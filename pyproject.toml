@@ -1,0 +1,14 @@
+[project]
+name = "alphatrion"
+version = "0.0.1"
+description = "AlphaTrion is an open-source and all-in-one platform to build AI-powered applications."
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
