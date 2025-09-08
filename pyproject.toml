@@ -5,9 +5,14 @@ description = "AlphaTrion is an open-source and all-in-one platform to build AI-
 license = {text = "Apache-2.0"}
 readme = "README.md"
 requires-python = ">=3.12"
+
 dependencies = [
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
 ]
 
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.4.2,<9.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

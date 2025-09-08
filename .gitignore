@@ -32,3 +32,4 @@ __pycache__
 .pytest_cache
 *.tgz
 dist
+.env

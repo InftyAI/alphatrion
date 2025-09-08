@@ -1,0 +1,31 @@
+name: Python CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry==2.0.0
+
+      - name: Configure Poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run tests
+        run: make test
