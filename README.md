@@ -1,3 +1,3 @@
-# template-repo
+# AlphaTrion
 
-A template repo.
+**AlphaTrion** is an open-source and all-in-one platform to build AI-powered applications. Still under development, join us on this exciting journey!
