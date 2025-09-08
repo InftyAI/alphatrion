@@ -1,0 +1,29 @@
+
+
+from abc import ABC
+
+from alphatrion.runtime.runtime import Runtime
+
+
+class Experiment(ABC):
+    """Base class for all experiments."""
+    def __init__(self, runtime: Runtime):
+        self._runtime = runtime
+
+    def create(self, name: str, description: str | None = None, meta: dict | None = None):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def delete(self, exp_id: int):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def get(self, exp_id: int):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def start(self, exp_id: int):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def stop(self, exp_id: int, status: str = "finished"):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def status(self, exp_id: int) -> str:
+        raise NotImplementedError("Subclasses must implement this method.")

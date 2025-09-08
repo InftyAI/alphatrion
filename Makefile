@@ -1,7 +1,17 @@
+POETRY := poetry
 
-.PHONY build:
+.PHONY: build
 build:
-	poetry build
+	$(POETRY) build
 
+.PHONY: publish
 publish: build
-	poetry publish
+	$(POETRY) publish
+
+.PHONY: launch
+launch:
+	docker-compose up -d
+
+.PHONY: test
+test:
+	$(POETRY) run pytest
