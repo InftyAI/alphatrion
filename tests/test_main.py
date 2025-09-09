@@ -1,9 +1,11 @@
 import subprocess
 import sys
 
+
 def test_main():
     process = subprocess.run(
         [sys.executable, "-m", "alphatrion.main"],
+        check=False,
         capture_output=True,
         text=True,
     )

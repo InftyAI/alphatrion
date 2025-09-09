@@ -15,3 +15,8 @@ launch:
 .PHONY: test
 test:
 	$(POETRY) run pytest
+
+.PHONY: format
+format:
+	ruff format .
+	ruff check --fix .

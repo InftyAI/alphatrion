@@ -1,15 +1,13 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from alphatrion.metadata.sql_models import Base, Experiment
 from alphatrion.metadata.base import MetaStore
+from alphatrion.metadata.sql_models import Base, Experiment
 
 
 # SQL-like metadata implementation, it could be SQLite, PostgreSQL, MySQL, etc.
 class SQLStore(MetaStore):
     def __init__(self, db_url: str, init_tables: bool = False):
-        super().__init__()
-
         self._engine = create_engine(db_url)
         self._session = sessionmaker(bind=self._engine)
         if init_tables:
@@ -17,10 +15,22 @@ class SQLStore(MetaStore):
             # In production, use migrations instead.
             Base.metadata.create_all(self._engine)
 
-
-    def create_exp(self, name: str, project_id: str, description: str | None, meta: dict | None):
+    def create_exp(
+        self,
+        name: str,
+        project_id: str,
+        description: str | None,
+        meta: dict | None,
+        labels: dict | None = None,
+    ):
         session = self._session()
-        new_exp = Experiment(name=name, description=description, project_id=project_id, meta=meta)
+        new_exp = Experiment(
+            name=name,
+            description=description,
+            project_id=project_id,
+            meta=meta,
+            labels=labels,
+        )
         session.add(new_exp)
         session.commit()
         session.close()
@@ -34,6 +44,7 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
+    # We don't support append-only update, the complete fields should be provided.
     def update_exp(self, exp_id: int, **kwargs):
         session = self._session()
         exp = session.query(Experiment).filter(Experiment.id == exp_id).first()
@@ -46,13 +57,23 @@ class SQLStore(MetaStore):
     # get_exp will ignore the deleted experiments.
     def get_exp(self, exp_id: int) -> Experiment | None:
         session = self._session()
-        exp = session.query(Experiment).filter(Experiment.id == exp_id, Experiment.is_del == 0).first()
+        exp = (
+            session.query(Experiment)
+            .filter(Experiment.id == exp_id, Experiment.is_del == 0)
+            .first()
+        )
         session.close()
         return exp
 
     # paginate the experiments in case of too many experiments.
     def list_exps(self, project_id: str, page: int, page_size: int) -> list[Experiment]:
         session = self._session()
-        exps = session.query(Experiment).filter(Experiment.project_id == project_id).offset(page * page_size).limit(page_size).all()
+        exps = (
+            session.query(Experiment)
+            .filter(Experiment.project_id == project_id)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
         session.close()
         return exps
