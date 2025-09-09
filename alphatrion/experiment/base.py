@@ -11,7 +11,11 @@ class Experiment(ABC):
 
     @abstractmethod
     def create(
-        self, name: str, description: str | None = None, meta: dict | None = None, labels: dict | None = None
+        self,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        labels: dict | None = None,
     ):
         raise NotImplementedError("Subclasses must implement this method.")
 
