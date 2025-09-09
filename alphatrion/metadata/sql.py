@@ -2,11 +2,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from alphatrion.metadata.sql_models import Base, Experiment
-from alphatrion.metadata.base import Metadata
+from alphatrion.metadata.base import MetaStore
 
 
 # SQL-like metadata implementation, it could be SQLite, PostgreSQL, MySQL, etc.
-class SQLMetadata(Metadata):
+class SQLStore(MetaStore):
     def __init__(self, db_url: str, init_tables: bool = False):
         super().__init__()
 

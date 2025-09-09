@@ -1,6 +1,6 @@
 from abc import ABC
 
-class Metadata(ABC):
+class MetaStore(ABC):
     """Base class for all metadata storage backends."""
     def __init__(self):
         pass
