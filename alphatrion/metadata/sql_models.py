@@ -38,6 +38,7 @@ class Experiment(Base):
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
+
 class Model(Base):
     __tablename__ = "models"
 

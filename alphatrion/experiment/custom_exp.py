@@ -10,7 +10,11 @@ class CustomExperiment(Experiment):
         super().__init__(runtime)
 
     def create(
-        self, name: str, description: str | None = None, meta: dict | None = None, labels: dict | None = None
+        self,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        labels: dict | None = None,
     ):
         self._runtime._metadb.create_exp(
             name=name,
