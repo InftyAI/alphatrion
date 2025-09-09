@@ -1,12 +1,12 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from alphatrion.database.base import Database
-from alphatrion.database.sql_models import Base, Experiment
+from alphatrion.metadata.sql_models import Base, Experiment
+from alphatrion.metadata.base import MetaStore
 
 
-# SQL-like database implementation, it could be SQLite, PostgreSQL, MySQL, etc.
-class SQLDatabase(Database):
+# SQL-like metadata implementation, it could be SQLite, PostgreSQL, MySQL, etc.
+class SQLStore(MetaStore):
     def __init__(self, db_url: str, init_tables: bool = False):
         super().__init__()
 

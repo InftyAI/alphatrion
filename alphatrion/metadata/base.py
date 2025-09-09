@@ -1,7 +1,7 @@
 from abc import ABC
 
-class Database(ABC):
-    """Base class for all databases."""
+class MetaStore(ABC):
+    """Base class for all metadata storage backends."""
     def __init__(self):
         pass
 

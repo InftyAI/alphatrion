@@ -1,11 +1,11 @@
 import pytest
-from alphatrion.database.sql import SQLDatabase
-from alphatrion.database.sql_models import ExperimentStatus
+from alphatrion.metadata.sql import SQLStore
+from alphatrion.metadata.sql_models import ExperimentStatus
 
 
 @pytest.fixture
 def db():
-    db = SQLDatabase("sqlite:///:memory:", init_tables=True)
+    db = SQLStore("sqlite:///:memory:", init_tables=True)
     yield db
 
 

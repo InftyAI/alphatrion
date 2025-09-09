@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from alphatrion.database.sql_models import ExperimentStatus
+from alphatrion.metadata.sql_models import ExperimentStatus
 from alphatrion import consts
 from alphatrion.experiment.custom_exp import CustomExperiment
 from alphatrion.runtime.runtime import Runtime
