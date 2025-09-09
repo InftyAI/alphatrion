@@ -1,9 +1,9 @@
 import pytest
 
-from alphatrion.database.base import Database
+from alphatrion.metadata.base import Metadata
 
-def test_database_abstract_methods():
-    db = Database()
+def test_metadata_abstract_methods():
+    db = Metadata()
 
     with pytest.raises(NotImplementedError):
         db.create_exp("test", "test", "test", {})

@@ -1,4 +1,4 @@
-from alphatrion.database.sql_models import ExperimentStatus
+from alphatrion.metadata.sql_models import ExperimentStatus
 from alphatrion.experiment.base import Experiment
 from alphatrion.runtime.runtime import Runtime
 
