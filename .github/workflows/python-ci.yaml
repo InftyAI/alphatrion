@@ -29,7 +29,5 @@ jobs:
 
       # Lint is already included in `make test`
 
-      # Lint is already included in `make test`
-
       - name: Run tests
         run: make test
