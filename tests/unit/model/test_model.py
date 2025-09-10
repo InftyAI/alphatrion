@@ -1,15 +1,11 @@
-import os
-
 import pytest
 
-from alphatrion import consts
 from alphatrion.model.model import Model
 from alphatrion.runtime.runtime import Runtime
 
 
 @pytest.fixture
 def model():
-    os.environ[consts.METADATA_DB_URL] = "sqlite:///:memory:"
     runtime = Runtime(project_id="test_project")
     model = Model(runtime=runtime)
     yield model

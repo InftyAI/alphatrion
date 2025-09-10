@@ -28,6 +28,10 @@ class Experiment(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
+    def list(self, page: int = 0, page_size: int = 10):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
     def update_labels(self, exp_id: int, labels: dict):
         raise NotImplementedError("Subclasses must implement this method.")
 

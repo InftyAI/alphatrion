@@ -25,7 +25,9 @@ jobs:
         run: poetry config virtualenvs.in-project true
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-ansi
+        run: poetry install --with dev --no-interaction --no-ansi
+
+      # Lint is already included in `make test`
 
       - name: Run tests
         run: make test
