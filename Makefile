@@ -14,8 +14,8 @@ launch:
 
 .PHONY: format
 format:
-	ruff format .
-	ruff check --fix .
+	$(POETRY) run ruff format .
+	$(POETRY) run ruff check .
 
 .PHONY: test
 test: format
