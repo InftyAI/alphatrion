@@ -10,7 +10,7 @@
 We welcome contributions! Please follow these steps:
 
 1. Fork the repository.
-2. Run `eval $(poetry env activate)` to activate the virtual environment.
+2. Run `source start.sh` to activate the virtual environment.
 3. Install dependencies with `poetry install`.
 4. Make your changes.
 

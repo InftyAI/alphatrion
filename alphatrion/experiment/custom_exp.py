@@ -30,6 +30,11 @@ class CustomExperiment(Experiment):
     def get(self, exp_id: int):
         return self._runtime._metadb.get_exp(exp_id=exp_id)
 
+    def list(self, page: int = 0, page_size: int = 10):
+        return self._runtime._metadb.list_exps(
+            project_id=self._runtime._project_id, page=page, page_size=page_size
+        )
+
     # Please provide all the labels to update, or it will overwrite the existing labels.
     def update_labels(self, exp_id: int, labels: dict):
         self._runtime._metadb.update_exp(exp_id=exp_id, labels=labels)

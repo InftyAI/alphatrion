@@ -12,11 +12,15 @@ publish: build
 launch:
 	docker-compose up -d
 
-.PHONY: test
-test:
-	$(POETRY) run pytest
-
 .PHONY: format
 format:
 	ruff format .
 	ruff check --fix .
+
+.PHONY: test
+test: format
+	ENV_FILE=.env.test $(POETRY) run pytest tests/unit
+
+.PHONY: test-integration
+test-integration: format
+	ENV_FILE=.env.integration-test $(POETRY) run pytest tests/integration

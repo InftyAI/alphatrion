@@ -1,8 +1,5 @@
-import os
-
 import pytest
 
-from alphatrion import consts
 from alphatrion.experiment.custom_exp import CustomExperiment
 from alphatrion.metadata.sql_models import ExperimentStatus
 from alphatrion.runtime.runtime import Runtime
@@ -10,7 +7,6 @@ from alphatrion.runtime.runtime import Runtime
 
 @pytest.fixture
 def exp():
-    os.environ[consts.METADATA_DB_URL] = "sqlite:///:memory:"
     runtime = Runtime(project_id="test_project")
     exp = CustomExperiment(runtime=runtime)
     yield exp
@@ -25,6 +21,7 @@ def test_custom_experiment(exp):
     assert exp1.meta == {"foo": "bar"}
     assert exp1.status == ExperimentStatus.PENDING
     assert exp1.duration == 0
+    assert len(exp.list()) == 1
 
     exp.update_labels(1, {"env": "prod"})
     exp1 = exp.get(1)
@@ -42,3 +39,4 @@ def test_custom_experiment(exp):
     exp.delete(1)
     exp1 = exp.get(1)
     assert exp1 is None
+    assert len(exp.list()) == 0
