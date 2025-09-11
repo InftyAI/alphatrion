@@ -23,9 +23,15 @@ To run tests, use:
 make test
 ```
 
+To run integration tests, use:
+
+```bash
+make test-integration
+```
+
 ## How to Build and Publish
 
-> NOTE: You need to have the PyPI token set in your environment variables to publish the package.
+> Note: You need to have the PyPI token set in your environment variables to publish the package.
 
 To build the project, run:
 
