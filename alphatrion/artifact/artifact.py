@@ -9,12 +9,12 @@ SUCCESS_CODE = 201
 
 
 class Artifact:
-    def __init__(self, runtime: Runtime):
+    def __init__(self, runtime: Runtime, insecure: bool = False):
         self._runtime = runtime
         self._url = os.environ.get(consts.ARTIFACT_REGISTRY_URL)
         self._url = self._url.replace("https://", "").replace("http://", "")
         self._client = oras.client.OrasClient(
-            hostname=self._url.strip("/"), auth_backend="token"
+            hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
         )
 
     def push(self, experiment_name: str, files: list[str], version: str = "latest"):

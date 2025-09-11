@@ -1,7 +1,6 @@
-version: "3.9"
-
 services:
   postgres:
+    container_name: postgres
     image: postgres:16
     environment:
       POSTGRES_USER: at_user
@@ -9,12 +8,19 @@ services:
       POSTGRES_DB: at_db
     ports:
       - "5432:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
+    # volumes:
+    #   - pg_data:/var/lib/postgresql/data
     deploy:
       replicas: 1
       restart_policy:
         condition: any
-
-volumes:
-  pg_data:
+  registry:
+    container_name: registry
+    image: registry:3
+    ports:
+      - "5001:5000"
+#     volumes:
+#       - oras-data:/data
+# volumes:
+#   pg_data:
+#   oras-data:
