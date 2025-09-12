@@ -35,6 +35,7 @@ def test_push_with_error_folder(artifact):
             version="v1",
         )
 
+
 def test_push_with_no_files_and_no_folder(artifact):
     with pytest.raises(ValueError):
         artifact.push(
