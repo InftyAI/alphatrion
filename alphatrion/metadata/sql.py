@@ -22,7 +22,7 @@ class SQLStore(MetaStore):
         description: str | None,
         meta: dict | None,
         labels: dict | None = None,
-    ):
+    ) -> int:
         session = self._session()
         new_exp = Experiment(
             name=name,
@@ -33,7 +33,11 @@ class SQLStore(MetaStore):
         )
         session.add(new_exp)
         session.commit()
+
+        exp_id = new_exp.id
         session.close()
+
+        return exp_id
 
     # Soft delete the experiment now. In the future, we may implement hard delete.
     def delete_exp(self, exp_id: int):
