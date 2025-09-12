@@ -1,6 +1,6 @@
 import pytest
 
-from alphatrion.experiment.custom_exp import CustomExperiment
+from alphatrion.experiment.craft_exp import Experiment
 from alphatrion.metadata.sql_models import ExperimentStatus
 from alphatrion.runtime.runtime import Runtime
 
@@ -8,11 +8,11 @@ from alphatrion.runtime.runtime import Runtime
 @pytest.fixture
 def exp():
     runtime = Runtime(project_id="test_project")
-    exp = CustomExperiment(runtime=runtime)
+    exp = Experiment(runtime=runtime)
     yield exp
 
 
-def test_custom_experiment(exp):
+def test_experiment_crud(exp):
     exp.create("test_exp", "A test experiment", {"foo": "bar"}, {"env": "test"})
     exp1 = exp.get(1)
     assert exp1 is not None
@@ -27,7 +27,14 @@ def test_custom_experiment(exp):
     exp1 = exp.get(1)
     assert exp1.labels == {"env": "prod"}
 
-    exp.start(1)
+    exp.delete(1)
+    exp1 = exp.get(1)
+    assert exp1 is None
+    assert len(exp.list()) == 0
+
+
+def test_experiment_start(exp):
+    exp.start()
     exp1 = exp.get(1)
     assert exp1.status == ExperimentStatus.RUNNING
 
@@ -35,8 +42,3 @@ def test_custom_experiment(exp):
     exp1 = exp.get(1)
     assert exp1.status == ExperimentStatus.FAILED
     assert exp1.duration > 0
-
-    exp.delete(1)
-    exp1 = exp.get(1)
-    assert exp1 is None
-    assert len(exp.list()) == 0
