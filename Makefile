@@ -19,6 +19,7 @@ lint:
 .PHONY: format
 format:
 	$(POETRY) run ruff format .
+	$(POETRY) run ruff check --fix .
 
 .PHONY: test
 test: lint

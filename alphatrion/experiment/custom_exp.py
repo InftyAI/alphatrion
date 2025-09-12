@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from alphatrion.artifact.artifact import Artifact
 from alphatrion.experiment.base import Experiment
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, ExperimentStatus
 from alphatrion.runtime.runtime import Runtime
@@ -8,6 +9,7 @@ from alphatrion.runtime.runtime import Runtime
 class CustomExperiment(Experiment):
     def __init__(self, runtime: Runtime):
         super().__init__(runtime)
+        self._artifact = Artifact(runtime)
 
     def create(
         self,
@@ -26,6 +28,9 @@ class CustomExperiment(Experiment):
 
     def delete(self, exp_id: int):
         self._runtime._metadb.delete_exp(exp_id=exp_id)
+        # TODO: delete related artifacts too. But for google artifact registry,
+        # it seems not supported to delete a tag only.
+        # See issue: https://github.com/InftyAI/alphatrion/issues/14
 
     def get(self, exp_id: int):
         return self._runtime._metadb.get_exp(exp_id=exp_id)
@@ -55,3 +60,9 @@ class CustomExperiment(Experiment):
     def status(self, exp_id: int) -> ExperimentStatus:
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
         return exp.status
+
+    def save_checkpoint(self, exp_id: int, meta: dict | None = None):
+        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
+        self._artifact.push(
+            experiment_name=exp.name, files=[self._runtime._checkpoint_path]
+        )

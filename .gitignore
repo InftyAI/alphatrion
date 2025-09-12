@@ -31,6 +31,7 @@ cache
 __pycache__
 *.pyc
 .pytest_cache
+.ruff_cache
 *.tgz
 dist
 .env
