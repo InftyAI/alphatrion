@@ -77,9 +77,15 @@ class Experiment:
         self._runtime = runtime
         self._artifact = Artifact(runtime)
         self._config = config or ExperimentConfig()
+
         self._steps = 0
-        self._start_at = None
         self._best_metric_value = None
+        # Start time of the experiment. Set when experiment is started,
+        # reset to None when experiment is stopped.
+        self._start_at = None
+        # Running Experiment ID that is stored in the metadata database.
+        # Set when experiment is created, reset to None when experiment is stopped.
+        self._exp_id = None
 
     @classmethod
     def run(
@@ -103,7 +109,12 @@ class Experiment:
         meta: dict | None = None,
         labels: dict | None = None,
     ):
-        exp_id = self._runtime._metadb.create_exp(
+        """
+        Create a new experiment in the metadata store.
+        Returns the experiment ID.
+        """
+
+        self._exp_id = self._runtime._metadb.create_exp(
             name=name,
             description=description,
             project_id=self._runtime._project_id,
@@ -111,7 +122,7 @@ class Experiment:
             labels=labels,
         )
 
-        return exp_id
+        return self._exp_id
 
     def get(self, exp_id: int):
         return self._runtime._metadb.get_exp(exp_id=exp_id)
@@ -138,6 +149,11 @@ class Experiment:
         meta: dict | None = None,
         labels: dict | None = None,
     ) -> int:
+        """
+        Start a new experiment. If name is not provided, a UUID will be generated.
+        Returns the experiment ID.
+        """
+
         if name is None:
             name = f"{uuid.uuid4()}"
 
@@ -167,6 +183,16 @@ class Experiment:
         self._steps = 0
         self._start_at = None
         self._best_metric_value = None
+        self._exp_id = None
+
+    def running_experiment_id(self) -> int | None:
+        return self._exp_id
+
+    # running time in seconds since the experiment is started.
+    def running_time(self) -> int:
+        if self._start_at is None:
+            return 0
+        return int((datetime.now(UTC) - self._start_at).total_seconds())
 
     # def save_checkpoint(
     #     self,
@@ -199,7 +225,7 @@ class RunContext:
         self._labels = labels
 
     def __enter__(self):
-        self._exp_id = self._experiment.start(
+        self._experiment.start(
             name=self._exp_name,
             description=self._description,
             meta=self._meta,
@@ -208,5 +234,5 @@ class RunContext:
         return self._experiment
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._experiment.stop(self._exp_id)
+        self._experiment.stop(self._experiment._exp_id)
         self._experiment.reset()

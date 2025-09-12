@@ -1,3 +1,5 @@
+import time
+
 from alphatrion.experiment.craft_exp import CraftExperiment
 from alphatrion.metadata.sql_models import ExperimentStatus
 
@@ -10,11 +12,18 @@ def test_run_context():
         meta={"key": "value"},
         labels={"type": "unit"},
     ) as exp:
+        assert exp.running_experiment_id() == 1
+        time.sleep(1)
+        assert exp.running_time() == 1
+
         exp1 = exp.get(1)
         assert exp1 is not None
         assert exp1.name == "context_exp"
         assert exp1.description == "Context manager test"
         assert exp1.status == ExperimentStatus.RUNNING
+
+    assert exp.running_experiment_id() is None
+    assert exp.running_time() == 0
 
     exp1 = exp.get(1)
     assert exp1.status == ExperimentStatus.FINISHED
