@@ -19,7 +19,7 @@ def artifact():
     yield artifact
 
 
-def test_push(artifact):
+def test_push_with_files(artifact):
     # Create a temporary directory with some files
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
@@ -34,6 +34,27 @@ def test_push(artifact):
         artifact.push(
             experiment_name="test_experiment", files=[file1, file2], version="v1"
         )
+
+        tags = artifact.list_tags("test_experiment")
+        assert "v1" in tags
+
+        artifact.delete_tags(experiment_name="test_experiment", versions="v1")
+        tags = artifact.list_tags("test_experiment")
+        assert "v1" not in tags
+
+
+def test_push_with_folder(artifact):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+
+        file1 = "file1.txt"
+        file2 = "file2.txt"
+        with open(file1, "w") as f:
+            f.write("This is a new file1.")
+        with open(file2, "w") as f:
+            f.write("This is a new file2.")
+
+        artifact.push(experiment_name="test_experiment", folder=tmpdir, version="v1")
 
         tags = artifact.list_tags("test_experiment")
         assert "v1" in tags
