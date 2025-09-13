@@ -36,6 +36,9 @@ lint.select = [
     "I",  # isort
     "PL",  # PyLint,
 ]
+lint.ignore = [
+    "PLR0913",  # Too many arguments in function definition
+]
 exclude = ["venv", "migrations", "__pycache__"]
 
 [tool.ruff.format]

@@ -21,7 +21,7 @@ def test_experiment_crud(exp):
     assert exp1.meta == {"foo": "bar"}
     assert exp1.status == ExperimentStatus.PENDING
     assert exp1.duration == 0
-    assert len(exp.list()) == 1
+    assert len(exp.list_paginated()) == 1
 
     exp.update_labels(1, {"env": "prod"})
     exp1 = exp.get(1)
@@ -30,7 +30,7 @@ def test_experiment_crud(exp):
     exp.delete(1)
     exp1 = exp.get(1)
     assert exp1 is None
-    assert len(exp.list()) == 0
+    assert len(exp.list_paginated()) == 0
 
 
 def test_experiment_start(exp):

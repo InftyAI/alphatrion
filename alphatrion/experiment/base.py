@@ -73,9 +73,22 @@ class ExperimentConfig(BaseModel):
 class Experiment:
     """Base Experiment class."""
 
-    def __init__(self, runtime: Runtime, config: ExperimentConfig | None = None):
+    def __init__(
+        self,
+        runtime: Runtime,
+        config: ExperimentConfig | None = None,
+        artifact_insecure: bool = False,
+    ):
+        """
+        :param runtime: the Runtime instance
+        :param config: the ExperimentConfig instance. If not provided,
+            default config will be used
+        :param artifact_insecure: whether to use insecure connection to the
+            artifact registry. Default is False.
+        """
+
         self._runtime = runtime
-        self._artifact = Artifact(runtime)
+        self._artifact = Artifact(runtime, insecure=artifact_insecure)
         self._config = config or ExperimentConfig()
 
         self._steps = 0
@@ -88,13 +101,32 @@ class Experiment:
     def run(
         cls,
         project_id: str,
+        config: ExperimentConfig | None = None,
         name: str | None = None,
         description: str | None = None,
         meta: dict | None = None,
         labels: dict | None = None,
+        artifact_insecure: bool = False,
     ):
+        """
+        :param project_id: the project ID to run the experiment under
+        :param name: the name of the experiment. If not provided,
+            a UUID will be generated.
+        :param description: the description of the experiment
+        :param meta: the metadata of the experiment
+        :param labels: the labels of the experiment
+        :param artifact_insecure: whether to use insecure connection to the
+            artifact registry. Default is False.
+
+        :return: a context manager that yields an Experiment instance
+        """
+
         runtime = Runtime(project_id=project_id)
-        exp = cls(runtime=runtime)
+        exp = Experiment(
+            runtime=runtime,
+            config=config,
+            artifact_insecure=artifact_insecure,
+        )
         return RunContext(
             exp, name=name, description=description, meta=meta, labels=labels
         )
@@ -121,19 +153,25 @@ class Experiment:
 
         return exp_id
 
+    # TODO: do not expose the db record directly.
     def get(self, exp_id: int):
         return self._runtime._metadb.get_exp(exp_id=exp_id)
 
-    def list(self, page: int = 0, page_size: int = 10):
+    # TODO: do not expose the db record directly.
+    def list_paginated(self, page: int = 0, page_size: int = 10):
         return self._runtime._metadb.list_exps(
             project_id=self._runtime._project_id, page=page, page_size=page_size
         )
 
-    # TODO: delete related artifacts too. But for google artifact registry,
-    # it seems not supported to delete a tag only.
-    # See issue: https://github.com/InftyAI/alphatrion/issues/14
     def delete(self, exp_id: int):
+        exp = self.get(exp_id)
+        if exp is None:
+            return
+
+        tags = self._artifact.list_versions(experiment_name=exp.name)
+
         self._runtime._metadb.delete_exp(exp_id=exp_id)
+        self._artifact.delete(experiment_name=exp.name, versions=tags)
 
     # Please provide all the labels to update, or it will overwrite the existing labels.
     def update_labels(self, exp_id: int, labels: dict):
@@ -147,8 +185,13 @@ class Experiment:
         labels: dict | None = None,
     ) -> int:
         """
-        Start a new experiment. If name is not provided, a UUID will be generated.
-        Returns the experiment ID.
+        :param name: the name of the experiment. If not provided,
+            a UUID will be generated.
+        :param description: the description of the experiment
+        :param meta: the metadata of the experiment
+        :param labels: the labels of the experiment
+
+        :return: the experiment ID
         """
 
         if name is None:
@@ -168,7 +211,7 @@ class Experiment:
     def stop(self, exp_id: int, status: ExperimentStatus = ExperimentStatus.FINISHED):
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
         if exp is not None and exp.status not in COMPLETED_STATUS:
-            duration = (datetime.now() - exp.created_at).total_seconds()
+            duration = (datetime.now(UTC) - exp.created_at).total_seconds()
             self._runtime._metadb.update_exp(
                 exp_id=exp_id, status=status, duration=duration
             )
@@ -188,17 +231,20 @@ class Experiment:
             return 0
         return int((datetime.now(UTC) - self._start_at).total_seconds())
 
-    # def save_checkpoint(
-    #     self,
-    #     exp_id: int,
-    #     files: list[str] | None = None,
-    #     folder: str | None = None,
-    #     version: str = "latest",
-    # ):
-    #     exp = self._runtime._metadb.get_exp(exp_id=exp_id)
-    #     self._artifact.push(
-    #         experiment_name=exp.name, files=files, folder=folder, version=version
-    #     )
+    def log_artifact(
+        self,
+        exp_id: int,
+        files: list[str] | None = None,
+        folder: str | None = None,
+        version: str = "latest",
+    ):
+        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
+        if exp is None:
+            raise ValueError(f"Experiment with id {exp_id} does not exist.")
+
+        self._artifact.push(
+            experiment_name=exp.name, files=files, folder=folder, version=version
+        )
 
 
 class RunContext:
