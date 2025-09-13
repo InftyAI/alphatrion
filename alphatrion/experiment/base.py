@@ -83,9 +83,6 @@ class Experiment:
         # Start time of the experiment. Set when experiment is started,
         # reset to None when experiment is stopped.
         self._start_at = None
-        # Running Experiment ID that is stored in the metadata database.
-        # Set when experiment is created, reset to None when experiment is stopped.
-        self._exp_id = None
 
     @classmethod
     def run(
@@ -114,7 +111,7 @@ class Experiment:
         Returns the experiment ID.
         """
 
-        self._exp_id = self._runtime._metadb.create_exp(
+        exp_id = self._runtime._metadb.create_exp(
             name=name,
             description=description,
             project_id=self._runtime._project_id,
@@ -122,7 +119,7 @@ class Experiment:
             labels=labels,
         )
 
-        return self._exp_id
+        return exp_id
 
     def get(self, exp_id: int):
         return self._runtime._metadb.get_exp(exp_id=exp_id)
@@ -163,6 +160,7 @@ class Experiment:
             meta=meta,
             labels=labels,
         )
+
         self._runtime._metadb.update_exp(exp_id=exp_id, status=ExperimentStatus.RUNNING)
         self._start_at = datetime.now(UTC)
         return exp_id
@@ -183,10 +181,6 @@ class Experiment:
         self._steps = 0
         self._start_at = None
         self._best_metric_value = None
-        self._exp_id = None
-
-    def running_experiment_id(self) -> int | None:
-        return self._exp_id
 
     # running time in seconds since the experiment is started.
     def running_time(self) -> int:
@@ -224,8 +218,11 @@ class RunContext:
         self._meta = meta
         self._labels = labels
 
+        # Set when start the context, reset to None when exit the context.
+        self._exp_id = None
+
     def __enter__(self):
-        self._experiment.start(
+        self._exp_id = self._experiment.start(
             name=self._exp_name,
             description=self._description,
             meta=self._meta,
@@ -234,5 +231,6 @@ class RunContext:
         return self._experiment
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._experiment.stop(self._experiment._exp_id)
+        self._experiment.stop(self._exp_id)
         self._experiment.reset()
+        self._exp_id = None

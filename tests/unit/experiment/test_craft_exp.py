@@ -12,7 +12,6 @@ def test_run_context():
         meta={"key": "value"},
         labels={"type": "unit"},
     ) as exp:
-        assert exp.running_experiment_id() == 1
         time.sleep(1)
         assert exp.running_time() == 1
 
@@ -22,7 +21,6 @@ def test_run_context():
         assert exp1.description == "Context manager test"
         assert exp1.status == ExperimentStatus.RUNNING
 
-    assert exp.running_experiment_id() is None
     assert exp.running_time() == 0
 
     exp1 = exp.get(1)
