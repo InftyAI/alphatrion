@@ -77,9 +77,12 @@ class Experiment:
         self._runtime = runtime
         self._artifact = Artifact(runtime)
         self._config = config or ExperimentConfig()
+
         self._steps = 0
-        self._start_at = None
         self._best_metric_value = None
+        # Start time of the experiment. Set when experiment is started,
+        # reset to None when experiment is stopped.
+        self._start_at = None
 
     @classmethod
     def run(
@@ -103,6 +106,11 @@ class Experiment:
         meta: dict | None = None,
         labels: dict | None = None,
     ):
+        """
+        Create a new experiment in the metadata store.
+        Returns the experiment ID.
+        """
+
         exp_id = self._runtime._metadb.create_exp(
             name=name,
             description=description,
@@ -138,6 +146,11 @@ class Experiment:
         meta: dict | None = None,
         labels: dict | None = None,
     ) -> int:
+        """
+        Start a new experiment. If name is not provided, a UUID will be generated.
+        Returns the experiment ID.
+        """
+
         if name is None:
             name = f"{uuid.uuid4()}"
 
@@ -147,6 +160,7 @@ class Experiment:
             meta=meta,
             labels=labels,
         )
+
         self._runtime._metadb.update_exp(exp_id=exp_id, status=ExperimentStatus.RUNNING)
         self._start_at = datetime.now(UTC)
         return exp_id
@@ -167,6 +181,12 @@ class Experiment:
         self._steps = 0
         self._start_at = None
         self._best_metric_value = None
+
+    # running time in seconds since the experiment is started.
+    def running_time(self) -> int:
+        if self._start_at is None:
+            return 0
+        return int((datetime.now(UTC) - self._start_at).total_seconds())
 
     # def save_checkpoint(
     #     self,
@@ -198,6 +218,9 @@ class RunContext:
         self._meta = meta
         self._labels = labels
 
+        # Set when start the context, reset to None when exit the context.
+        self._exp_id = None
+
     def __enter__(self):
         self._exp_id = self._experiment.start(
             name=self._exp_name,
@@ -210,3 +233,4 @@ class RunContext:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._experiment.stop(self._exp_id)
         self._experiment.reset()
+        self._exp_id = None
