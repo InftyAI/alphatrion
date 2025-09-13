@@ -168,6 +168,7 @@ class Experiment:
         if exp is None:
             return
 
+        # TODO: Should we make this optional as a parameter?
         tags = self._artifact.list_versions(experiment_name=exp.name)
 
         self._runtime._metadb.delete_exp(exp_id=exp_id)
@@ -211,7 +212,9 @@ class Experiment:
     def stop(self, exp_id: int, status: ExperimentStatus = ExperimentStatus.FINISHED):
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
         if exp is not None and exp.status not in COMPLETED_STATUS:
-            duration = (datetime.now(UTC) - exp.created_at).total_seconds()
+            duration = (
+                datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
+            ).total_seconds()
             self._runtime._metadb.update_exp(
                 exp_id=exp_id, status=status, duration=duration
             )

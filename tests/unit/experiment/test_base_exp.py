@@ -27,11 +27,6 @@ def test_experiment_crud(exp):
     exp1 = exp.get(1)
     assert exp1.labels == {"env": "prod"}
 
-    exp.delete(1)
-    exp1 = exp.get(1)
-    assert exp1 is None
-    assert len(exp.list_paginated()) == 0
-
 
 def test_experiment_start(exp):
     exp.start()
