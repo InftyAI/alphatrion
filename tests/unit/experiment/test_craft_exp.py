@@ -4,7 +4,7 @@ from alphatrion.experiment.craft_exp import CraftExperiment
 from alphatrion.metadata.sql_models import ExperimentStatus
 
 
-def test_run_context():
+def test_craft_experiment():
     with CraftExperiment.run(
         project_id="test_project",
         name="context_exp",
