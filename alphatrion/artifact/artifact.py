@@ -3,14 +3,13 @@ import os
 import oras.client
 
 from alphatrion import consts
-from alphatrion.runtime.runtime import Runtime
 
 SUCCESS_CODE = 201
 
 
 class Artifact:
-    def __init__(self, runtime: Runtime, insecure: bool = False):
-        self._runtime = runtime
+    def __init__(self, project_id: str, insecure: bool = False):
+        self._project_id = project_id
         self._url = os.environ.get(consts.ARTIFACT_REGISTRY_URL)
         self._url = self._url.replace("https://", "").replace("http://", "")
         self._client = oras.client.OrasClient(
@@ -52,16 +51,17 @@ class Artifact:
             raise ValueError("No files to push.")
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._runtime._project_id}/{experiment_name}:{version}"
+        target = f"{url}{self._project_id}/{experiment_name}:{version}"
 
         try:
             self._client.push(target, files=files_to_push)
         except Exception as e:
             raise RuntimeError("Failed to push artifacts") from e
 
+    # TODO: should we store it in the metadb instead?
     def list_versions(self, experiment_name: str) -> list[str]:
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._runtime._project_id}/{experiment_name}"
+        target = f"{url}{self._project_id}/{experiment_name}"
         try:
             tags = self._client.get_tags(target)
             return tags
@@ -70,7 +70,7 @@ class Artifact:
 
     def delete(self, experiment_name: str, versions: str | list[str]):
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._runtime._project_id}/{experiment_name}"
+        target = f"{url}{self._project_id}/{experiment_name}"
 
         try:
             self._client.delete_tags(target, tags=versions)

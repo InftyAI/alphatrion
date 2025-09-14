@@ -3,17 +3,13 @@
 
 import pytest
 
-from alphatrion.artifact.artifact import Artifact
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.runtime.runtime import global_runtime, init
 
 
 @pytest.fixture
 def artifact():
-    # We use a local registry for testing, it doesn't mean
-    # it will always successfully with cloud registries.
-    # We may need e2e tests for that.
-    runtime = Runtime(project_id="test_project")
-    artifact = Artifact(runtime=runtime, insecure=True)
+    init(project_id="test_project", artifact_insecure=True)
+    artifact = global_runtime()._artifact
     yield artifact
 
 

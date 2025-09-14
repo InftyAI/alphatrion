@@ -2,13 +2,13 @@ import pytest
 
 from alphatrion.experiment.craft_exp import Experiment
 from alphatrion.metadata.sql_models import ExperimentStatus
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.runtime.runtime import init
 
 
 @pytest.fixture
 def exp():
-    runtime = Runtime(project_id="test_project")
-    exp = Experiment(runtime=runtime)
+    init(project_id="test_project", artifact_insecure=True)
+    exp = Experiment()
     yield exp
 
 

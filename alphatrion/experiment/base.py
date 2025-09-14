@@ -3,9 +3,8 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-from alphatrion.artifact.artifact import Artifact
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, ExperimentStatus
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.runtime.runtime import global_runtime
 
 
 class CheckpointConfig(BaseModel):
@@ -75,9 +74,7 @@ class Experiment:
 
     def __init__(
         self,
-        runtime: Runtime,
         config: ExperimentConfig | None = None,
-        artifact_insecure: bool = False,
     ):
         """
         :param runtime: the Runtime instance
@@ -87,9 +84,8 @@ class Experiment:
             artifact registry. Default is False.
         """
 
-        self._runtime = runtime
-        self._artifact = Artifact(runtime, insecure=artifact_insecure)
         self._config = config or ExperimentConfig()
+        self._runtime = global_runtime()
 
         self._steps = 0
         self._best_metric_value = None
@@ -100,13 +96,11 @@ class Experiment:
     @classmethod
     def run(
         cls,
-        project_id: str,
         config: ExperimentConfig | None = None,
         name: str | None = None,
         description: str | None = None,
         meta: dict | None = None,
         labels: dict | None = None,
-        artifact_insecure: bool = False,
     ):
         """
         :param project_id: the project ID to run the experiment under
@@ -121,12 +115,7 @@ class Experiment:
         :return: a context manager that yields an Experiment instance
         """
 
-        runtime = Runtime(project_id=project_id)
-        exp = Experiment(
-            runtime=runtime,
-            config=config,
-            artifact_insecure=artifact_insecure,
-        )
+        exp = Experiment(config=config)
         return RunContext(
             exp, name=name, description=description, meta=meta, labels=labels
         )
@@ -233,32 +222,6 @@ class Experiment:
         if self._start_at is None:
             return 0
         return int((datetime.now(UTC) - self._start_at).total_seconds())
-
-    def log_artifact(
-        self,
-        exp_id: int,
-        paths: str | list[str],
-        version: str = "latest",
-    ):
-        """
-        Log artifacts (files) to the artifact registry.
-        :param exp_id: the experiment ID
-        :param paths: list of file paths to log.
-            Support one or multiple files or a folder.
-            If a folder is provided, all files in the folder will be logged.
-            Don't support nested folders currently.
-            Only files in the first level of the folder will be logged.
-        :param version: the version (tag) to log the files under
-        """
-
-        if not paths:
-            raise ValueError("no files specified to log")
-
-        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
-        if exp is None:
-            raise ValueError(f"Experiment with id {exp_id} does not exist.")
-
-        self._artifact.push(experiment_name=exp.name, paths=paths, version=version)
 
 
 class RunContext:

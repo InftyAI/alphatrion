@@ -5,23 +5,22 @@ import tempfile
 
 import pytest
 
-from alphatrion.artifact.artifact import Artifact
 from alphatrion.experiment.base import Experiment
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.observe.observe import log_artifact
+from alphatrion.runtime.runtime import global_runtime, init
 
 
 @pytest.fixture
 def artifact():
-    # We use a local registry for testing, it doesn't mean
-    # it will always successfully with cloud registries.
-    # We may need e2e tests for that.
-    runtime = Runtime(project_id="test_project")
-    artifact = Artifact(runtime=runtime, insecure=True)
+    init(project_id="test_project", artifact_insecure=True)
+    artifact = global_runtime()._artifact
+
     yield artifact
 
 
 def test_push_with_files(artifact):
-    # Create a temporary directory with some files
+    init(project_id="test_project", artifact_insecure=True)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
 
@@ -45,6 +44,8 @@ def test_push_with_files(artifact):
 
 
 def test_push_with_folder(artifact):
+    init(project_id="test_project", artifact_insecure=True)
+
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
 
@@ -66,13 +67,13 @@ def test_push_with_folder(artifact):
 
 
 def test_save_checkpoint():
+    init(project_id="test_project", artifact_insecure=True)
+
     with Experiment.run(
-        project_id="test_project",
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
         labels={"type": "unit"},
-        artifact_insecure=True,
     ) as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
@@ -81,18 +82,21 @@ def test_save_checkpoint():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            exp.log_artifact(1, paths="file1.txt", version="v1")
-            versions = exp._artifact.list_versions("context_exp")
+            log_artifact(1, paths="file1.txt", version="v1")
+            versions = exp._runtime._artifact.list_versions("context_exp")
             assert "v1" in versions
 
             with open("file1.txt", "w") as f:
                 f.write("This is modified file1.")
 
             # push folder instead
-            exp.log_artifact(1, paths=["file1.txt"], version="v2")
-            versions = exp._artifact.list_versions("context_exp")
+            log_artifact(1, paths=["file1.txt"], version="v2")
+            versions = exp._runtime._artifact.list_versions("context_exp")
             assert "v2" in versions
 
-        exp._artifact.delete(experiment_name="context_exp", versions=["v1", "v2"])
-        versions = exp._artifact.list_versions("context_exp")
+        exp._runtime._artifact.delete(
+            experiment_name="context_exp",
+            versions=["v1", "v2"],
+        )
+        versions = exp._runtime._artifact.list_versions("context_exp")
         assert len(versions) == 0
