@@ -28,10 +28,7 @@ class Artifact:
         If both are specified, a ValueError will be raised.
 
         :param experiment_name: the name of the experiment
-        :param files: list of file paths to push
-        :param folder: the folder path to push all files in it.
-            Don't support nested folders currently.
-            Only files in the first level of the folder will be pushed.
+        :param paths: list of file paths or a folder path to push.
         :param version: the version (tag) to push the files under
         """
 

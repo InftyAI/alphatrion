@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from alphatrion.metadata.base import MetaStore
-from alphatrion.metadata.sql_models import Base, Experiment, Model
+from alphatrion.metadata.sql_models import Base, Experiment, ExperimentStatus, Model
 
 
 # SQL-like metadata implementation, it could be SQLite, PostgreSQL, MySQL, etc.
@@ -22,6 +22,7 @@ class SQLStore(MetaStore):
         description: str | None,
         meta: dict | None,
         labels: dict | None = None,
+        status: ExperimentStatus = ExperimentStatus.PENDING,
     ) -> int:
         session = self._session()
         new_exp = Experiment(
@@ -30,6 +31,7 @@ class SQLStore(MetaStore):
             project_id=project_id,
             meta=meta,
             labels=labels,
+            status=status,
         )
         session.add(new_exp)
         session.commit()

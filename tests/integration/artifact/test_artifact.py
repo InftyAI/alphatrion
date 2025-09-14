@@ -82,7 +82,7 @@ def test_save_checkpoint():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            log_artifact(1, paths="file1.txt", version="v1")
+            log_artifact(paths="file1.txt", version="v1")
             versions = exp._runtime._artifact.list_versions("context_exp")
             assert "v1" in versions
 
@@ -90,7 +90,7 @@ def test_save_checkpoint():
                 f.write("This is modified file1.")
 
             # push folder instead
-            log_artifact(1, paths=["file1.txt"], version="v2")
+            log_artifact(paths=["file1.txt"], version="v2")
             versions = exp._runtime._artifact.list_versions("context_exp")
             assert "v2" in versions
 

@@ -20,7 +20,7 @@ def test_sdk():
             with open(file, "w") as f:
                 f.write("Hello, AlphaTrion!")
 
-            at.log_artifact(2, paths=file, version="v1")
+            at.log_artifact(paths=file, version="v1")
 
         versions = exp._runtime._artifact.list_versions("craft_exp")
         assert "v1" in versions

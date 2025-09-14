@@ -8,7 +8,7 @@ from alphatrion.metadata.sql import SQLStore
 __RUNTIME__ = None
 
 
-def init(project_id: str, artifact_insecure: bool = False):
+def init(project_id: str = "alphatrion", artifact_insecure: bool = False):
     """
     Initialize the AlphaTrion runtime environment.
 
@@ -25,6 +25,7 @@ def global_runtime():
 
 
 # Runtime contains all kinds of clients, e.g., metadb client, artifact client, etc.
+# Stateful information will also be stored here, e.g., current running experiment ID.
 class Runtime:
     def __init__(self, project_id: str, artifact_insecure: bool = False):
         self._project_id = project_id
@@ -32,3 +33,7 @@ class Runtime:
         self._artifact = Artifact(
             project_id=self._project_id, insecure=artifact_insecure
         )
+
+        # Current running experiment ID. Set when contenxt is entered,
+        # reset to None when context is exited.
+        self._current_exp_id = None
