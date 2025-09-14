@@ -192,7 +192,7 @@ class Experiment:
             description=description,
             meta=meta,
             labels=labels,
-            status=ExperimentStatus.RUNNING
+            status=ExperimentStatus.RUNNING,
         )
 
         return exp_id
