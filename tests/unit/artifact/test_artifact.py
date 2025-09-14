@@ -17,28 +17,19 @@ def artifact():
     yield artifact
 
 
-def test_push_with_both_files_and_folder(artifact):
-    with pytest.raises(ValueError):
-        artifact.push(
-            experiment_name="test_experiment",
-            files=["file1.txt"],
-            folder="some_folder",
-            version="v1",
-        )
-
-
 def test_push_with_error_folder(artifact):
-    with pytest.raises(ValueError):
+    with pytest.raises(RuntimeError):
         artifact.push(
             experiment_name="test_experiment",
-            folder="non_existent_folder.txt",
+            paths="non_existent_folder.txt",
             version="v1",
         )
 
 
-def test_push_with_no_files_and_no_folder(artifact):
-    with pytest.raises(ValueError):
+def test_push_with_empty_folder(artifact):
+    with pytest.raises(RuntimeError):
         artifact.push(
             experiment_name="test_experiment",
+            paths="empty_folder",
             version="v1",
         )

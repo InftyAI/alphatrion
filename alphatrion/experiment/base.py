@@ -237,17 +237,28 @@ class Experiment:
     def log_artifact(
         self,
         exp_id: int,
-        files: list[str] | None = None,
-        folder: str | None = None,
+        paths: str | list[str],
         version: str = "latest",
     ):
+        """
+        Log artifacts (files) to the artifact registry.
+        :param exp_id: the experiment ID
+        :param paths: list of file paths to log.
+            Support one or multiple files or a folder.
+            If a folder is provided, all files in the folder will be logged.
+            Don't support nested folders currently.
+            Only files in the first level of the folder will be logged.
+        :param version: the version (tag) to log the files under
+        """
+
+        if not paths:
+            raise ValueError("no files specified to log")
+
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
         if exp is None:
             raise ValueError(f"Experiment with id {exp_id} does not exist.")
 
-        self._artifact.push(
-            experiment_name=exp.name, files=files, folder=folder, version=version
-        )
+        self._artifact.push(experiment_name=exp.name, paths=paths, version=version)
 
 
 class RunContext:
