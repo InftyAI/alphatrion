@@ -2,11 +2,13 @@ import time
 
 from alphatrion.experiment.craft_exp import CraftExperiment
 from alphatrion.metadata.sql_models import ExperimentStatus
+from alphatrion.runtime.runtime import init
 
 
 def test_craft_experiment():
+    init(project_id="test_project", artifact_insecure=True)
+
     with CraftExperiment.run(
-        project_id="test_project",
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},

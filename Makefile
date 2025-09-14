@@ -34,3 +34,5 @@ test-integration: lint
 	until docker exec postgres pg_isready -U at_user; do sleep 1; done; \
 	$(POETRY) run pytest tests/integration; \
 	'
+.PHONY: test-all
+test-all: test test-integration

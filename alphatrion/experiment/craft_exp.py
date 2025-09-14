@@ -1,5 +1,4 @@
-from alphatrion.experiment.base import Experiment
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.experiment.base import Experiment, ExperimentConfig
 
 
 class CraftExperiment(Experiment):
@@ -10,7 +9,7 @@ class CraftExperiment(Experiment):
     Opposite to other experiment classes, you need to call all these methods yourself.
     """
 
-    def __init__(self, runtime: Runtime):
-        super().__init__(runtime)
-        # Disable checkpointing by default for CraftExperiment
+    def __init__(self, config: ExperimentConfig | None = None):
+        super().__init__(config=config)
+        # Disable auto-checkpointing by default for CraftExperiment
         self._config.checkpoint.enabled = False
