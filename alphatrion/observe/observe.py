@@ -2,7 +2,6 @@ from alphatrion.runtime.runtime import global_runtime
 
 
 def log_artifact(
-    exp_id: int,
     paths: str | list[str],
     version: str = "latest",
 ):
@@ -13,8 +12,8 @@ def log_artifact(
     :param paths: list of file paths to log.
         Support one or multiple files or a folder.
         If a folder is provided, all files in the folder will be logged.
-        Don't support nested folders currently.
-        Only files in the first level of the folder will be logged.
+        Don't support nested folders currently, only files in the first level
+        of the folder will be logged.
     :param version: the version (tag) to log the files
     """
 
@@ -24,6 +23,10 @@ def log_artifact(
     runtime = global_runtime()
     if runtime is None:
         raise RuntimeError("Runtime is not initialized. Please call init() first.")
+
+    exp_id = runtime._current_exp_id
+    if exp_id is None:
+        raise RuntimeError("No running experiment found.")
 
     exp = runtime._metadb.get_exp(exp_id=exp_id)
     if exp is None:

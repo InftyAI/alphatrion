@@ -89,9 +89,6 @@ class Experiment:
 
         self._steps = 0
         self._best_metric_value = None
-        # Start time of the experiment. Set when experiment is started,
-        # reset to None when experiment is stopped.
-        self._start_at = None
 
     @classmethod
     def run(
@@ -126,7 +123,8 @@ class Experiment:
         description: str | None = None,
         meta: dict | None = None,
         labels: dict | None = None,
-    ):
+        status: ExperimentStatus = ExperimentStatus.PENDING,
+    ) -> int:
         """
         Create a new experiment in the metadata store.
         Returns the experiment ID.
@@ -138,6 +136,7 @@ class Experiment:
             project_id=self._runtime._project_id,
             meta=meta,
             labels=labels,
+            status=status,
         )
 
         return exp_id
@@ -167,7 +166,8 @@ class Experiment:
     def update_labels(self, exp_id: int, labels: dict):
         self._runtime._metadb.update_exp(exp_id=exp_id, labels=labels)
 
-    def start(
+    # start with save the
+    def _start(
         self,
         name: str | None = None,
         description: str | None = None,
@@ -192,21 +192,21 @@ class Experiment:
             description=description,
             meta=meta,
             labels=labels,
+            status=ExperimentStatus.RUNNING
         )
 
-        self._runtime._metadb.update_exp(exp_id=exp_id, status=ExperimentStatus.RUNNING)
-        self._start_at = datetime.now(UTC)
         return exp_id
 
-    def stop(self, exp_id: int, status: ExperimentStatus = ExperimentStatus.FINISHED):
+    def _stop(self, exp_id: int, status: ExperimentStatus = ExperimentStatus.FINISHED):
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
         if exp is not None and exp.status not in COMPLETED_STATUS:
             duration = (
                 datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
             ).total_seconds()
             self._runtime._metadb.update_exp(
-                exp_id=exp_id, status=status, duration=duration
+                exp_id=self._runtime._current_exp_id, status=status, duration=duration
             )
+        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
 
     def status(self, exp_id: int) -> ExperimentStatus:
         exp = self._runtime._metadb.get_exp(exp_id=exp_id)
@@ -214,14 +214,7 @@ class Experiment:
 
     def reset(self):
         self._steps = 0
-        self._start_at = None
         self._best_metric_value = None
-
-    # running time in seconds since the experiment is started.
-    def running_time(self) -> int:
-        if self._start_at is None:
-            return 0
-        return int((datetime.now(UTC) - self._start_at).total_seconds())
 
 
 class RunContext:
@@ -241,19 +234,20 @@ class RunContext:
         self._meta = meta
         self._labels = labels
 
-        # Set when start the context, reset to None when exit the context.
-        self._exp_id = None
-
     def __enter__(self):
-        self._exp_id = self._experiment.start(
+        exp_id = self._experiment._start(
             name=self._exp_name,
             description=self._description,
             meta=self._meta,
             labels=self._labels,
         )
+
+        # Set the current experiment ID in the runtime
+        # reset to None when exiting the context.
+        self._experiment._runtime._current_exp_id = exp_id
         return self._experiment
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._experiment.stop(self._exp_id)
+        self._experiment._stop(self._experiment._runtime._current_exp_id)
         self._experiment.reset()
-        self._exp_id = None
+        self._experiment._runtime._current_exp_id = None

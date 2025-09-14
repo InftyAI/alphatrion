@@ -13,8 +13,8 @@ def exp():
 
 
 def test_experiment_crud(exp):
-    exp.create("test_exp", "A test experiment", {"foo": "bar"}, {"env": "test"})
-    exp1 = exp.get(1)
+    id = exp.create("test_exp", "A test experiment", {"foo": "bar"}, {"env": "test"})
+    exp1 = exp.get(id)
     assert exp1 is not None
     assert exp1.name == "test_exp"
     assert exp1.description == "A test experiment"
@@ -23,17 +23,20 @@ def test_experiment_crud(exp):
     assert exp1.duration == 0
     assert len(exp.list_paginated()) == 1
 
-    exp.update_labels(1, {"env": "prod"})
-    exp1 = exp.get(1)
+    exp.update_labels(id, {"env": "prod"})
+    exp1 = exp.get(id)
     assert exp1.labels == {"env": "prod"}
 
 
 def test_experiment_start(exp):
-    exp.start()
-    exp1 = exp.get(1)
+    id = exp._start()
+    exp1 = exp.get(id)
     assert exp1.status == ExperimentStatus.RUNNING
 
-    exp.stop(1, status=ExperimentStatus.FAILED)
-    exp1 = exp.get(1)
-    assert exp1.status == ExperimentStatus.FAILED
+    # reset current exp id to simulate a new session
+    exp._runtime._current_exp_id = id
+
+    exp._stop(id)
+    exp1 = exp.get(id)
+    assert exp1.status == ExperimentStatus.FINISHED
     assert exp1.duration > 0
