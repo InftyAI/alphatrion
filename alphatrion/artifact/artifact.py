@@ -20,8 +20,7 @@ class Artifact:
     def push(
         self,
         experiment_name: str,
-        files: list[str] | None = None,
-        folder: str | None = None,
+        paths: str | list[str],
         version: str = "latest",
     ):
         """
@@ -37,26 +36,23 @@ class Artifact:
         :param version: the version (tag) to push the files under
         """
 
-        if folder and files:
-            # Let's be strict here to simplify the implementation.
-            raise ValueError("Cannot specify both folder and files.")
+        if paths is None or not paths:
+            raise ValueError("no files specified to push")
 
-        if not folder and not files:
-            raise ValueError("Either folder or files must be specified.")
-
-        url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._runtime._project_id}/{experiment_name}:{version}"
-
-        files_to_push = files
-        if folder:
-            if not os.path.isdir(folder):
-                raise ValueError(f"{folder} is not a valid directory.")
-
-            os.chdir(folder)
-            files_to_push = [f for f in os.listdir(".") if os.path.isfile(f)]
+        if isinstance(paths, str):
+            if os.path.isdir(paths):
+                os.chdir(paths)
+                files_to_push = [f for f in os.listdir(".") if os.path.isfile(f)]
+            else:
+                files_to_push = [paths]
+        else:
+            files_to_push = paths
 
         if not files_to_push:
             raise ValueError("No files to push.")
+
+        url = self._url if self._url.endswith("/") else f"{self._url}/"
+        target = f"{url}{self._runtime._project_id}/{experiment_name}:{version}"
 
         try:
             self._client.push(target, files=files_to_push)

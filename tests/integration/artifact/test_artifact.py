@@ -33,7 +33,7 @@ def test_push_with_files(artifact):
             f.write("This is file2.")
 
         artifact.push(
-            experiment_name="test_experiment", files=[file1, file2], version="v1"
+            experiment_name="test_experiment", paths=[file1, file2], version="v1"
         )
 
         tags = artifact.list_versions("test_experiment")
@@ -55,7 +55,7 @@ def test_push_with_folder(artifact):
         with open(file2, "w") as f:
             f.write("This is a new file2.")
 
-        artifact.push(experiment_name="test_experiment", folder=tmpdir, version="v1")
+        artifact.push(experiment_name="test_experiment", paths=tmpdir, version="v1")
 
         tags = artifact.list_versions("test_experiment")
         assert "v1" in tags
@@ -81,14 +81,15 @@ def test_save_checkpoint():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            exp.log_artifact(1, files=["file1.txt"], version="v1")
+            exp.log_artifact(1, paths="file1.txt", version="v1")
             versions = exp._artifact.list_versions("context_exp")
             assert "v1" in versions
 
             with open("file1.txt", "w") as f:
                 f.write("This is modified file1.")
 
-            exp.log_artifact(1, files=["file1.txt"], version="v2")
+            # push folder instead
+            exp.log_artifact(1, paths=["file1.txt"], version="v2")
             versions = exp._artifact.list_versions("context_exp")
             assert "v2" in versions
 
