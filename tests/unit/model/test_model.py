@@ -12,16 +12,16 @@ def model():
 
 
 def test_model(model):
-    model.create("test_model", "A test model", {"foo": "bar"}, {"env": "test"})
+    model.create("test_model", "A test model", {"tags": {"foo": "bar"}})
     model1 = model.get(1)
     assert model1 is not None
     assert model1.name == "test_model"
     assert model1.description == "A test model"
-    assert model1.meta == {"foo": "bar"}
+    assert model1.meta == {"tags": {"foo": "bar"}}
 
-    model.update(1, labels={"env": "prod"})
+    model.update(1, meta={"tags": {"foo": "fuz"}})
     model1 = model.get(1)
-    assert model1.labels == {"env": "prod"}
+    assert model1.meta == {"tags": {"foo": "fuz"}}
 
     models = model.list()
     assert len(models) == 1

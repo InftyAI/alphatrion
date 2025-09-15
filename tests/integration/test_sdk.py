@@ -11,7 +11,6 @@ def test_sdk():
         name="craft_exp",
         description="test description",
         meta={"key": "value"},
-        labels={"type": "unit"},
     ) as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)

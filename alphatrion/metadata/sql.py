@@ -21,7 +21,6 @@ class SQLStore(MetaStore):
         project_id: str,
         description: str | None,
         meta: dict | None,
-        labels: dict | None = None,
         status: ExperimentStatus = ExperimentStatus.PENDING,
     ) -> int:
         session = self._session()
@@ -30,7 +29,6 @@ class SQLStore(MetaStore):
             description=description,
             project_id=project_id,
             meta=meta,
-            labels=labels,
             status=status,
         )
         session.add(new_exp)
@@ -98,7 +96,6 @@ class SQLStore(MetaStore):
         version: str = "latest",
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
     ):
         session = self._session()
         new_model = Model(
@@ -106,7 +103,6 @@ class SQLStore(MetaStore):
             version=version,
             description=description,
             meta=meta,
-            labels=labels,
         )
         session.add(new_model)
         session.commit()

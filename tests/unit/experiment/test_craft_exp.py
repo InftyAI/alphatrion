@@ -12,7 +12,6 @@ def test_craft_experiment():
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
-        labels={"type": "unit"},
     ) as exp:
         id = exp._runtime._current_exp_id
         exp1 = exp.get(id)

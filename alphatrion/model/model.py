@@ -10,13 +10,11 @@ class Model:
         name: str,
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
     ):
         self._runtime._metadb.create_model(
             name=name,
             description=description,
             meta=meta,
-            labels=labels,
         )
 
     def update(self, model_id: int, **kwargs):

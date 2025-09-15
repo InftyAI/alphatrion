@@ -73,7 +73,6 @@ def test_save_checkpoint():
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
-        labels={"type": "unit"},
     ) as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
