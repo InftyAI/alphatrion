@@ -66,7 +66,7 @@ def test_push_with_folder(artifact):
         assert "v1" not in tags
 
 
-def test_save_checkpoint():
+def test_log_artifact():
     init(project_id="test_project", artifact_insecure=True)
 
     with Experiment.run(

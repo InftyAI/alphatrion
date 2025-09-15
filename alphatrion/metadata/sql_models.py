@@ -29,6 +29,9 @@ class Experiment(Base):
         Enum(ExperimentStatus), nullable=False, default=ExperimentStatus.PENDING
     )
     meta = Column(JSON, nullable=True, comment="Additional metadata for the experiment")
+    # Let's start with simple approach here, it the params are too large,
+    # we can move them to a separate table.
+    params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     duration = Column(Integer, default=0, comment="Duration in seconds")
 
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
@@ -52,6 +55,7 @@ class Model(Base):
         DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
 
 class Params(Base):
     __tablename__ = "params"
