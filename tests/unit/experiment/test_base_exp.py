@@ -13,19 +13,18 @@ def exp():
 
 
 def test_experiment_crud(exp):
-    id = exp.create("test_exp", "A test experiment", {"foo": "bar"}, {"env": "test"})
+    id = exp.create("test_exp", "A test experiment")
     exp1 = exp.get(id)
     assert exp1 is not None
     assert exp1.name == "test_exp"
     assert exp1.description == "A test experiment"
-    assert exp1.meta == {"foo": "bar"}
     assert exp1.status == ExperimentStatus.PENDING
     assert exp1.duration == 0
     assert len(exp.list_paginated()) == 1
 
-    exp.update_labels(id, {"env": "prod"})
+    exp.update_tags(id, {"env": "prod"})
     exp1 = exp.get(id)
-    assert exp1.labels == {"env": "prod"}
+    assert exp1.meta["tags"] == {"env": "prod"}
 
 
 def test_experiment_start(exp):

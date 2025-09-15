@@ -97,7 +97,6 @@ class Experiment:
         name: str | None = None,
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
     ):
         """
         :param project_id: the project ID to run the experiment under
@@ -105,7 +104,6 @@ class Experiment:
             a UUID will be generated.
         :param description: the description of the experiment
         :param meta: the metadata of the experiment
-        :param labels: the labels of the experiment
         :param artifact_insecure: whether to use insecure connection to the
             artifact registry. Default is False.
 
@@ -114,7 +112,10 @@ class Experiment:
 
         exp = Experiment(config=config)
         return RunContext(
-            exp, name=name, description=description, meta=meta, labels=labels
+            exp,
+            name=name,
+            description=description,
+            meta=meta,
         )
 
     def create(
@@ -122,7 +123,6 @@ class Experiment:
         name: str,
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
         status: ExperimentStatus = ExperimentStatus.PENDING,
     ) -> int:
         """
@@ -135,7 +135,6 @@ class Experiment:
             description=description,
             project_id=self._runtime._project_id,
             meta=meta,
-            labels=labels,
             status=status,
         )
 
@@ -162,24 +161,29 @@ class Experiment:
         self._runtime._metadb.delete_exp(exp_id=exp_id)
         self._artifact.delete(experiment_name=exp.name, versions=tags)
 
-    # Please provide all the labels to update, or it will overwrite the existing labels.
-    def update_labels(self, exp_id: int, labels: dict):
-        self._runtime._metadb.update_exp(exp_id=exp_id, labels=labels)
+    # Please provide all the tags to update, or it will overwrite the existing tags.
+    def update_tags(self, exp_id: int, tags: dict):
+        exp = self.get(exp_id)
+        if exp is None:
+            return
 
-    # start with save the
+        if exp.meta is None:
+            exp.meta = {}
+
+        exp.meta["tags"] = tags
+        self._runtime._metadb.update_exp(exp_id=exp_id, meta=exp.meta)
+
     def _start(
         self,
         name: str | None = None,
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
     ) -> int:
         """
         :param name: the name of the experiment. If not provided,
             a UUID will be generated.
         :param description: the description of the experiment
         :param meta: the metadata of the experiment
-        :param labels: the labels of the experiment
 
         :return: the experiment ID
         """
@@ -191,8 +195,7 @@ class Experiment:
             name=name,
             description=description,
             meta=meta,
-            labels=labels,
-            status=ExperimentStatus.RUNNING
+            status=ExperimentStatus.RUNNING,
         )
 
         return exp_id
@@ -226,20 +229,17 @@ class RunContext:
         name: str | None = None,
         description: str | None = None,
         meta: dict | None = None,
-        labels: dict | None = None,
     ):
         self._experiment = experiment
         self._exp_name = name
         self._description = description
         self._meta = meta
-        self._labels = labels
 
     def __enter__(self):
         exp_id = self._experiment._start(
             name=self._exp_name,
             description=self._description,
             meta=self._meta,
-            labels=self._labels,
         )
 
         # Set the current experiment ID in the runtime

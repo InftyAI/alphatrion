@@ -66,14 +66,13 @@ def test_push_with_folder(artifact):
         assert "v1" not in tags
 
 
-def test_save_checkpoint():
+def test_log_artifact():
     init(project_id="test_project", artifact_insecure=True)
 
     with Experiment.run(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
-        labels={"type": "unit"},
     ) as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)

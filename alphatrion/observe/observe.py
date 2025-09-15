@@ -35,9 +35,9 @@ def log_artifact(
     runtime._artifact.push(experiment_name=exp.name, paths=paths, version=version)
 
 
-# def log_params(exp_id: int, params: dict):
-#     runtime = global_runtime()
-#     if runtime is None:
-#         raise RuntimeError("Runtime is not initialized. Please call init() first.")
+def log_params(params: dict):
+    runtime = global_runtime()
+    if runtime is None:
+        raise RuntimeError("Runtime is not initialized. Please call init() first.")
 
-#     runtime._metadb.log_params(exp_id=exp_id, params=params)
+    runtime._metadb.update_exp(exp_id=runtime._current_exp_id, params=params)
