@@ -93,6 +93,7 @@ class SQLStore(MetaStore):
     def create_model(
         self,
         name: str,
+        project_id: str,
         version: str = "latest",
         description: str | None = None,
         meta: dict | None = None,
@@ -100,6 +101,7 @@ class SQLStore(MetaStore):
         session = self._session()
         new_model = Model(
             name=name,
+            project_id=project_id,
             version=version,
             description=description,
             meta=meta,

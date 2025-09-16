@@ -21,6 +21,8 @@ COMPLETED_STATUS = [ExperimentStatus.FINISHED, ExperimentStatus.FAILED]
 class Experiment(Base):
     __tablename__ = "experiments"
 
+    # We may have another uuid field for external usage in the future
+    # to avoid exposing the internal ID.
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
@@ -49,6 +51,7 @@ class Model(Base):
     version = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the model")
+    project_id = Column(String, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
     updated_at = Column(

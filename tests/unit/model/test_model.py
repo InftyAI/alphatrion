@@ -12,7 +12,7 @@ def model():
 
 
 def test_model(model):
-    model.create("test_model", "A test model", {"tags": {"foo": "bar"}})
+    model.create("test_model", "test_project", "A test model", {"tags": {"foo": "bar"}})
     model1 = model.get(1)
     assert model1 is not None
     assert model1.name == "test_model"

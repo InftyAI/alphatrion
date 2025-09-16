@@ -11,8 +11,8 @@ def db():
 
 
 def test_create_exp(db):
-    db.create_exp("test_exp", "test_project", "test description", {"key": "value"})
-    exp = db.get_exp(1)
+    id = db.create_exp("test_exp", "test_project", "test description", {"key": "value"})
+    exp = db.get_exp(id)
     assert exp is not None
     assert exp.name == "test_exp"
     assert exp.project_id == "test_project"
@@ -21,16 +21,16 @@ def test_create_exp(db):
 
 
 def test_delete_exp(db):
-    db.create_exp("test_exp", "test_project", None, None)
-    db.delete_exp(1)
-    exp = db.get_exp(1)
+    id = db.create_exp("test_exp", "test_project", None, None)
+    db.delete_exp(id)
+    exp = db.get_exp(id)
     assert exp is None
 
 
 def test_update_exp(db):
-    db.create_exp("test_exp", "test_project", None, None)
-    db.update_exp(1, name="new_name", status=ExperimentStatus.RUNNING)
-    exp = db.get_exp(1)
+    id = db.create_exp("test_exp", "test_project", None, None)
+    db.update_exp(id, name="new_name", status=ExperimentStatus.RUNNING)
+    exp = db.get_exp(id)
     assert exp.name == "new_name"
     assert exp.status == ExperimentStatus.RUNNING
 
