@@ -23,7 +23,12 @@ COMPLETED_STATUS = [TrialStatus.FINISHED, TrialStatus.FAILED]
 class Experiment(Base):
     __tablename__ = "experiments"
 
+<<<<<<< HEAD
     # id for internal join, uuid for external reference
+=======
+    # We may have another uuid field for external usage in the future
+    # to avoid exposing the internal ID.
+>>>>>>> f84c8d4 (Add project_id to Model)
     id = Column(Integer, primary_key=True)
     uuid = Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4)
 
