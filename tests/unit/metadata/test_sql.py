@@ -1,7 +1,7 @@
 import pytest
 
 from alphatrion.metadata.sql import SQLStore
-from alphatrion.metadata.sql_models import ExperimentStatus
+from alphatrion.metadata.sql_models import TrialStatus
 
 
 @pytest.fixture
@@ -18,6 +18,7 @@ def test_create_exp(db):
     assert exp.project_id == "test_project"
     assert exp.description == "test description"
     assert exp.meta == {"key": "value"}
+    assert exp.uuid is not None
 
 
 def test_delete_exp(db):
@@ -29,10 +30,9 @@ def test_delete_exp(db):
 
 def test_update_exp(db):
     id = db.create_exp("test_exp", "test_project", None, None)
-    db.update_exp(id, name="new_name", status=ExperimentStatus.RUNNING)
+    db.update_exp(id, name="new_name")
     exp = db.get_exp(id)
     assert exp.name == "new_name"
-    assert exp.status == ExperimentStatus.RUNNING
 
 
 def test_list_exps(db):
@@ -48,3 +48,28 @@ def test_list_exps(db):
 
     exps = db.list_exps("proj3", 0, 10)
     assert len(exps) == 0
+
+
+def test_create_trial(db):
+    exp_id = 1
+    trial_id = db.create_trial(exp_id, "test description", None, params={"lr": 0.01})
+    trial = db.get_trial(trial_id)
+    assert trial is not None
+    assert trial.experiment_id == exp_id
+    assert trial.description == "test description"
+    assert trial.status == TrialStatus.PENDING
+    assert trial.meta is None
+    assert trial.params == {"lr": 0.01}
+
+
+def test_update_trial(db):
+    exp_id = 1
+    trial_id = db.create_trial(exp_id, "test description", None)
+    trial = db.get_trial(trial_id)
+    assert trial.status == TrialStatus.PENDING
+    assert trial.meta is None
+
+    db.update_trial(trial_id, status=TrialStatus.RUNNING, meta={"note": "started"})
+    trial = db.get_trial(trial_id)
+    assert trial.status == TrialStatus.RUNNING
+    assert trial.meta == {"note": "started"}

@@ -2,7 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from alphatrion.metadata.base import MetaStore
-from alphatrion.metadata.sql_models import Base, Experiment, ExperimentStatus, Model
+from alphatrion.metadata.sql_models import (
+    Base,
+    Experiment,
+    Model,
+    Trial,
+    TrialStatus,
+)
 
 
 # SQL-like metadata implementation, it could be SQLite, PostgreSQL, MySQL, etc.
@@ -21,15 +27,13 @@ class SQLStore(MetaStore):
         project_id: str,
         description: str | None,
         meta: dict | None,
-        status: ExperimentStatus = ExperimentStatus.PENDING,
     ) -> int:
         session = self._session()
         new_exp = Experiment(
             name=name,
-            description=description,
             project_id=project_id,
+            description=description,
             meta=meta,
-            status=status,
         )
         session.add(new_exp)
         session.commit()
@@ -142,5 +146,44 @@ class SQLStore(MetaStore):
         )
         if model:
             model.is_del = 1
+            session.commit()
+        session.close()
+
+    def create_trial(
+        self,
+        exp_id: int,
+        description: str | None,
+        meta: dict | None,
+        params: dict | None = None,
+        status: TrialStatus = TrialStatus.PENDING,
+    ) -> int:
+        session = self._session()
+        new_trial = Trial(
+            experiment_id=exp_id,
+            description=description,
+            meta=meta,
+            params=params,
+            status=status,
+        )
+        session.add(new_trial)
+        session.commit()
+
+        trial_id = new_trial.id
+        session.close()
+
+        return trial_id
+
+    def get_trial(self, trial_id: int) -> Trial | None:
+        session = self._session()
+        trial = session.query(Trial).filter(Trial.id == trial_id).first()
+        session.close()
+        return trial
+
+    def update_trial(self, trial_id: int, **kwargs):
+        session = self._session()
+        trial = session.query(Trial).filter(Trial.id == trial_id).first()
+        if trial:
+            for key, value in kwargs.items():
+                setattr(trial, key, value)
             session.commit()
         session.close()

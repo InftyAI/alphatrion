@@ -21,6 +21,8 @@ def init(project_id: str = "alphatrion", artifact_insecure: bool = False):
 
 
 def global_runtime():
+    if __RUNTIME__ is None:
+        raise RuntimeError("Runtime is not initialized. Call alphatrion.init() first.")
     return __RUNTIME__
 
 
@@ -34,6 +36,15 @@ class Runtime:
             project_id=self._project_id, insecure=artifact_insecure
         )
 
-        # Current running experiment ID. Set when contenxt is entered,
-        # reset to None when context is exited.
-        self._current_exp_id = None
+        # Current running Experiment UUID. One experiment at a time.
+        # Set in Experiment.__enter__ and cleared in __exit__.
+        # This is for global access, e.g., log_metrics/artifacts/params
+        self.__current_exp_uuid = None
+
+    @property
+    def current_exp_uuid(self):
+        return self.__current_exp_uuid
+
+    @current_exp_uuid.setter
+    def current_exp_uuid(self, value):
+        self.__current_exp_uuid = value
