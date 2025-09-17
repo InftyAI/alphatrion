@@ -18,7 +18,7 @@ class Artifact:
 
     def push(
         self,
-        experiment_name: str,
+        repo_name: str,
         paths: str | list[str],
         version: str = "latest",
     ):
@@ -27,7 +27,7 @@ class Artifact:
         You can specify either files or folder, but not both.
         If both are specified, a ValueError will be raised.
 
-        :param experiment_name: the name of the experiment
+        :param repo_name: the name of the repository to push to
         :param paths: list of file paths or a folder path to push.
         :param version: the version (tag) to push the files under
         """
@@ -48,7 +48,7 @@ class Artifact:
             raise ValueError("No files to push.")
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{experiment_name}:{version}"
+        target = f"{url}{self._project_id}/{repo_name}:{version}"
 
         try:
             self._client.push(target, files=files_to_push)
@@ -56,18 +56,18 @@ class Artifact:
             raise RuntimeError("Failed to push artifacts") from e
 
     # TODO: should we store it in the metadb instead?
-    def list_versions(self, experiment_name: str) -> list[str]:
+    def list_versions(self, repo_name: str) -> list[str]:
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{experiment_name}"
+        target = f"{url}{self._project_id}/{repo_name}"
         try:
             tags = self._client.get_tags(target)
             return tags
         except Exception as e:
             raise RuntimeError("Failed to list artifacts versions") from e
 
-    def delete(self, experiment_name: str, versions: str | list[str]):
+    def delete(self, repo_name: str, versions: str | list[str]):
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{experiment_name}"
+        target = f"{url}{self._project_id}/{repo_name}"
 
         try:
             self._client.delete_tags(target, tags=versions)

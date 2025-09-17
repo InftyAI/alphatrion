@@ -1,4 +1,5 @@
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.trial.trial import current_trial_id
 
 
 def log_artifact(
@@ -24,20 +25,19 @@ def log_artifact(
     if runtime is None:
         raise RuntimeError("Runtime is not initialized. Please call init() first.")
 
-    exp_id = runtime._current_exp_id
-    if exp_id is None:
-        raise RuntimeError("No running experiment found.")
-
-    exp = runtime._metadb.get_exp(exp_id=exp_id)
-    if exp is None:
-        raise ValueError(f"Experiment with id {exp_id} does not exist.")
-
-    runtime._artifact.push(experiment_name=exp.name, paths=paths, version=version)
+    # We use experiment ID as the repo name rather than the experiment name,
+    # because experiment name is not unique
+    runtime._artifact.push(
+        repo_name=str(runtime.current_exp_uuid), paths=paths, version=version
+    )
 
 
+# log_params should be called after starting a trial.
 def log_params(params: dict):
     runtime = global_runtime()
-    if runtime is None:
-        raise RuntimeError("Runtime is not initialized. Please call init() first.")
-
-    runtime._metadb.update_exp(exp_id=runtime._current_exp_id, params=params)
+    # TODO: should we upload to the artifact as well?
+    # current_trial_id is protect by contextvar, so it's safe to use in async
+    runtime._metadb.update_trial(
+        trial_id=current_trial_id.get(),
+        params=params,
+    )

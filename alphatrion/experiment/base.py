@@ -1,253 +1,82 @@
-import uuid
-from datetime import UTC, datetime
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
-from pydantic import BaseModel, Field, field_validator
-
-from alphatrion.metadata.sql_models import COMPLETED_STATUS, ExperimentStatus
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.trial import trial
 
 
-class CheckpointConfig(BaseModel):
-    """Configuration for a checkpoint."""
+@dataclass
+class Experiment(ABC):
+    """
+    Base Experiment class. One instance one experiment, multiple trials.
+    """
 
-    enabled: bool = Field(
-        default=True,
-        description="Whether to enable checkpointing. \
-            Default is True. One exception is CraftExperiment, \
-            which doesn't enable checkpoint by default.",
-    )
-    save_every_n_seconds: int = Field(
-        default=300,
-        description="Interval in seconds to save checkpoints. \
-            Default is 300 seconds.",
-    )
-    save_every_n_steps: int = Field(
-        default=0,
-        description="Interval in steps to save checkpoints. \
-            Default is 0 (disabled).",
-    )
-    save_best_only: bool = Field(
-        default=True,
-        description="Once a best result is found, it will be saved. Default is True. \
-            Can be enabled together with save_every_n_steps/save_every_n_seconds.",
-    )
-    monitor_metric: str = Field(
-        default=None,
-        description="The metric to monitor for saving the best checkpoint. \
-            Required if save_best_only is True.",
-    )
-    monitor_mode: str = Field(
-        default="max",
-        description="The mode for monitoring the metric. Can be 'max' or 'min'. \
-            Default is 'max'.",
-    )
+    __slots__ = ("_runtime", "_id", "_trials")
 
-    @field_validator("monitor_metric")
-    def metric_must_be_valid(cls, v, info):
-        save_best_only = info.data.get("save_best_only")
-        if save_best_only and v is None:
-            raise ValueError("metric must be specified when save_best_only=True")
-        return v
-
-
-class ExperimentConfig(BaseModel):
-    """Configuration for an experiment."""
-
-    max_duration_seconds: int = Field(
-        default=86400,
-        description="Maximum duration in seconds for the experiment. \
-        Default is 86400 seconds (1 day).",
-    )
-    max_retries: int = Field(
-        default=0,
-        description="Maximum number of retries for the experiment. \
-            Default is 0 (no retries).",
-    )
-    checkpoint: CheckpointConfig = Field(
-        default=CheckpointConfig(),
-        description="Configuration for checkpointing.",
-    )
-
-
-class Experiment:
-    """Base Experiment class."""
-
-    def __init__(
-        self,
-        config: ExperimentConfig | None = None,
-    ):
-        """
-        :param runtime: the Runtime instance
-        :param config: the ExperimentConfig instance. If not provided,
-            default config will be used
-        :param artifact_insecure: whether to use insecure connection to the
-            artifact registry. Default is False.
-        """
-
-        self._config = config or ExperimentConfig()
+    def __init__(self):
         self._runtime = global_runtime()
+        # All trials in this experiment, key is trial_id, value is Trial instance.
+        self._trials = dict()
 
-        self._steps = 0
-        self._best_metric_value = None
+    def _reset(self):
+        self._trials = dict()
+        self._exp = None
+
+    def __enter__(self):
+        if self._id is None:
+            raise RuntimeError("Experiment is not set. Did you call begin()?")
+
+        exp = self._get()
+        if exp is None:
+            raise RuntimeError(f"Experiment {self._id} not found in the database.")
+
+        self._runtime.current_exp_uuid = exp.uuid
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._reset()
+        self._runtime.current_exp_uuid = None
 
     @classmethod
-    def run(
-        cls,
-        config: ExperimentConfig | None = None,
-        name: str | None = None,
-        description: str | None = None,
-        meta: dict | None = None,
-    ):
-        """
-        :param project_id: the project ID to run the experiment under
-        :param name: the name of the experiment. If not provided,
-            a UUID will be generated.
-        :param description: the description of the experiment
-        :param meta: the metadata of the experiment
-        :param artifact_insecure: whether to use insecure connection to the
-            artifact registry. Default is False.
+    @abstractmethod
+    def begin(cls, name: str, description: str | None = None, meta: dict | None = None):
+        """Return a new experiment."""
+        ...
 
-        :return: a context manager that yields an Experiment instance
-        """
+    def _register_trial(self, id: int, instance: trial.Trial):
+        self._trials[id] = instance
 
-        exp = Experiment(config=config)
-        return RunContext(
-            exp,
-            name=name,
-            description=description,
-            meta=meta,
-        )
-
-    def create(
+    def _create(
         self,
         name: str,
         description: str | None = None,
         meta: dict | None = None,
-        status: ExperimentStatus = ExperimentStatus.PENDING,
-    ) -> int:
+    ):
         """
-        Create a new experiment in the metadata store.
-        Returns the experiment ID.
-        """
-
-        exp_id = self._runtime._metadb.create_exp(
-            name=name,
-            description=description,
-            project_id=self._runtime._project_id,
-            meta=meta,
-            status=status,
-        )
-
-        return exp_id
-
-    # TODO: do not expose the db record directly.
-    def get(self, exp_id: int):
-        return self._runtime._metadb.get_exp(exp_id=exp_id)
-
-    # TODO: do not expose the db record directly.
-    def list_paginated(self, page: int = 0, page_size: int = 10):
-        return self._runtime._metadb.list_exps(
-            project_id=self._runtime._project_id, page=page, page_size=page_size
-        )
-
-    def delete(self, exp_id: int):
-        exp = self.get(exp_id)
-        if exp is None:
-            return
-
-        # TODO: Should we make this optional as a parameter?
-        tags = self._artifact.list_versions(experiment_name=exp.name)
-
-        self._runtime._metadb.delete_exp(exp_id=exp_id)
-        self._artifact.delete(experiment_name=exp.name, versions=tags)
-
-    # Please provide all the tags to update, or it will overwrite the existing tags.
-    def update_tags(self, exp_id: int, tags: dict):
-        exp = self.get(exp_id)
-        if exp is None:
-            return
-
-        if exp.meta is None:
-            exp.meta = {}
-
-        exp.meta["tags"] = tags
-        self._runtime._metadb.update_exp(exp_id=exp_id, meta=exp.meta)
-
-    def _start(
-        self,
-        name: str | None = None,
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> int:
-        """
-        :param name: the name of the experiment. If not provided,
-            a UUID will be generated.
+        :param name: the name of the experiment.
         :param description: the description of the experiment
         :param meta: the metadata of the experiment
 
         :return: the experiment ID
         """
 
-        if name is None:
-            name = f"{uuid.uuid4()}"
-
-        exp_id = self.create(
+        self._id = self._runtime._metadb.create_exp(
             name=name,
             description=description,
+            project_id=self._runtime._project_id,
             meta=meta,
-            status=ExperimentStatus.RUNNING,
         )
+        return self._id
 
-        return exp_id
+    def _get(self):
+        return self._runtime._metadb.get_exp(exp_id=self._id)
 
-    def _stop(self, exp_id: int, status: ExperimentStatus = ExperimentStatus.FINISHED):
-        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
-        if exp is not None and exp.status not in COMPLETED_STATUS:
-            duration = (
-                datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
-            ).total_seconds()
-            self._runtime._metadb.update_exp(
-                exp_id=self._runtime._current_exp_id, status=status, duration=duration
-            )
-        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
+    def delete(self):
+        exp = self._get()
+        if exp is None:
+            return
 
-    def status(self, exp_id: int) -> ExperimentStatus:
-        exp = self._runtime._metadb.get_exp(exp_id=exp_id)
-        return exp.status
-
-    def reset(self):
-        self._steps = 0
-        self._best_metric_value = None
-
-
-class RunContext:
-    """A context manager for running experiments."""
-
-    def __init__(
-        self,
-        experiment: Experiment,
-        name: str | None = None,
-        description: str | None = None,
-        meta: dict | None = None,
-    ):
-        self._experiment = experiment
-        self._exp_name = name
-        self._description = description
-        self._meta = meta
-
-    def __enter__(self):
-        exp_id = self._experiment._start(
-            name=self._exp_name,
-            description=self._description,
-            meta=self._meta,
-        )
-
-        # Set the current experiment ID in the runtime
-        # reset to None when exiting the context.
-        self._experiment._runtime._current_exp_id = exp_id
-        return self._experiment
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._experiment._stop(self._experiment._runtime._current_exp_id)
-        self._experiment.reset()
-        self._experiment._runtime._current_exp_id = None
+        self._runtime._metadb.delete_exp(exp_id=self._exp.id)
+        # TODO: Should we make this optional as a parameter?
+        tags = self._runtime._artifact.list_versions(repo_name=str(self._exp.id))
+        self._runtime._artifact.delete(experiment_name=exp.name, versions=tags)

@@ -1,4 +1,5 @@
-from alphatrion.experiment.base import Experiment, ExperimentConfig
+from alphatrion.experiment.base import Experiment
+from alphatrion.trial.trial import Trial, TrialConfig
 
 
 class CraftExperiment(Experiment):
@@ -9,7 +10,47 @@ class CraftExperiment(Experiment):
     Opposite to other experiment classes, you need to call all these methods yourself.
     """
 
-    def __init__(self, config: ExperimentConfig | None = None):
-        super().__init__(config=config)
-        # Disable auto-checkpointing by default for CraftExperiment
-        self._config.checkpoint.enabled = False
+    def __init__(self):
+        super().__init__()
+
+    @classmethod
+    def begin(cls, name: str, description: str | None = None, meta: dict | None = None):
+        """
+        Begin the experiment. This method must be used to start multi-trial experiment.
+        """
+
+        exp = CraftExperiment()
+        exp._create(
+            name=name,
+            description=description,
+            meta=meta,
+        )
+
+        return exp
+
+    def start_trial(
+        self,
+        description: str | None = None,
+        meta: dict | None = None,
+        params: dict | None = None,
+        config: TrialConfig | None = None,
+    ) -> Trial:
+        """
+        start_trial starts a new trial in this experiment.
+
+        :params description: the description of the trial
+        :params meta: the metadata of the trial
+        :params config: the configuration of the trial
+
+        :return: the Trial instance
+        """
+
+        trial = Trial(exp_id=self._id, config=config)
+        trial._start(description=description, meta=meta, params=params)
+        self._register_trial(id=trial._id, instance=trial)
+        return trial
+
+    # @classmethod
+    # # TODO: support async
+    # async def async_trial(cls):
+    #     pass
