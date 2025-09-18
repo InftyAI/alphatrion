@@ -32,7 +32,8 @@ def log_artifact(
     )
 
 
-# log_params should be called after starting a trial.
+# log_params is used to save a set of parameters, which is a dict of key-value pairs.
+# should be called after starting a trial.
 def log_params(params: dict):
     runtime = global_runtime()
     # TODO: should we upload to the artifact as well?
@@ -41,3 +42,15 @@ def log_params(params: dict):
         trial_id=current_trial_id.get(),
         params=params,
     )
+
+
+# log_metrics is used to log a set of metrics at once.
+# metric key must be string, value must be float
+def log_metrics(metrics: dict[str, float]):
+    runtime = global_runtime()
+    for key, value in metrics.items():
+        runtime._metadb.create_metric(
+            key=key,
+            value=value,
+            trial_id=current_trial_id.get(),
+        )

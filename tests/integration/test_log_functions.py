@@ -82,3 +82,25 @@ def test_log_params():
         trial = exp.start_trial(description="Second trial", params={"param1": 0.1})
         assert current_trial_id.get() == trial._id
         trial.finish()
+
+
+def test_log_metrics():
+    alpha.init(project_id="test_project", artifact_insecure=True)
+
+    with alpha.CraftExperiment.run(name="test_experiment") as exp:
+        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+
+        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
+        assert new_trial is not None
+        assert new_trial.params == {"param1": 0.1}
+
+        alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
+
+        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        assert len(metrics) == 2
+        assert metrics[0].key == "accuracy"
+        assert metrics[0].value == 0.95
+        assert metrics[1].key == "loss"
+        assert metrics[1].value == 0.1
+
+        trial.finish()

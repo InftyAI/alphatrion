@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Enum, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Enum, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
@@ -81,12 +81,11 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-# class Metrics(Base):
-#     __tablename__ = "metrics"
+class Metrics(Base):
+    __tablename__ = "metrics"
 
-#     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     key = Column(String, nullable=False)
-#     value = Column(float, nullable=False)
-#     run_id = Column(Integer, nullable=False)
-#     step = Column(Integer, nullable=False)
-#     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    key = Column(String, nullable=False)
+    value = Column(Float, nullable=False)
+    trial_id = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
