@@ -73,3 +73,16 @@ def test_update_trial(db):
     trial = db.get_trial(trial_id)
     assert trial.status == TrialStatus.RUNNING
     assert trial.meta == {"note": "started"}
+
+
+def test_create_metric(db):
+    trial_id = db.create_trial(1, "test description", None)
+    db.create_metric(trial_id, "accuracy", 0.95)
+    db.create_metric(trial_id, "accuracy", 0.85)
+
+    metrics = db.list_metrics(trial_id)
+    assert len(metrics) == 2
+    assert metrics[0].key == "accuracy"
+    assert metrics[0].value == 0.95
+    assert metrics[1].key == "accuracy"
+    assert metrics[1].value == 0.85

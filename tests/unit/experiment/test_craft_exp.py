@@ -6,7 +6,7 @@ from alphatrion.runtime.runtime import init
 def test_craft_experiment():
     init(project_id="test_project", artifact_insecure=True)
 
-    with CraftExperiment.begin(
+    with CraftExperiment.run(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
