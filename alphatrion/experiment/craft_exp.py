@@ -14,7 +14,7 @@ class CraftExperiment(Experiment):
         super().__init__()
 
     @classmethod
-    def begin(cls, name: str, description: str | None = None, meta: dict | None = None):
+    def run(cls, name: str, description: str | None = None, meta: dict | None = None):
         """
         Begin the experiment. This method must be used to start multi-trial experiment.
         """

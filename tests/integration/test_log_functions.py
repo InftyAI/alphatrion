@@ -9,7 +9,7 @@ from alphatrion.trial.trial import current_trial_id
 def test_log_artifact():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    with alpha.CraftExperiment.begin(
+    with alpha.CraftExperiment.run(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -61,7 +61,7 @@ def test_log_artifact():
 def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    with alpha.CraftExperiment.begin(name="test_experiment") as exp:
+    with alpha.CraftExperiment.run(name="test_experiment") as exp:
         trial = exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
