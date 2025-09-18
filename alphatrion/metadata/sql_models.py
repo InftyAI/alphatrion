@@ -81,22 +81,12 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-class Params(Base):
-    __tablename__ = "params"
-
-    id = Column(Integer, primary_key=True)
-    experiment_id = Column(Integer, nullable=False)
-    params = Column(JSON, nullable=False, comment="Parameters for the experiment")
-    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
-
-
 # class Metrics(Base):
 #     __tablename__ = "metrics"
 
 #     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 #     key = Column(String, nullable=False)
 #     value = Column(float, nullable=False)
-#     experiment_id = Column(Integer, nullable=False)
 #     run_id = Column(Integer, nullable=False)
 #     step = Column(Integer, nullable=False)
 #     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))

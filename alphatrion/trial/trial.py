@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
 from alphatrion.runtime.runtime import global_runtime
 
-# Used in observe.py to log params/metrics
+# Used in record/record.py to log params/metrics
 current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
 
 
