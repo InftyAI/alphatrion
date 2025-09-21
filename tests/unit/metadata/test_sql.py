@@ -77,8 +77,8 @@ def test_update_trial(db):
 
 def test_create_metric(db):
     trial_id = db.create_trial(1, "test description", None)
-    db.create_metric(trial_id, "accuracy", 0.95)
-    db.create_metric(trial_id, "accuracy", 0.85)
+    db.create_metric(trial_id, "accuracy", 0.95, 1)
+    db.create_metric(trial_id, "accuracy", 0.85, 2)
 
     metrics = db.list_metrics(trial_id)
     assert len(metrics) == 2

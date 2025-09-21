@@ -18,24 +18,30 @@ class Experiment(ABC):
         # All trials in this experiment, key is trial_id, value is Trial instance.
         self._trials = dict()
 
+    @property
+    def id(self):
+        return self._id
+
+    def get_trial(self, id: int) -> trial.Trial | None:
+        return self._trials.get(id)
+
     def _reset(self):
         self._trials = dict()
-        self._exp = None
 
     def __enter__(self):
         if self._id is None:
-            raise RuntimeError("Experiment is not set. Did you call begin()?")
+            raise RuntimeError("Experiment is not set. Did you call run()?")
 
         exp = self._get()
         if exp is None:
             raise RuntimeError(f"Experiment {self._id} not found in the database.")
 
-        self._runtime.current_exp_uuid = exp.uuid
+        self._runtime.current_exp = self
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._reset()
-        self._runtime.current_exp_uuid = None
+        self._runtime.current_exp = None
 
     @classmethod
     @abstractmethod

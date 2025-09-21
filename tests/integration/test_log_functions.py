@@ -16,6 +16,9 @@ def test_log_artifact():
     ) as exp:
         trial = exp.start_trial(description="First trial")
 
+        exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
+        assert exp_obj is not None
+
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
@@ -25,7 +28,7 @@ def test_log_artifact():
 
             alpha.log_artifact(paths="file1.txt", version="v1")
             versions = exp._runtime._artifact.list_versions(
-                exp._runtime.current_exp_uuid
+                exp_obj.uuid
             )
             assert "v1" in versions
 
@@ -35,15 +38,15 @@ def test_log_artifact():
             # push folder instead
             alpha.log_artifact(paths=["file1.txt"], version="v2")
             versions = exp._runtime._artifact.list_versions(
-                exp._runtime.current_exp_uuid
+                exp_obj.uuid
             )
             assert "v2" in versions
 
         exp._runtime._artifact.delete(
-            repo_name=exp._runtime.current_exp_uuid,
+            repo_name=exp_obj.uuid,
             versions=["v1", "v2"],
         )
-        versions = exp._runtime._artifact.list_versions(exp._runtime.current_exp_uuid)
+        versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
         assert len(versions) == 0
 
         trial.finish()
@@ -94,13 +97,26 @@ def test_log_metrics():
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.1}
 
+        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        assert len(metrics) == 0
+
         alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 2
         assert metrics[0].key == "accuracy"
         assert metrics[0].value == 0.95
+        assert metrics[0].step == 1
         assert metrics[1].key == "loss"
         assert metrics[1].value == 0.1
+        assert metrics[1].step == 1
+
+        alpha.log_metrics({"accuracy": 0.96})
+
+        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        assert len(metrics) == 3
+        assert metrics[2].key == "accuracy"
+        assert metrics[2].value == 0.96
+        assert metrics[2].step == 2
 
         trial.finish()

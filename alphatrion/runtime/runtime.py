@@ -29,6 +29,8 @@ def global_runtime():
 # Runtime contains all kinds of clients, e.g., metadb client, artifact client, etc.
 # Stateful information will also be stored here, e.g., current running experiment ID.
 class Runtime:
+    __slots__ = ("_project_id", "_metadb", "_artifact", "__current_exp")
+
     def __init__(self, project_id: str, artifact_insecure: bool = False):
         self._project_id = project_id
         self._metadb = SQLStore(os.getenv(consts.METADATA_DB_URL), init_tables=True)
@@ -36,15 +38,11 @@ class Runtime:
             project_id=self._project_id, insecure=artifact_insecure
         )
 
-        # Current running Experiment UUID. One experiment at a time.
-        # Set in Experiment.__enter__ and cleared in __exit__.
-        # This is for global access, e.g., log_metrics/artifacts/params
-        self.__current_exp_uuid = None
-
+    # current_exp is the current running experiment.
     @property
-    def current_exp_uuid(self):
-        return self.__current_exp_uuid
+    def current_exp(self):
+        return self.__current_exp
 
-    @current_exp_uuid.setter
-    def current_exp_uuid(self, value):
-        self.__current_exp_uuid = value
+    @current_exp.setter
+    def current_exp(self, value):
+        self.__current_exp = value

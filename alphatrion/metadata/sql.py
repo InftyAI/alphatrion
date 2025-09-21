@@ -189,12 +189,13 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
-    def create_metric(self, trial_id: int, key: str, value: float):
+    def create_metric(self, trial_id: int, key: str, value: float, step: int):
         session = self._session()
         new_metric = Metrics(
             trial_id=trial_id,
             key=key,
             value=value,
+            step=step,
         )
         session.add(new_metric)
         session.commit()
