@@ -79,12 +79,15 @@ class Trial:
         "_config",
         "_runtime",
         "_token",
+        "_step",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
         self._exp_id = exp_id
         self._config = config or TrialConfig()
         self._runtime = global_runtime()
+        # step is used to track the round, e.g. the step in metric logging.
+        self._step = 0
 
     def _start(
         self,
@@ -103,6 +106,10 @@ class Trial:
         self._token = current_trial_id.set(self._id)
         return self._id
 
+    @property
+    def id(self):
+        return self._id
+
     # finish function should be called manually as a pair of start
     def finish(self, status: TrialStatus = TrialStatus.FINISHED):
         trial = self._runtime._metadb.get_trial(trial_id=self._id)
@@ -119,3 +126,7 @@ class Trial:
 
     def _get(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
+
+    def increment_step(self) -> int:
+        self._step += 1
+        return self._step

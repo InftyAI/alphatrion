@@ -88,4 +88,5 @@ class Metrics(Base):
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
     trial_id = Column(Integer, nullable=False)
+    step = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
