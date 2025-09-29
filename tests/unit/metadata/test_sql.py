@@ -51,7 +51,7 @@ def test_list_exps(db):
 
 
 def test_create_trial(db):
-    exp_id = 1
+    exp_id = db.create_exp("test_exp", "test_project", None, None)
     trial_id = db.create_trial(exp_id, "test description", None, params={"lr": 0.01})
     trial = db.get_trial(trial_id)
     assert trial is not None
@@ -63,7 +63,7 @@ def test_create_trial(db):
 
 
 def test_update_trial(db):
-    exp_id = 1
+    exp_id = db.create_exp("test_exp", "test_project", None, None)
     trial_id = db.create_trial(exp_id, "test description", None)
     trial = db.get_trial(trial_id)
     assert trial.status == TrialStatus.PENDING
@@ -76,7 +76,8 @@ def test_update_trial(db):
 
 
 def test_create_metric(db):
-    trial_id = db.create_trial(1, "test description", None)
+    exp_id = db.create_exp("test_exp", "test_project", None, None)
+    trial_id = db.create_trial(exp_id, "test description", None)
     db.create_metric(trial_id, "accuracy", 0.95, 1)
     db.create_metric(trial_id, "accuracy", 0.85, 2)
 

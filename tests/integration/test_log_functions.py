@@ -27,9 +27,7 @@ def test_log_artifact():
                 f.write("This is file1.")
 
             alpha.log_artifact(paths="file1.txt", version="v1")
-            versions = exp._runtime._artifact.list_versions(
-                exp_obj.uuid
-            )
+            versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v1" in versions
 
             with open("file1.txt", "w") as f:
@@ -37,9 +35,7 @@ def test_log_artifact():
 
             # push folder instead
             alpha.log_artifact(paths=["file1.txt"], version="v2")
-            versions = exp._runtime._artifact.list_versions(
-                exp_obj.uuid
-            )
+            versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v2" in versions
 
         exp._runtime._artifact.delete(

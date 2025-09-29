@@ -1,3 +1,4 @@
+import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -36,7 +37,8 @@ class Experiment(ABC):
         if exp is None:
             raise RuntimeError(f"Experiment {self._id} not found in the database.")
 
-        self._runtime.current_exp = self
+        # Use weakref to avoid circular reference
+        self._runtime.current_exp = weakref.ref(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):

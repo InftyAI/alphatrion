@@ -12,20 +12,22 @@ def model():
 
 
 def test_model(model):
-    model.create("test_model", "test_project", "A test model", {"tags": {"foo": "bar"}})
-    model1 = model.get(1)
+    id = model.create(
+        "test_model", "test_project", "A test model", {"tags": {"foo": "bar"}}
+    )
+    model1 = model.get(id)
     assert model1 is not None
     assert model1.name == "test_model"
     assert model1.description == "A test model"
     assert model1.meta == {"tags": {"foo": "bar"}}
 
-    model.update(1, meta={"tags": {"foo": "fuz"}})
-    model1 = model.get(1)
+    model.update(id, meta={"tags": {"foo": "fuz"}})
+    model1 = model.get(id)
     assert model1.meta == {"tags": {"foo": "fuz"}}
 
     models = model.list()
     assert len(models) == 1
 
-    model.delete(1)
-    model1 = model.get(1)
+    model.delete(id)
+    model1 = model.get(id)
     assert model1 is None

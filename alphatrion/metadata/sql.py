@@ -39,7 +39,7 @@ class SQLStore(MetaStore):
         session.add(new_exp)
         session.commit()
 
-        exp_id = new_exp.id
+        exp_id = new_exp.uuid
         session.close()
 
         return exp_id
@@ -49,7 +49,7 @@ class SQLStore(MetaStore):
         session = self._session()
         exp = (
             session.query(Experiment)
-            .filter(Experiment.id == exp_id, Experiment.is_del == 0)
+            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
             .first()
         )
         if exp:
@@ -62,7 +62,7 @@ class SQLStore(MetaStore):
         session = self._session()
         exp = (
             session.query(Experiment)
-            .filter(Experiment.id == exp_id, Experiment.is_del == 0)
+            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
             .first()
         )
         if exp:
@@ -76,7 +76,7 @@ class SQLStore(MetaStore):
         session = self._session()
         exp = (
             session.query(Experiment)
-            .filter(Experiment.id == exp_id, Experiment.is_del == 0)
+            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
             .first()
         )
         session.close()
@@ -113,12 +113,17 @@ class SQLStore(MetaStore):
         )
         session.add(new_model)
         session.commit()
+        model_id = new_model.uuid
         session.close()
+
+        return model_id
 
     def update_model(self, model_id: int, **kwargs):
         session = self._session()
         model = (
-            session.query(Model).filter(Model.id == model_id, Model.is_del == 0).first()
+            session.query(Model)
+            .filter(Model.uuid == model_id, Model.is_del == 0)
+            .first()
         )
         if model:
             for key, value in kwargs.items():
@@ -129,7 +134,9 @@ class SQLStore(MetaStore):
     def get_model(self, model_id: int) -> Model | None:
         session = self._session()
         model = (
-            session.query(Model).filter(Model.id == model_id, Model.is_del == 0).first()
+            session.query(Model)
+            .filter(Model.uuid == model_id, Model.is_del == 0)
+            .first()
         )
         session.close()
         return model
@@ -143,7 +150,9 @@ class SQLStore(MetaStore):
     def delete_model(self, model_id: int):
         session = self._session()
         model = (
-            session.query(Model).filter(Model.id == model_id, Model.is_del == 0).first()
+            session.query(Model)
+            .filter(Model.uuid == model_id, Model.is_del == 0)
+            .first()
         )
         if model:
             model.is_del = 1
@@ -169,20 +178,20 @@ class SQLStore(MetaStore):
         session.add(new_trial)
         session.commit()
 
-        trial_id = new_trial.id
+        trial_id = new_trial.uuid
         session.close()
 
         return trial_id
 
     def get_trial(self, trial_id: int) -> Trial | None:
         session = self._session()
-        trial = session.query(Trial).filter(Trial.id == trial_id).first()
+        trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
         session.close()
         return trial
 
     def update_trial(self, trial_id: int, **kwargs):
         session = self._session()
-        trial = session.query(Trial).filter(Trial.id == trial_id).first()
+        trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
         if trial:
             for key, value in kwargs.items():
                 setattr(trial, key, value)
