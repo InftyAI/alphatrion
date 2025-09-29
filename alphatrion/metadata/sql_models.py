@@ -23,9 +23,7 @@ COMPLETED_STATUS = [TrialStatus.FINISHED, TrialStatus.FAILED]
 class Experiment(Base):
     __tablename__ = "experiments"
 
-    id = Column(Integer, primary_key=True)
-    uuid = Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4)
-
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     project_id = Column(String, nullable=False)
@@ -41,10 +39,9 @@ class Experiment(Base):
 class Trial(Base):
     __tablename__ = "trials"
 
-    id = Column(Integer, primary_key=True)
-    uuid = Column(UUID(as_uuid=True), unique=True, default=uuid.uuid4)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    experiment_id = Column(Integer, nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
     duration = Column(Integer, default=0, comment="Duration in seconds")
@@ -67,7 +64,7 @@ class Trial(Base):
 class Model(Base):
     __tablename__ = "models"
 
-    id = Column(Integer, primary_key=True)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False, unique=True)
     version = Column(String, nullable=False)
     description = Column(String, nullable=True)
@@ -84,9 +81,21 @@ class Model(Base):
 class Metrics(Base):
     __tablename__ = "metrics"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
-    trial_id = Column(Integer, nullable=False)
+    trial_id = Column(UUID(as_uuid=True), nullable=False)
     step = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+
+
+# class Traces(Base):
+#     __tablename__ = "traces"
+
+#     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     trial_id = Column(UUID(as_uuid=True), nullable=False)
+#     run_id = Column(UUID(as_uuid=True), nullable=False)
+#     message = Column(String, nullable=False)
+#     level = Column(String, nullable=False, default="INFO")
+#     trial_id = Column(Integer, nullable=False)
+#     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))

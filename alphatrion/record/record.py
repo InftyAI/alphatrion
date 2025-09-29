@@ -27,16 +27,11 @@ def log_artifact(
 
     # We use experiment ID as the repo name rather than the experiment name,
     # because experiment name is not unique
-
     exp = runtime.current_exp
     if exp is None:
         raise RuntimeError("No running experiment found in the current context.")
 
-    exp_obj = runtime._metadb.get_exp(exp.id)
-    if exp_obj is None:
-        raise RuntimeError(f"Experiment {exp.id} not found in the database.")
-
-    runtime._artifact.push(repo_name=str(exp_obj.uuid), paths=paths, version=version)
+    runtime._artifact.push(repo_name=str(exp.id), paths=paths, version=version)
 
 
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
@@ -67,6 +62,6 @@ def log_metrics(metrics: dict[str, float]):
         runtime._metadb.create_metric(
             key=key,
             value=value,
-            trial_id=trial.id,
+            trial_id=trial_id,
             step=step,
         )

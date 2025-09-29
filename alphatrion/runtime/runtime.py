@@ -41,7 +41,7 @@ class Runtime:
     # current_exp is the current running experiment.
     @property
     def current_exp(self):
-        return self.__current_exp
+        return self.__current_exp()
 
     @current_exp.setter
     def current_exp(self, value):
