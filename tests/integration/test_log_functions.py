@@ -80,13 +80,13 @@ async def test_log_params():
         assert new_trial.status == TrialStatus.RUNNING
         assert current_trial_id.get() == trial.id
 
-        trial.finish()
+        trial.stop()
 
         trial = await exp.start_trial(
             description="Second trial", params={"param1": 0.1}
         )
-        assert current_trial_id.get() == trial._id
-        trial.finish()
+        assert current_trial_id.get() == trial.id
+        trial.stop()
 
 
 @pytest.mark.asyncio
@@ -122,4 +122,4 @@ async def test_log_metrics():
         assert metrics[2].value == 0.96
         assert metrics[2].step == 2
 
-        trial.finish()
+        trial.stop()

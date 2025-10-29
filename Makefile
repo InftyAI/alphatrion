@@ -23,7 +23,7 @@ format:
 
 .PHONY: test
 test: lint
-	$(POETRY) run pytest tests/unit
+	$(POETRY) run pytest tests/unit --timeout=15
 
 .PHONY: test-integration
 test-integration: lint

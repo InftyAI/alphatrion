@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 
 from alphatrion.experiment.base import Experiment
@@ -59,10 +58,7 @@ class CraftExperiment(Experiment):
         :return: the Trial instance
         """
 
-        async def _start_trial():
-            trial = Trial(exp_id=self._id, config=config)
-            await trial._start(description=description, meta=meta, params=params)
-            self.register_trial(id=trial.id, instance=trial)
-            return trial
-
-        return await asyncio.create_task(_start_trial())
+        trial = Trial(exp_id=self._id, config=config)
+        await trial._start(description=description, meta=meta, params=params)
+        self.register_trial(id=trial.id, instance=trial)
+        return trial

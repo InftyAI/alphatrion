@@ -5,6 +5,10 @@ from collections.abc import Callable
 # Inspired by golang context package
 class Context:
     def __init__(self, cancel_func: Callable | None = None, timeout=None):
+        """A context for managing cancellation and timeouts.
+        :param cancel_func: A function to call when the context is cancelled.
+        :param timeout: Timeout in seconds. If None, no timeout is set.
+        """
         self._cancel_event = asyncio.Event()
         self._cancel_func = cancel_func
         self._timeout = timeout
@@ -15,13 +19,13 @@ class Context:
 
     async def _auto_cancel(self, timeout):
         await asyncio.sleep(timeout)
+        self.cancel()
+
+    def cancel(self):
         if self.cancelled():
             return
         if self._cancel_func:
             self._cancel_func()
-        self._cancel_event.set()
-
-    def cancel(self):
         self._cancel_event.set()
 
     def cancelled(self):

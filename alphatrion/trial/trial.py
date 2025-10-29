@@ -1,4 +1,3 @@
-import asyncio
 import contextvars
 import uuid
 from datetime import UTC, datetime
@@ -83,6 +82,7 @@ class Trial:
         "_runtime",
         "_step",
         "_context",
+        "_token",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -92,7 +92,7 @@ class Trial:
         # step is used to track the round, e.g. the step in metric logging.
         self._step = 0
         self._context = Context(
-            cancel_func=self.stop,
+            cancel_func=self._stop,
             timeout=self._config.max_duration_seconds
             if self._config.max_duration_seconds > 0
             else None,
@@ -118,9 +118,10 @@ class Trial:
             status=TrialStatus.RUNNING,
         )
 
-        # For each trial, it has a dedicated context, no longer need to reset it.
-        _ = current_trial_id.set(self._id)
-        _ = asyncio.create_task(self._context.start())
+        # We don't reset the trial id context var here, because
+        # each trial runs in its own context.
+        self._token = current_trial_id.set(self._id)
+        await self._context.start()
         return self._id
 
     @property
@@ -129,6 +130,9 @@ class Trial:
 
     # stop function should be called manually as a pair of start
     def stop(self):
+        self._context.cancel()
+
+    def _stop(self):
         trial = self._runtime._metadb.get_trial(trial_id=self._id)
         if trial is not None and trial.status not in COMPLETED_STATUS:
             duration = (
@@ -139,7 +143,6 @@ class Trial:
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
-        self._context.cancel()
 
     def _get(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
