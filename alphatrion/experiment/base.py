@@ -1,4 +1,3 @@
-import weakref
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -29,7 +28,7 @@ class Experiment(ABC):
     def _reset(self):
         self._trials = dict()
 
-    def __enter__(self):
+    async def __aenter__(self):
         if self._id is None:
             raise RuntimeError("Experiment is not set. Did you call run()?")
 
@@ -38,10 +37,10 @@ class Experiment(ABC):
             raise RuntimeError(f"Experiment {self._id} not found in the database.")
 
         # Use weakref to avoid circular reference
-        self._runtime.current_exp = weakref.ref(self)
+        self._runtime.current_exp = self
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
         self._reset()
         self._runtime.current_exp = None
 
@@ -53,8 +52,11 @@ class Experiment(ABC):
         """Return a new experiment."""
         ...
 
-    def _register_trial(self, id: int, instance: trial.Trial):
+    def register_trial(self, id: int, instance: trial.Trial):
         self._trials[id] = instance
+
+    def unregister_trial(self, id: int):
+        del self._trials[id]
 
     def _create(
         self,

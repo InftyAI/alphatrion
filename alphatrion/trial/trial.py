@@ -1,3 +1,4 @@
+import asyncio
 import contextvars
 from datetime import UTC, datetime
 
@@ -5,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.utils.context import Context
 
 # Used in record/record.py to log params/metrics
 current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
@@ -57,15 +59,15 @@ class TrialConfig(BaseModel):
     """Configuration for an experiment."""
 
     max_duration_seconds: int = Field(
-        default=86400,
+        default=-1,
         description="Maximum duration in seconds for the experiment. \
-        Default is 86400 seconds (1 day).",
+        Default is -1 (no limit).",
     )
-    max_retries: int = Field(
-        default=0,
-        description="Maximum number of retries for the experiment. \
-            Default is 0 (no retries).",
-    )
+    # max_retries: int = Field(
+    #     default=0,
+    #     description="Maximum number of retries for the experiment. \
+    #         Default is 0 (no retries).",
+    # )
     checkpoint: CheckpointConfig = Field(
         default=CheckpointConfig(),
         description="Configuration for checkpointing.",
@@ -78,8 +80,8 @@ class Trial:
         "_exp_id",
         "_config",
         "_runtime",
-        "_token",
         "_step",
+        "_context",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -88,8 +90,20 @@ class Trial:
         self._runtime = global_runtime()
         # step is used to track the round, e.g. the step in metric logging.
         self._step = 0
+        self._context = Context(
+            cancel_func=self.stop,
+            timeout=self._config.max_duration_seconds
+            if self._config.max_duration_seconds > 0
+            else None,
+        )
 
-    def _start(
+    def stopped(self) -> bool:
+        return self._context.cancelled()
+
+    async def wait_stopped(self):
+        await self._context.wait_cancelled()
+
+    async def _start(
         self,
         description: str | None = None,
         meta: dict | None = None,
@@ -103,26 +117,27 @@ class Trial:
             status=TrialStatus.RUNNING,
         )
 
-        self._token = current_trial_id.set(self._id)
+        # For each trial, it has a dedicated context, no longer need to reset it.
+        _ = current_trial_id.set(self._id)
+        _ = asyncio.create_task(self._context.start())
         return self._id
 
     @property
     def id(self):
         return self._id
 
-    # finish function should be called manually as a pair of start
-    def finish(self, status: TrialStatus = TrialStatus.FINISHED):
+    # stop function should be called manually as a pair of start
+    def stop(self):
         trial = self._runtime._metadb.get_trial(trial_id=self._id)
         if trial is not None and trial.status not in COMPLETED_STATUS:
             duration = (
                 datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
             ).total_seconds()
             self._runtime._metadb.update_trial(
-                trial_id=self._id, status=status, duration=duration
+                trial_id=self._id, status=TrialStatus.FINISHED, duration=duration
             )
 
-        # recover the context var
-        current_trial_id.reset(self._token)
+        self._runtime.current_exp.unregister_trial(self._id)
 
     def _get(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
