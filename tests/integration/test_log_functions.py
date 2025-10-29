@@ -1,20 +1,23 @@
 import os
 import tempfile
 
+import pytest
+
 import alphatrion as alpha
 from alphatrion.metadata.sql_models import TrialStatus
 from alphatrion.trial.trial import current_trial_id
 
 
-def test_log_artifact():
+@pytest.mark.asyncio
+async def test_log_artifact():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    with alpha.CraftExperiment.run(
+    async with alpha.CraftExperiment.run(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
-        trial = exp.start_trial(description="First trial")
+        trial = await exp.start_trial(description="First trial")
 
         exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert exp_obj is not None
@@ -45,7 +48,7 @@ def test_log_artifact():
         versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
         assert len(versions) == 0
 
-        trial.finish()
+        trial.stop()
 
         got_exp = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert got_exp is not None
@@ -57,37 +60,41 @@ def test_log_artifact():
         assert got_trial.status == TrialStatus.FINISHED
 
 
-def test_log_params():
+@pytest.mark.asyncio
+async def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+    async with alpha.CraftExperiment.run(name="test_experiment") as exp:
+        trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
+        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.1}
 
         params = {"param1": 0.2}
         alpha.log_params(params=params)
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
+        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.2}
         assert new_trial.status == TrialStatus.RUNNING
-        assert current_trial_id.get() == trial._id
+        assert current_trial_id.get() == trial.id
 
-        trial.finish()
+        trial.stop()
 
-        trial = exp.start_trial(description="Second trial", params={"param1": 0.1})
-        assert current_trial_id.get() == trial._id
-        trial.finish()
+        trial = await exp.start_trial(
+            description="Second trial", params={"param1": 0.1}
+        )
+        assert current_trial_id.get() == trial.id
+        trial.stop()
 
 
-def test_log_metrics():
+@pytest.mark.asyncio
+async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+    async with alpha.CraftExperiment.run(name="test_experiment") as exp:
+        trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert new_trial is not None
@@ -115,4 +122,4 @@ def test_log_metrics():
         assert metrics[2].value == 0.96
         assert metrics[2].step == 2
 
-        trial.finish()
+        trial.stop()

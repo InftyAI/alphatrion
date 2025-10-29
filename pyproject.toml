@@ -17,6 +17,8 @@ dependencies = [
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.4.2,<9.0.0"
 ruff = "^0.12.12"
+pytest-asyncio = ">=0.22.0,<1.0.0"
+pytest-timeout = ">=2.1.0,<3.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

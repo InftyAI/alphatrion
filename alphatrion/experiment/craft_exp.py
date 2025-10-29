@@ -1,3 +1,5 @@
+import uuid
+
 from alphatrion.experiment.base import Experiment
 from alphatrion.trial.trial import Trial, TrialConfig
 
@@ -14,21 +16,32 @@ class CraftExperiment(Experiment):
         super().__init__()
 
     @classmethod
-    def run(cls, name: str, description: str | None = None, meta: dict | None = None):
+    def run(
+        cls,
+        name: str,
+        id: uuid.UUID | None = None,
+        description: str | None = None,
+        meta: dict | None = None,
+    ) -> "CraftExperiment":
         """
         Begin the experiment. This method must be used to start multi-trial experiment.
+        If id is provided, the experiment with the given id will be used.
         """
 
         exp = CraftExperiment()
-        exp._create(
-            name=name,
-            description=description,
-            meta=meta,
-        )
+
+        if id is not None:
+            exp._id = id
+        else:
+            exp._create(
+                name=name,
+                description=description,
+                meta=meta,
+            )
 
         return exp
 
-    def start_trial(
+    async def start_trial(
         self,
         description: str | None = None,
         meta: dict | None = None,
@@ -46,11 +59,6 @@ class CraftExperiment(Experiment):
         """
 
         trial = Trial(exp_id=self._id, config=config)
-        trial._start(description=description, meta=meta, params=params)
-        self._register_trial(id=trial._id, instance=trial)
+        await trial._start(description=description, meta=meta, params=params)
+        self.register_trial(id=trial.id, instance=trial)
         return trial
-
-    # @classmethod
-    # # TODO: support async
-    # async def async_trial(cls):
-    #     pass
