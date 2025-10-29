@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -166,7 +168,7 @@ class SQLStore(MetaStore):
         meta: dict | None,
         params: dict | None = None,
         status: TrialStatus = TrialStatus.PENDING,
-    ) -> int:
+    ) -> uuid.UUID:
         session = self._session()
         new_trial = Trial(
             experiment_id=exp_id,
@@ -183,13 +185,13 @@ class SQLStore(MetaStore):
 
         return trial_id
 
-    def get_trial(self, trial_id: int) -> Trial | None:
+    def get_trial(self, trial_id: uuid.UUID) -> Trial | None:
         session = self._session()
         trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
         session.close()
         return trial
 
-    def update_trial(self, trial_id: int, **kwargs):
+    def update_trial(self, trial_id: uuid.UUID, **kwargs):
         session = self._session()
         trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
         if trial:
@@ -198,7 +200,7 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
-    def create_metric(self, trial_id: int, key: str, value: float, step: int):
+    def create_metric(self, trial_id: uuid.UUID, key: str, value: float, step: int):
         session = self._session()
         new_metric = Metrics(
             trial_id=trial_id,
@@ -210,7 +212,7 @@ class SQLStore(MetaStore):
         session.commit()
         session.close()
 
-    def list_metrics(self, trial_id: int) -> list[Metrics]:
+    def list_metrics(self, trial_id: uuid.UUID) -> list[Metrics]:
         session = self._session()
         metrics = session.query(Metrics).filter(Metrics.trial_id == trial_id).all()
         session.close()

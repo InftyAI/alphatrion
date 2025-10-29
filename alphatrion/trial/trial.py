@@ -1,5 +1,6 @@
 import asyncio
 import contextvars
+import uuid
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
@@ -108,7 +109,7 @@ class Trial:
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
-    ) -> int:
+    ) -> uuid.UUID:
         self._id = self._runtime._metadb.create_trial(
             exp_id=self._exp_id,
             description=description,
@@ -123,7 +124,7 @@ class Trial:
         return self._id
 
     @property
-    def id(self):
+    def id(self) -> uuid.UUID:
         return self._id
 
     # stop function should be called manually as a pair of start
@@ -138,6 +139,7 @@ class Trial:
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
+        self._context.cancel()
 
     def _get(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)

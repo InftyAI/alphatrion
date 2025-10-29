@@ -15,13 +15,13 @@ class Context:
 
     async def _auto_cancel(self, timeout):
         await asyncio.sleep(timeout)
-        self.cancel()
-
-    def cancel(self):
         if self.cancelled():
             return
         if self._cancel_func:
             self._cancel_func()
+        self._cancel_event.set()
+
+    def cancel(self):
         self._cancel_event.set()
 
     def cancelled(self):

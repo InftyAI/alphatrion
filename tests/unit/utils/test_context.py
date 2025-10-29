@@ -11,6 +11,8 @@ async def test_context_no_timeout():
     await ctx.start()
     assert not ctx.cancelled()
     ctx.cancel()
+    # double cancel should be no-op
+    ctx.cancel()
     assert ctx.cancelled()
     await ctx.wait_cancelled()
 

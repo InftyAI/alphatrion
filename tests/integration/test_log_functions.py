@@ -67,18 +67,18 @@ async def test_log_params():
     async with alpha.CraftExperiment.run(name="test_experiment") as exp:
         trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
+        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.1}
 
         params = {"param1": 0.2}
         alpha.log_params(params=params)
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
+        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.2}
         assert new_trial.status == TrialStatus.RUNNING
-        assert current_trial_id.get() == trial._id
+        assert current_trial_id.get() == trial.id
 
         trial.finish()
 
@@ -94,7 +94,7 @@ async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
     async with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+        trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert new_trial is not None

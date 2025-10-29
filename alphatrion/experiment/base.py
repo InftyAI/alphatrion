@@ -1,3 +1,4 @@
+import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -52,11 +53,11 @@ class Experiment(ABC):
         """Return a new experiment."""
         ...
 
-    def register_trial(self, id: int, instance: trial.Trial):
+    def register_trial(self, id: uuid.UUID, instance: trial.Trial):
         self._trials[id] = instance
 
-    def unregister_trial(self, id: int):
-        del self._trials[id]
+    def unregister_trial(self, id: uuid.UUID):
+        self._trials.pop(id, None)
 
     def _create(
         self,
