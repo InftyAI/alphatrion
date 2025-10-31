@@ -1,4 +1,5 @@
 import contextvars
+import os
 import uuid
 from datetime import UTC, datetime
 
@@ -93,10 +94,25 @@ class Trial:
         self._step = 0
         self._context = Context(
             cancel_func=self._stop,
-            timeout=self._config.max_duration_seconds
-            if self._config.max_duration_seconds > 0
-            else None,
+            timeout=self._timeout(),
         )
+
+    def _timeout(self) -> int | None:
+        timeout = self._config.max_duration_seconds
+        if timeout < 0:
+            return None
+
+        # Adjust timeout based on the trial start time from environment variable,
+        # this is useful when running in cloud env when the trial process may be
+        # restarted.
+        start_time = os.environ.get("ALPHATRION_TRIAL_START_TIME", None)
+        if start_time is not None:
+            elapsed = (
+                datetime.now(UTC)
+                - datetime.fromisoformat(start_time).replace(tzinfo=UTC)
+            ).total_seconds()
+            timeout -= int(elapsed)
+        return timeout
 
     def stopped(self) -> bool:
         return self._context.cancelled()

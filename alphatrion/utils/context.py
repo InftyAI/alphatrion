@@ -14,7 +14,9 @@ class Context:
         self._timeout = timeout
 
     async def start(self):
-        if self._timeout:
+        # If timeout is None, it means no timeout is set.
+        # If timeout is negative, it means already timed out.
+        if self._timeout is not None:
             asyncio.create_task(self._auto_cancel(self._timeout))
 
     async def _auto_cancel(self, timeout):
