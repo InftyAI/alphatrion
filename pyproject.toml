@@ -12,6 +12,7 @@ dependencies = [
     "oras (>=0.2.38,<0.3.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "pydantic (>=2.11.7,<3.0.0)",
+    "traceloop (>=0.47.0,<1.0.0)",
 ]
 
 [tool.poetry.group.dev.dependencies]
