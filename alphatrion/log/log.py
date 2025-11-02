@@ -1,5 +1,6 @@
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.trial.trial import TrialConfig, current_trial_id
+from alphatrion.trial.trial import current_trial_id
+from alphatrion.utils import time as utime
 
 
 async def log_artifact(
@@ -36,9 +37,7 @@ async def log_artifact(
 
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
 # should be called after starting a trial.
-async def log_params(params: dict, config: TrialConfig | None = None):
-    config = config or TrialConfig()
-
+async def log_params(params: dict):
     runtime = global_runtime()
     # TODO: should we upload to the artifact as well?
     # current_trial_id is protect by contextvar, so it's safe to use in async
@@ -48,8 +47,10 @@ async def log_params(params: dict, config: TrialConfig | None = None):
     )
 
 
-# log_metrics is used to log a set of metrics at once.
-# metric key must be string, value must be float
+# log_metrics is used to log a set of metrics at once,
+# metric key must be string, value must be float.
+# If save_best_only is enabled in the trial config, and the metric is the best metric
+# so far, the trial will checkpoint the current data.
 async def log_metrics(metrics: dict[str, float]):
     runtime = global_runtime()
     exp = runtime.current_exp
@@ -60,10 +61,22 @@ async def log_metrics(metrics: dict[str, float]):
         raise RuntimeError(f"Trial {trial_id} not found in the database.")
 
     step = trial.increment_step()
+
+    # track if any metric is the best metric
+    is_best_metric = False
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
             value=value,
             trial_id=trial_id,
             step=step,
+        )
+
+        # Should we save the checkpoint path for the best metric?
+        is_best_metric |= trial.save_best_metric(metric_key=key, metric_value=value)
+
+    if is_best_metric:
+        await log_artifact(
+            paths=trial.config().checkpoint.path,
+            version=utime.now_2_hash(),
         )

@@ -46,6 +46,10 @@ class CheckpointConfig(BaseModel):
         description="The mode for monitoring the metric. Can be 'max' or 'min'. \
             Default is 'max'.",
     )
+    path: str = Field(
+        default="checkpoints",
+        description="The path to save checkpoints. Default is 'checkpoints'.",
+    )
 
     @field_validator("monitor_metric")
     def metric_must_be_valid(cls, v, info):
@@ -63,11 +67,6 @@ class TrialConfig(BaseModel):
         description="Maximum duration in seconds for the experiment. \
         Default is -1 (no limit).",
     )
-    # max_retries: int = Field(
-    #     default=0,
-    #     description="Maximum number of retries for the experiment. \
-    #         Default is 0 (no retries).",
-    # )
     checkpoint: CheckpointConfig = Field(
         default=CheckpointConfig(),
         description="Configuration for checkpointing.",
@@ -83,6 +82,7 @@ class Trial:
         "_step",
         "_context",
         "_token",
+        "_meta",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -95,6 +95,51 @@ class Trial:
             cancel_func=self._stop,
             timeout=self._timeout(),
         )
+        # _meta stores the runtime meta information of the trial,
+        # like the metric max/min values.
+        self._construct_meta()
+
+    def _construct_meta(self):
+        self._meta = dict()
+
+        if self._config.checkpoint.enabled and self._config.checkpoint.save_best_only:
+            if self._config.checkpoint.monitor_mode == "max":
+                self._meta["best_metrics"] = {
+                    self._config.checkpoint.monitor_metric: float("-inf")
+                }
+            elif self._config.checkpoint.monitor_mode == "min":
+                self._meta["best_metrics"] = {
+                    self._config.checkpoint.monitor_metric: float("inf")
+                }
+            else:
+                raise ValueError(
+                    f"Invalid monitor_mode: {self._config.checkpoint.monitor_mode}"
+                )
+
+    def config(self) -> TrialConfig:
+        return self._config
+
+    def save_best_metric(self, metric_key: str, metric_value: float) -> bool:
+        if (
+            self._config.checkpoint.enabled
+            and self._config.checkpoint.save_best_only
+            and metric_key == self._config.checkpoint.monitor_metric
+        ):
+            best_value = self._meta["best_metrics"][metric_key]
+
+            if self._config.checkpoint.monitor_mode == "max":
+                if metric_value > best_value:
+                    self._meta["best_metrics"][metric_key] = metric_value
+                    return True
+            elif self._config.checkpoint.monitor_mode == "min":
+                if metric_value < best_value:
+                    self._meta["best_metrics"][metric_key] = metric_value
+                    return True
+            else:
+                raise ValueError(
+                    f"Invalid monitor_mode: {self._config.checkpoint.monitor_mode}"
+                )
+        return False
 
     def _timeout(self) -> int | None:
         timeout = self._config.max_duration_seconds
