@@ -169,3 +169,7 @@ async def test_log_metrics_with_save_best_only():
             await alpha.log_metrics({"accuracy": 0.91})
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
+
+            await alpha.log_metrics({"accuracy2": 0.98})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 2
