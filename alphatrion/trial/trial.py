@@ -17,10 +17,9 @@ class CheckpointConfig(BaseModel):
     """Configuration for a checkpoint."""
 
     enabled: bool = Field(
-        default=True,
+        default=False,
         description="Whether to enable checkpointing. \
-            Default is True. One exception is CraftExperiment, \
-            which doesn't enable checkpoint by default.",
+            Default is False.",
     )
     save_every_n_seconds: int = Field(
         default=300,
