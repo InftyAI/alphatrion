@@ -160,15 +160,20 @@ async def test_log_metrics_with_save_best_only():
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
 
+            # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
 
             await alpha.log_metrics({"accuracy": 0.78})
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
 
+            time.sleep(1)
+
             await alpha.log_metrics({"accuracy": 0.91})
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
+
+            time.sleep(1)
 
             await alpha.log_metrics({"accuracy2": 0.98})
             versions = exp._runtime._artifact.list_versions(exp.id)
