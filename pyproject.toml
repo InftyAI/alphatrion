@@ -4,7 +4,7 @@ version = "0.0.1"
 description = "AlphaTrion is an open-source and all-in-one platform to build AI-powered applications."
 license = {text = "Apache-2.0"}
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12, <4.0"
 
 dependencies = [
     "sqlalchemy (>=2.0.43,<3.0.0)",
@@ -12,7 +12,8 @@ dependencies = [
     "oras (>=0.2.38,<0.3.0)",
     "psycopg2-binary (>=2.9.10,<3.0.0)",
     "pydantic (>=2.11.7,<3.0.0)",
-    "traceloop (>=0.47.0,<1.0.0)",
+    "traceloop-sdk (>=0.47.5,<1.0.0)",
+    "openai (>=0.27.7,<1.0.0)",
 ]
 
 [tool.poetry.group.dev.dependencies]
