@@ -1,4 +1,24 @@
 services:
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    entrypoint: ["/bin/bash", "-c", "\
+      ollama serve & \
+      sleep 2 && \
+      ollama pull smollm:135m && \
+      wait"]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
   postgres:
     container_name: postgres
     image: postgres:16

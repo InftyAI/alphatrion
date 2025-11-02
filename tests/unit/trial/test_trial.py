@@ -35,9 +35,7 @@ class TestTrial(unittest.IsolatedAsyncioTestCase):
             {
                 "name": "With started_at, positive timeout",
                 "config": TrialConfig(max_duration_seconds=5),
-                "started_at": (
-                    datetime.now(UTC) - timedelta(seconds=3)
-                ).isoformat(),
+                "started_at": (datetime.now(UTC) - timedelta(seconds=3)).isoformat(),
                 "expected": 2,
             },
         ]

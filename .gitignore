@@ -35,3 +35,5 @@ __pycache__
 *.tgz
 dist
 .env
+
+tmp
