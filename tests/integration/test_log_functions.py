@@ -144,7 +144,7 @@ async def test_log_metrics_with_save_best_only():
                     checkpoint=CheckpointConfig(
                         enabled=True,
                         path=tmpdir,
-                        save_best_only=True,
+                        save_on_best=True,
                         monitor_metric="accuracy",
                         monitor_mode="max",
                     )

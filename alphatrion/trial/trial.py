@@ -31,15 +31,16 @@ class CheckpointConfig(BaseModel):
         description="Interval in steps to save checkpoints. \
             Default is None.",
     )
-    save_best_only: bool = Field(
+    save_on_best: bool = Field(
         default=False,
-        description="Once a best result is found, it will be saved. Default is False. \
+        description="Once a best result is found, it will be saved. \
+            The metric to monitor is specified by monitor_metric. Default is False. \
             Can be enabled together with save_every_n_steps/save_every_n_seconds.",
     )
     monitor_metric: str | None = Field(
         default=None,
         description="The metric to monitor for saving the best checkpoint. \
-            Required if save_best_only is True.",
+            Required if save_on_best is True.",
     )
     monitor_mode: str = Field(
         default="max",
@@ -102,7 +103,7 @@ class Trial:
     def _construct_meta(self):
         self._meta = dict()
 
-        if self._config.checkpoint.enabled and self._config.checkpoint.save_best_only:
+        if self._config.checkpoint.enabled and self._config.checkpoint.save_on_best:
             if self._config.checkpoint.monitor_mode == "max":
                 self._meta["best_metrics"] = {
                     self._config.checkpoint.monitor_metric: float("-inf")
@@ -122,7 +123,7 @@ class Trial:
     def save_best_metric(self, metric_key: str, metric_value: float) -> bool:
         if (
             self._config.checkpoint.enabled
-            and self._config.checkpoint.save_best_only
+            and self._config.checkpoint.save_on_best
             and metric_key == self._config.checkpoint.monitor_metric
         ):
             best_value = self._meta["best_metrics"][metric_key]
