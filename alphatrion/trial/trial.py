@@ -21,22 +21,22 @@ class CheckpointConfig(BaseModel):
         description="Whether to enable checkpointing. \
             Default is False.",
     )
-    save_every_n_seconds: int = Field(
-        default=300,
+    save_every_n_seconds: int | None = Field(
+        default=None,
         description="Interval in seconds to save checkpoints. \
-            Default is 300 seconds.",
+            Default is None.",
     )
-    save_every_n_steps: int = Field(
-        default=0,
+    save_every_n_steps: int | None = Field(
+        default=None,
         description="Interval in steps to save checkpoints. \
-            Default is 0 (disabled).",
+            Default is None.",
     )
     save_best_only: bool = Field(
-        default=True,
-        description="Once a best result is found, it will be saved. Default is True. \
+        default=False,
+        description="Once a best result is found, it will be saved. Default is False. \
             Can be enabled together with save_every_n_steps/save_every_n_seconds.",
     )
-    monitor_metric: str = Field(
+    monitor_metric: str | None = Field(
         default=None,
         description="The metric to monitor for saving the best checkpoint. \
             Required if save_best_only is True.",
