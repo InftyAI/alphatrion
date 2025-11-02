@@ -1,8 +1,8 @@
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.trial.trial import current_trial_id
+from alphatrion.trial.trial import TrialConfig, current_trial_id
 
 
-def log_artifact(
+async def log_artifact(
     paths: str | list[str],
     version: str = "latest",
 ):
@@ -36,7 +36,9 @@ def log_artifact(
 
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
 # should be called after starting a trial.
-def log_params(params: dict):
+async def log_params(params: dict, config: TrialConfig | None = None):
+    config = config or TrialConfig()
+
     runtime = global_runtime()
     # TODO: should we upload to the artifact as well?
     # current_trial_id is protect by contextvar, so it's safe to use in async
@@ -48,7 +50,7 @@ def log_params(params: dict):
 
 # log_metrics is used to log a set of metrics at once.
 # metric key must be string, value must be float
-def log_metrics(metrics: dict[str, float]):
+async def log_metrics(metrics: dict[str, float]):
     runtime = global_runtime()
     exp = runtime.current_exp
 

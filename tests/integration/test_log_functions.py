@@ -29,7 +29,7 @@ async def test_log_artifact():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            alpha.log_artifact(paths="file1.txt", version="v1")
+            await alpha.log_artifact(paths="file1.txt", version="v1")
             versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v1" in versions
 
@@ -37,7 +37,7 @@ async def test_log_artifact():
                 f.write("This is modified file1.")
 
             # push folder instead
-            alpha.log_artifact(paths=["file1.txt"], version="v2")
+            await alpha.log_artifact(paths=["file1.txt"], version="v2")
             versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v2" in versions
 
@@ -72,7 +72,7 @@ async def test_log_params():
         assert new_trial.params == {"param1": 0.1}
 
         params = {"param1": 0.2}
-        alpha.log_params(params=params)
+        await alpha.log_params(params=params)
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
@@ -103,7 +103,7 @@ async def test_log_metrics():
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 0
 
-        alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
+        await alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 2
@@ -114,7 +114,7 @@ async def test_log_metrics():
         assert metrics[1].value == 0.1
         assert metrics[1].step == 1
 
-        alpha.log_metrics({"accuracy": 0.96})
+        await alpha.log_metrics({"accuracy": 0.96})
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 3
