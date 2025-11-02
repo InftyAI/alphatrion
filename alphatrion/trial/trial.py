@@ -9,7 +9,7 @@ from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
 
-# Used in record/record.py to log params/metrics
+# Used in log/log.py to log params/metrics
 current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
 
 
