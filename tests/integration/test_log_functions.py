@@ -1,11 +1,12 @@
 import os
 import tempfile
+import time
 
 import pytest
 
 import alphatrion as alpha
 from alphatrion.metadata.sql_models import TrialStatus
-from alphatrion.trial.trial import current_trial_id
+from alphatrion.trial.trial import CheckpointConfig, TrialConfig, current_trial_id
 
 
 @pytest.mark.asyncio
@@ -29,7 +30,7 @@ async def test_log_artifact():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            alpha.log_artifact(paths="file1.txt", version="v1")
+            await alpha.log_artifact(paths="file1.txt", version="v1")
             versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v1" in versions
 
@@ -37,7 +38,7 @@ async def test_log_artifact():
                 f.write("This is modified file1.")
 
             # push folder instead
-            alpha.log_artifact(paths=["file1.txt"], version="v2")
+            await alpha.log_artifact(paths=["file1.txt"], version="v2")
             versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
             assert "v2" in versions
 
@@ -72,7 +73,7 @@ async def test_log_params():
         assert new_trial.params == {"param1": 0.1}
 
         params = {"param1": 0.2}
-        alpha.log_params(params=params)
+        await alpha.log_params(params=params)
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
@@ -103,7 +104,7 @@ async def test_log_metrics():
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 0
 
-        alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
+        await alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 2
@@ -114,7 +115,7 @@ async def test_log_metrics():
         assert metrics[1].value == 0.1
         assert metrics[1].step == 1
 
-        alpha.log_metrics({"accuracy": 0.96})
+        await alpha.log_metrics({"accuracy": 0.96})
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 3
@@ -123,3 +124,57 @@ async def test_log_metrics():
         assert metrics[2].step == 2
 
         trial.stop()
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_save_best_only():
+    alpha.init(project_id="test_project", artifact_insecure=True)
+
+    async with alpha.CraftExperiment.run(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+    ) as exp:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+
+            _ = await exp.start_trial(
+                description="Trial with save_best_only",
+                config=TrialConfig(
+                    checkpoint=CheckpointConfig(
+                        enabled=True,
+                        path=tmpdir,
+                        save_on_best=True,
+                        monitor_metric="accuracy",
+                        monitor_mode="max",
+                    )
+                ),
+            )
+
+            file1 = "file1.txt"
+            with open(file1, "w") as f:
+                f.write("This is file1.")
+
+            await alpha.log_metrics({"accuracy": 0.90})
+
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 1
+
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy": 0.78})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 1
+
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy": 0.91})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 2
+
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy2": 0.98})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 2
