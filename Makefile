@@ -10,7 +10,7 @@ publish: build
 
 .PHONY: launch
 launch:
-	docker-compose up -d
+	docker-compose -f ./hack/docker-compose.yaml up -d
 
 .PHONY: lint
 lint:
@@ -29,9 +29,10 @@ test: lint
 test-integration: lint
 	@bash -c '\
 	set -e; \
-	docker-compose up -d; \
-	trap "docker-compose down" EXIT; \
+	docker-compose -f ./hack/docker-compose.yaml up -d; \
+	trap "docker-compose -f ./hack/docker-compose.yaml down" EXIT; \
 	until docker exec postgres pg_isready -U at_user; do sleep 1; done; \
+	until curl -sf http://localhost:11434/api/tags | grep "smollm:135m" > /dev/null; do sleep 1; done; \
 	$(POETRY) run pytest tests/integration; \
 	'
 .PHONY: test-all
