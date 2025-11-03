@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
 from alphatrion.runtime.runtime import global_runtime
@@ -21,16 +21,16 @@ class CheckpointConfig(BaseModel):
         description="Whether to enable checkpointing. \
             Default is False.",
     )
-    save_every_n_seconds: int | None = Field(
-        default=None,
-        description="Interval in seconds to save checkpoints. \
-            Default is None.",
-    )
-    save_every_n_steps: int | None = Field(
-        default=None,
-        description="Interval in steps to save checkpoints. \
-            Default is None.",
-    )
+    # save_every_n_seconds: int | None = Field(
+    #     default=None,
+    #     description="Interval in seconds to save checkpoints. \
+    #         Default is None.",
+    # )
+    # save_every_n_steps: int | None = Field(
+    #     default=None,
+    #     description="Interval in steps to save checkpoints. \
+    #         Default is None.",
+    # )
     save_on_best: bool = Field(
         default=False,
         description="Once a best result is found, it will be saved. \
@@ -52,12 +52,11 @@ class CheckpointConfig(BaseModel):
         description="The path to save checkpoints. Default is 'checkpoints'.",
     )
 
-    @field_validator("monitor_metric")
-    def metric_must_be_valid(cls, v, info):
-        save_best_only = info.data.get("save_best_only")
-        if save_best_only and v is None:
-            raise ValueError("metric must be specified when save_best_only=True")
-        return v
+    @model_validator(mode="after")
+    def metric_must_be_valid(self):
+        if self.save_on_best and not self.monitor_metric:
+            raise ValueError("monitor_metric must be specified when save_on_best=True")
+        return self
 
 
 class TrialConfig(BaseModel):

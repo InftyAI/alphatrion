@@ -49,7 +49,7 @@ async def log_params(params: dict):
 
 # log_metrics is used to log a set of metrics at once,
 # metric key must be string, value must be float.
-# If save_best_only is enabled in the trial config, and the metric is the best metric
+# If save_on_best is enabled in the trial config, and the metric is the best metric
 # so far, the trial will checkpoint the current data.
 async def log_metrics(metrics: dict[str, float]):
     runtime = global_runtime()
