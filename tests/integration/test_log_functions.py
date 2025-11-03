@@ -83,9 +83,7 @@ async def test_log_params():
 
         trial.stop()
 
-        trial = exp.start_trial(
-            description="Second trial", params={"param1": 0.1}
-        )
+        trial = exp.start_trial(description="Second trial", params={"param1": 0.1})
         assert current_trial_id.get() == trial.id
         trial.stop()
 

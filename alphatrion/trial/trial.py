@@ -211,7 +211,7 @@ class Trial:
 
         self._runtime.current_exp.unregister_trial(self._id)
 
-    def _get(self):
+    def _get_obj(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
 
     def increment_step(self) -> int:

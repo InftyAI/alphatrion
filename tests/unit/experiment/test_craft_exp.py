@@ -24,28 +24,31 @@ async def test_craft_experiment():
         assert exp1.description == "Context manager test"
 
         trial = exp.start_trial(description="First trial")
-        trial1 = trial._get()
-        assert trial1 is not None
-        assert trial1.description == "First trial"
+        trial_obj = trial._get_obj()
+        assert trial_obj is not None
+        assert trial_obj.description == "First trial"
 
         trial.stop()
 
-        trial2 = trial._get()
+        trial2 = trial._get_obj()
         assert trial2.status == TrialStatus.FINISHED
 
-# @pytest.mark.asyncio
-# async def test_create_experiment_with_trial():
-#     init(project_id="test_project", artifact_insecure=True)
 
-#     async with CraftExperiment.run(name="context_exp") as exp:
-#         async with await exp.start_trial(description="First trial") as trial:
-#             trial1 = trial._get()
-#             assert trial1 is not None
-#             assert trial1.description == "First trial"
+@pytest.mark.asyncio
+async def test_create_experiment_with_trial():
+    init(project_id="test_project", artifact_insecure=True)
 
-#         trial_id = current_trial_id.get()
-#         trial2 = exp.get_trial(trial_id)._get()
-#         assert trial2.status == TrialStatus.FINISHED
+    trial_id = None
+    async with CraftExperiment.run(name="context_exp") as exp:
+        async with exp.start_trial(description="First trial") as trial:
+            trial_obj = trial._get_obj()
+            assert trial_obj is not None
+            assert trial_obj.description == "First trial"
+            trial_id = current_trial_id.get()
+
+        trial_obj = exp._runtime._metadb.get_trial(trial_id=trial_id)
+        assert trial_obj.status == TrialStatus.FINISHED
+
 
 @pytest.mark.asyncio
 async def test_craft_experiment_with_context():
@@ -62,7 +65,7 @@ async def test_craft_experiment_with_context():
         await trial.wait_stopped()
         assert trial.stopped()
 
-        trial = trial._get()
+        trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
 
 
@@ -83,7 +86,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         # we don't reset the current trial id.
         assert trial.id == current_trial_id.get()
 
-        trial = trial._get()
+        trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
 
     async with CraftExperiment.run(
