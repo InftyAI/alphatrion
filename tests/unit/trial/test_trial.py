@@ -2,7 +2,50 @@ import os
 import unittest
 from datetime import UTC, datetime, timedelta
 
-from alphatrion.trial.trial import Trial, TrialConfig
+from alphatrion.trial.trial import CheckpointConfig, Trial, TrialConfig
+
+
+class TestCheckpointConfig(unittest.TestCase):
+    def test_invalid_monitor_metric(self):
+        test_cases = [
+            {
+                "name": "Valid metric with save_on_best True",
+                "config": {
+                    "enabled": True,
+                    "save_on_best": True,
+                    "monitor_mode": "max",
+                    "monitor_metric": "accuracy",
+                },
+                "error": False,
+            },
+            {
+                "name": "Invalid metric with save_on_best True",
+                "config": {
+                    "enabled": True,
+                    "save_on_best": True,
+                    "monitor_mode": "max",
+                },
+                "error": True,
+            },
+            {
+                "name": "Valid metric with save_on_best False",
+                "config": {
+                    "enabled": True,
+                    "save_on_best": False,
+                    "monitor_mode": "max",
+                    "monitor_metric": "accuracy",
+                },
+                "error": False,
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(name=case["name"]):
+                if case["error"]:
+                    with self.assertRaises(ValueError):
+                        CheckpointConfig(**case["config"])
+                else:
+                    _ = CheckpointConfig(**case["config"])
 
 
 class TestTrial(unittest.IsolatedAsyncioTestCase):

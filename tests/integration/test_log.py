@@ -125,7 +125,7 @@ async def test_log_metrics():
 
 
 @pytest.mark.asyncio
-async def test_log_metrics_with_save_best_only():
+async def test_log_metrics_with_save_on_max():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
     async with alpha.CraftExperiment.run(
@@ -137,7 +137,7 @@ async def test_log_metrics_with_save_best_only():
             os.chdir(tmpdir)
 
             _ = exp.start_trial(
-                description="Trial with save_best_only",
+                description="Trial with save_on_best",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(
                         enabled=True,
@@ -174,5 +174,59 @@ async def test_log_metrics_with_save_best_only():
             time.sleep(1)
 
             await alpha.log_metrics({"accuracy2": 0.98})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 2
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_save_on_min():
+    alpha.init(project_id="test_project", artifact_insecure=True)
+
+    async with alpha.CraftExperiment.run(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+    ) as exp:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+
+            _ = exp.start_trial(
+                description="Trial with save_on_best",
+                config=TrialConfig(
+                    checkpoint=CheckpointConfig(
+                        enabled=True,
+                        path=tmpdir,
+                        save_on_best=True,
+                        monitor_metric="accuracy",
+                        monitor_mode="min",
+                    )
+                ),
+            )
+
+            file1 = "file1.txt"
+            with open(file1, "w") as f:
+                f.write("This is file1.")
+
+            await alpha.log_metrics({"accuracy": 0.30})
+
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 1
+
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy": 0.58})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 1
+
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy": 0.21})
+            versions = exp._runtime._artifact.list_versions(exp.id)
+            assert len(versions) == 2
+
+            time.sleep(1)
+
+            await alpha.log_metrics({"accuracy2": 0.18})
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
