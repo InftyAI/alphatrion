@@ -13,7 +13,7 @@ class Context:
         self._cancel_func = cancel_func
         self._timeout = timeout
 
-    async def start(self):
+    def start(self):
         # If timeout is None, it means no timeout is set.
         # If timeout is negative, it means already timed out.
         if self._timeout is not None:

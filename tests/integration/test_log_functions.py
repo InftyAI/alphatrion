@@ -18,7 +18,7 @@ async def test_log_artifact():
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
-        trial = await exp.start_trial(description="First trial")
+        trial = exp.start_trial(description="First trial")
 
         exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert exp_obj is not None
@@ -66,7 +66,7 @@ async def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
     async with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
+        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
@@ -83,7 +83,7 @@ async def test_log_params():
 
         trial.stop()
 
-        trial = await exp.start_trial(
+        trial = exp.start_trial(
             description="Second trial", params={"param1": 0.1}
         )
         assert current_trial_id.get() == trial.id
@@ -95,7 +95,7 @@ async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
     async with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = await exp.start_trial(description="First trial", params={"param1": 0.1})
+        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert new_trial is not None
@@ -138,7 +138,7 @@ async def test_log_metrics_with_save_best_only():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            _ = await exp.start_trial(
+            _ = exp.start_trial(
                 description="Trial with save_best_only",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(

@@ -23,7 +23,7 @@ async def test_craft_experiment():
         assert exp1.name == "context_exp"
         assert exp1.description == "Context manager test"
 
-        trial = await exp.start_trial(description="First trial")
+        trial = exp.start_trial(description="First trial")
         trial1 = trial._get()
         assert trial1 is not None
         assert trial1.description == "First trial"
@@ -33,6 +33,19 @@ async def test_craft_experiment():
         trial2 = trial._get()
         assert trial2.status == TrialStatus.FINISHED
 
+# @pytest.mark.asyncio
+# async def test_create_experiment_with_trial():
+#     init(project_id="test_project", artifact_insecure=True)
+
+#     async with CraftExperiment.run(name="context_exp") as exp:
+#         async with await exp.start_trial(description="First trial") as trial:
+#             trial1 = trial._get()
+#             assert trial1 is not None
+#             assert trial1.description == "First trial"
+
+#         trial_id = current_trial_id.get()
+#         trial2 = exp.get_trial(trial_id)._get()
+#         assert trial2.status == TrialStatus.FINISHED
 
 @pytest.mark.asyncio
 async def test_craft_experiment_with_context():
@@ -43,7 +56,7 @@ async def test_craft_experiment_with_context():
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
-        trial = await exp.start_trial(
+        trial = exp.start_trial(
             description="First trial", config=TrialConfig(max_duration_seconds=2)
         )
         await trial.wait_stopped()
@@ -59,7 +72,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
 
     async def fake_work(exp: CraftExperiment):
         duration = random.randint(1, 5)
-        trial = await exp.start_trial(
+        trial = exp.start_trial(
             description="First trial", config=TrialConfig(max_duration_seconds=duration)
         )
         # double check current trial id.
