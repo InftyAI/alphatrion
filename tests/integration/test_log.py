@@ -13,12 +13,12 @@ from alphatrion.trial.trial import CheckpointConfig, TrialConfig, current_trial_
 async def test_log_artifact():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    async with alpha.CraftExperiment.run(
+    async with alpha.CraftExperiment.start(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
-        trial = exp.run_trial(description="First trial")
+        trial = exp.start_trial(description="First trial")
 
         exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert exp_obj is not None
@@ -65,8 +65,8 @@ async def test_log_artifact():
 async def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    async with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = exp.run_trial(description="First trial", params={"param1": 0.1})
+    async with alpha.CraftExperiment.start(name="test_experiment") as exp:
+        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
@@ -83,7 +83,7 @@ async def test_log_params():
 
         trial.cancel()
 
-        trial = exp.run_trial(description="Second trial", params={"param1": 0.1})
+        trial = exp.start_trial(description="Second trial", params={"param1": 0.1})
         assert current_trial_id.get() == trial.id
         trial.cancel()
 
@@ -92,8 +92,8 @@ async def test_log_params():
 async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    async with alpha.CraftExperiment.run(name="test_experiment") as exp:
-        trial = exp.run_trial(description="First trial", params={"param1": 0.1})
+    async with alpha.CraftExperiment.start(name="test_experiment") as exp:
+        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert new_trial is not None
@@ -128,7 +128,7 @@ async def test_log_metrics():
 async def test_log_metrics_with_save_on_max():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    async with alpha.CraftExperiment.run(
+    async with alpha.CraftExperiment.start(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -136,7 +136,7 @@ async def test_log_metrics_with_save_on_max():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            _ = exp.run_trial(
+            _ = exp.start_trial(
                 description="Trial with save_on_best",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(
@@ -182,7 +182,7 @@ async def test_log_metrics_with_save_on_max():
 async def test_log_metrics_with_save_on_min():
     alpha.init(project_id="test_project", artifact_insecure=True)
 
-    async with alpha.CraftExperiment.run(
+    async with alpha.CraftExperiment.start(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -190,7 +190,7 @@ async def test_log_metrics_with_save_on_min():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            _ = exp.run_trial(
+            _ = exp.start_trial(
                 description="Trial with save_on_best",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(

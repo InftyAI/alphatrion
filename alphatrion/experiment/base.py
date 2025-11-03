@@ -47,7 +47,7 @@ class Experiment(ABC):
 
     @classmethod
     @abstractmethod
-    def run(
+    def start(
         cls, name: str, description: str | None = None, meta: dict | None = None
     ) -> "Experiment":
         """Return a new experiment."""
