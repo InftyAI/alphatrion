@@ -100,6 +100,12 @@ class Trial:
         # like the metric max/min values.
         self._construct_meta()
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
     def _construct_meta(self):
         self._meta = dict()
 
@@ -165,7 +171,7 @@ class Trial:
     async def wait_stopped(self):
         await self._context.wait_cancelled()
 
-    async def _start(
+    def _start(
         self,
         description: str | None = None,
         meta: dict | None = None,
@@ -182,7 +188,7 @@ class Trial:
         # We don't reset the trial id context var here, because
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
-        await self._context.start()
+        self._context.start()
         return self._id
 
     @property
@@ -205,7 +211,7 @@ class Trial:
 
         self._runtime.current_exp.unregister_trial(self._id)
 
-    def _get(self):
+    def _get_obj(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
 
     def increment_step(self) -> int:
