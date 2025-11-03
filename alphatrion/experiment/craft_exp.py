@@ -41,7 +41,7 @@ class CraftExperiment(Experiment):
 
         return exp
 
-    def start_trial(
+    def run_trial(
         self,
         description: str | None = None,
         meta: dict | None = None,
@@ -49,10 +49,11 @@ class CraftExperiment(Experiment):
         config: TrialConfig | None = None,
     ) -> Trial:
         """
-        start_trial starts a new trial in this experiment.
-        You need to call trial.stop() to stop the trial for proper cleanup,
-        unless it's a timeout trial. Or you can use 'async with exp.run_trial(...)'
-        as trial, which will automatically stop the trial at the end of the context.
+        run_trial starts a new trial in this experiment.
+        You need to call trial.cancel() to stop the trial for proper cleanup,
+        unless it's a timeout trial.
+        Or you can use 'async with exp.run_trial(...) as trial', which will
+        automatically stop the trial at the end of the context.
 
         :params description: the description of the trial
         :params meta: the metadata of the trial

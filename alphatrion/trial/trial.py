@@ -103,7 +103,7 @@ class Trial:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
+        self.cancel()
 
     def _construct_meta(self):
         self._meta = dict()
@@ -167,7 +167,7 @@ class Trial:
     def stopped(self) -> bool:
         return self._context.cancelled()
 
-    async def wait_stopped(self):
+    async def wait(self):
         await self._context.wait_cancelled()
 
     def _start(
@@ -194,8 +194,8 @@ class Trial:
     def id(self) -> uuid.UUID:
         return self._id
 
-    # stop function should be called manually as a pair of start
-    def stop(self):
+    # cancel function should be called manually as a pair of start
+    def cancel(self):
         self._context.cancel()
 
     def _stop(self):
