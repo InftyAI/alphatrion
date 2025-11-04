@@ -63,7 +63,6 @@ async def test_create_experiment_with_trial_wait():
     async with CraftExperiment.start(name="context_exp") as exp:
         async with exp.start_trial(description="First trial") as trial:
             trial_id = current_trial_id.get()
-
             start_time = datetime.now()
 
             asyncio.create_task(fake_work(trial))
@@ -74,6 +73,34 @@ async def test_create_experiment_with_trial_wait():
 
         trial_obj = exp._runtime._metadb.get_trial(trial_id=trial_id)
         assert trial_obj.status == TrialStatus.FINISHED
+
+
+@pytest.mark.asyncio
+async def test_create_experiment_with_run():
+    init(project_id="test_project", artifact_insecure=True)
+
+    async def fake_work(cancel_func: callable):
+        await asyncio.sleep(3)
+        cancel_func()
+
+    async with (
+        CraftExperiment.start(name="context_exp") as exp,
+        exp.start_trial(description="First trial") as trial,
+    ):
+        start_time = datetime.now()
+
+        trial.start_run(lambda: fake_work(trial.cancel))
+        assert len(trial._running_tasks) == 1
+        assert len(trial._runs) == 1
+
+        trial.start_run(lambda: fake_work(trial.cancel))
+        assert len(trial._running_tasks) == 2
+        assert len(trial._runs) == 2
+
+        await trial.wait()
+        assert datetime.now() - start_time >= timedelta(seconds=3)
+        assert len(trial._running_tasks) == 0
+        assert len(trial._runs) == 0
 
 
 @pytest.mark.asyncio

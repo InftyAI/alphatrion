@@ -61,6 +61,19 @@ class Trial(Base):
     )
 
 
+class Run(Base):
+    __tablename__ = "runs"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    trial_id = Column(UUID(as_uuid=True), nullable=False)
+    # artifact_path = Column(String, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+    )
+
+
 class Model(Base):
     __tablename__ = "models"
 
@@ -88,15 +101,3 @@ class Metrics(Base):
     # TODO: do we need?
     step = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
-
-
-# class Traces(Base):
-#     __tablename__ = "traces"
-
-#     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-#     trial_id = Column(UUID(as_uuid=True), nullable=False)
-#     run_id = Column(UUID(as_uuid=True), nullable=False)
-#     message = Column(String, nullable=False)
-#     level = Column(String, nullable=False, default="INFO")
-#     trial_id = Column(Integer, nullable=False)
-#     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))

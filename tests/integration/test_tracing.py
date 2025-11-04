@@ -56,7 +56,3 @@ def test_workflow():
     pirate_joke, signature = joke_workflow()
     assert pirate_joke is not None
     assert signature is not None
-
-
-if __name__ == "__main__":
-    test_workflow()

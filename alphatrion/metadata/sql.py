@@ -9,6 +9,7 @@ from alphatrion.metadata.sql_models import (
     Experiment,
     Metrics,
     Model,
+    Run,
     Trial,
     TrialStatus,
 )
@@ -199,6 +200,17 @@ class SQLStore(MetaStore):
                 setattr(trial, key, value)
             session.commit()
         session.close()
+
+    def create_run(self, trial_id: uuid.UUID) -> uuid.UUID:
+        session = self._session()
+        new_run = Run(
+            trial_id=trial_id,
+        )
+        session.add(new_run)
+        session.commit()
+        run_id = new_run.uuid
+        session.close()
+        return run_id
 
     def create_metric(self, trial_id: uuid.UUID, key: str, value: float, step: int):
         session = self._session()
