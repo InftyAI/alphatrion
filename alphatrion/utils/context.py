@@ -33,5 +33,7 @@ class Context:
     def cancelled(self):
         return self._cancel_event.is_set()
 
-    async def wait_cancelled(self):
+    # TODO: wait will not wait for all the coroutines to finish,
+    # it will return as soon as the context is cancelled.
+    async def wait(self):
         await self._cancel_event.wait()

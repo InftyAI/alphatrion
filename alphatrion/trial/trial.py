@@ -1,3 +1,4 @@
+import asyncio
 import contextvars
 import os
 import uuid
@@ -6,6 +7,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
+from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
 
@@ -83,6 +85,8 @@ class Trial:
         "_context",
         "_token",
         "_meta",
+        "_runs",
+        "_running_tasks",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -98,12 +102,20 @@ class Trial:
         # _meta stores the runtime meta information of the trial,
         # like the metric max/min values.
         self._construct_meta()
+        self._runs = dict()
+        self._running_tasks = dict()
 
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.cancel()
+        if self._token:
+            current_trial_id.reset(self._token)
+
+    @property
+    def id(self) -> uuid.UUID:
+        return self._id
 
     def _construct_meta(self):
         self._meta = dict()
@@ -168,14 +180,17 @@ class Trial:
         return self._context.cancelled()
 
     async def wait(self):
-        await self._context.wait_cancelled()
+        await self._context.wait()
+
+    def cancelled(self) -> bool:
+        return self._context.cancelled()
 
     def _start(
         self,
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
-    ) -> uuid.UUID:
+    ):
         self._id = self._runtime._metadb.create_trial(
             exp_id=self._exp_id,
             description=description,
@@ -188,11 +203,6 @@ class Trial:
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
         self._context.start()
-        return self._id
-
-    @property
-    def id(self) -> uuid.UUID:
-        return self._id
 
     # cancel function should be called manually as a pair of start
     def cancel(self):
@@ -209,6 +219,10 @@ class Trial:
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
+        self._runs.clear()
+        for task in self._running_tasks.values():
+            task.cancel()
+        self._running_tasks.clear()
 
     def _get_obj(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
@@ -216,3 +230,18 @@ class Trial:
     def increment_step(self) -> int:
         self._step += 1
         return self._step
+
+    # start_run should accept a lambda function to create the run task.
+    def start_run(self, call_func: callable) -> Run:
+        run = Run(trial_id=self._id)
+        run._start()
+        self._runs[run.id] = run
+
+        # the created task will also inherit the current context,
+        # including the current_trial_id context var.
+        task = asyncio.create_task(call_func())
+        self._running_tasks[run.id] = task
+        task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
+        task.add_done_callback(lambda t: self._runs.pop(run.id, None))
+
+        return run

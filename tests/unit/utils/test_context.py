@@ -14,7 +14,7 @@ async def test_context_no_timeout():
     # double cancel should be no-op
     ctx.cancel()
     assert ctx.cancelled()
-    await ctx.wait_cancelled()
+    await ctx.wait()
 
 
 @pytest.mark.asyncio
@@ -24,7 +24,7 @@ async def test_context_with_timeout():
     assert not ctx.cancelled()
     await asyncio.sleep(0.2)
     assert ctx.cancelled()
-    await ctx.wait_cancelled()
+    await ctx.wait()
 
 
 @pytest.mark.asyncio
@@ -34,7 +34,7 @@ async def test_context_manual_cancel():
     assert not ctx.cancelled()
     ctx.cancel()
     assert ctx.cancelled()
-    await ctx.wait_cancelled()
+    await ctx.wait()
 
 
 @pytest.mark.asyncio
@@ -43,7 +43,7 @@ async def test_context_wait_cancelled():
     ctx.start()
 
     async def waiter():
-        await ctx.wait_cancelled()
+        await ctx.wait()
         return True
 
     task = asyncio.create_task(waiter())
@@ -62,7 +62,7 @@ async def test_context_multiple_waiters():
     results = []
 
     async def waiter(idx):
-        await ctx.wait_cancelled()
+        await ctx.wait()
         results.append(idx)
 
     tasks = [asyncio.create_task(waiter(i)) for i in range(5)]

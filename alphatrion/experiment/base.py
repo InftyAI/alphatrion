@@ -37,7 +37,6 @@ class Experiment(ABC):
         if exp is None:
             raise RuntimeError(f"Experiment {self._id} not found in the database.")
 
-        # Use weakref to avoid circular reference
         self._runtime.current_exp = self
         return self
 
