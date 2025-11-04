@@ -143,9 +143,9 @@ async def test_log_metrics_with_save_on_max():
                         enabled=True,
                         path=tmpdir,
                         save_on_best=True,
-                        monitor_metric="accuracy",
-                        monitor_mode="max",
-                    )
+                    ),
+                    monitor_metric="accuracy",
+                    monitor_mode="max",
                 ),
             )
 
@@ -197,9 +197,9 @@ async def test_log_metrics_with_save_on_min():
                         enabled=True,
                         path=tmpdir,
                         save_on_best=True,
-                        monitor_metric="accuracy",
-                        monitor_mode="min",
-                    )
+                    ),
+                    monitor_metric="accuracy",
+                    monitor_mode="min",
                 ),
             )
 
