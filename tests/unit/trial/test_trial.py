@@ -1,51 +1,10 @@
+# ruff: noqa: E501
+
 import os
 import unittest
 from datetime import UTC, datetime, timedelta
 
 from alphatrion.trial.trial import CheckpointConfig, Trial, TrialConfig
-
-
-class TestCheckpointConfig(unittest.TestCase):
-    def test_invalid_monitor_metric(self):
-        test_cases = [
-            {
-                "name": "Valid metric with save_on_best True",
-                "config": {
-                    "enabled": True,
-                    "save_on_best": True,
-                    "monitor_mode": "max",
-                    "monitor_metric": "accuracy",
-                },
-                "error": False,
-            },
-            {
-                "name": "Invalid metric with save_on_best True",
-                "config": {
-                    "enabled": True,
-                    "save_on_best": True,
-                    "monitor_mode": "max",
-                },
-                "error": True,
-            },
-            {
-                "name": "Valid metric with save_on_best False",
-                "config": {
-                    "enabled": True,
-                    "save_on_best": False,
-                    "monitor_mode": "max",
-                    "monitor_metric": "accuracy",
-                },
-                "error": False,
-            },
-        ]
-
-        for case in test_cases:
-            with self.subTest(name=case["name"]):
-                if case["error"]:
-                    with self.assertRaises(ValueError):
-                        CheckpointConfig(**case["config"])
-                else:
-                    _ = CheckpointConfig(**case["config"])
 
 
 class TestTrial(unittest.IsolatedAsyncioTestCase):
@@ -89,3 +48,76 @@ class TestTrial(unittest.IsolatedAsyncioTestCase):
             with self.subTest(name=case["name"]):
                 trial = Trial(exp_id=1, config=case["config"])
                 self.assertEqual(trial._timeout(), case["expected"])
+
+    def test_config(self):
+        test_cases = [
+            {
+                "name": "Default config",
+                "config": {
+                    "checkpoint.save_on_best": False,
+                    "early_stopping_runs": -1,
+                },
+                "error": False,
+            },
+            {
+                "name": "save_on_best True config",
+                "config": {
+                    "monitor_metric": "accuracy",
+                    "checkpoint.save_on_best": True,
+                    "early_stopping_runs": 2,
+                },
+                "error": False,
+            },
+            {
+                "name": "Invalid config missing monitor_metric",
+                "config": {
+                    "checkpoint.save_on_best": True,
+                    "early_stopping_runs": -1,
+                },
+                "error": True,
+            },
+            {
+                "name": "Invalid config early_stopping_runs > 0",
+                "config": {
+                    "checkpoint.save_on_best": False,
+                    "early_stopping_runs": 2,
+                },
+                "error": True,
+            },
+        ]
+
+        for case in test_cases:
+            with self.subTest(name=case["name"]):
+                if case["error"]:
+                    with self.assertRaises(ValueError):
+                        Trial(
+                            exp_id=1,
+                            config=TrialConfig(
+                                monitor_metric=case["config"].get(
+                                    "monitor_metric", None
+                                ),
+                                checkpoint=CheckpointConfig(
+                                    save_on_best=case["config"].get(
+                                        "checkpoint.save_on_best", False
+                                    ),
+                                ),
+                                early_stopping_runs=case["config"].get(
+                                    "early_stopping_runs", -1
+                                ),
+                            ),
+                        )
+                else:
+                    _ = Trial(
+                        exp_id=1,
+                        config=TrialConfig(
+                            monitor_metric=case["config"].get("monitor_metric", None),
+                            checkpoint=CheckpointConfig(
+                                save_on_best=case["config"].get(
+                                    "checkpoint.save_on_best", False
+                                ),
+                            ),
+                            early_stopping_runs=case["config"].get(
+                                "early_stopping_runs", -1
+                            ),
+                        ),
+                    )

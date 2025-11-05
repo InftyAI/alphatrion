@@ -63,7 +63,8 @@ async def log_metrics(metrics: dict[str, float]):
     step = trial.increment_step()
 
     # track if any metric is the best metric
-    is_best_metric = False
+    should_checkpoint = False
+    should_early_stop = False
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
@@ -72,11 +73,19 @@ async def log_metrics(metrics: dict[str, float]):
             step=step,
         )
 
-        # Should we save the checkpoint path for the best metric?
-        is_best_metric |= trial.save_best_metric(metric_key=key, metric_value=value)
+        # TODO: should we save the checkpoint path for the best metric?
+        # Always call the should_checkpoint_on_best first because
+        # it also updates the best metric.
+        should_checkpoint |= trial.should_checkpoint_on_best(
+            metric_key=key, metric_value=value
+        )
+        should_early_stop |= trial.should_early_stop(metric_key=key, metric_value=value)
 
-    if is_best_metric:
+    if should_checkpoint:
         await log_artifact(
             paths=trial.config().checkpoint.path,
             version=utime.now_2_hash(),
         )
+
+    if should_early_stop:
+        trial.cancel()
