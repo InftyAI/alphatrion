@@ -12,7 +12,7 @@ from alphatrion.trial.trial import Trial, TrialConfig, current_trial_id
 
 @pytest.mark.asyncio
 async def test_craft_experiment():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with CraftExperiment.start(
         name="context_exp",
@@ -37,7 +37,7 @@ async def test_craft_experiment():
 
 @pytest.mark.asyncio
 async def test_create_experiment_with_trial():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     trial_id = None
     async with CraftExperiment.start(name="context_exp") as exp:
@@ -53,7 +53,7 @@ async def test_create_experiment_with_trial():
 
 @pytest.mark.asyncio
 async def test_create_experiment_with_trial_wait():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
@@ -77,7 +77,7 @@ async def test_create_experiment_with_trial_wait():
 
 @pytest.mark.asyncio
 async def test_create_experiment_with_run():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async def fake_work(cancel_func: callable):
         await asyncio.sleep(3)
@@ -105,7 +105,7 @@ async def test_create_experiment_with_run():
 
 @pytest.mark.asyncio
 async def test_craft_experiment_with_context():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with CraftExperiment.start(
         name="context_exp",
@@ -124,7 +124,7 @@ async def test_craft_experiment_with_context():
 
 @pytest.mark.asyncio
 async def test_craft_experiment_with_multi_trials_in_parallel():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async def fake_work(exp: CraftExperiment):
         duration = random.randint(1, 5)

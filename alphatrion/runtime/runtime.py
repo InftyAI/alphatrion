@@ -8,7 +8,11 @@ from alphatrion.metadata.sql import SQLStore
 __RUNTIME__ = None
 
 
-def init(project_id: str = "alphatrion", artifact_insecure: bool = False):
+def init(
+    project_id: str = "alphatrion",
+    artifact_insecure: bool = False,
+    init_tables: bool = False,
+):
     """
     Initialize the AlphaTrion runtime environment.
 
@@ -17,7 +21,11 @@ def init(project_id: str = "alphatrion", artifact_insecure: bool = False):
         artifact registry
     """
     global __RUNTIME__
-    __RUNTIME__ = Runtime(project_id=project_id, artifact_insecure=artifact_insecure)
+    __RUNTIME__ = Runtime(
+        project_id=project_id,
+        artifact_insecure=artifact_insecure,
+        init_tables=init_tables,
+    )
 
 
 def global_runtime():
@@ -31,9 +39,16 @@ def global_runtime():
 class Runtime:
     __slots__ = ("_project_id", "_metadb", "_artifact", "__current_exp")
 
-    def __init__(self, project_id: str, artifact_insecure: bool = False):
+    def __init__(
+        self,
+        project_id: str,
+        artifact_insecure: bool = False,
+        init_tables: bool = False,
+    ):
         self._project_id = project_id
-        self._metadb = SQLStore(os.getenv(consts.METADATA_DB_URL), init_tables=True)
+        self._metadb = SQLStore(
+            os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
+        )
         self._artifact = Artifact(
             project_id=self._project_id, insecure=artifact_insecure
         )
