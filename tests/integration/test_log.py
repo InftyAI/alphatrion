@@ -1,3 +1,4 @@
+import asyncio
 import os
 import tempfile
 import time
@@ -230,3 +231,38 @@ async def test_log_metrics_with_save_on_min():
             await alpha.log_metrics({"accuracy2": 0.18})
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_early_stopping():
+    alpha.init(project_id="test_project", artifact_insecure=True)
+
+    async def fake_work(value: float):
+        await alpha.log_metrics({"accuracy": value})
+
+    async def fake_sleep(value: float):
+        await asyncio.sleep(100)
+        await alpha.log_metrics({"accuracy": value})
+
+    async with alpha.CraftExperiment.start(name="context_exp") as exp:
+        async with exp.start_trial(
+            description="Trial with early stopping",
+            config=TrialConfig(
+                monitor_metric="accuracy",
+                early_stopping_runs=2,
+            ),
+        ) as trial:
+            trial.start_run(lambda: fake_work(0.5))
+            trial.start_run(lambda: fake_work(0.6))
+            trial.start_run(lambda: fake_work(0.2))
+            trial.start_run(lambda: fake_work(0.7))
+            trial.start_run(lambda: fake_sleep(0.2))
+            # The first run that is worse than 0.6
+            trial.start_run(lambda: fake_work(0.4))
+            # The second run that is worse than 0.6, should trigger early stopping
+            trial.start_run(lambda: fake_work(0.1))
+            trial.start_run(lambda: fake_work(0.2))
+            # trigger early stopping
+            await trial.wait()
+
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 6

@@ -90,18 +90,34 @@ class TestTrial(unittest.IsolatedAsyncioTestCase):
             with self.subTest(name=case["name"]):
                 if case["error"]:
                     with self.assertRaises(ValueError):
-                        Trial(exp_id=1, config=TrialConfig(
+                        Trial(
+                            exp_id=1,
+                            config=TrialConfig(
+                                monitor_metric=case["config"].get(
+                                    "monitor_metric", None
+                                ),
+                                checkpoint=CheckpointConfig(
+                                    save_on_best=case["config"].get(
+                                        "checkpoint.save_on_best", False
+                                    ),
+                                ),
+                                early_stopping_runs=case["config"].get(
+                                    "early_stopping_runs", -1
+                                ),
+                            ),
+                        )
+                else:
+                    _ = Trial(
+                        exp_id=1,
+                        config=TrialConfig(
                             monitor_metric=case["config"].get("monitor_metric", None),
                             checkpoint=CheckpointConfig(
-                                save_on_best=case["config"].get("checkpoint.save_on_best", False),
+                                save_on_best=case["config"].get(
+                                    "checkpoint.save_on_best", False
+                                ),
                             ),
-                            early_stopping_runs=case["config"].get("early_stopping_runs", -1),
-                        ))
-                else:
-                    _ = Trial(exp_id=1, config=TrialConfig(
-                        monitor_metric=case["config"].get("monitor_metric", None),
-                        checkpoint=CheckpointConfig(
-                            save_on_best=case["config"].get("checkpoint.save_on_best", False),
+                            early_stopping_runs=case["config"].get(
+                                "early_stopping_runs", -1
+                            ),
                         ),
-                        early_stopping_runs=case["config"].get("early_stopping_runs", -1),
-                    ))
+                    )
