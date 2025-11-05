@@ -23,9 +23,9 @@ services:
     container_name: postgres
     image: postgres:16
     environment:
-      POSTGRES_USER: at_user
-      POSTGRES_PASSWORD: at_pass
-      POSTGRES_DB: at_db
+      POSTGRES_USER: alphatrion
+      POSTGRES_PASSWORD: alphatr1on
+      POSTGRES_DB: alphatrion
     ports:
       - "5432:5432"
     # volumes:
@@ -34,6 +34,15 @@ services:
       replicas: 1
       restart_policy:
         condition: any
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: alphatrion@inftyai.com
+      PGADMIN_DEFAULT_PASSWORD: alphatr1on
+    ports:
+      - 8080:80
+    depends_on:
+      - postgres
   registry:
     container_name: registry
     image: registry:3

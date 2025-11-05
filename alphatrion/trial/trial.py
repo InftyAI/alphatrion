@@ -292,7 +292,8 @@ class Trial:
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
         # FIXME: One potential issue here is once the former task finished
         # very fast, it could lead to cancelling the trial even if there are
-        # other running tasks. We may need a more robust way to handle this.
+        # other pending tasks ready to run. We may need a more robust way to
+        # handle this.
         task.add_done_callback(
             lambda t: self.cancel() if len(self._running_tasks) == 0 else None
         )
