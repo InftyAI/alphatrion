@@ -51,20 +51,20 @@ def test_list_exps(db):
 
 
 def test_create_trial(db):
-    exp_id = db.create_exp("test_exp", "test_project", None, None)
-    trial_id = db.create_trial(exp_id, "test description", None, params={"lr": 0.01})
+    exp_id = db.create_exp("test_exp", "test_project")
+    trial_id = db.create_trial(exp_id=exp_id, name="test-trial", params={"lr": 0.01})
     trial = db.get_trial(trial_id)
     assert trial is not None
     assert trial.experiment_id == exp_id
-    assert trial.description == "test description"
+    assert trial.name == "test-trial"
     assert trial.status == TrialStatus.PENDING
     assert trial.meta is None
     assert trial.params == {"lr": 0.01}
 
 
 def test_update_trial(db):
-    exp_id = db.create_exp("test_exp", "test_project", None, None)
-    trial_id = db.create_trial(exp_id, "test description", None)
+    exp_id = db.create_exp("test_exp", "test_project")
+    trial_id = db.create_trial(exp_id=exp_id, name="test-trial")
     trial = db.get_trial(trial_id)
     assert trial.status == TrialStatus.PENDING
     assert trial.meta is None
@@ -76,8 +76,8 @@ def test_update_trial(db):
 
 
 def test_create_metric(db):
-    exp_id = db.create_exp("test_exp", "test_project", None, None)
-    trial_id = db.create_trial(exp_id, "test description", None)
+    exp_id = db.create_exp("test_exp", "test_project")
+    trial_id = db.create_trial(exp_id=exp_id, name="test-trial")
     db.create_metric(trial_id, "accuracy", 0.95, 1)
     db.create_metric(trial_id, "accuracy", 0.85, 2)
 

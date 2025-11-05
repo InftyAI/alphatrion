@@ -24,10 +24,10 @@ async def test_craft_experiment():
         assert exp1.name == "context_exp"
         assert exp1.description == "Context manager test"
 
-        trial = exp.start_trial(description="First trial")
+        trial = exp.start_trial(name="first-trial")
         trial_obj = trial._get_obj()
         assert trial_obj is not None
-        assert trial_obj.description == "First trial"
+        assert trial_obj.name == "first-trial"
 
         trial.cancel()
 
@@ -41,10 +41,10 @@ async def test_create_experiment_with_trial():
 
     trial_id = None
     async with CraftExperiment.start(name="context_exp") as exp:
-        async with exp.start_trial(description="First trial") as trial:
+        async with exp.start_trial(name="first-trial") as trial:
             trial_obj = trial._get_obj()
             assert trial_obj is not None
-            assert trial_obj.description == "First trial"
+            assert trial_obj.name == "first-trial"
             trial_id = current_trial_id.get()
 
         trial_obj = exp._runtime._metadb.get_trial(trial_id=trial_id)
@@ -61,7 +61,7 @@ async def test_create_experiment_with_trial_wait():
 
     trial_id = None
     async with CraftExperiment.start(name="context_exp") as exp:
-        async with exp.start_trial(description="First trial") as trial:
+        async with exp.start_trial(name="first-trial") as trial:
             trial_id = current_trial_id.get()
             start_time = datetime.now()
 
@@ -85,7 +85,7 @@ async def test_create_experiment_with_run():
 
     async with (
         CraftExperiment.start(name="context_exp") as exp,
-        exp.start_trial(description="First trial") as trial,
+        exp.start_trial(name="first-trial") as trial,
     ):
         start_time = datetime.now()
 
@@ -113,7 +113,7 @@ async def test_craft_experiment_with_context():
         meta={"key": "value"},
     ) as exp:
         trial = exp.start_trial(
-            description="First trial", config=TrialConfig(max_duration_seconds=2)
+            name="first-trial", config=TrialConfig(max_duration_seconds=2)
         )
         await trial.wait()
         assert trial.stopped()
@@ -129,7 +129,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
     async def fake_work(exp: CraftExperiment):
         duration = random.randint(1, 5)
         trial = exp.start_trial(
-            description="First trial", config=TrialConfig(max_duration_seconds=duration)
+            name="first-trial", config=TrialConfig(max_duration_seconds=duration)
         )
         # double check current trial id.
         assert trial.id == current_trial_id.get()

@@ -60,8 +60,6 @@ async def log_metrics(metrics: dict[str, float]):
     if trial is None:
         raise RuntimeError(f"Trial {trial_id} not found in the database.")
 
-    step = trial.increment_step()
-
     # track if any metric is the best metric
     should_checkpoint = False
     should_early_stop = False
@@ -70,7 +68,7 @@ async def log_metrics(metrics: dict[str, float]):
             key=key,
             value=value,
             trial_id=trial_id,
-            step=step,
+            step=trial.increment_step(),
         )
 
         # TODO: should we save the checkpoint path for the best metric?

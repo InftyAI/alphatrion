@@ -40,13 +40,11 @@ class Trial(Base):
     __tablename__ = "trials"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
+    name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
     duration = Column(Integer, default=0, comment="Duration in seconds")
-    # Let's start with simple approach here, it the params are too large,
-    # we can move them to a separate table.
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     status = Column(
         Enum(TrialStatus),
@@ -98,6 +96,5 @@ class Metrics(Base):
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
-    # TODO: do we need?
     step = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
