@@ -234,12 +234,14 @@ class Trial:
 
     def _start(
         self,
+        name: str,
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
     ):
         self._id = self._runtime._metadb.create_trial(
             exp_id=self._exp_id,
+            name=name,
             description=description,
             meta=meta,
             params=params,

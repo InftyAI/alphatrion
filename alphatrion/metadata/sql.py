@@ -29,8 +29,8 @@ class SQLStore(MetaStore):
         self,
         name: str,
         project_id: str,
-        description: str | None,
-        meta: dict | None,
+        description: str | None = None,
+        meta: dict | None = None,
     ) -> int:
         session = self._session()
         new_exp = Experiment(
@@ -165,14 +165,16 @@ class SQLStore(MetaStore):
     def create_trial(
         self,
         exp_id: int,
-        description: str | None,
-        meta: dict | None,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
         params: dict | None = None,
         status: TrialStatus = TrialStatus.PENDING,
     ) -> uuid.UUID:
         session = self._session()
         new_trial = Trial(
             experiment_id=exp_id,
+            name=name,
             description=description,
             meta=meta,
             params=params,

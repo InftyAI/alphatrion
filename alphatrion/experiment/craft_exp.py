@@ -43,6 +43,7 @@ class CraftExperiment(Experiment):
 
     def start_trial(
         self,
+        name: str,
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
@@ -63,6 +64,6 @@ class CraftExperiment(Experiment):
         """
 
         trial = Trial(exp_id=self._id, config=config)
-        trial._start(description=description, meta=meta, params=params)
+        trial._start(name=name, description=description, meta=meta, params=params)
         self.register_trial(id=trial.id, instance=trial)
         return trial

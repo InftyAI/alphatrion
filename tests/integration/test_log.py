@@ -20,7 +20,7 @@ async def test_log_artifact():
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
-        trial = exp.start_trial(description="First trial")
+        trial = exp.start_trial(name="first-trial")
 
         exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert exp_obj is not None
@@ -59,7 +59,7 @@ async def test_log_artifact():
 
         got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert got_trial is not None
-        assert got_trial.description == "First trial"
+        assert got_trial.name == "first-trial"
         assert got_trial.status == TrialStatus.FINISHED
 
 
@@ -68,7 +68,7 @@ async def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(name="test_experiment") as exp:
-        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+        trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
@@ -85,7 +85,7 @@ async def test_log_params():
 
         trial.cancel()
 
-        trial = exp.start_trial(description="Second trial", params={"param1": 0.1})
+        trial = exp.start_trial(name="second-trial", params={"param1": 0.1})
         assert current_trial_id.get() == trial.id
         trial.cancel()
 
@@ -95,7 +95,7 @@ async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(name="test_experiment") as exp:
-        trial = exp.start_trial(description="First trial", params={"param1": 0.1})
+        trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert new_trial is not None
@@ -139,7 +139,7 @@ async def test_log_metrics_with_save_on_max():
             os.chdir(tmpdir)
 
             _ = exp.start_trial(
-                description="Trial with save_on_best",
+                name="trial-with-save_on_best",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(
                         enabled=True,
@@ -193,7 +193,7 @@ async def test_log_metrics_with_save_on_min():
             os.chdir(tmpdir)
 
             _ = exp.start_trial(
-                description="Trial with save_on_best",
+                name="trial-with-save_on_best",
                 config=TrialConfig(
                     checkpoint=CheckpointConfig(
                         enabled=True,
@@ -247,7 +247,7 @@ async def test_log_metrics_with_early_stopping():
 
     async with alpha.CraftExperiment.start(name="context_exp") as exp:
         async with exp.start_trial(
-            description="Trial with early stopping",
+            name="trial-with-early-stopping",
             config=TrialConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=2,
@@ -282,7 +282,7 @@ async def test_log_metrics_with_early_stopping_never_triggered():
 
     async with alpha.CraftExperiment.start(name="context_exp") as exp:
         async with exp.start_trial(
-            description="Trial with early stopping",
+            name="trial-with-early-stopping",
             config=TrialConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=3,
