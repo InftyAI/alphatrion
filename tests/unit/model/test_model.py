@@ -6,7 +6,7 @@ from alphatrion.runtime.runtime import Runtime
 
 @pytest.fixture
 def model():
-    runtime = Runtime(project_id="test_project")
+    runtime = Runtime(project_id="test_project", init_tables=True)
     model = Model(runtime=runtime)
     yield model
 

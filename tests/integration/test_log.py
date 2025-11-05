@@ -13,7 +13,7 @@ from alphatrion.trial.trial import CheckpointConfig, TrialConfig, current_trial_
 
 @pytest.mark.asyncio
 async def test_log_artifact():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
         name="context_exp",
@@ -65,7 +65,7 @@ async def test_log_artifact():
 
 @pytest.mark.asyncio
 async def test_log_params():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(name="test_experiment") as exp:
         trial = exp.start_trial(description="First trial", params={"param1": 0.1})
@@ -92,7 +92,7 @@ async def test_log_params():
 
 @pytest.mark.asyncio
 async def test_log_metrics():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(name="test_experiment") as exp:
         trial = exp.start_trial(description="First trial", params={"param1": 0.1})
@@ -128,7 +128,7 @@ async def test_log_metrics():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_max():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
         name="context_exp",
@@ -182,7 +182,7 @@ async def test_log_metrics_with_save_on_max():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_min():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
         name="context_exp",
@@ -236,7 +236,7 @@ async def test_log_metrics_with_save_on_min():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -271,7 +271,7 @@ async def test_log_metrics_with_early_stopping():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping_never_triggered():
-    alpha.init(project_id="test_project", artifact_insecure=True)
+    alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
