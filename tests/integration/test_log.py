@@ -2,6 +2,7 @@ import asyncio
 import os
 import tempfile
 import time
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -266,3 +267,32 @@ async def test_log_metrics_with_early_stopping():
             await trial.wait()
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 6
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_early_stopping_never_triggered():
+    alpha.init(project_id="test_project", artifact_insecure=True)
+
+    async def fake_work(value: float):
+        await alpha.log_metrics({"accuracy": value})
+
+    async def fake_sleep(value: float):
+        await asyncio.sleep(value)
+        await alpha.log_metrics({"accuracy": value})
+
+    async with alpha.CraftExperiment.start(name="context_exp") as exp:
+        async with exp.start_trial(
+            description="Trial with early stopping",
+            config=TrialConfig(
+                monitor_metric="accuracy",
+                early_stopping_runs=3,
+            ),
+        ) as trial:
+            start_time = datetime.now()
+            trial.start_run(lambda: fake_work(1))
+            trial.start_run(lambda: fake_work(2))
+            trial.start_run(lambda: fake_sleep(3))
+            await trial.wait()
+
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+            assert datetime.now() - start_time >= timedelta(seconds=3)

@@ -95,10 +95,19 @@ class Trial:
         "_exp_id",
         "_config",
         "_runtime",
+        # step is used to track the round, e.g. the step in metric logging.
         "_step",
         "_context",
         "_token",
+        # _meta stores the runtime meta information of the trial.
+        # * best_metrics: dict of best metric values, used for checkpointing and
+        #   early stopping. When the workload(e.g. Pod) restarts, the meta info
+        #   will be lost and start from scratch. Then once some features like
+        #   early_stopping_runs is enabled, it may lead to unexpected behaviors like
+        #   never stopping because the counter is reset everytime restarted.
+        #   To avoid this, you can set the restart times for the workload.
         "_meta",
+        # key is run_id, value is Run instance
         "_runs",
         "_running_tasks",
         "_early_stopping_counter",
@@ -108,16 +117,12 @@ class Trial:
         self._exp_id = exp_id
         self._config = config or TrialConfig()
         self._runtime = global_runtime()
-        # step is used to track the round, e.g. the step in metric logging.
         self._step = 0
         self._context = Context(
             cancel_func=self._stop,
             timeout=self._timeout(),
         )
-        # _meta stores the runtime meta information of the trial,
-        # like the metric max/min values.
         self._construct_meta()
-        # key is run_id, value is Run instance
         self._runs = dict()
         self._running_tasks = dict()
         self._early_stopping_counter = 0
@@ -138,15 +143,9 @@ class Trial:
         self._meta = dict()
 
         if self._config.monitor_mode == "max":
-            self._meta["best_metrics"] = {
-                # TODO: load from db just in case of restart
-                self._config.monitor_metric: float("-inf")
-            }
+            self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
         elif self._config.monitor_mode == "min":
-            self._meta["best_metrics"] = {
-                # TODO: load from db just in case of restart
-                self._config.monitor_metric: float("inf")
-            }
+            self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
         else:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
@@ -291,5 +290,11 @@ class Trial:
         self._running_tasks[run.id] = task
         task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
+        # FIXME: One potential issue here is once the former task finished
+        # very fast, it could lead to cancelling the trial even if there are
+        # other running tasks. We may need a more robust way to handle this.
+        task.add_done_callback(
+            lambda t: self.cancel() if len(self._running_tasks) == 0 else None
+        )
 
         return run
