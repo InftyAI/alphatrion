@@ -63,12 +63,13 @@ async def log_metrics(metrics: dict[str, float]):
     # track if any metric is the best metric
     should_checkpoint = False
     should_early_stop = False
+    step = trial.increment_step()
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
             value=value,
             trial_id=trial_id,
-            step=trial.increment_step(),
+            step=step,
         )
 
         # TODO: should we save the checkpoint path for the best metric?
