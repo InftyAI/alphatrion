@@ -83,6 +83,9 @@ class Experiment(ABC):
     def _get(self):
         return self._runtime._metadb.get_exp(exp_id=self._id)
 
+    def _get_by_name(self, name: str, project_id: str):
+        return self._runtime._metadb.get_exp_by_name(name=name, project_id=project_id)
+
     def delete(self):
         exp = self._get()
         if exp is None:
