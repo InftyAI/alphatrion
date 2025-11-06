@@ -9,7 +9,7 @@ import pytest
 
 import alphatrion as alpha
 from alphatrion.metadata.sql_models import TrialStatus
-from alphatrion.trial.trial import CheckpointConfig, TrialConfig, current_trial_id
+from alphatrion.trial.trial import current_trial_id
 
 
 @pytest.mark.asyncio
@@ -141,8 +141,8 @@ async def test_log_metrics_with_save_on_max():
 
             _ = exp.start_trial(
                 name="trial-with-save_on_best",
-                config=TrialConfig(
-                    checkpoint=CheckpointConfig(
+                config=alpha.TrialConfig(
+                    checkpoint=alpha.CheckpointConfig(
                         enabled=True,
                         path=tmpdir,
                         save_on_best=True,
@@ -195,8 +195,8 @@ async def test_log_metrics_with_save_on_min():
 
             _ = exp.start_trial(
                 name="trial-with-save_on_best",
-                config=TrialConfig(
-                    checkpoint=CheckpointConfig(
+                config=alpha.TrialConfig(
+                    checkpoint=alpha.CheckpointConfig(
                         enabled=True,
                         path=tmpdir,
                         save_on_best=True,
@@ -251,7 +251,7 @@ async def test_log_metrics_with_early_stopping():
     ) as exp:
         async with exp.start_trial(
             name="trial-with-early-stopping",
-            config=TrialConfig(
+            config=alpha.TrialConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=2,
             ),
@@ -284,20 +284,48 @@ async def test_log_metrics_with_early_stopping_never_triggered():
         await alpha.log_metrics({"accuracy": value})
 
     async with alpha.CraftExperiment.start(
-        name="log_metrics_with_early_stopping_never_triggered"
+        name="log_metrics_with_both_early_stopping_and_timeout"
     ) as exp:
         async with exp.start_trial(
             name="trial-with-early-stopping",
-            config=TrialConfig(
+            config=alpha.TrialConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=3,
+                max_duration_seconds=3,
             ),
         ) as trial:
             start_time = datetime.now()
             trial.start_run(lambda: fake_work(1))
             trial.start_run(lambda: fake_work(2))
-            trial.start_run(lambda: fake_sleep(3))
+            trial.start_run(lambda: fake_sleep(2))
+            # running in parallel.
             await trial.wait()
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
             assert datetime.now() - start_time >= timedelta(seconds=3)
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_max_run_number():
+    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def fake_work(value: float):
+        await alpha.log_metrics({"accuracy": value})
+        print("fake finished.")
+
+    async with alpha.CraftExperiment.start(
+        name="log_metrics_with_max_run_number"
+    ) as exp:
+        async with exp.start_trial(
+            name="trial-with-max-run-number",
+            config=alpha.TrialConfig(
+                monitor_metric="accuracy",
+                max_run_number=5,
+            ),
+        ) as trial:
+            while not trial.cancelled():
+                run = trial.start_run(lambda: fake_work(1))
+                # running in serial.
+                await run.wait()
+
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5

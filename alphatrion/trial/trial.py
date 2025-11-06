@@ -59,6 +59,11 @@ class TrialConfig(BaseModel):
         after which experiment will be stopped. Default is -1 (no early stopping). \
         Count each time when calling log_metrics with the monitored metric.",
     )
+    max_run_number: int = Field(
+        default=-1,
+        description="Maximum number of runs for the trial. \
+        Default is -1 (no limit). Count by the finished runs.",
+    )
     monitor_metric: str | None = Field(
         default=None,
         description="The metric to monitor for saving the best checkpoint. \
@@ -110,7 +115,10 @@ class Trial:
         # key is run_id, value is Run instance
         "_runs",
         "_running_tasks",
+        # Only work when early_stopping_runs > 0
         "_early_stopping_counter",
+        # Only work when max_run_number > 0
+        "_total_runs_counter",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -126,6 +134,7 @@ class Trial:
         self._runs = dict()
         self._running_tasks = dict()
         self._early_stopping_counter = 0
+        self._total_runs_counter = 0
 
     async def __aenter__(self):
         return self
@@ -223,9 +232,10 @@ class Trial:
             timeout -= int(elapsed)
         return timeout
 
-    def stopped(self) -> bool:
-        return self._context.cancelled()
-
+    # Make sure you have termination condition, either by timeout or by calling cancel()
+    # Before we have logic like once all the tasks are done, we'll call the cancel()
+    # automatically, however, this is unpredictable because some tasks may be waiting
+    # for external events, so we leave it to the user to decide when to stop the trial.
     async def wait(self):
         await self._context.wait()
 
@@ -287,18 +297,22 @@ class Trial:
         run._start()
         self._runs[run.id] = run
 
-        # the created task will also inherit the current context,
+        # The created task will also inherit the current context,
         # including the current_trial_id context var.
         task = asyncio.create_task(call_func())
         self._running_tasks[run.id] = task
+        run.register_task(task)
+
         task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
-        # FIXME: One potential issue here is once the former task finished
-        # very fast, it could lead to cancelling the trial even if there are
-        # other pending tasks ready to run. We may need a more robust way to
-        # handle this.
-        task.add_done_callback(
-            lambda t: self.cancel() if len(self._running_tasks) == 0 else None
-        )
+        if self._config.max_run_number > 0:
+            task.add_done_callback(
+                lambda t: (
+                    setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
+                    self.cancel()
+                    if self._total_runs_counter >= self._config.max_run_number
+                    else None,
+                )
+            )
 
         return run

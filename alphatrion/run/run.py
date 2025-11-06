@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 
 from alphatrion.runtime.runtime import global_runtime
@@ -16,3 +17,9 @@ class Run:
         self._id = self._runtime._metadb.create_run(
             project_id=self._runtime._project_id, trial_id=self._trial_id
         )
+
+    def register_task(self, task: asyncio.Task):
+        self._task = task
+
+    async def wait(self):
+        await self._task
