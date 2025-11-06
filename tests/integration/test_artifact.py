@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+import uuid
 
 import pytest
 
@@ -10,14 +11,14 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.fixture
 def artifact():
-    init(project_id="test_project", artifact_insecure=True, init_tables=True)
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
     artifact = global_runtime()._artifact
 
     yield artifact
 
 
 def test_push_with_files(artifact):
-    init(project_id="test_project", artifact_insecure=True, init_tables=True)
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
@@ -40,7 +41,7 @@ def test_push_with_files(artifact):
 
 
 def test_push_with_folder(artifact):
-    init(project_id="test_project", artifact_insecure=True, init_tables=True)
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)

@@ -9,6 +9,7 @@ from alphatrion.metadata.sql_models import (
     Experiment,
     Metrics,
     Model,
+    Project,
     Run,
     Trial,
     TrialStatus,
@@ -178,7 +179,8 @@ class SQLStore(MetaStore):
 
     def create_trial(
         self,
-        exp_id: int,
+        project_id: uuid.UUID,
+        exp_id: uuid.UUID,
         name: str,
         description: str | None = None,
         meta: dict | None = None,
@@ -187,6 +189,7 @@ class SQLStore(MetaStore):
     ) -> uuid.UUID:
         session = self._session()
         new_trial = Trial(
+            project_id=project_id,
             experiment_id=exp_id,
             name=name,
             description=description,
@@ -217,9 +220,10 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
-    def create_run(self, trial_id: uuid.UUID) -> uuid.UUID:
+    def create_run(self, project_id: uuid.UUID, trial_id: uuid.UUID) -> uuid.UUID:
         session = self._session()
         new_run = Run(
+            project_id=project_id,
             trial_id=trial_id,
         )
         session.add(new_run)
@@ -228,9 +232,17 @@ class SQLStore(MetaStore):
         session.close()
         return run_id
 
-    def create_metric(self, trial_id: uuid.UUID, key: str, value: float, step: int):
+    def create_metric(
+        self,
+        project_id: uuid.UUID,
+        trial_id: uuid.UUID,
+        key: str,
+        value: float,
+        step: int,
+    ):
         session = self._session()
         new_metric = Metrics(
+            project_id=project_id,
             trial_id=trial_id,
             key=key,
             value=value,
@@ -245,3 +257,13 @@ class SQLStore(MetaStore):
         metrics = session.query(Metrics).filter(Metrics.trial_id == trial_id).all()
         session.close()
         return metrics
+
+    def get_project(self, project_id: str) -> Project | None:
+        session = self._session()
+        project = (
+            session.query(Project)
+            .filter(Project.uuid == project_id, Project.is_del == 0)
+            .first()
+        )
+        session.close()
+        return project

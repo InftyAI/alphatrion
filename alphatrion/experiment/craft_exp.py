@@ -1,4 +1,3 @@
-
 from alphatrion.experiment.base import Experiment
 from alphatrion.trial.trial import Trial, TrialConfig
 

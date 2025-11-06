@@ -1,6 +1,8 @@
 # Test the Artifact class
 
 
+import uuid
+
 import pytest
 
 from alphatrion.runtime.runtime import global_runtime, init
@@ -8,7 +10,7 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.fixture
 def artifact():
-    init(project_id="test_project", artifact_insecure=True)
+    init(project_id=uuid.uuid4(), artifact_insecure=True)
     artifact = global_runtime()._artifact
     yield artifact
 
