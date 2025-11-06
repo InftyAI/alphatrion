@@ -1,4 +1,3 @@
-import uuid
 
 from alphatrion.experiment.base import Experiment
 from alphatrion.trial.trial import Trial, TrialConfig
@@ -19,19 +18,20 @@ class CraftExperiment(Experiment):
     def start(
         cls,
         name: str,
-        id: uuid.UUID | None = None,
         description: str | None = None,
         meta: dict | None = None,
     ) -> "CraftExperiment":
         """
-        Begin the experiment. This method must be used to start multi-trial experiment.
-        If id is provided, the experiment with the given id will be used.
+        Begin the experiment. If the name already exists in the same project,
+        it will refer to the existing experiment instead of creating a new one.
         """
 
         exp = CraftExperiment()
+        exp_obj = exp._get_by_name(name=name, project_id=exp._runtime._project_id)
 
-        if id is not None:
-            exp._id = id
+        # If experiment with the same name exists in the project, use it.
+        if exp_obj:
+            exp._id = exp_obj.uuid
         else:
             exp._create(
                 name=name,

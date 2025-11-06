@@ -16,7 +16,7 @@ async def test_log_artifact():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
-        name="context_exp",
+        name="log_artifact_exp",
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
@@ -55,7 +55,7 @@ async def test_log_artifact():
 
         got_exp = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert got_exp is not None
-        assert got_exp.name == "context_exp"
+        assert got_exp.name == "log_artifact_exp"
 
         got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert got_trial is not None
@@ -67,7 +67,7 @@ async def test_log_artifact():
 async def test_log_params():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.start(name="test_experiment") as exp:
+    async with alpha.CraftExperiment.start(name="log_params_exp") as exp:
         trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
@@ -94,7 +94,7 @@ async def test_log_params():
 async def test_log_metrics():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.start(name="test_experiment") as exp:
+    async with alpha.CraftExperiment.start(name="log_metrics_exp") as exp:
         trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
@@ -131,7 +131,7 @@ async def test_log_metrics_with_save_on_max():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
-        name="context_exp",
+        name="log_metrics_with_save_on_max",
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
@@ -185,7 +185,7 @@ async def test_log_metrics_with_save_on_min():
     alpha.init(project_id="test_project", artifact_insecure=True, init_tables=True)
 
     async with alpha.CraftExperiment.start(
-        name="context_exp",
+        name="log_metrics_with_save_on_min",
         description="Context manager test",
         meta={"key": "value"},
     ) as exp:
@@ -245,7 +245,9 @@ async def test_log_metrics_with_early_stopping():
         await asyncio.sleep(100)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(name="context_exp") as exp:
+    async with alpha.CraftExperiment.start(
+        name="log_metrics_with_early_stopping"
+    ) as exp:
         async with exp.start_trial(
             name="trial-with-early-stopping",
             config=TrialConfig(
@@ -280,7 +282,9 @@ async def test_log_metrics_with_early_stopping_never_triggered():
         await asyncio.sleep(value)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(name="context_exp") as exp:
+    async with alpha.CraftExperiment.start(
+        name="log_metrics_with_early_stopping_never_triggered"
+    ) as exp:
         async with exp.start_trial(
             name="trial-with-early-stopping",
             config=TrialConfig(

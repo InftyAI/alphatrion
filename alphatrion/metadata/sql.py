@@ -85,6 +85,20 @@ class SQLStore(MetaStore):
         session.close()
         return exp
 
+    def get_exp_by_name(self, name: str, project_id: str) -> Experiment | None:
+        session = self._session()
+        exp = (
+            session.query(Experiment)
+            .filter(
+                Experiment.name == name,
+                Experiment.project_id == project_id,
+                Experiment.is_del == 0,
+            )
+            .first()
+        )
+        session.close()
+        return exp
+
     # paginate the experiments in case of too many experiments.
     def list_exps(self, project_id: str, page: int, page_size: int) -> list[Experiment]:
         session = self._session()
