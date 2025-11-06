@@ -7,7 +7,7 @@ import pytest
 
 from alphatrion.experiment.craft_exp import CraftExperiment
 from alphatrion.metadata.sql_models import TrialStatus
-from alphatrion.runtime.runtime import init
+from alphatrion.runtime.runtime import global_runtime, init
 from alphatrion.trial.trial import Trial, TrialConfig, current_trial_id
 
 
@@ -117,7 +117,7 @@ async def test_craft_experiment_with_context():
             name="first-trial", config=TrialConfig(max_duration_seconds=2)
         )
         await trial.wait()
-        assert trial.stopped()
+        assert trial.cancelled()
 
         trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
@@ -127,7 +127,9 @@ async def test_craft_experiment_with_context():
 async def test_craft_experiment_with_multi_trials_in_parallel():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async def fake_work(exp: CraftExperiment):
+    async def fake_work():
+        exp = global_runtime().current_exp
+
         duration = random.randint(1, 5)
         trial = exp.start_trial(
             name="first-trial", config=TrialConfig(max_duration_seconds=duration)
@@ -136,7 +138,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         assert trial.id == current_trial_id.get()
 
         await trial.wait()
-        assert trial.stopped()
+        assert trial.cancelled()
         # we don't reset the current trial id.
         assert trial.id == current_trial_id.get()
 
@@ -147,10 +149,10 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
-    ) as exp:
+    ):
         await asyncio.gather(
-            fake_work(exp),
-            fake_work(exp),
-            fake_work(exp),
+            fake_work(),
+            fake_work(),
+            fake_work(),
         )
         print("All trials finished.")
