@@ -1,5 +1,6 @@
 # ruff: noqa: PLW0603
 import os
+import uuid
 
 from alphatrion import consts
 from alphatrion.artifact.artifact import Artifact
@@ -9,7 +10,7 @@ __RUNTIME__ = None
 
 
 def init(
-    project_id: str = "alphatrion",
+    project_id: uuid.UUID,
     artifact_insecure: bool = False,
     init_tables: bool = False,
 ):

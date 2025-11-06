@@ -240,6 +240,7 @@ class Trial:
         params: dict | None = None,
     ):
         self._id = self._runtime._metadb.create_trial(
+            project_id=self._runtime._project_id,
             exp_id=self._exp_id,
             name=name,
             description=description,

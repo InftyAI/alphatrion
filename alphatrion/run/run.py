@@ -13,4 +13,6 @@ class Run:
         return self._id
 
     def _start(self):
-        self._id = self._runtime._metadb.create_run(trial_id=self._trial_id)
+        self._id = self._runtime._metadb.create_run(
+            project_id=self._runtime._project_id, trial_id=self._trial_id
+        )

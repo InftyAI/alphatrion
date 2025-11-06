@@ -68,6 +68,7 @@ async def log_metrics(metrics: dict[str, float]):
         runtime._metadb.create_metric(
             key=key,
             value=value,
+            project_id=runtime._project_id,
             trial_id=trial_id,
             step=step,
         )

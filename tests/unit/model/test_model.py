@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 
 from alphatrion.model.model import Model
@@ -12,8 +14,9 @@ def model():
 
 
 def test_model(model):
+    project_id = uuid.uuid4()
     id = model.create(
-        "test_model", "test_project", "A test model", {"tags": {"foo": "bar"}}
+        "test_model", project_id, "A test model", {"tags": {"foo": "bar"}}
     )
     model1 = model.get(id)
     assert model1 is not None
