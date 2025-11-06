@@ -211,6 +211,16 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
+    def get_trial_by_name(self, trial_name: str, exp_id: uuid.UUID) -> Trial | None:
+        session = self._session()
+        trial = (
+            session.query(Trial)
+            .filter(Trial.name == trial_name, Trial.experiment_id == exp_id)
+            .first()
+        )
+        session.close()
+        return trial
+
     def update_trial(self, trial_id: uuid.UUID, **kwargs):
         session = self._session()
         trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
