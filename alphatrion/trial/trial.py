@@ -242,6 +242,7 @@ class Trial:
     def cancelled(self) -> bool:
         return self._context.cancelled()
 
+    # If the name is same in the same experiment, it will refer to the existing trial.
     def _start(
         self,
         name: str,
@@ -249,15 +250,22 @@ class Trial:
         meta: dict | None = None,
         params: dict | None = None,
     ):
-        self._id = self._runtime._metadb.create_trial(
-            project_id=self._runtime._project_id,
-            exp_id=self._exp_id,
-            name=name,
-            description=description,
-            meta=meta,
-            params=params,
-            status=TrialStatus.RUNNING,
+        trial_obj = self._runtime._metadb.get_trial_by_name(
+            trial_name=name, exp_id=self._exp_id
         )
+        # FIXME: what if the existing trial is finished, will lead to confusion?
+        if trial_obj:
+            self._id = trial_obj.uuid
+        else:
+            self._id = self._runtime._metadb.create_trial(
+                project_id=self._runtime._project_id,
+                exp_id=self._exp_id,
+                name=name,
+                description=description,
+                meta=meta,
+                params=params,
+                status=TrialStatus.RUNNING,
+            )
 
         # We don't reset the trial id context var here, because
         # each trial runs in its own context.
@@ -265,6 +273,8 @@ class Trial:
         self._context.start()
 
     # cancel function should be called manually as a pair of start
+    # FIXME: watch for system signals to cancel the trial gracefully,
+    # or it could lead to trial not being marked as finished.
     def cancel(self):
         self._context.cancel()
 

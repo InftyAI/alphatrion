@@ -211,6 +211,22 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
+    # TODO: should we use join to get the trial by experiment name?
+    def get_trial_by_name(self, trial_name: str, exp_id: uuid.UUID) -> Trial | None:
+        # make sure the experiment exists
+        exp = self.get_exp(exp_id)
+        if exp is None:
+            return None
+
+        session = self._session()
+        trial = (
+            session.query(Trial)
+            .filter(Trial.name == trial_name, Trial.experiment_id == exp_id)
+            .first()
+        )
+        session.close()
+        return trial
+
     def update_trial(self, trial_id: uuid.UUID, **kwargs):
         session = self._session()
         trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
