@@ -28,6 +28,14 @@ Open, modular framework to build GenAI applications.
 pip install alphatrion
 ```
 
+### Initialize the Environment
+
+```bash
+make up
+```
+
+You can login to pgAdmin at `http://localhost:8080` to see the Postgres database. The host name for registering a new server is `postgres`, and the username and password are `alphatrion` and `alphatr1on`, respectively.
+
 ### Run a Sample Experiment
 
 Below is a simple example demonstrating how to create an experiment and log parameters, metrics, and artifacts.
@@ -41,11 +49,15 @@ async with alpha.CraftExperiment.start(name="my_first_experiment") as exp:
   async with exp.start_trial(name="my_first_trial") as trial:
 
     trial.start_run(lambda: alpha.log_parameters({"learning_rate": 0.01}))
-    trial.start_run(lambda: alpha.log_metrics({"accuracy": 0.9}))
-    trial.start_run(lambda: alpha.log_artifact(paths="file.txt", version="v1"))
-
     await trial.wait()
 ```
+
+### Cleanup
+
+```bash
+make down
+```
+
 
 ## Contributing
 
