@@ -46,7 +46,6 @@ def workflow(
         @wraps(func)
         async def async_wrapper(*args, **kwargs):
             actual_run_id = run_id or current_run_id.get()
-            # 调用 _workflow 并传递 run_id 作为 name
             wrapped_func = _workflow(
                 name=str(actual_run_id),
                 version=version,
