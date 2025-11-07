@@ -311,7 +311,6 @@ async def test_log_metrics_with_max_run_number():
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
-        print("fake finished.")
 
     async with alpha.CraftExperiment.start(
         name="log_metrics_with_max_run_number"
@@ -328,4 +327,4 @@ async def test_log_metrics_with_max_run_number():
                 # running in serial.
                 await run.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 50

@@ -14,8 +14,13 @@ Open, modular framework to build GenAI applications.
 
 **AlphaTrion** is an open-source and all-in-one platform to build LLM-powered applications and frameworks. Named after the oldest and wisest Transformer mentor, it embodies guidance and innovation to help developers build **production-ready** GenAI applications and frameworks with ease. *Still under active development.*
 
+## Concepts
 
-## How to Install
+- **Experiment**: An Experiment is a high-level abstraction for organizing and managing a series of related trials. It serves as a way to group together multiple trials that share a common goal or objective.
+- **Trial**: A Trial represents a single attempt or multiple iterations within an experiment. It encapsulates the configuration, execution, and results of a specific set of runs.
+- **Run**: A Run is an execution of a specific configuration within a trial. It represents a real iteration of the trial.
+
+## Quick Start
 
 ### Install from PyPI
 
@@ -23,22 +28,27 @@ Open, modular framework to build GenAI applications.
 pip install alphatrion
 ```
 
-### Install from Source
+### Run a Sample Experiment
 
-Refer to [developer.md](./site/docs/development.md) for more information on how to set up your development environment.
+Below is a simple example demonstrating how to create an experiment and log parameters, metrics, and artifacts.
 
-## Quick Start
+```python
+import alphatrion as alpha
 
-Still under active development now.
+alpha.init(project_id=<your_project_id>, artifact_insecure=True, init_tables=True)
 
-Refer to [troubleshooting.md](./site/docs/troubleshooting.md) for common issues and solutions which may help.
+async with alpha.CraftExperiment.start(name="my_first_experiment") as exp:
+  async with exp.start_trial(name="my_first_trial") as trial:
 
-## How to Contribute
+    trial.start_run(lambda: alpha.log_parameters({"learning_rate": 0.01}))
+    trial.start_run(lambda: alpha.log_metrics({"accuracy": 0.9}))
+    trial.start_run(lambda: alpha.log_artifact(paths="file.txt", version="v1"))
 
-We welcome all kinds of contributions! Please see our [contribution guidelines](CONTRIBUTING.md) for more details.
+    await trial.wait()
+```
 
-Refer to [developer.md](./site/docs/development.md) for more information on how to set up your development environment.
+## Contributing
 
-Refer to [our roadmap](./site/docs/roadmap.md) to see what features are coming next.
+We welcome contributions! Please refer to [developer.md](./site/docs/development.md) for more information on how to set up your development environment and contribute to the project.
 
 [![Star History Chart](https://api.star-history.com/svg?repos=inftyai/alphatrion&type=Date)](https://www.star-history.com/#inftyai/alphatrion&Date)
