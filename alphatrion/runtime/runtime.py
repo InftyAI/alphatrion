@@ -17,7 +17,8 @@ def init(
     """
     Initialize the AlphaTrion runtime environment.
 
-    :param project_id: the project ID to initialize the environment for
+    :param project_id: the project ID to initialize the environment for,
+                       for testing purpose, you can use a random UUID.
     :param artifact_insecure: whether to use insecure connection to the
         artifact registry
     """

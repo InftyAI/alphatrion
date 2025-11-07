@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
-from alphatrion.run.run import Run
+from alphatrion.run.run import Run, current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
 
@@ -301,15 +301,25 @@ class Trial:
         self._step += 1
         return self._step
 
-    # start_run should accept a lambda function to create the run task.
     def start_run(self, call_func: callable) -> Run:
+        """Start a new run for the trial.
+        :param call_func: a callable function that returns a coroutine.
+                          It must be a async and lambda function.
+        :return: the Run instance."""
+
         run = Run(trial_id=self._id)
         run._start()
         self._runs[run.id] = run
 
-        # The created task will also inherit the current context,
-        # including the current_trial_id context var.
-        task = asyncio.create_task(call_func())
+        # current_run_id context var is used in tracing workflow/task decorators.
+        token = current_run_id.set(run.id)
+        try:
+            # The created task will also inherit the current context,
+            # including the current_trial_id, current_run_id context var.
+            task = asyncio.create_task(call_func())
+        finally:
+            current_run_id.reset(token)
+
         self._running_tasks[run.id] = task
         run.register_task(task)
 
