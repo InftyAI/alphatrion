@@ -1,8 +1,10 @@
 # ruff: noqa: E501
 
+import uuid
+
 from openai import OpenAI
 
-from alphatrion.tracing.tracing import task, workflow
+import alphatrion as alpha
 
 client = OpenAI(
     base_url="http://localhost:11434/v1",
@@ -10,7 +12,7 @@ client = OpenAI(
 )
 
 
-@task(name="joke_creation")
+@alpha.task()
 def create_joke():
     completion = client.chat.completions.create(
         model="smollm:135m",
@@ -19,7 +21,7 @@ def create_joke():
     return completion.choices[0].message.content
 
 
-@task(name="joke_translation")
+@alpha.task()
 def translate_joke_to_pirate(joke: str):
     completion = client.chat.completions.create(
         model="smollm:135m",
@@ -33,7 +35,7 @@ def translate_joke_to_pirate(joke: str):
     return completion.choices[0].message.content
 
 
-@task(name="signature_generation")
+@alpha.task()
 def generate_signature(joke: str):
     completion = client.chat.completions.create(
         model="smollm:135m",
@@ -44,7 +46,7 @@ def generate_signature(joke: str):
     return completion.choices[0].message.content
 
 
-@workflow(name="pirate_joke_generator")
+@alpha.workflow(run_id=uuid.uuid4())
 def joke_workflow():
     eng_joke = create_joke()
     pirate_joke = translate_joke_to_pirate(eng_joke)

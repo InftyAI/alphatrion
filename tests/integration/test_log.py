@@ -311,7 +311,6 @@ async def test_log_metrics_with_max_run_number():
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
-        print("fake finished.")
 
     async with alpha.CraftExperiment.start(
         name="log_metrics_with_max_run_number"
