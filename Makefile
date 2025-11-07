@@ -8,9 +8,14 @@ build:
 publish: build
 	$(POETRY) publish
 
-.PHONY: launch
-launch:
+.PHONY: up
+up:
 	docker-compose -f ./docker-compose.yaml up -d
+	alembic upgrade head
+
+.PHONY: down
+down:
+	docker-compose -f ./docker-compose.yaml down
 
 .PHONY: lint
 lint:

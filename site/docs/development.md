@@ -7,8 +7,6 @@
 
 ## How to Set Up
 
-We welcome contributions! Please follow these steps:
-
 1. Fork the repository.
 2. Run `source start.sh` to activate the virtual environment.
 3. Install dependencies with `poetry install`.

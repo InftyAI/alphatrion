@@ -26,6 +26,16 @@ class SQLStore(MetaStore):
             # In production, use migrations instead.
             Base.metadata.create_all(self._engine)
 
+    def get_project(self, project_id: str) -> Project | None:
+        session = self._session()
+        project = (
+            session.query(Project)
+            .filter(Project.uuid == project_id, Project.is_del == 0)
+            .first()
+        )
+        session.close()
+        return project
+
     def create_exp(
         self,
         name: str,
@@ -273,13 +283,3 @@ class SQLStore(MetaStore):
         metrics = session.query(Metrics).filter(Metrics.trial_id == trial_id).all()
         session.close()
         return metrics
-
-    def get_project(self, project_id: str) -> Project | None:
-        session = self._session()
-        project = (
-            session.query(Project)
-            .filter(Project.uuid == project_id, Project.is_del == 0)
-            .first()
-        )
-        session.close()
-        return project
