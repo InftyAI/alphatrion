@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import uuid
+
 from openai import OpenAI
 
 import alphatrion as alpha

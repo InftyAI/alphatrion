@@ -1,4 +1,5 @@
 import uuid
+
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk import Traceloop
