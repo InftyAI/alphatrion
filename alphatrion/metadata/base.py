@@ -77,7 +77,6 @@ class MetaStore(ABC):
     ) -> int:
         raise NotImplementedError("Subclasses must implement this method.")
 
-
     @abstractmethod
     def get_trial(self, trial_id: int):
         raise NotImplementedError("Subclasses must implement this method.")
