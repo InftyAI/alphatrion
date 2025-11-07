@@ -23,7 +23,7 @@ class SQLStore(MetaStore):
         self._session = sessionmaker(bind=self._engine)
         if init_tables:
             # create tables if not exist, will not affect existing tables.
-            # In production, use migrations instead.
+            # Mostly used in tests.
             Base.metadata.create_all(self._engine)
 
     def get_project(self, project_id: str) -> Project | None:
