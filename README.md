@@ -38,19 +38,28 @@ You can login to pgAdmin at `http://localhost:8080` to see the Postgres database
 
 ### Run a Sample Experiment
 
-Below is a simple example demonstrating how to create an experiment and log parameters, metrics, and artifacts.
+Below is a simple example demonstrating how to create an experiment and log performance metrics.
 
 ```python
 import alphatrion as alpha
+import uuid
 
-alpha.init(project_id=<your_project_id>, artifact_insecure=True, init_tables=True)
+# Better to use a fixed UUID to identify your project.
+alpha.init(project_id=uuid.uuid4(), artifact_insecure=True)
+
+async def report():
+  # Run your code here then log metrics.
+  await alpha.log_metrics({"accuracy": 0.95})
 
 async with alpha.CraftExperiment.start(name="my_first_experiment") as exp:
   async with exp.start_trial(name="my_first_trial") as trial:
-
-    trial.start_run(lambda: alpha.log_parameters({"learning_rate": 0.01}))
+    trial.start_run(lambda: report())
     await trial.wait()
 ```
+
+### View Results
+
+Dashboard is coming soon! Meanwhile, you can query the results directly from the database.
 
 ### Cleanup
 

@@ -27,7 +27,21 @@ To run integration tests, use:
 make test-integration
 ```
 
-## How to Build and Publish
+## How to migrate the Database
+
+To create a new migration, use:
+
+```bash
+alembic revision --autogenerate -m "your message here"
+```
+
+To apply migrations, use:
+
+```bash
+alembic upgrade head
+```
+
+## How to Publish to PyPI
 
 > Note: You need to have the PyPI token set in your environment variables to publish the package.
 
