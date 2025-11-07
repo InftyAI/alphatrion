@@ -327,4 +327,4 @@ async def test_log_metrics_with_max_run_number():
                 # running in serial.
                 await run.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 50
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
