@@ -324,7 +324,6 @@ async def test_log_metrics_with_max_run_number():
         ) as trial:
             while not trial.cancelled():
                 run = trial.start_run(lambda: fake_work(1))
-                # running in serial.
                 await run.wait()
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
