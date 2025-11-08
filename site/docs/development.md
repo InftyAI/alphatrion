@@ -34,6 +34,12 @@ To seed the database with sample data, run:
 make seed
 ```
 
+To cleanup, run:
+
+```bash
+make seed-cleanup
+```
+
 ## How to Test
 
 To run tests, use:

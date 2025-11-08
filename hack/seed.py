@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import random
 import uuid
 from datetime import datetime
@@ -115,30 +116,52 @@ def seed_all(
     session.add_all(projects)
     session.commit()
 
-    experiments = [generate_experiment(projects) for _ in range(num_exps_per_project)]
+    experiments = [generate_experiment(projects) for _ in range(num_exps_per_project) for _ in range(len(projects))]
     session.add_all(experiments)
     session.commit()
 
-    trials = [generate_trial([exp]) for exp in experiments]
+    trials = [generate_trial(experiments) for _  in range(num_trials_per_exp) for _ in range(len(experiments))]
     session.add_all(trials)
     session.commit()
 
-    runs = [generate_run(trials) for _ in range(num_runs_per_trial)]
+    runs = [generate_run(trials) for _ in range(num_runs_per_trial) for _ in range(len(trials))]
     session.add_all(runs)
     session.commit()
 
-    metrics = [generate_metric(runs) for _ in range(num_metrics_per_run)]
+    metrics = [generate_metric(runs) for _ in range(num_metrics_per_run) for _ in range(len(runs))]
     session.add_all(metrics)
     session.commit()
 
     print("🌳 seeding completed.")
 
 
+def cleanup():
+    print("🧹 cleaning up seeded data ...")
+    session.query(Metric).delete()
+    session.query(Run).delete()
+    session.query(Trial).delete()
+    session.query(Experiment).delete()
+    session.query(Project).delete()
+    session.commit()
+    print("🧼 cleanup completed.")
+
 if __name__ == "__main__":
-    seed_all(
-        num_projects=3,
-        num_exps_per_project=20,
-        num_trials_per_exp=50,
-        num_runs_per_trial=100,
-        num_metrics_per_run=100,
-    )
+    if len(sys.argv) < 2:
+        print("Usage: python script.py [cleanup|seed]")
+        sys.exit(1)
+
+    action = sys.argv[1]
+
+    if action == "cleanup":
+        cleanup()
+    elif action == "seed":
+        seed_all(
+            num_projects=3,
+            num_exps_per_project=10,
+            num_trials_per_exp=10,
+            num_runs_per_trial=20,
+            num_metrics_per_run=30,
+        )
+    else:
+        print(f"Unknown action: {action}")
+        sys.exit(1)

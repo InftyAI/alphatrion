@@ -45,4 +45,8 @@ test-all: test test-integration
 
 .PHONY: seed
 seed:
-	python hack/seed.py
+	python hack/seed.py seed
+
+.PHONY: seed-cleanup
+seed-cleanup:
+	python hack/seed.py cleanup
