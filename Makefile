@@ -42,3 +42,7 @@ test-integration: lint
 	'
 .PHONY: test-all
 test-all: test test-integration
+
+.PHONY: seed
+seed:
+	python hack/seed.py

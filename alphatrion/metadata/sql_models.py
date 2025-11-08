@@ -59,7 +59,6 @@ class Trial(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
-    duration = Column(Integer, default=0, comment="Duration in seconds")
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     status = Column(
         Enum(TrialStatus),
@@ -104,7 +103,7 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-class Metrics(Base):
+class Metric(Base):
     __tablename__ = "metrics"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
