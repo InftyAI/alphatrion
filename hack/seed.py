@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import random
+import sys
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -116,19 +116,35 @@ def seed_all(
     session.add_all(projects)
     session.commit()
 
-    experiments = [generate_experiment(projects) for _ in range(num_exps_per_project) for _ in range(len(projects))]
+    experiments = [
+        generate_experiment(projects)
+        for _ in range(num_exps_per_project)
+        for _ in range(len(projects))
+    ]
     session.add_all(experiments)
     session.commit()
 
-    trials = [generate_trial(experiments) for _  in range(num_trials_per_exp) for _ in range(len(experiments))]
+    trials = [
+        generate_trial(experiments)
+        for _ in range(num_trials_per_exp)
+        for _ in range(len(experiments))
+    ]
     session.add_all(trials)
     session.commit()
 
-    runs = [generate_run(trials) for _ in range(num_runs_per_trial) for _ in range(len(trials))]
+    runs = [
+        generate_run(trials)
+        for _ in range(num_runs_per_trial)
+        for _ in range(len(trials))
+    ]
     session.add_all(runs)
     session.commit()
 
-    metrics = [generate_metric(runs) for _ in range(num_metrics_per_run) for _ in range(len(runs))]
+    metrics = [
+        generate_metric(runs)
+        for _ in range(num_metrics_per_run)
+        for _ in range(len(runs))
+    ]
     session.add_all(metrics)
     session.commit()
 
@@ -145,8 +161,9 @@ def cleanup():
     session.commit()
     print("🧼 cleanup completed.")
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 2:  # noqa: PLR2004
         print("Usage: python script.py [cleanup|seed]")
         sys.exit(1)
 
