@@ -7,7 +7,7 @@ from alphatrion.metadata.base import MetaStore
 from alphatrion.metadata.sql_models import (
     Base,
     Experiment,
-    Metrics,
+    Metric,
     Model,
     Project,
     Run,
@@ -267,7 +267,7 @@ class SQLStore(MetaStore):
         step: int,
     ):
         session = self._session()
-        new_metric = Metrics(
+        new_metric = Metric(
             project_id=project_id,
             trial_id=trial_id,
             key=key,
@@ -278,8 +278,8 @@ class SQLStore(MetaStore):
         session.commit()
         session.close()
 
-    def list_metrics(self, trial_id: uuid.UUID) -> list[Metrics]:
+    def list_metrics(self, trial_id: uuid.UUID) -> list[Metric]:
         session = self._session()
-        metrics = session.query(Metrics).filter(Metrics.trial_id == trial_id).all()
+        metrics = session.query(Metric).filter(Metric.trial_id == trial_id).all()
         session.close()
         return metrics

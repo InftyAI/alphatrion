@@ -16,6 +16,7 @@ Open, modular framework to build GenAI applications.
 
 ## Concepts
 
+- **Project**: A Project is a namespace-level abstraction that isolates experiments from different users or teams.
 - **Experiment**: An Experiment is a high-level abstraction for organizing and managing a series of related trials. It serves as a way to group together multiple trials that share a common goal or objective.
 - **Trial**: A Trial represents a single attempt or multiple iterations within an experiment. It encapsulates the configuration, execution, and results of a specific set of runs.
 - **Run**: A Run is an execution of a specific configuration within a trial. It represents a real iteration of the trial.
@@ -66,7 +67,6 @@ Dashboard is coming soon! Meanwhile, you can query the results directly from the
 ```bash
 make down
 ```
-
 
 ## Contributing
 
