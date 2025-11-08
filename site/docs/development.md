@@ -12,6 +12,27 @@
 3. Install dependencies with `poetry install`.
 4. Make your changes.
 
+## How to Migrate the Database
+
+To create a new migration, use:
+
+```bash
+alembic revision --autogenerate -m "your message here"
+```
+
+To apply migrations, use:
+
+```bash
+alembic upgrade head
+```
+
+## How to Seed the Database
+
+To seed the database with sample data, run:
+
+```bash
+make seed
+```
 
 ## How to Test
 
@@ -25,20 +46,6 @@ To run integration tests, use:
 
 ```bash
 make test-integration
-```
-
-## How to migrate the Database
-
-To create a new migration, use:
-
-```bash
-alembic revision --autogenerate -m "your message here"
-```
-
-To apply migrations, use:
-
-```bash
-alembic upgrade head
 ```
 
 ## How to Publish to PyPI
