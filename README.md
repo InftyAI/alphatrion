@@ -31,8 +31,10 @@ pip install alphatrion
 
 ### Initialize the Environment
 
+Run the following command for setup:
+
 ```bash
-make up
+cp .env.example .env & make up
 ```
 
 You can login to pgAdmin at `http://localhost:8080` to see the Postgres database. The host name for registering a new server is `postgres`, and the username and password are `alphatrion` and `alphatr1on`, respectively.

@@ -88,8 +88,9 @@ def test_create_metric(db):
     project_id = uuid.uuid4()
     exp_id = db.create_exp("test_exp", project_id, "test description")
     trial_id = db.create_trial(exp_id=exp_id, project_id=project_id, name="test-trial")
-    db.create_metric(project_id, trial_id, "accuracy", 0.95, 1)
-    db.create_metric(project_id, trial_id, "accuracy", 0.85, 2)
+    run_id = db.create_run(trial_id=trial_id, project_id=project_id)
+    db.create_metric(project_id, trial_id, run_id, "accuracy", 0.95, 1)
+    db.create_metric(project_id, trial_id, run_id, "accuracy", 0.85, 2)
 
     metrics = db.list_metrics(trial_id)
     assert len(metrics) == 2

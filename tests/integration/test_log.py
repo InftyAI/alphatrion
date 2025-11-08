@@ -95,6 +95,9 @@ async def test_log_params():
 async def test_log_metrics():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
+    async def log_metric(metrics: dict):
+        await alpha.log_metrics(metrics)
+
     async with alpha.CraftExperiment.start(name="log_metrics_exp") as exp:
         trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
@@ -105,7 +108,8 @@ async def test_log_metrics():
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 0
 
-        await alpha.log_metrics({"accuracy": 0.95, "loss": 0.1})
+        run = trial.start_run(lambda: log_metric({"accuracy": 0.95, "loss": 0.1}))
+        await run.wait()
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 2
@@ -115,14 +119,21 @@ async def test_log_metrics():
         assert metrics[1].key == "loss"
         assert metrics[1].value == 0.1
         assert metrics[1].step == 1
+        run_id_1 = metrics[0].run_id
+        assert run_id_1 is not None
+        assert metrics[0].run_id == metrics[1].run_id
 
-        await alpha.log_metrics({"accuracy": 0.96})
+        run = trial.start_run(lambda: log_metric({"accuracy": 0.96}))
+        await run.wait()
 
         metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
         assert len(metrics) == 3
         assert metrics[2].key == "accuracy"
         assert metrics[2].value == 0.96
         assert metrics[2].step == 2
+        run_id_2 = metrics[2].run_id
+        assert run_id_2 is not None
+        assert run_id_2 != run_id_1
 
         trial.cancel()
 
@@ -130,6 +141,9 @@ async def test_log_metrics():
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_max():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def log_metric(value: float):
+        await alpha.log_metrics({"accuracy": value})
 
     async with alpha.CraftExperiment.start(
         name="log_metrics_with_save_on_max",
@@ -139,7 +153,7 @@ async def test_log_metrics_with_save_on_max():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            _ = exp.start_trial(
+            trial = exp.start_trial(
                 name="trial-with-save_on_best",
                 config=alpha.TrialConfig(
                     checkpoint=alpha.CheckpointConfig(
@@ -156,7 +170,8 @@ async def test_log_metrics_with_save_on_max():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            await alpha.log_metrics({"accuracy": 0.90})
+            run = trial.start_run(lambda: log_metric(0.90))
+            await run.wait()
 
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
@@ -164,26 +179,37 @@ async def test_log_metrics_with_save_on_max():
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy": 0.78})
+            run = trial.start_run(lambda: log_metric(0.78))
+            await run.wait()
+
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
 
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy": 0.91})
+            run = trial.start_run(lambda: log_metric(0.91))
+            await run.wait()
+
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
 
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy2": 0.98})
+            run = trial.start_run(lambda: log_metric(0.98))
+            await run.wait()
+
             versions = exp._runtime._artifact.list_versions(exp.id)
-            assert len(versions) == 2
+            assert len(versions) == 3
+
+            trial.cancel()
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_min():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def log_metric(value: float):
+        await alpha.log_metrics({"accuracy": value})
 
     async with alpha.CraftExperiment.start(
         name="log_metrics_with_save_on_min",
@@ -193,7 +219,7 @@ async def test_log_metrics_with_save_on_min():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            _ = exp.start_trial(
+            trial = exp.start_trial(
                 name="trial-with-save_on_best",
                 config=alpha.TrialConfig(
                     checkpoint=alpha.CheckpointConfig(
@@ -210,7 +236,8 @@ async def test_log_metrics_with_save_on_min():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            await alpha.log_metrics({"accuracy": 0.30})
+            run = trial.start_run(lambda: log_metric(0.30))
+            await run.wait()
 
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
@@ -218,21 +245,28 @@ async def test_log_metrics_with_save_on_min():
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy": 0.58})
+            run = trial.start_run(lambda: log_metric(0.58))
+            await run.wait()
+
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
 
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy": 0.21})
+            run = trial.start_run(lambda: log_metric(0.21))
+            await run.wait()
+
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
 
             time.sleep(1)
 
-            await alpha.log_metrics({"accuracy2": 0.18})
+            task = trial.start_run(lambda: log_metric(0.18))
+            await task.wait()
             versions = exp._runtime._artifact.list_versions(exp.id)
-            assert len(versions) == 2
+            assert len(versions) == 3
+
+            trial.cancel()
 
 
 @pytest.mark.asyncio

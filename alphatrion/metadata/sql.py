@@ -262,6 +262,7 @@ class SQLStore(MetaStore):
         self,
         project_id: uuid.UUID,
         trial_id: uuid.UUID,
+        run_id: uuid.UUID,
         key: str,
         value: float,
         step: int,
@@ -270,6 +271,7 @@ class SQLStore(MetaStore):
         new_metric = Metric(
             project_id=project_id,
             trial_id=trial_id,
+            run_id=run_id,
             key=key,
             value=value,
             step=step,
