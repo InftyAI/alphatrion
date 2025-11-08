@@ -1,3 +1,4 @@
+from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.trial.trial import current_trial_id
 from alphatrion.utils import time as utime
@@ -51,7 +52,13 @@ async def log_params(params: dict):
 # metric key must be string, value must be float.
 # If save_on_best is enabled in the trial config, and the metric is the best metric
 # so far, the trial will checkpoint the current data.
+#
+# Note: log_metrics can only be called inside a Run, because it needs a run_id.
 async def log_metrics(metrics: dict[str, float]):
+    run_id = current_run_id.get()
+    if run_id is None:
+        raise RuntimeError("log_metrics must be called inside a Run.")
+
     runtime = global_runtime()
     exp = runtime.current_exp
 
@@ -70,6 +77,7 @@ async def log_metrics(metrics: dict[str, float]):
             value=value,
             project_id=runtime._project_id,
             trial_id=trial_id,
+            run_id=run_id,
             step=step,
         )
 
