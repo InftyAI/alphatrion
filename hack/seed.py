@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from curses import meta
 import os
-import uuid
 import random
+import uuid
+from datetime import datetime
 from decimal import Decimal
 
+from dotenv import load_dotenv
 from faker import Faker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
-from datetime import datetime
 
-from alphatrion.metadata.sql_models import Metric, Project, Experiment, Run, Trial, TrialStatus, Base
 from alphatrion import consts
+from alphatrion.metadata.sql_models import (
+    Base,
+    Experiment,
+    Metric,
+    Project,
+    Run,
+    Trial,
+    TrialStatus,
+)
 
 load_dotenv()
 
@@ -25,6 +31,7 @@ SessionLocal = sessionmaker(bind=engine)
 session = SessionLocal()
 
 fake = Faker()
+
 
 def make_json_serializable(obj):
     if isinstance(obj, dict):
@@ -38,6 +45,7 @@ def make_json_serializable(obj):
     else:
         return obj
 
+
 def generate_project() -> Project:
     return Project(
         uuid=uuid.uuid4(),
@@ -45,13 +53,17 @@ def generate_project() -> Project:
         description=fake.catch_phrase(),
     )
 
+
 def generate_experiment(projects: list[Project]) -> Experiment:
     return Experiment(
         name=fake.bs().title(),
         description=fake.catch_phrase(),
-        meta=make_json_serializable(fake.pydict(nb_elements=3, variable_nb_elements=True)),
+        meta=make_json_serializable(
+            fake.pydict(nb_elements=3, variable_nb_elements=True)
+        ),
         project_id=random.choice(projects).uuid,
     )
+
 
 def generate_trial(exps: list[Experiment]) -> Trial:
     exp = random.choice(exps)
@@ -60,10 +72,15 @@ def generate_trial(exps: list[Experiment]) -> Trial:
         experiment_id=exp.uuid,
         name=fake.bs().title(),
         description=fake.catch_phrase(),
-        meta=make_json_serializable(fake.pydict(nb_elements=3, variable_nb_elements=True)),
-        params=make_json_serializable(fake.pydict(nb_elements=3, variable_nb_elements=True)),
+        meta=make_json_serializable(
+            fake.pydict(nb_elements=3, variable_nb_elements=True)
+        ),
+        params=make_json_serializable(
+            fake.pydict(nb_elements=3, variable_nb_elements=True)
+        ),
         status=random.choice(list(TrialStatus)),
     )
+
 
 def generate_run(trials: list[Trial]) -> Run:
     trial = random.choice(trials)
@@ -71,6 +88,7 @@ def generate_run(trials: list[Trial]) -> Run:
         project_id=trial.project_id,
         trial_id=trial.uuid,
     )
+
 
 def generate_metric(runs: list[Run]) -> Metric:
     run = random.choice(runs)
@@ -82,7 +100,14 @@ def generate_metric(runs: list[Run]) -> Metric:
         step=random.randint(1, 1000),
     )
 
-def seed_all(num_projects: int, num_exps_per_project: int, num_trials_per_exp: int, num_runs_per_trial: int, num_metrics_per_run: int):
+
+def seed_all(
+    num_projects: int,
+    num_exps_per_project: int,
+    num_trials_per_exp: int,
+    num_runs_per_trial: int,
+    num_metrics_per_run: int,
+):
     Base.metadata.create_all(bind=engine)
 
     print("🌱 generating seeds ...")
@@ -110,4 +135,10 @@ def seed_all(num_projects: int, num_exps_per_project: int, num_trials_per_exp: i
 
 
 if __name__ == "__main__":
-    seed_all(num_projects=3, num_exps_per_project=20, num_trials_per_exp=50, num_runs_per_trial=100, num_metrics_per_run=100)
+    seed_all(
+        num_projects=3,
+        num_exps_per_project=20,
+        num_trials_per_exp=50,
+        num_runs_per_trial=100,
+        num_metrics_per_run=100,
+    )
