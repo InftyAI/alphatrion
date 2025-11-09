@@ -58,8 +58,8 @@ async def report():
 
 async with alpha.CraftExperiment.start(name="my_first_experiment") as exp:
   async with exp.start_trial(name="my_first_trial") as trial:
-    trial.start_run(lambda: report())
-    await trial.wait()
+    run = trial.start_run(lambda: report())
+    await run.wait()
 ```
 
 ### View Results
