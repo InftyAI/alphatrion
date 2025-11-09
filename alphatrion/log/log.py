@@ -39,11 +39,14 @@ async def log_artifact(
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
 # should be called after starting a trial.
 async def log_params(params: dict):
+    trial_id = current_trial_id.get()
+    if trial_id is None:
+        raise RuntimeError("log_params must be called inside a Trial.")
     runtime = global_runtime()
     # TODO: should we upload to the artifact as well?
     # current_trial_id is protect by contextvar, so it's safe to use in async
     runtime._metadb.update_trial(
-        trial_id=current_trial_id.get(),
+        trial_id=trial_id,
         params=params,
     )
 
@@ -63,6 +66,9 @@ async def log_metrics(metrics: dict[str, float]):
     exp = runtime.current_exp
 
     trial_id = current_trial_id.get()
+    if trial_id is None:
+        raise RuntimeError("log_metrics must be called inside a Trial.")
+
     trial = exp.get_trial(id=trial_id)
     if trial is None:
         raise RuntimeError(f"Trial {trial_id} not found in the database.")
