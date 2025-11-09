@@ -12,7 +12,9 @@ Open, modular framework to build GenAI applications.
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
 [![Latest Release](https://img.shields.io/github/v/release/inftyai/alphatrion?include_prereleases)](https://github.com/inftyai/alphatrion/releases/latest)
 
-**AlphaTrion** is an open-source and all-in-one platform to build LLM-powered applications and frameworks. Named after the oldest and wisest Transformer mentor, it embodies guidance and innovation to help developers build **production-ready** GenAI applications and frameworks with ease. *Still under active development.*
+**AlphaTrion** is an open-source framework to help build GenAI applications, including experiment tracking, adaptive model routing, prompt optimization, performance evaluation and so on. The name comes after the oldest and wisest Transformer - AlphaTrion.
+
+*Still under active development.*
 
 ## Concepts
 
