@@ -1,4 +1,3 @@
-import asyncio
 import contextvars
 import os
 import uuid
@@ -7,7 +6,7 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
-from alphatrion.run.run import Run, current_run_id
+from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
 
@@ -308,20 +307,11 @@ class Trial:
         :return: the Run instance."""
 
         run = Run(trial_id=self._id)
-        run._start()
+        task = run._start(call_func)
+        if task is None:
+            raise RuntimeError("Failed to start the run task.")
         self._runs[run.id] = run
-
-        # current_run_id context var is used in tracing workflow/task decorators.
-        token = current_run_id.set(run.id)
-        try:
-            # The created task will also inherit the current context,
-            # including the current_trial_id, current_run_id context var.
-            task = asyncio.create_task(call_func())
-        finally:
-            current_run_id.reset(token)
-
         self._running_tasks[run.id] = task
-        run.register_task(task)
 
         task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
