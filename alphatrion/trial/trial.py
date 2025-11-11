@@ -58,15 +58,16 @@ class TrialConfig(BaseModel):
         after which experiment will be stopped. Default is -1 (no early stopping). \
         Count each time when calling log_metrics with the monitored metric.",
     )
-    max_run_number: int = Field(
+    max_runs_per_trial: int = Field(
         default=-1,
-        description="Maximum number of runs for the trial. \
+        description="Maximum number of runs for each trial. \
         Default is -1 (no limit). Count by the finished runs.",
     )
     monitor_metric: str | None = Field(
         default=None,
-        description="The metric to monitor for saving the best checkpoint. \
-            Required if save_on_best is True.",
+        description="The metric to monitor together with other configurations  \
+            like early_stopping_runs and save_on_best. \
+            Required if save_on_best is true or early_stopping_runs > 0.",
     )
     monitor_mode: str = Field(
         default="max",
@@ -116,7 +117,7 @@ class Trial:
         "_running_tasks",
         # Only work when early_stopping_runs > 0
         "_early_stopping_counter",
-        # Only work when max_run_number > 0
+        # Only work when max_runs_per_trial > 0
         "_total_runs_counter",
     )
 
@@ -315,12 +316,12 @@ class Trial:
 
         task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
-        if self._config.max_run_number > 0:
+        if self._config.max_runs_per_trial > 0:
             task.add_done_callback(
                 lambda t: (
                     setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
                     self.cancel()
-                    if self._total_runs_counter >= self._config.max_run_number
+                    if self._total_runs_counter >= self._config.max_runs_per_trial
                     else None,
                 )
             )
