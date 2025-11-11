@@ -353,7 +353,7 @@ async def test_log_metrics_with_max_run_number():
             name="trial-with-max-run-number",
             config=alpha.TrialConfig(
                 monitor_metric="accuracy",
-                max_run_number=5,
+                max_runs_per_trial=5,
             ),
         ) as trial:
             while not trial.cancelled():
