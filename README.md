@@ -31,6 +31,12 @@ Open, modular framework to build GenAI applications.
 pip install alphatrion
 ```
 
+### Install from Source
+
+* Git clone the repository
+* Run `source start.sh` to activate the virtual environment.
+* Run `poetry install` to install dependencies.
+
 ### Initialize the Environment
 
 Run the following command for setup:
