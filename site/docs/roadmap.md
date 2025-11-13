@@ -1,13 +1,13 @@
 # RoadMap
 
-## 2024 Q3 (September Only)
+## 2025 Q4
 
-- Finish core modules: Experiment, Model, Checkpoint, Metric
+- Finish core modules: Experiment, Model, Checkpoint, Metric, Log
+- Add GraphQL API support
 - Add dashboard for experiment tracking and visualization
 
-## 2024 Q4
+## 2026 Q1
 
-- Experiment logging
 - Cost tracking for Experiments
 - Playground for quick prototyping
 - Prompt management system with versioning
