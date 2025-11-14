@@ -325,7 +325,7 @@ async def test_log_metrics_with_early_stopping_never_triggered():
             config=alpha.TrialConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=3,
-                max_duration_seconds=3,
+                max_runtime_seconds=3,
             ),
         ) as trial:
             start_time = datetime.now()

@@ -1,12 +1,12 @@
 POETRY := poetry
 
 .PHONY: build
-build:
+build: lint
 	$(POETRY) build
 
 .PHONY: publish
 publish: build
-	$(POETRY) publish
+	$(POETRY) publish --username=__token__ --password=$(INFTYAI_PYPI_TOKEN)
 
 .PHONY: up
 up:
