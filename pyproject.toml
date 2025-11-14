@@ -1,6 +1,6 @@
 [project]
 name = "alphatrion"
-version = "0.0.1"
+version = "0.0.2"
 description = "AlphaTrion is an open-source and all-in-one platform to build AI-powered applications."
 license = {text = "Apache-2.0"}
 readme = "README.md"

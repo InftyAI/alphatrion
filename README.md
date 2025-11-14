@@ -45,17 +45,18 @@ Run the following command for setup:
 cp .env.example .env & make up
 ```
 
-You can login to pgAdmin at `http://localhost:8080` to see the Postgres database. The host name for registering a new server is `postgres`, and the username and password are `alphatrion` and `alphatr1on`, respectively.
+You can login to pgAdmin at `http://localhost:8080` to see the Postgres database with following credentials:
 
-**Note:**  
-To log in to the pgAdmin web interface itself (before adding a server),  
-use the default credentials defined in `docker-compose.yaml`:  
-**Email:** `alphatrion@inftyai.com`  
-**Password:** `alphatr1on`
+```shell
+Email:     alphatrion@inftyai.com
+Username:  alphatrion
+Password:  alphatr1on
+Server:    postgres
+```
 
 ### Run a Sample Experiment
 
-Below is a simple example demonstrating how to create an experiment and log performance metrics.
+Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
 
 ```python
 import alphatrion as alpha
@@ -68,8 +69,8 @@ async def report():
   # Run your code here then log metrics.
   await alpha.log_metrics({"accuracy": 0.95})
 
-async with alpha.CraftExperiment.start(name="my_first_experiment") as exp:
-  async with exp.start_trial(name="my_first_trial") as trial:
+async with alpha.CraftExperiment.setup(name="my_first_experiment") as exp:
+  async with exp.start_trial(name="my_trial") as trial:
     run = trial.start_run(lambda: report())
     await run.wait()
 ```

@@ -16,7 +16,7 @@ from alphatrion.trial.trial import current_trial_id
 async def test_log_artifact():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_artifact_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -68,7 +68,7 @@ async def test_log_artifact():
 async def test_log_params():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.start(name="log_params_exp") as exp:
+    async with alpha.CraftExperiment.setup(name="log_params_exp") as exp:
         trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
@@ -98,7 +98,7 @@ async def test_log_metrics():
     async def log_metric(metrics: dict):
         await alpha.log_metrics(metrics)
 
-    async with alpha.CraftExperiment.start(name="log_metrics_exp") as exp:
+    async with alpha.CraftExperiment.setup(name="log_metrics_exp") as exp:
         trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
 
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
@@ -145,7 +145,7 @@ async def test_log_metrics_with_save_on_max():
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_metrics_with_save_on_max",
         description="Context manager test",
         meta={"key": "value"},
@@ -211,7 +211,7 @@ async def test_log_metrics_with_save_on_min():
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_metrics_with_save_on_min",
         description="Context manager test",
         meta={"key": "value"},
@@ -280,7 +280,7 @@ async def test_log_metrics_with_early_stopping():
         await asyncio.sleep(100)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_metrics_with_early_stopping"
     ) as exp:
         async with exp.start_trial(
@@ -317,7 +317,7 @@ async def test_log_metrics_with_early_stopping_never_triggered():
         await asyncio.sleep(value)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_metrics_with_both_early_stopping_and_timeout"
     ) as exp:
         async with exp.start_trial(
@@ -346,7 +346,7 @@ async def test_log_metrics_with_max_run_number():
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.start(
+    async with alpha.CraftExperiment.setup(
         name="log_metrics_with_max_run_number"
     ) as exp:
         async with exp.start_trial(
