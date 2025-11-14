@@ -1,4 +1,4 @@
-from alphatrion.experiment.base import Experiment
+from alphatrion.experiment.base import Experiment, ExperimentConfig
 from alphatrion.trial.trial import Trial, TrialConfig
 
 
@@ -10,8 +10,8 @@ class CraftExperiment(Experiment):
     Opposite to other experiment classes, you need to call all these methods yourself.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, config: ExperimentConfig | None = None):
+        super().__init__(config=config)
 
     @classmethod
     def setup(
@@ -19,13 +19,14 @@ class CraftExperiment(Experiment):
         name: str,
         description: str | None = None,
         meta: dict | None = None,
+        config: ExperimentConfig | None = None,
     ) -> "CraftExperiment":
         """
         Setup the experiment. If the name already exists in the same project,
         it will refer to the existing experiment instead of creating a new one.
         """
 
-        exp = CraftExperiment()
+        exp = CraftExperiment(config=config)
         exp_obj = exp._get_by_name(name=name, project_id=exp._runtime._project_id)
 
         # If experiment with the same name exists in the project, use it.
@@ -61,6 +62,15 @@ class CraftExperiment(Experiment):
 
         :return: the Trial instance
         """
+
+        config = config or TrialConfig()
+
+        if (
+            self._config is not None
+            and self._config.max_runtime_seconds > 0
+            and config.max_runtime_seconds < 0
+        ):
+            config.max_runtime_seconds = self._config.max_runtime_seconds
 
         trial = Trial(exp_id=self._id, config=config)
         trial._start(name=name, description=description, meta=meta, params=params)

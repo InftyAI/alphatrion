@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from alphatrion.experiment.craft_exp import CraftExperiment
+from alphatrion.experiment.craft_exp import CraftExperiment, ExperimentConfig
 from alphatrion.metadata.sql_models import TrialStatus
 from alphatrion.runtime.runtime import global_runtime, init
 from alphatrion.trial.trial import Trial, TrialConfig, current_trial_id
@@ -35,6 +35,7 @@ async def test_craft_experiment():
         trial_obj = trial._get_obj()
         assert trial_obj.status == TrialStatus.FINISHED
 
+
 @pytest.mark.asyncio
 async def test_craft_experiment_with_no_context():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
@@ -50,6 +51,7 @@ async def test_craft_experiment_with_no_context():
 
         trial_obj = trial._get_obj()
         assert trial_obj.status == TrialStatus.FINISHED
+
 
 @pytest.mark.asyncio
 async def test_create_experiment_with_trial():
@@ -129,7 +131,7 @@ async def test_craft_experiment_with_context():
         meta={"key": "value"},
     ) as exp:
         trial = exp.start_trial(
-            name="first-trial", config=TrialConfig(max_duration_seconds=2)
+            name="first-trial", config=TrialConfig(max_runtime_seconds=2)
         )
         await trial.wait()
         assert trial.cancelled()
@@ -147,7 +149,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
 
         duration = random.randint(1, 5)
         trial = exp.start_trial(
-            name="first-trial", config=TrialConfig(max_duration_seconds=duration)
+            name="first-trial", config=TrialConfig(max_runtime_seconds=duration)
         )
         # double check current trial id.
         assert trial.id == current_trial_id.get()
@@ -171,3 +173,39 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
             fake_work(),
         )
         print("All trials finished.")
+
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_timeout():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    exp = CraftExperiment.setup(
+        name="timeout_exp",
+        config=ExperimentConfig(max_runtime_seconds=3),
+    )
+
+    async with exp.start_trial(name="first-trial") as trial:
+        await trial.wait()
+
+        trial_obj = trial._get_obj()
+        assert trial_obj.status == TrialStatus.FINISHED
+
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_timeout_overwrite():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    exp = CraftExperiment.setup(
+        name="timeout_exp",
+        config=ExperimentConfig(max_runtime_seconds=3),
+    )
+
+    start_time = datetime.now()
+    async with exp.start_trial(
+        name="first-trial", config=TrialConfig(max_runtime_seconds=1)
+    ) as trial:
+        await trial.wait()
+        assert datetime.now() - start_time < timedelta(seconds=3)
+
+        trial_obj = trial._get_obj()
+        assert trial_obj.status == TrialStatus.FINISHED

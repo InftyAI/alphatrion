@@ -47,9 +47,10 @@ class CheckpointConfig(BaseModel):
 class TrialConfig(BaseModel):
     """Configuration for an experiment."""
 
-    max_duration_seconds: int = Field(
+    max_runtime_seconds: int = Field(
         default=-1,
-        description="Maximum duration in seconds for the experiment. \
+        description="Maximum runtime seconds for the trial. \
+        Trial timeout will override experiment timeout if both are set. \
         Default is -1 (no limit).",
     )
     early_stopping_runs: int = Field(
@@ -216,7 +217,7 @@ class Trial:
         return self._early_stopping_counter >= self._config.early_stopping_runs
 
     def _timeout(self) -> int | None:
-        timeout = self._config.max_duration_seconds
+        timeout = self._config.max_runtime_seconds
         if timeout < 0:
             return None
 
