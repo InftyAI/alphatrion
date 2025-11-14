@@ -29,7 +29,7 @@ class Experiment(ABC):
 
     async def __aenter__(self):
         if self._id is None:
-            raise RuntimeError("Experiment is not set. Did you call run()?")
+            raise RuntimeError("Experiment is not set. Did you call start()?")
 
         exp = self._get()
         if exp is None:
@@ -43,7 +43,7 @@ class Experiment(ABC):
 
     @classmethod
     @abstractmethod
-    def start(
+    def setup(
         cls, name: str, description: str | None = None, meta: dict | None = None
     ) -> "Experiment":
         """Return a new experiment."""

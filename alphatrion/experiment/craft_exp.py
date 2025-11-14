@@ -14,14 +14,14 @@ class CraftExperiment(Experiment):
         super().__init__()
 
     @classmethod
-    def start(
+    def setup(
         cls,
         name: str,
         description: str | None = None,
         meta: dict | None = None,
     ) -> "CraftExperiment":
         """
-        Begin the experiment. If the name already exists in the same project,
+        Setup the experiment. If the name already exists in the same project,
         it will refer to the existing experiment instead of creating a new one.
         """
 

@@ -15,7 +15,7 @@ from alphatrion.trial.trial import Trial, TrialConfig, current_trial_id
 async def test_craft_experiment():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with CraftExperiment.start(
+    async with CraftExperiment.setup(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -43,7 +43,7 @@ async def test_craft_experiment_with_no_context():
         await asyncio.sleep(3)
         trial.cancel()
 
-    exp = CraftExperiment.start(name="no_context_exp")
+    exp = CraftExperiment.setup(name="no_context_exp")
     async with exp.start_trial(name="first-trial") as trial:
         trial.start_run(lambda: fake_work(trial))
         await trial.wait()
@@ -56,7 +56,7 @@ async def test_create_experiment_with_trial():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     trial_id = None
-    async with CraftExperiment.start(name="context_exp") as exp:
+    async with CraftExperiment.setup(name="context_exp") as exp:
         async with exp.start_trial(name="first-trial") as trial:
             trial_obj = trial._get_obj()
             assert trial_obj is not None
@@ -76,7 +76,7 @@ async def test_create_experiment_with_trial_wait():
         trial.cancel()
 
     trial_id = None
-    async with CraftExperiment.start(name="context_exp") as exp:
+    async with CraftExperiment.setup(name="context_exp") as exp:
         async with exp.start_trial(name="first-trial") as trial:
             trial_id = current_trial_id.get()
             start_time = datetime.now()
@@ -100,7 +100,7 @@ async def test_create_experiment_with_run():
         cancel_func()
 
     async with (
-        CraftExperiment.start(name="context_exp") as exp,
+        CraftExperiment.setup(name="context_exp") as exp,
         exp.start_trial(name="first-trial") as trial,
     ):
         start_time = datetime.now()
@@ -123,7 +123,7 @@ async def test_create_experiment_with_run():
 async def test_craft_experiment_with_context():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with CraftExperiment.start(
+    async with CraftExperiment.setup(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},
@@ -160,7 +160,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
 
-    async with CraftExperiment.start(
+    async with CraftExperiment.setup(
         name="context_exp",
         description="Context manager test",
         meta={"key": "value"},

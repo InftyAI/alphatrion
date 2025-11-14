@@ -52,7 +52,7 @@ async def joke_workflow():
 
 @pytest.mark.asyncio
 async def test_workflow():
-    async with alpha.CraftExperiment.start("demo_joke_workflow") as exp:
+    async with alpha.CraftExperiment.setup("demo_joke_workflow") as exp:
         async with exp.start_trial("demo_joke_trial") as trial:
             task = trial.start_run(lambda: joke_workflow())
             await task.wait()
