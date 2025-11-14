@@ -18,6 +18,7 @@ class Experiment(ABC):
         self._runtime = global_runtime()
         # All trials in this experiment, key is trial_id, value is Trial instance.
         self._trials = dict()
+        self._runtime.current_exp = self
 
     @property
     def id(self):
@@ -25,9 +26,6 @@ class Experiment(ABC):
 
     def get_trial(self, id: int) -> trial.Trial | None:
         return self._trials.get(id)
-
-    def _reset(self):
-        self._trials = dict()
 
     async def __aenter__(self):
         if self._id is None:
@@ -37,11 +35,10 @@ class Experiment(ABC):
         if exp is None:
             raise RuntimeError(f"Experiment {self._id} not found in the database.")
 
-        self._runtime.current_exp = self
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self._reset()
+        self._trials = dict()
         self._runtime.current_exp = None
 
     @classmethod
