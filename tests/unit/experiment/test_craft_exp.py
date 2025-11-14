@@ -32,9 +32,24 @@ async def test_craft_experiment():
 
         trial.cancel()
 
-        trial2 = trial._get_obj()
-        assert trial2.status == TrialStatus.FINISHED
+        trial_obj = trial._get_obj()
+        assert trial_obj.status == TrialStatus.FINISHED
 
+@pytest.mark.asyncio
+async def test_craft_experiment_with_no_context():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def fake_work(trial: Trial):
+        await asyncio.sleep(3)
+        trial.cancel()
+
+    exp = CraftExperiment.start(name="no_context_exp")
+    async with exp.start_trial(name="first-trial") as trial:
+        trial.start_run(lambda: fake_work(trial))
+        await trial.wait()
+
+        trial_obj = trial._get_obj()
+        assert trial_obj.status == TrialStatus.FINISHED
 
 @pytest.mark.asyncio
 async def test_create_experiment_with_trial():
