@@ -37,6 +37,16 @@ pip install alphatrion
 * Run `source start.sh` to activate the virtual environment.
 * Run `poetry install` to install dependencies.
 
+### Using uv for dependency management
+
+You can also use [uv](https://github.com/astral-sh/uv) for faster dependency management in local development:
+
+```bash
+uv sync
+uv run alembic upgrade head
+uv run pytest
+```
+
 ### Initialize the Environment
 
 Run the following command for setup:
