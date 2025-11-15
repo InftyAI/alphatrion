@@ -66,13 +66,13 @@ import uuid
 # Better to use a fixed UUID to identify your project.
 alpha.init(project_id=uuid.uuid4(), artifact_insecure=True)
 
-async def report():
+async def log():
   # Run your code here then log metrics.
   await alpha.log_metrics({"accuracy": 0.95})
 
 async with alpha.CraftExperiment.setup(name="my_first_experiment") as exp:
   async with exp.start_trial(name="my_trial") as trial:
-    run = trial.start_run(lambda: report())
+    run = trial.start_run(lambda: log())
     await run.wait()
 ```
 
