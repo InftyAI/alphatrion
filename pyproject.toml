@@ -1,10 +1,10 @@
 [project]
 name = "alphatrion"
-version = "0.0.2"
-description = "AlphaTrion is an open-source and all-in-one platform to build AI-powered applications."
+version = "0.0.3"
+description = "⚒️ AlphaTrion is an open-source framework to help build GenAI applications, including experiment tracking, adaptive model routing, prompt optimization and performance evaluation."
 license = {text = "Apache-2.0"}
 readme = "README.md"
-requires-python = ">=3.12, <4.0"
+requires-python = ">=3.12"
 
 dependencies = [
     "sqlalchemy (>=2.0.43,<3.0.0)",
@@ -17,16 +17,25 @@ dependencies = [
     "alembic (>=1.17.1,<2.0.0)",
 ]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.4.2,<9.0.0"
-ruff = "^0.12.12"
-pytest-asyncio = ">=0.22.0,<1.0.0"
-pytest-timeout = ">=2.1.0,<3.0.0"
-faker = "^37.12.0"
+[dependency-groups]
+dev = [
+  {include-group = "lint"},
+  {include-group = "test"}
+]
+lint = [
+    "ruff>=0.12",
+]
+test = [
+    "pytest>=8.4",
+    "pytest-asyncio>=0.22",
+    "pytest-timeout>=2.1",
+    # Data generation
+    "faker>=37.12",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 # Configuration for ruff linter and formatter
 

@@ -19,16 +19,16 @@ down:
 
 .PHONY: lint
 lint:
-	$(POETRY) run ruff check .
+	ruff check .
 
 .PHONY: format
 format:
-	$(POETRY) run ruff format .
-	$(POETRY) run ruff check --fix .
+	ruff format .
+	ruff check --fix .
 
 .PHONY: test
 test: lint
-	$(POETRY) run pytest tests/unit --timeout=15
+	pytest tests/unit --timeout=15
 
 .PHONY: test-integration
 test-integration: lint
@@ -38,7 +38,7 @@ test-integration: lint
 	trap "docker-compose -f ./docker-compose.yaml down" EXIT; \
 	until docker exec postgres pg_isready -U alphatr1on; do sleep 1; done; \
 	until curl -sf http://localhost:11434/api/tags | grep "smollm:135m" > /dev/null; do sleep 1; done; \
-	$(POETRY) run pytest tests/integration --timeout=30; \
+	pytest tests/integration --timeout=30; \
 	'
 .PHONY: test-all
 test-all: test test-integration
