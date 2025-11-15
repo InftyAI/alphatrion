@@ -8,7 +8,6 @@ from alphatrion.utils.context import Context
 @pytest.mark.asyncio
 async def test_context_no_timeout():
     ctx = Context()
-    ctx.start()
     assert not ctx.cancelled()
     ctx.cancel()
     # double cancel should be no-op
@@ -20,7 +19,6 @@ async def test_context_no_timeout():
 @pytest.mark.asyncio
 async def test_context_with_timeout():
     ctx = Context(timeout=0.1)
-    ctx.start()
     assert not ctx.cancelled()
     await asyncio.sleep(0.2)
     assert ctx.cancelled()
@@ -30,7 +28,6 @@ async def test_context_with_timeout():
 @pytest.mark.asyncio
 async def test_context_manual_cancel():
     ctx = Context(timeout=10000)
-    ctx.start()
     assert not ctx.cancelled()
     ctx.cancel()
     assert ctx.cancelled()
@@ -40,7 +37,6 @@ async def test_context_manual_cancel():
 @pytest.mark.asyncio
 async def test_context_wait_cancelled():
     ctx = Context()
-    ctx.start()
 
     async def waiter():
         await ctx.wait()
@@ -58,7 +54,6 @@ async def test_context_wait_cancelled():
 @pytest.mark.asyncio
 async def test_context_multiple_waiters():
     ctx = Context()
-    ctx.start()
     results = []
 
     async def waiter(idx):

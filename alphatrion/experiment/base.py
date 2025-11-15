@@ -54,7 +54,14 @@ class Experiment(ABC):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        self.done()
+
+    def done(self):
+        for t in list(self._trials.values()):
+            t.done()
         self._trials = dict()
+        # Set to None at the end of the experiment because
+        # it will be used in trial.done().
         self._runtime.current_exp = None
 
     @classmethod

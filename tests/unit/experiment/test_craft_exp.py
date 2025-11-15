@@ -30,10 +30,29 @@ async def test_craft_experiment():
         assert trial_obj is not None
         assert trial_obj.name == "first-trial"
 
-        trial.cancel()
+        trial.done()
 
         trial_obj = trial._get_obj()
+        assert trial_obj.duration is not None
         assert trial_obj.status == TrialStatus.FINISHED
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_done():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    trial_id = None
+    async with CraftExperiment.setup(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+    ) as exp:
+        trial = exp.start_trial(name="first-trial")
+        trial_id = trial.id
+
+    # exit the exp context, trial should be done automatically
+    trial_obj = global_runtime()._metadb.get_trial(trial_id=trial_id)
+    assert trial_obj.duration is not None
+    assert trial_obj.status == TrialStatus.FINISHED
 
 
 @pytest.mark.asyncio
@@ -42,7 +61,7 @@ async def test_craft_experiment_with_no_context():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.cancel()
+        trial.done()
 
     exp = CraftExperiment.setup(name="no_context_exp")
     async with exp.start_trial(name="first-trial") as trial:
@@ -50,6 +69,7 @@ async def test_craft_experiment_with_no_context():
         await trial.wait()
 
         trial_obj = trial._get_obj()
+        assert trial_obj.duration is not None
         assert trial_obj.status == TrialStatus.FINISHED
 
 
@@ -75,7 +95,7 @@ async def test_create_experiment_with_trial_wait():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.cancel()
+        trial.done()
 
     trial_id = None
     async with CraftExperiment.setup(name="context_exp") as exp:
@@ -107,11 +127,11 @@ async def test_create_experiment_with_run():
     ):
         start_time = datetime.now()
 
-        trial.start_run(lambda: fake_work(trial.cancel))
+        trial.start_run(lambda: fake_work(trial.done))
         assert len(trial._running_tasks) == 1
         assert len(trial._runs) == 1
 
-        trial.start_run(lambda: fake_work(trial.cancel))
+        trial.start_run(lambda: fake_work(trial.done))
         assert len(trial._running_tasks) == 2
         assert len(trial._runs) == 2
 

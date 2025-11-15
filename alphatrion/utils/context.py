@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 # Inspired by golang context package
 class Context:
-    def __init__(self, cancel_func: Callable | None = None, timeout=None):
+    def __init__(self, cancel_func: Callable | None = None, timeout: int | None = None):
         """A context for managing cancellation and timeouts.
         :param cancel_func: A function to call when the context is cancelled.
         :param timeout: Timeout in seconds. If None, no timeout is set.
@@ -13,9 +13,6 @@ class Context:
         self._cancel_func = cancel_func
         self._timeout = timeout
 
-    def start(self):
-        # If timeout is None, it means no timeout is set.
-        # If timeout is negative, it means already timed out.
         if self._timeout is not None:
             asyncio.create_task(self._auto_cancel(self._timeout))
 

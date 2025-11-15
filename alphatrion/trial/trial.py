@@ -1,5 +1,4 @@
 import contextvars
-import os
 import uuid
 from datetime import UTC, datetime
 
@@ -127,10 +126,6 @@ class Trial:
         self._config = config or TrialConfig()
         self._runtime = global_runtime()
         self._step = 0
-        self._context = Context(
-            cancel_func=self._stop,
-            timeout=self._timeout(),
-        )
         self._construct_meta()
         self._runs = dict()
         self._running_tasks = dict()
@@ -141,7 +136,7 @@ class Trial:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.cancel()
+        self.done()
         if self._token:
             current_trial_id.reset(self._token)
 
@@ -218,19 +213,18 @@ class Trial:
 
     def _timeout(self) -> int | None:
         timeout = self._config.max_runtime_seconds
-        if timeout < 0:
+        if timeout is None or timeout < 0:
             return None
 
-        # Adjust timeout based on the trial start time from environment variable,
-        # this is useful when running in cloud env when the trial process may be
-        # restarted.
-        start_time = os.environ.get("ALPHATRION_TRIAL_START_TIME", None)
-        if start_time is not None:
-            elapsed = (
-                datetime.now(UTC)
-                - datetime.fromisoformat(start_time).replace(tzinfo=UTC)
-            ).total_seconds()
-            timeout -= int(elapsed)
+        obj = self._get_obj()
+        if obj is None:
+            return timeout
+
+        elapsed = (
+            datetime.now(UTC) - obj.created_at.replace(tzinfo=UTC)
+        ).total_seconds()
+        timeout -= int(elapsed)
+
         return timeout
 
     # Make sure you have termination condition, either by timeout or by calling cancel()
@@ -268,15 +262,19 @@ class Trial:
                 status=TrialStatus.RUNNING,
             )
 
+        self._context = Context(
+            cancel_func=self._stop,
+            timeout=self._timeout(),
+        )
+
         # We don't reset the trial id context var here, because
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
-        self._context.start()
 
-    # cancel function should be called manually as a pair of start
+    # done function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the trial gracefully,
     # or it could lead to trial not being marked as finished.
-    def cancel(self):
+    def done(self):
         self._context.cancel()
 
     def _stop(self):
@@ -321,7 +319,7 @@ class Trial:
             task.add_done_callback(
                 lambda t: (
                     setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                    self.cancel()
+                    self.done()
                     if self._total_runs_counter >= self._config.max_runs_per_trial
                     else None,
                 )
