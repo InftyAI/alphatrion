@@ -12,11 +12,11 @@ Base = declarative_base()
 class TrialStatus(enum.Enum):
     PENDING = "pending"
     RUNNING = "running"
-    FINISHED = "finished"
+    COMPLETED = "completed"
     FAILED = "failed"
 
 
-COMPLETED_STATUS = [TrialStatus.FINISHED, TrialStatus.FAILED]
+FINISHED_STATUS = [TrialStatus.COMPLETED, TrialStatus.FAILED]
 
 
 class Project(Base):

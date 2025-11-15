@@ -61,7 +61,7 @@ async def test_log_artifact():
         got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert got_trial is not None
         assert got_trial.name == "first-trial"
-        assert got_trial.status == TrialStatus.FINISHED
+        assert got_trial.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio

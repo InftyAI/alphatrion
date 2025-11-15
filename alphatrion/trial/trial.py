@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
+from alphatrion.metadata.sql_models import FINISHED_STATUS, TrialStatus
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
@@ -248,7 +248,7 @@ class Trial:
         trial_obj = self._runtime._metadb.get_trial_by_name(
             trial_name=name, exp_id=self._exp_id
         )
-        # FIXME: what if the existing trial is finished, will lead to confusion?
+        # FIXME: what if the existing trial is completed, will lead to confusion?
         if trial_obj:
             self._id = trial_obj.uuid
         else:
@@ -273,18 +273,18 @@ class Trial:
 
     # complete function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the trial gracefully,
-    # or it could lead to trial not being marked as finished.
+    # or it could lead to trial not being marked as completed.
     def complete(self):
         self._context.cancel()
 
     def _stop(self):
         trial = self._runtime._metadb.get_trial(trial_id=self._id)
-        if trial is not None and trial.status not in COMPLETED_STATUS:
+        if trial is not None and trial.status not in FINISHED_STATUS:
             duration = (
                 datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
             ).total_seconds()
             self._runtime._metadb.update_trial(
-                trial_id=self._id, status=TrialStatus.FINISHED, duration=duration
+                trial_id=self._id, status=TrialStatus.COMPLETED, duration=duration
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
