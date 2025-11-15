@@ -36,6 +36,7 @@ async def test_craft_experiment():
         assert trial_obj.duration is not None
         assert trial_obj.status == TrialStatus.FINISHED
 
+
 @pytest.mark.asyncio
 async def test_craft_experiment_with_done():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
