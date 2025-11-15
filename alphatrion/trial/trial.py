@@ -136,7 +136,7 @@ class Trial:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.done()
+        self.complete()
         if self._token:
             current_trial_id.reset(self._token)
 
@@ -234,7 +234,7 @@ class Trial:
     async def wait(self):
         await self._context.wait()
 
-    def completed(self) -> bool:
+    def done(self) -> bool:
         return self._context.cancelled()
 
     # If the name is same in the same experiment, it will refer to the existing trial.
@@ -271,10 +271,10 @@ class Trial:
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
 
-    # done function should be called manually as a pair of start
+    # complete function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the trial gracefully,
     # or it could lead to trial not being marked as finished.
-    def done(self):
+    def complete(self):
         self._context.cancel()
 
     def _stop(self):
@@ -319,7 +319,7 @@ class Trial:
             task.add_done_callback(
                 lambda t: (
                     setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                    self.done()
+                    self.complete()
                     if self._total_runs_counter >= self._config.max_runs_per_trial
                     else None,
                 )

@@ -54,14 +54,14 @@ class Experiment(ABC):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.done()
+        self.complete()
 
-    def done(self):
+    def complete(self):
         for t in list(self._trials.values()):
-            t.done()
+            t.complete()
         self._trials = dict()
         # Set to None at the end of the experiment because
-        # it will be used in trial.done().
+        # it will be used in trial.complete().
         self._runtime.current_exp = None
 
     @classmethod

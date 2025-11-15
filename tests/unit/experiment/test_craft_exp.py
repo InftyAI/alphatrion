@@ -30,7 +30,7 @@ async def test_craft_experiment():
         assert trial_obj is not None
         assert trial_obj.name == "first-trial"
 
-        trial.done()
+        trial.complete()
 
         trial_obj = trial._get_obj()
         assert trial_obj.duration is not None
@@ -62,7 +62,7 @@ async def test_craft_experiment_with_no_context():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.done()
+        trial.complete()
 
     exp = CraftExperiment.setup(name="no_context_exp")
     async with exp.start_trial(name="first-trial") as trial:
@@ -96,7 +96,7 @@ async def test_create_experiment_with_trial_wait():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.done()
+        trial.complete()
 
     trial_id = None
     async with CraftExperiment.setup(name="context_exp") as exp:
@@ -128,11 +128,11 @@ async def test_create_experiment_with_run():
     ):
         start_time = datetime.now()
 
-        trial.start_run(lambda: fake_work(trial.done))
+        trial.start_run(lambda: fake_work(trial.complete))
         assert len(trial._running_tasks) == 1
         assert len(trial._runs) == 1
 
-        trial.start_run(lambda: fake_work(trial.done))
+        trial.start_run(lambda: fake_work(trial.complete))
         assert len(trial._running_tasks) == 2
         assert len(trial._runs) == 2
 
@@ -155,7 +155,7 @@ async def test_craft_experiment_with_context():
             name="first-trial", config=TrialConfig(max_runtime_seconds=2)
         )
         await trial.wait()
-        assert trial.completed()
+        assert trial.done()
 
         trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
@@ -176,7 +176,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         assert trial.id == current_trial_id.get()
 
         await trial.wait()
-        assert trial.completed()
+        assert trial.done()
         # we don't reset the current trial id.
         assert trial.id == current_trial_id.get()
 
