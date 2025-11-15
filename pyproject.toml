@@ -33,9 +33,6 @@ test = [
     "faker>=37.12",
 ]
 
-[tool.uv.venv]
-path = ".venv"
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
