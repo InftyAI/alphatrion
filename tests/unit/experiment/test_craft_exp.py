@@ -30,10 +30,30 @@ async def test_craft_experiment():
         assert trial_obj is not None
         assert trial_obj.name == "first-trial"
 
-        trial.cancel()
+        trial.complete()
 
         trial_obj = trial._get_obj()
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.duration is not None
+        assert trial_obj.status == TrialStatus.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_done():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    trial_id = None
+    async with CraftExperiment.setup(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+    ) as exp:
+        trial = exp.start_trial(name="first-trial")
+        trial_id = trial.id
+
+    # exit the exp context, trial should be done automatically
+    trial_obj = global_runtime()._metadb.get_trial(trial_id=trial_id)
+    assert trial_obj.duration is not None
+    assert trial_obj.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -42,7 +62,7 @@ async def test_craft_experiment_with_no_context():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.cancel()
+        trial.complete()
 
     exp = CraftExperiment.setup(name="no_context_exp")
     async with exp.start_trial(name="first-trial") as trial:
@@ -50,7 +70,8 @@ async def test_craft_experiment_with_no_context():
         await trial.wait()
 
         trial_obj = trial._get_obj()
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.duration is not None
+        assert trial_obj.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -66,7 +87,7 @@ async def test_create_experiment_with_trial():
             trial_id = current_trial_id.get()
 
         trial_obj = exp._runtime._metadb.get_trial(trial_id=trial_id)
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -75,7 +96,7 @@ async def test_create_experiment_with_trial_wait():
 
     async def fake_work(trial: Trial):
         await asyncio.sleep(3)
-        trial.cancel()
+        trial.complete()
 
     trial_id = None
     async with CraftExperiment.setup(name="context_exp") as exp:
@@ -90,7 +111,7 @@ async def test_create_experiment_with_trial_wait():
             assert datetime.now() - start_time >= timedelta(seconds=3)
 
         trial_obj = exp._runtime._metadb.get_trial(trial_id=trial_id)
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -107,11 +128,11 @@ async def test_create_experiment_with_run():
     ):
         start_time = datetime.now()
 
-        trial.start_run(lambda: fake_work(trial.cancel))
+        trial.start_run(lambda: fake_work(trial.complete))
         assert len(trial._running_tasks) == 1
         assert len(trial._runs) == 1
 
-        trial.start_run(lambda: fake_work(trial.cancel))
+        trial.start_run(lambda: fake_work(trial.complete))
         assert len(trial._running_tasks) == 2
         assert len(trial._runs) == 2
 
@@ -134,10 +155,10 @@ async def test_craft_experiment_with_context():
             name="first-trial", config=TrialConfig(max_runtime_seconds=2)
         )
         await trial.wait()
-        assert trial.cancelled()
+        assert trial.done()
 
         trial = trial._get_obj()
-        assert trial.status == TrialStatus.FINISHED
+        assert trial.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -155,12 +176,12 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         assert trial.id == current_trial_id.get()
 
         await trial.wait()
-        assert trial.cancelled()
+        assert trial.done()
         # we don't reset the current trial id.
         assert trial.id == current_trial_id.get()
 
         trial = trial._get_obj()
-        assert trial.status == TrialStatus.FINISHED
+        assert trial.status == TrialStatus.COMPLETED
 
     async with CraftExperiment.setup(
         name="context_exp",
@@ -188,7 +209,7 @@ async def test_craft_experiment_with_timeout():
         await trial.wait()
 
         trial_obj = trial._get_obj()
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -208,4 +229,4 @@ async def test_craft_experiment_with_timeout_overwrite():
         assert datetime.now() - start_time < timedelta(seconds=3)
 
         trial_obj = trial._get_obj()
-        assert trial_obj.status == TrialStatus.FINISHED
+        assert trial_obj.status == TrialStatus.COMPLETED

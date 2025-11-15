@@ -1,11 +1,10 @@
 import contextvars
-import os
 import uuid
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion.metadata.sql_models import COMPLETED_STATUS, TrialStatus
+from alphatrion.metadata.sql_models import FINISHED_STATUS, TrialStatus
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils.context import Context
@@ -127,10 +126,6 @@ class Trial:
         self._config = config or TrialConfig()
         self._runtime = global_runtime()
         self._step = 0
-        self._context = Context(
-            cancel_func=self._stop,
-            timeout=self._timeout(),
-        )
         self._construct_meta()
         self._runs = dict()
         self._running_tasks = dict()
@@ -141,7 +136,7 @@ class Trial:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.cancel()
+        self.complete()
         if self._token:
             current_trial_id.reset(self._token)
 
@@ -218,19 +213,18 @@ class Trial:
 
     def _timeout(self) -> int | None:
         timeout = self._config.max_runtime_seconds
-        if timeout < 0:
+        if timeout is None or timeout < 0:
             return None
 
-        # Adjust timeout based on the trial start time from environment variable,
-        # this is useful when running in cloud env when the trial process may be
-        # restarted.
-        start_time = os.environ.get("ALPHATRION_TRIAL_START_TIME", None)
-        if start_time is not None:
-            elapsed = (
-                datetime.now(UTC)
-                - datetime.fromisoformat(start_time).replace(tzinfo=UTC)
-            ).total_seconds()
-            timeout -= int(elapsed)
+        obj = self._get_obj()
+        if obj is None:
+            return timeout
+
+        elapsed = (
+            datetime.now(UTC) - obj.created_at.replace(tzinfo=UTC)
+        ).total_seconds()
+        timeout -= int(elapsed)
+
         return timeout
 
     # Make sure you have termination condition, either by timeout or by calling cancel()
@@ -240,7 +234,7 @@ class Trial:
     async def wait(self):
         await self._context.wait()
 
-    def cancelled(self) -> bool:
+    def done(self) -> bool:
         return self._context.cancelled()
 
     # If the name is same in the same experiment, it will refer to the existing trial.
@@ -254,7 +248,7 @@ class Trial:
         trial_obj = self._runtime._metadb.get_trial_by_name(
             trial_name=name, exp_id=self._exp_id
         )
-        # FIXME: what if the existing trial is finished, will lead to confusion?
+        # FIXME: what if the existing trial is completed, will lead to confusion?
         if trial_obj:
             self._id = trial_obj.uuid
         else:
@@ -268,25 +262,29 @@ class Trial:
                 status=TrialStatus.RUNNING,
             )
 
+        self._context = Context(
+            cancel_func=self._stop,
+            timeout=self._timeout(),
+        )
+
         # We don't reset the trial id context var here, because
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
-        self._context.start()
 
-    # cancel function should be called manually as a pair of start
+    # complete function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the trial gracefully,
-    # or it could lead to trial not being marked as finished.
-    def cancel(self):
+    # or it could lead to trial not being marked as completed.
+    def complete(self):
         self._context.cancel()
 
     def _stop(self):
         trial = self._runtime._metadb.get_trial(trial_id=self._id)
-        if trial is not None and trial.status not in COMPLETED_STATUS:
+        if trial is not None and trial.status not in FINISHED_STATUS:
             duration = (
                 datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
             ).total_seconds()
             self._runtime._metadb.update_trial(
-                trial_id=self._id, status=TrialStatus.FINISHED, duration=duration
+                trial_id=self._id, status=TrialStatus.COMPLETED, duration=duration
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
@@ -321,7 +319,7 @@ class Trial:
             task.add_done_callback(
                 lambda t: (
                     setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                    self.cancel()
+                    self.complete()
                     if self._total_runs_counter >= self._config.max_runs_per_trial
                     else None,
                 )

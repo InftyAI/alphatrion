@@ -1,53 +1,63 @@
 # ruff: noqa: E501
 
-import os
+import time
 import unittest
-from datetime import UTC, datetime, timedelta
+import uuid
+
+import faker
+import pytest
 
 from alphatrion.trial.trial import CheckpointConfig, Trial, TrialConfig
 
 
 class TestTrial(unittest.IsolatedAsyncioTestCase):
-    def test_timeout(self):
+    @pytest.mark.asyncio
+    async def test_timeout(self):
         test_cases = [
             {
                 "name": "No timeout",
                 "config": TrialConfig(),
-                "started_at": None,
+                "created": False,
                 "expected": None,
             },
             {
                 "name": "Positive timeout",
                 "config": TrialConfig(max_runtime_seconds=10),
-                "started_at": None,
+                "created": False,
                 "expected": 10,
             },
             {
                 "name": "Zero timeout",
                 "config": TrialConfig(max_runtime_seconds=0),
-                "started_at": None,
+                "created": False,
                 "expected": 0,
             },
             {
                 "name": "Negative timeout",
                 "config": TrialConfig(max_runtime_seconds=-5),
-                "started_at": None,
+                "created": False,
                 "expected": None,
             },
             {
                 "name": "With started_at, positive timeout",
                 "config": TrialConfig(max_runtime_seconds=5),
-                "started_at": (datetime.now(UTC) - timedelta(seconds=3)).isoformat(),
-                "expected": 2,
+                "created": True,
+                "expected": 3,
             },
         ]
 
         for case in test_cases:
-            if case["started_at"]:
-                os.environ["ALPHATRION_TRIAL_START_TIME"] = case["started_at"]
             with self.subTest(name=case["name"]):
-                trial = Trial(exp_id=1, config=case["config"])
-                self.assertEqual(trial._timeout(), case["expected"])
+                trial = Trial(exp_id=uuid.uuid4(), config=case["config"])
+                trial._start(name=faker.Faker().word())
+
+                if case["created"]:
+                    time.sleep(2)  # simulate elapsed time
+                    self.assertEqual(
+                        trial._timeout(), case["config"].max_runtime_seconds - 2
+                    )
+                else:
+                    self.assertEqual(trial._timeout(), case["expected"])
 
     def test_config(self):
         test_cases = [

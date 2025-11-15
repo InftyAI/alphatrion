@@ -12,11 +12,11 @@ Base = declarative_base()
 class TrialStatus(enum.Enum):
     PENDING = "pending"
     RUNNING = "running"
-    FINISHED = "finished"
+    COMPLETED = "completed"
     FAILED = "failed"
 
 
-COMPLETED_STATUS = [TrialStatus.FINISHED, TrialStatus.FAILED]
+FINISHED_STATUS = [TrialStatus.COMPLETED, TrialStatus.FAILED]
 
 
 class Project(Base):
@@ -26,9 +26,11 @@ class Project(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
 
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
@@ -43,9 +45,11 @@ class Experiment(Base):
     project_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the experiment")
 
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
@@ -60,6 +64,7 @@ class Trial(Base):
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
+    duration = Column(Float, nullable=True, comment="Duration of the trial in seconds")
     status = Column(
         Enum(TrialStatus),
         default=TrialStatus.PENDING,
@@ -67,9 +72,11 @@ class Trial(Base):
         comment="Status of the trial",
     )
 
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -80,9 +87,11 @@ class Run(Base):
     project_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
 
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
 
 
@@ -96,9 +105,11 @@ class Model(Base):
     version = Column(String, nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the model")
 
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC)
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 

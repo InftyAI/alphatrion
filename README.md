@@ -34,7 +34,6 @@ pip install alphatrion
 ### Install from Source
 
 * Git clone the repository
-* Run `uv sync` to install dependencies from `pyproject.toml`.
 * Run `source start.sh` to activate the virtual environment.
 
 

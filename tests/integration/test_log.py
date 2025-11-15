@@ -52,7 +52,7 @@ async def test_log_artifact():
         versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
         assert len(versions) == 0
 
-        trial.cancel()
+        trial.complete()
 
         got_exp = exp._runtime._metadb.get_exp(exp_id=exp._id)
         assert got_exp is not None
@@ -61,7 +61,7 @@ async def test_log_artifact():
         got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert got_trial is not None
         assert got_trial.name == "first-trial"
-        assert got_trial.status == TrialStatus.FINISHED
+        assert got_trial.status == TrialStatus.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -84,11 +84,11 @@ async def test_log_params():
         assert new_trial.status == TrialStatus.RUNNING
         assert current_trial_id.get() == trial.id
 
-        trial.cancel()
+        trial.complete()
 
         trial = exp.start_trial(name="second-trial", params={"param1": 0.1})
         assert current_trial_id.get() == trial.id
-        trial.cancel()
+        trial.complete()
 
 
 @pytest.mark.asyncio
@@ -135,7 +135,7 @@ async def test_log_metrics():
         assert run_id_2 is not None
         assert run_id_2 != run_id_1
 
-        trial.cancel()
+        trial.complete()
 
 
 @pytest.mark.asyncio
@@ -201,7 +201,7 @@ async def test_log_metrics_with_save_on_max():
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 3
 
-            trial.cancel()
+            trial.complete()
 
 
 @pytest.mark.asyncio
@@ -266,7 +266,7 @@ async def test_log_metrics_with_save_on_min():
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 3
 
-            trial.cancel()
+            trial.complete()
 
 
 @pytest.mark.asyncio
@@ -356,7 +356,7 @@ async def test_log_metrics_with_max_run_number():
                 max_runs_per_trial=5,
             ),
         ) as trial:
-            while not trial.cancelled():
+            while not trial.done():
                 run = trial.start_run(lambda: fake_work(1))
                 await run.wait()
 
