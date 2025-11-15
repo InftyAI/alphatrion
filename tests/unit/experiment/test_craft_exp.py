@@ -155,7 +155,7 @@ async def test_craft_experiment_with_context():
             name="first-trial", config=TrialConfig(max_runtime_seconds=2)
         )
         await trial.wait()
-        assert trial.cancelled()
+        assert trial.completed()
 
         trial = trial._get_obj()
         assert trial.status == TrialStatus.FINISHED
@@ -176,7 +176,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
         assert trial.id == current_trial_id.get()
 
         await trial.wait()
-        assert trial.cancelled()
+        assert trial.completed()
         # we don't reset the current trial id.
         assert trial.id == current_trial_id.get()
 

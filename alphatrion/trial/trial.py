@@ -234,7 +234,7 @@ class Trial:
     async def wait(self):
         await self._context.wait()
 
-    def cancelled(self) -> bool:
+    def completed(self) -> bool:
         return self._context.cancelled()
 
     # If the name is same in the same experiment, it will refer to the existing trial.

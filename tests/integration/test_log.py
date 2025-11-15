@@ -356,7 +356,7 @@ async def test_log_metrics_with_max_run_number():
                 max_runs_per_trial=5,
             ),
         ) as trial:
-            while not trial.cancelled():
+            while not trial.completed():
                 run = trial.start_run(lambda: fake_work(1))
                 await run.wait()
 
