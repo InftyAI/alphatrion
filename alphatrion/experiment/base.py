@@ -2,23 +2,8 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from pydantic import BaseModel, Field
-
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.trial import trial
-
-
-class ExperimentConfig(BaseModel):
-    """
-    Configuration for Experiment.
-    """
-
-    max_runtime_seconds: int = Field(
-        default=-1,
-        description="Maximum runtime seconds for the experiment. \
-        It will overwrite the trial timeout if both are set. \
-        Default is -1 (no limit).",
-    )
 
 
 @dataclass
@@ -29,8 +14,7 @@ class Experiment(ABC):
 
     __slots__ = ("_runtime", "_id", "_trials")
 
-    def __init__(self, config: ExperimentConfig | None = None):
-        self._config = config or ExperimentConfig()
+    def __init__(self):
         self._runtime = global_runtime()
         # All trials in this experiment, key is trial_id, value is Trial instance.
         self._trials = dict()
