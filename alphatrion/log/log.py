@@ -28,7 +28,10 @@ async def log_artifact(
         raise RuntimeError("Runtime is not initialized. Please call init() first.")
 
     if not runtime.artifact_storage_enabled():
-        raise RuntimeError("Artifact storage is not enabled in the runtime. Set ENABLE_ARTIFACT_STORAGE=true in the environment variables. It's enabled by default.")
+        raise RuntimeError(
+            "Artifact storage is not enabled in the runtime."
+            "Set ENABLE_ARTIFACT_STORAGE=true in the environment variables."
+        )
 
     # We use experiment ID as the repo name rather than the experiment name,
     # because experiment name is not unique
