@@ -51,9 +51,14 @@ class Runtime:
         self._metadb = SQLStore(
             os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
         )
-        self._artifact = Artifact(
-            project_id=self._project_id, insecure=artifact_insecure
-        )
+
+        if self.artifact_storage_enabled():
+            self._artifact = Artifact(
+                project_id=self._project_id, insecure=artifact_insecure
+            )
+
+    def artifact_storage_enabled(self) -> bool:
+        return os.getenv(consts.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
 
     # current_exp is the current running experiment.
     @property
