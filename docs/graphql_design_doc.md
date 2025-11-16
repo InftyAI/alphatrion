@@ -9,15 +9,17 @@ Issue #61 – Experiment layout in the dashboard.
 ## 2. Scope (v0.1)
 
 We incude the following
-A new FastAPI + Strawberry GraphQL server
-GraphQL schema read-only
+- A new FastAPI + Strawberry GraphQL server
+- GraphQL schema read-only
 
-Queries:
+- Queries (The following queries will be implemented in v0.1):
+```
     experiments
     experiment(uuid)
     trials(experiment_uuid)
     runs(trial_uuid)
     metrics(run_uuid)
+```
 
 GraphQL resolvers mapped to existing SQLAlchemy models
 Add /graphql endpoint
@@ -99,6 +101,7 @@ GET  /graphql (playground)
 
 ## 6. Integration with FastAPI
 Example (v0.1):
+```
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 from .graphql.schema import schema
@@ -107,17 +110,19 @@ app = FastAPI()
 graphql_app = GraphQLRouter(schema)
 
 app.include_router(graphql_app, prefix="/graphql")
+```
 
 ## 7. Security
 Not included for v0.1.
 
 
 ## 8. Testing Plan
-Unit tests for each resolver (pytest)
-Integration tests for:
-experiments
-experiment(uuid)
-nested queries (experiment --> trials --> runs)
+- Unit tests for each resolver (pytest)
+- Integration tests for:
+  - experiments
+  - experiment(uuid)
+  - nested queries (experiment --> trials --> runs)
+
 
 
 ## 10. Open Questions
