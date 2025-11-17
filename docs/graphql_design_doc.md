@@ -9,16 +9,21 @@ Issue #61 – Experiment layout in the dashboard.
 ## 2. Scope (v0.1)
 
 We incude the following
-- A new FastAPI + Strawberry GraphQL server
-- GraphQL schema read-only
+- A new FastAPI + Strawberry GraphQL server  
+- GraphQL schema (read-only)
+- Queries implemented in v0.1:
 
 - Queries (The following queries will be implemented in v0.1):
 ```
+    projects
+    project(id)
     experiments
-    experiment(uuid)
-    trials(experiment_uuid)
-    runs(trial_uuid)
-    metrics(run_uuid)
+    experiment(id)
+    trials(experiment_id)
+    trial(id)
+    runs(trial_id)
+    run(id)
+    trial_metrics(trial_id)
 ```
 
 GraphQL resolvers mapped to existing SQLAlchemy models
@@ -33,53 +38,65 @@ Mutations, Authetication, Caching, Filtering, Pagination
 Dashboard -->  GraphQL Server (FastAPI + Strawberry) --> Backend Services (SqlAlchemy/ Postgres)
 
 
-## 4. Schema Proposal (v0.1)
+## 4. Schema Proposal (v0.2)
 ### 4.1 Types
 ```
+type Project {
+id: ID!
+name: String
+description: String
+created_at: DateTime
+updated_at: DateTime
+experiments: [Experiment]
+}
 type Experiment {
-  uuid: ID!
-  name: String
-  description: String
-  project_id: ID
-  meta: JSON
-  created_at: DateTime
-  updated_at: DateTime
-  trials: [Trial]
+id: ID!
+project_id: ID
+name: String
+description: String
+meta: JSON
+created_at: DateTime
+updated_at: DateTime
+trials: [Trial]
 }
-
 type Trial {
-  uuid: ID!
-  experiment_id: ID!
-  meta: JSON
-  created_at: DateTime
-  updated_at: DateTime
-  runs: [Run]
+id: ID!
+experiment_id: ID!
+meta: JSON
+created_at: DateTime
+updated_at: DateTime
+runs: [Run]
 }
-
 type Run {
-  uuid: ID!
-  trial_id: ID!
-  meta: JSON
-  created_at: DateTime
-  metrics: [Metric]
+id: ID!
+trial_id: ID!
+meta: JSON
+created_at: DateTime
 }
-
 type Metric {
-  uuid: ID!
-  run_id: ID!
-  name: String
-  value: Float
-  created_at: DateTime
+id: ID!
+trial_id: ID!
+name: String
+value: Float
+created_at: DateTime
 }
 ```
 ### 4.2 Queries
 ```
 type Query {
-  experiments: [Experiment]
-  experiment(uuid: ID!): Experiment
-  trials(experiment_uuid: ID!): [Trial]
-  runs(trial_uuid: ID!): [Run]
-  metrics(run_uuid: ID!): [Metric]
+projects: [Project]
+project(id: ID!): Project
+
+experiments: [Experiment]
+experiment(id: ID!): Experiment
+
+trials(experiment_id: ID!): [Trial]
+trial(id: ID!): Trial
+
+runs(trial_id: ID!): [Run]
+run(id: ID!): Run
+
+trial_metrics(trial_id: ID!): [Metric]
 }
 ```
 ## 5. Directory Structure
@@ -119,22 +136,25 @@ Not included for v0.1.
 ## 8. Testing Plan
 - Unit tests for each resolver (pytest)
 - Integration tests for:
-  - experiments
-  - experiment(uuid)
+  - projects / project(id)
+  - experiments / experiment(id)
   - nested queries (experiment --> trials --> runs)
-
+  - trial_metrics(trial_id)
 
 
 ## 10. Open Questions
-Is read-only sufficient for v0.1?
-(Default assumption: yes, until dashboard requires creation workflows.)
-Do we want nested queries (Experiment --> Trials --> Runs) or only flat queries?
-
+- Is read-only sufficient for v0.1?
+  (Default assumption: yes, until dashboard requires creation workflows.)
+- Do we want nested queries (Experiment --> Trials --> Runs) or only flat queries?
+  The frontend can choose whether to use nested or flat queries.
 
 
 ## 11. Summary (TL;DR)
-Implement read-only GraphQL.
-Use FastAPI + Strawberry.
-Expose /graphql endpoint.
-Provide queries for experiments, trials, runs, metrics.
-No mutations in v0.1.
+- Implement read-only GraphQL  
+- Use FastAPI + Strawberry  
+- Expose `/graphql` endpoint  
+- Provide queries for:
+  - projects  
+  - experiments, trials, runs  
+  - trial_metrics  
+- No mutations in v0.1
