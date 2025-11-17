@@ -361,3 +361,61 @@ async def test_log_metrics_with_max_run_number():
                 await run.wait()
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_max_target_meet():
+    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def fake_work(value: float):
+        await alpha.log_metrics({"accuracy": value})
+
+    async def fake_sleep(value: float):
+        await asyncio.sleep(10)
+        await alpha.log_metrics({"accuracy": value})
+
+    async with alpha.CraftExperiment.setup(
+        name="log_metrics_with_max_target_meet"
+    ) as exp:
+        async with exp.start_trial(
+            name="trial-with-max-target-meet",
+            config=alpha.TrialConfig(
+                monitor_metric="accuracy",
+                target_metric_value=0.9,
+            ),
+        ) as trial:
+            while not trial.done():
+                trial.start_run(lambda: fake_work(0.5))
+                trial.start_run(lambda: fake_work(0.3))
+                trial.start_run(lambda: fake_work(0.9))
+                trial.start_run(lambda: fake_sleep(0.4))
+
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_min_target_meet():
+    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async def fake_work(value: float):
+        await alpha.log_metrics({"accuracy": value})
+
+    async def fake_sleep(value: float):
+        await asyncio.sleep(3)
+        await alpha.log_metrics({"accuracy": value})
+
+    async with alpha.CraftExperiment.setup(
+        name="log_metrics_with_min_target_meet"
+    ) as exp:
+        async with exp.start_trial(
+            name="trial-with-min-target-meet",
+            config=alpha.TrialConfig(
+                monitor_metric="accuracy",
+                target_metric_value=0.2,
+            ),
+        ) as trial:
+            while not trial.done():
+                trial.start_run(lambda: fake_work(0.5))
+                trial.start_run(lambda: fake_work(0.3))
+                trial.start_run(lambda: fake_work(0.2))
+                trial.start_run(lambda: fake_sleep(0.4))
+
+            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3

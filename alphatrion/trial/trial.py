@@ -74,6 +74,15 @@ class TrialConfig(BaseModel):
         description="The mode for monitoring the metric. Can be 'max' or 'min'. \
             Default is 'max'.",
     )
+    target_metric_value: float | None = Field(
+        default=None,
+        description="If specified, the trial will stop when \
+            the monitored metric reaches this target value. \
+            If monitor_mode is 'max', the trial will stop when \
+            the metric >= target_metric_value. If monitor_mode is 'min', \
+            the trial will stop when the metric <= target_metric_value. \
+            Default is None (no target).",
+    )
     checkpoint: CheckpointConfig = Field(
         default=CheckpointConfig(),
         description="Configuration for checkpointing.",
@@ -186,6 +195,23 @@ class Trial:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
         return False
+
+    def should_stop_on_target_metric(self, metric_key: str, metric_value: float) -> bool:
+        """Check if the metric meets the target metric value."""
+        if (
+            self._config.target_metric_value is None
+            or metric_key != self._config.monitor_metric
+        ):
+            return False
+
+        target_value = self._config.target_metric_value
+
+        if self._config.monitor_mode == "max":
+            return metric_value >= target_value
+        elif self._config.monitor_mode == "min":
+            return metric_value <= target_value
+        else:
+            raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
     def should_early_stop(self, metric_key: str, metric_value: float) -> bool:
         if (
