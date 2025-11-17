@@ -196,7 +196,9 @@ class Trial:
 
         return False
 
-    def should_stop_on_target_metric(self, metric_key: str, metric_value: float) -> bool:
+    def should_stop_on_target_metric(
+        self, metric_key: str, metric_value: float
+    ) -> bool:
         """Check if the metric meets the target metric value."""
         if (
             self._config.target_metric_value is None

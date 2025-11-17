@@ -362,6 +362,7 @@ async def test_log_metrics_with_max_run_number():
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
 
+
 @pytest.mark.asyncio
 async def test_log_metrics_with_max_target_meet():
     alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
@@ -390,6 +391,7 @@ async def test_log_metrics_with_max_target_meet():
                 trial.start_run(lambda: fake_sleep(0.4))
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_min_target_meet():
