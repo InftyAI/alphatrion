@@ -162,7 +162,8 @@ async def test_log_metrics_with_save_on_max():
                         save_on_best=True,
                     ),
                     monitor_metric="accuracy",
-                    monitor_mode=alpha.MonitorMode.MAX,
+                    # Make sure raw max also works.
+                    monitor_mode="max",
                 ),
             )
 
