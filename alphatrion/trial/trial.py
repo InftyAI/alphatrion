@@ -61,7 +61,7 @@ class TrialConfig(BaseModel):
     early_stopping_runs: int = Field(
         default=-1,
         description="Number of runs with no improvement \
-        after which experiment will be stopped. Default is -1 (no early stopping). \
+        after which the trial will be stopped. Default is -1 (no early stopping). \
         Count each time when calling log_metrics with the monitored metric.",
     )
     max_runs_per_trial: int = Field(
