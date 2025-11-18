@@ -162,7 +162,7 @@ async def test_log_metrics_with_save_on_max():
                         save_on_best=True,
                     ),
                     monitor_metric="accuracy",
-                    monitor_mode="max",
+                    monitor_mode=alpha.MonitorMode.MAX,
                 ),
             )
 
@@ -228,7 +228,7 @@ async def test_log_metrics_with_save_on_min():
                         save_on_best=True,
                     ),
                     monitor_metric="accuracy",
-                    monitor_mode="min",
+                    monitor_mode=alpha.MonitorMode.MIN,
                 ),
             )
 
@@ -412,7 +412,7 @@ async def test_log_metrics_with_min_target_meet():
             config=alpha.TrialConfig(
                 monitor_metric="accuracy",
                 target_metric_value=0.2,
-                monitor_mode="min",
+                monitor_mode=alpha.MonitorMode.MIN,
             ),
         ) as trial:
             trial.start_run(lambda: fake_work(0.5))

@@ -4,6 +4,7 @@ import uuid
 
 from alphatrion import consts
 from alphatrion.artifact.artifact import Artifact
+from alphatrion.experiment.base import Experiment
 from alphatrion.metadata.sql import SQLStore
 
 __RUNTIME__ = None
@@ -62,9 +63,9 @@ class Runtime:
 
     # current_exp is the current running experiment.
     @property
-    def current_exp(self):
+    def current_exp(self) -> Experiment:
         return self.__current_exp
 
     @current_exp.setter
-    def current_exp(self, value):
+    def current_exp(self, value: Experiment) -> None:
         self.__current_exp = value
