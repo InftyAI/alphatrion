@@ -67,7 +67,8 @@ class TrialConfig(BaseModel):
         default=None,
         description="The metric to monitor together with other configurations  \
             like early_stopping_runs and save_on_best. \
-            Required if save_on_best is true or early_stopping_runs > 0.",
+            Required if save_on_best is true or early_stopping_runs > 0 \
+            or target_metric_value is not None.",
     )
     monitor_mode: str = Field(
         default="max",
@@ -99,6 +100,11 @@ class TrialConfig(BaseModel):
             raise ValueError(
                 "monitor_metric must be specified \
                 when early_stopping_runs>0"
+            )
+        if self.target_metric_value is not None and not self.monitor_metric:
+            raise ValueError(
+                "monitor_metric must be specified \
+                when target_metric_value is set"
             )
         return self
 
@@ -156,6 +162,7 @@ class Trial:
     def _construct_meta(self):
         self._meta = dict()
 
+        # TODO: if restart from existing trial, load the best_metrics from database.
         if self._config.monitor_mode == "max":
             self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
         elif self._config.monitor_mode == "min":

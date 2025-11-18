@@ -387,8 +387,9 @@ async def test_log_metrics_with_max_target_meet():
             while not trial.done():
                 trial.start_run(lambda: fake_work(0.5))
                 trial.start_run(lambda: fake_work(0.3))
-                trial.start_run(lambda: fake_work(0.9))
+                # Will be cancelled before completion
                 trial.start_run(lambda: fake_sleep(0.4))
+                trial.start_run(lambda: fake_work(0.9))
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
 
@@ -412,12 +413,14 @@ async def test_log_metrics_with_min_target_meet():
             config=alpha.TrialConfig(
                 monitor_metric="accuracy",
                 target_metric_value=0.2,
+                monitor_mode="min",
             ),
         ) as trial:
             while not trial.done():
                 trial.start_run(lambda: fake_work(0.5))
                 trial.start_run(lambda: fake_work(0.3))
-                trial.start_run(lambda: fake_work(0.2))
                 trial.start_run(lambda: fake_sleep(0.4))
+                # Will be cancelled before completion
+                trial.start_run(lambda: fake_work(0.2))
 
             assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
