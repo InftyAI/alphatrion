@@ -37,3 +37,10 @@ dist
 .env
 
 tmp
+
+
+.venv/
+python-version
+testenv/
+ptest/
+.python-version
