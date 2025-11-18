@@ -1,4 +1,5 @@
 import contextvars
+import enum
 import uuid
 from datetime import UTC, datetime
 
@@ -43,8 +44,13 @@ class CheckpointConfig(BaseModel):
     )
 
 
+class MonitorMode(enum.Enum):
+    MAX = "max"
+    MIN = "min"
+
+
 class TrialConfig(BaseModel):
-    """Configuration for an experiment."""
+    """Configuration for a Trial."""
 
     max_runtime_seconds: int = Field(
         default=-1,
@@ -55,7 +61,7 @@ class TrialConfig(BaseModel):
     early_stopping_runs: int = Field(
         default=-1,
         description="Number of runs with no improvement \
-        after which experiment will be stopped. Default is -1 (no early stopping). \
+        after which the trial will be stopped. Default is -1 (no early stopping). \
         Count each time when calling log_metrics with the monitored metric.",
     )
     max_runs_per_trial: int = Field(
@@ -70,8 +76,8 @@ class TrialConfig(BaseModel):
             Required if save_on_best is true or early_stopping_runs > 0 \
             or target_metric_value is not None.",
     )
-    monitor_mode: str = Field(
-        default="max",
+    monitor_mode: MonitorMode = Field(
+        default=MonitorMode.MAX,
         description="The mode for monitoring the metric. Can be 'max' or 'min'. \
             Default is 'max'.",
     )
@@ -163,9 +169,9 @@ class Trial:
         self._meta = dict()
 
         # TODO: if restart from existing trial, load the best_metrics from database.
-        if self._config.monitor_mode == "max":
+        if self._config.monitor_mode == MonitorMode.MAX:
             self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
-        elif self._config.monitor_mode == "min":
+        elif self._config.monitor_mode == MonitorMode.MIN:
             self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
         else:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
@@ -190,11 +196,11 @@ class Trial:
 
         best_value = self._meta["best_metrics"][metric_key]
 
-        if self._config.monitor_mode == "max":
+        if self._config.monitor_mode == MonitorMode.MAX:
             if metric_value > best_value:
                 self._meta["best_metrics"][metric_key] = metric_value
                 return True
-        elif self._config.monitor_mode == "min":
+        elif self._config.monitor_mode == MonitorMode.MIN:
             if metric_value < best_value:
                 self._meta["best_metrics"][metric_key] = metric_value
                 return True
@@ -215,9 +221,9 @@ class Trial:
 
         target_value = self._config.target_metric_value
 
-        if self._config.monitor_mode == "max":
+        if self._config.monitor_mode == MonitorMode.MAX:
             return metric_value >= target_value
-        elif self._config.monitor_mode == "min":
+        elif self._config.monitor_mode == MonitorMode.MIN:
             return metric_value <= target_value
         else:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
@@ -231,12 +237,12 @@ class Trial:
 
         best_value = self._meta["best_metrics"][metric_key]
 
-        if self._config.monitor_mode == "max":
+        if self._config.monitor_mode == MonitorMode.MAX:
             if metric_value < best_value:
                 self._early_stopping_counter += 1
             else:
                 self._early_stopping_counter = 0
-        elif self._config.monitor_mode == "min":
+        elif self._config.monitor_mode == MonitorMode.MIN:
             if metric_value > best_value:
                 self._early_stopping_counter += 1
             else:

@@ -66,5 +66,5 @@ class Runtime:
         return self.__current_exp
 
     @current_exp.setter
-    def current_exp(self, value):
+    def current_exp(self, value) -> None:
         self.__current_exp = value
