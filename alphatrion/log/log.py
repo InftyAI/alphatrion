@@ -82,6 +82,7 @@ async def log_metrics(metrics: dict[str, float]):
     # track if any metric is the best metric
     should_checkpoint = False
     should_early_stop = False
+    should_stop_on_target = False
     step = trial.increment_step()
     for key, value in metrics.items():
         runtime._metadb.create_metric(
@@ -100,6 +101,9 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=value
         )
         should_early_stop |= trial.should_early_stop(metric_key=key, metric_value=value)
+        should_stop_on_target |= trial.should_stop_on_target_metric(
+            metric_key=key, metric_value=value
+        )
 
     if should_checkpoint:
         await log_artifact(
@@ -107,5 +111,5 @@ async def log_metrics(metrics: dict[str, float]):
             version=utime.now_2_hash(),
         )
 
-    if should_early_stop:
+    if should_early_stop or should_stop_on_target:
         trial.complete()

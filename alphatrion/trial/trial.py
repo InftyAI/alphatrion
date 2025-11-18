@@ -67,12 +67,22 @@ class TrialConfig(BaseModel):
         default=None,
         description="The metric to monitor together with other configurations  \
             like early_stopping_runs and save_on_best. \
-            Required if save_on_best is true or early_stopping_runs > 0.",
+            Required if save_on_best is true or early_stopping_runs > 0 \
+            or target_metric_value is not None.",
     )
     monitor_mode: str = Field(
         default="max",
         description="The mode for monitoring the metric. Can be 'max' or 'min'. \
             Default is 'max'.",
+    )
+    target_metric_value: float | None = Field(
+        default=None,
+        description="If specified, the trial will stop when \
+            the monitored metric reaches this target value. \
+            If monitor_mode is 'max', the trial will stop when \
+            the metric >= target_metric_value. If monitor_mode is 'min', \
+            the trial will stop when the metric <= target_metric_value. \
+            Default is None (no target).",
     )
     checkpoint: CheckpointConfig = Field(
         default=CheckpointConfig(),
@@ -90,6 +100,11 @@ class TrialConfig(BaseModel):
             raise ValueError(
                 "monitor_metric must be specified \
                 when early_stopping_runs>0"
+            )
+        if self.target_metric_value is not None and not self.monitor_metric:
+            raise ValueError(
+                "monitor_metric must be specified \
+                when target_metric_value is set"
             )
         return self
 
@@ -147,6 +162,7 @@ class Trial:
     def _construct_meta(self):
         self._meta = dict()
 
+        # TODO: if restart from existing trial, load the best_metrics from database.
         if self._config.monitor_mode == "max":
             self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
         elif self._config.monitor_mode == "min":
@@ -186,6 +202,25 @@ class Trial:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
         return False
+
+    def should_stop_on_target_metric(
+        self, metric_key: str, metric_value: float
+    ) -> bool:
+        """Check if the metric meets the target metric value."""
+        if (
+            self._config.target_metric_value is None
+            or metric_key != self._config.monitor_metric
+        ):
+            return False
+
+        target_value = self._config.target_metric_value
+
+        if self._config.monitor_mode == "max":
+            return metric_value >= target_value
+        elif self._config.monitor_mode == "min":
+            return metric_value <= target_value
+        else:
+            raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
     def should_early_stop(self, metric_key: str, metric_value: float) -> bool:
         if (

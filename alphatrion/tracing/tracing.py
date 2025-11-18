@@ -2,7 +2,6 @@ import inspect
 import uuid
 from functools import wraps
 
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk import Traceloop
 from traceloop.sdk.decorators import task as _task
@@ -13,7 +12,7 @@ from alphatrion.run.run import current_run_id
 Traceloop.init(
     app_name="alphatrion",
     # TODO: make this configurable
-    exporter=ConsoleSpanExporter(),
+    # exporter=ConsoleSpanExporter(),
     disable_batch=True,
     telemetry_enabled=False,
 )
