@@ -2,7 +2,6 @@ import inspect
 import uuid
 from functools import wraps
 
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk import Traceloop
 from traceloop.sdk.decorators import task as _task
