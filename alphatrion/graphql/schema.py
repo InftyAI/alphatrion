@@ -1,42 +1,29 @@
 import strawberry
-from typing import List, Optional
 
-from .types import Project, Experiment, Trial, Run, Metric
 from .resolvers import GraphQLResolvers
+from .types import Experiment, Metric, Project, Run, Trial
 
 
 @strawberry.type
 class Query:
-    projects: List[Project] = strawberry.field(
-        resolver=GraphQLResolvers.get_projects
-    )
-    project: Optional[Project] = strawberry.field(
-        resolver=GraphQLResolvers.get_project
-    )
+    projects: list[Project] = strawberry.field(resolver=GraphQLResolvers.list_projects)
+    project: Project | None = strawberry.field(resolver=GraphQLResolvers.get_project)
 
-    experiments: List[Experiment] = strawberry.field(
-        resolver=GraphQLResolvers.get_experiments
+    experiments: list[Experiment] = strawberry.field(
+        resolver=GraphQLResolvers.list_experiments
     )
-    experiment: Optional[Experiment] = strawberry.field(
+    experiment: Experiment | None = strawberry.field(
         resolver=GraphQLResolvers.get_experiment
     )
 
-    trials: List[Trial] = strawberry.field(
-        resolver=GraphQLResolvers.get_trials
-    )
-    trial: Optional[Trial] = strawberry.field(
-        resolver=GraphQLResolvers.get_trial
-    )
+    trials: list[Trial] = strawberry.field(resolver=GraphQLResolvers.list_trials)
+    trial: Trial | None = strawberry.field(resolver=GraphQLResolvers.get_trial)
 
-    runs: List[Run] = strawberry.field(
-        resolver=GraphQLResolvers.get_runs
-    )
-    run: Optional[Run] = strawberry.field(
-        resolver=GraphQLResolvers.get_run
-    )
+    runs: list[Run] = strawberry.field(resolver=GraphQLResolvers.list_runs)
+    run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
 
-    trial_metrics: List[Metric] = strawberry.field(
-        resolver=GraphQLResolvers.get_trial_metrics
+    trial_metrics: list[Metric] = strawberry.field(
+        resolver=GraphQLResolvers.list_trial_metrics
     )
 
 

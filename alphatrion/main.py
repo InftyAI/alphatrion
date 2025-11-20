@@ -1,8 +1,9 @@
 import uvicorn
-from .graphql.schema import schema
-from fastapi import FastAPI
 from dotenv import load_dotenv
+from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
+
+from .graphql.schema import schema
 
 load_dotenv()
 

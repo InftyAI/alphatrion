@@ -1,14 +1,14 @@
+from datetime import datetime
+
 import strawberry
 from strawberry.scalars import JSON
-from typing import Optional, Dict
-from datetime import datetime
 
 
 @strawberry.type
 class Project:
     id: strawberry.ID
-    name: Optional[str]
-    description: Optional[str]
+    name: str | None
+    description: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -16,10 +16,10 @@ class Project:
 @strawberry.type
 class Experiment:
     id: strawberry.ID
-    project_id: Optional[strawberry.ID]
-    name: Optional[str]
-    description: Optional[str]
-    meta: Optional[JSON]
+    project_id: strawberry.ID | None
+    name: str | None
+    description: str | None
+    meta: JSON | None
     created_at: datetime
     updated_at: datetime
 
@@ -28,7 +28,7 @@ class Experiment:
 class Trial:
     id: strawberry.ID
     experiment_id: strawberry.ID
-    meta: Optional[JSON]
+    meta: JSON | None
     created_at: datetime
     updated_at: datetime
 
@@ -37,13 +37,13 @@ class Trial:
 class Run:
     id: strawberry.ID
     trial_id: strawberry.ID
-    meta: Optional[JSON]
+    meta: JSON | None
     created_at: datetime
 
 
 @strawberry.type
 class Metric:
     id: strawberry.ID
-    name: Optional[str]
-    value: Optional[float]
+    name: str | None
+    value: float | None
     created_at: datetime

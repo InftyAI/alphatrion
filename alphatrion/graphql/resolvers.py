@@ -1,41 +1,39 @@
-from typing import List, Optional
-from .types import Project, Experiment, Trial, Run, Metric
+from .types import Experiment, Metric, Project, Run, Trial
 
 
 class GraphQLResolvers:
-
     @staticmethod
-    def list_projects() -> List[Project]:
+    def list_projects() -> list[Project]:
         return []
 
     @staticmethod
-    def get_project(id: str) -> Optional[Project]:
+    def get_project(id: str) -> Project | None:
         return None
 
     @staticmethod
-    def list_experiments() -> List[Experiment]:
+    def list_experiments() -> list[Experiment]:
         return []
 
     @staticmethod
-    def get_experiment(id: str) -> Optional[Experiment]:
+    def get_experiment(id: str) -> Experiment | None:
         return None
 
     @staticmethod
-    def list_trials(experiment_id: str) -> List[Trial]:
+    def list_trials(experiment_id: str) -> list[Trial]:
         return []
 
     @staticmethod
-    def get_trial(id: str) -> Optional[Trial]:
+    def get_trial(id: str) -> Trial | None:
         return None
 
     @staticmethod
-    def list_runs(trial_id: str) -> List[Run]:
+    def list_runs(trial_id: str) -> list[Run]:
         return []
 
     @staticmethod
-    def get_run(id: str) -> Optional[Run]:
+    def get_run(id: str) -> Run | None:
         return None
 
     @staticmethod
-    def list_trial_metrics(trial_id: str) -> List[Metric]:
+    def list_trial_metrics(trial_id: str) -> list[Metric]:
         return []
