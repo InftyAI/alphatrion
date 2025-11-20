@@ -5,7 +5,7 @@ from .types import Project, Experiment, Trial, Run, Metric
 class GraphQLResolvers:
 
     @staticmethod
-    def get_projects() -> List[Project]:
+    def list_projects() -> List[Project]:
         return []
 
     @staticmethod
@@ -13,7 +13,7 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def get_experiments() -> List[Experiment]:
+    def list_experiments() -> List[Experiment]:
         return []
 
     @staticmethod
@@ -21,7 +21,7 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def get_trials(experiment_id: str) -> List[Trial]:
+    def list_trials(experiment_id: str) -> List[Trial]:
         return []
 
     @staticmethod
@@ -29,7 +29,7 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def get_runs(trial_id: str) -> List[Run]:
+    def list_runs(trial_id: str) -> List[Run]:
         return []
 
     @staticmethod
@@ -37,5 +37,5 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def get_trial_metrics(trial_id: str) -> List[Metric]:
+    def list_trial_metrics(trial_id: str) -> List[Metric]:
         return []
