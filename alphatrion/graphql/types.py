@@ -44,7 +44,6 @@ class Run:
 @strawberry.type
 class Metric:
     id: strawberry.ID
-    trial_id: strawberry.ID
     name: Optional[str]
     value: Optional[float]
     created_at: datetime
