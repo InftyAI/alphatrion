@@ -43,4 +43,3 @@ tmp
 python-version
 testenv/
 ptest/
-.python-version
