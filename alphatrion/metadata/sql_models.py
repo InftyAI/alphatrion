@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Enum, Float, Integer, String, values
+from sqlalchemy import JSON, Column, DateTime, Enum, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
@@ -66,7 +66,11 @@ class Trial(Base):
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
     status = Column(
-        Enum(TrialStatus, name="trial_status", values_callable=lambda enum: [e.value for e in enum]),
+        Enum(
+            TrialStatus,
+            name="trial_status",
+            values_callable=lambda enum: [e.value for e in enum],
+        ),
         default=TrialStatus.PENDING,
         nullable=False,
         comment="Status of the trial",

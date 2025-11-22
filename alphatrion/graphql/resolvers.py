@@ -1,8 +1,8 @@
 import uuid
 
-from .types import Experiment, Metric, Project, Run, Trial
-
 from alphatrion.graphql import runtime
+
+from .types import Experiment, Metric, Project, Run, Trial
 
 
 class GraphQLResolvers:

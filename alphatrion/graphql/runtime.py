@@ -1,9 +1,11 @@
-
+# ruff: noqa: PLW0603
 import os
+
 from alphatrion import consts
 from alphatrion.metadata.sql import SQLStore
 
 __GRAPHQL_RUNTIME__ = None
+
 
 class GraphQLRuntime:
     _metadb = None
@@ -15,13 +17,15 @@ class GraphQLRuntime:
     def metadb(self):
         return self._metadb
 
+
 def init():
     """
     Initialize the GraphQL runtime environment.
     """
 
     global __GRAPHQL_RUNTIME__
-    __GRAPHQL_RUNTIME__ = GraphQLRuntime()
+    if __GRAPHQL_RUNTIME__ is None:
+        __GRAPHQL_RUNTIME__ = GraphQLRuntime()
 
 
 def graphql_runtime() -> GraphQLRuntime:
