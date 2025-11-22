@@ -87,6 +87,6 @@ make down
 
 ## Contributing
 
-We welcome contributions! Please refer to [developer.md](./site/docs/development.md) for more information on how to set up your development environment and contribute to the project.
+We welcome contributions! Please refer to [developer.md](./docs/dev/development.md) for more information on how to set up your development environment and contribute to the project.
 
 [![Star History Chart](https://api.star-history.com/svg?repos=inftyai/alphatrion&type=Date)](https://www.star-history.com/#inftyai/alphatrion&Date)

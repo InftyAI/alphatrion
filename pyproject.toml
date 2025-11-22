@@ -39,7 +39,7 @@ test = [
 ]
 
 [project.scripts]
-alphatrion = "alphatrion.cmd.main:main"
+alphatrion = "alphatrion.server.cmd.main:main"
 
 [build-system]
 requires = ["hatchling"]

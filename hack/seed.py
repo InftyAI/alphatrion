@@ -90,6 +90,9 @@ def generate_run(trials: list[Trial]) -> Run:
         project_id=trial.project_id,
         experiment_id=trial.experiment_id,
         trial_id=trial.uuid,
+        meta=make_json_serializable(
+            fake.pydict(nb_elements=2, variable_nb_elements=True)
+        ),
     )
 
 
