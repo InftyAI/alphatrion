@@ -9,9 +9,10 @@ class Query:
     projects: list[Project] = strawberry.field(resolver=GraphQLResolvers.list_projects)
     project: Project | None = strawberry.field(resolver=GraphQLResolvers.get_project)
 
-    experiments: list[Experiment] = strawberry.field(
-        resolver=GraphQLResolvers.list_experiments
-    )
+    @strawberry.field
+    def experiments(self, project_id: str) -> list[Experiment]:
+        return GraphQLResolvers.list_experiments(project_id)
+
     experiment: Experiment | None = strawberry.field(
         resolver=GraphQLResolvers.get_experiment
     )

@@ -285,3 +285,9 @@ class SQLStore(MetaStore):
         metrics = session.query(Metric).filter(Metric.trial_id == trial_id).all()
         session.close()
         return metrics
+
+    def list_projects(self) -> list[Project]:
+        session = self._session()
+        rows = session.query(Project).filter(Project.is_del == 0).all()
+        session.close()
+        return rows
