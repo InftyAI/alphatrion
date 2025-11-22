@@ -212,9 +212,11 @@ def test_query_single_run():
     init(init_tables=True)
     project_id = uuid.uuid4()
     trial_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     run_id = metadb.create_run(
         project_id=project_id,
+        experiment_id=exp_id,
         trial_id=trial_id,
     )
     response = schema.execute_sync(
@@ -224,6 +226,7 @@ def test_query_single_run():
             id
             trialId
             projectId
+            experimentId
             meta
             createdAt
         }}
@@ -233,21 +236,25 @@ def test_query_single_run():
     )
     assert response.errors is None
     assert response.data["run"]["id"] == str(run_id)
-    assert response.data["run"]["trialId"] == str(trial_id)
     assert response.data["run"]["projectId"] == str(project_id)
+    assert response.data["run"]["experimentId"] == str(exp_id)
+    assert response.data["run"]["trialId"] == str(trial_id)
 
 
 def test_query_runs():
     init(init_tables=True)
     project_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
     trial_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     _ = metadb.create_run(
         project_id=project_id,
+        experiment_id=exp_id,
         trial_id=trial_id,
     )
     _ = metadb.create_run(
         project_id=project_id,
+        experiment_id=exp_id,
         trial_id=trial_id,
     )
 
@@ -256,6 +263,8 @@ def test_query_runs():
         runs(trialId: "{trial_id}", page: 0, pageSize: 10) {{
             id
             trialId
+            experimentId
+            projectId
             meta
             createdAt
         }}
@@ -272,11 +281,13 @@ def test_query_runs():
 def test_query_trial_metrics():
     init(init_tables=True)
     project_id = uuid.uuid4()
+    experiment_id = uuid.uuid4()
     trial_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
 
     _ = metadb.create_metric(
         project_id=project_id,
+        experiment_id=experiment_id,
         trial_id=trial_id,
         run_id=uuid.uuid4(),
         key="accuracy",
@@ -285,6 +296,7 @@ def test_query_trial_metrics():
     )
     _ = metadb.create_metric(
         project_id=project_id,
+        experiment_id=experiment_id,
         trial_id=trial_id,
         run_id=uuid.uuid4(),
         key="accuracy",
@@ -295,9 +307,10 @@ def test_query_trial_metrics():
     query {{
         trialMetrics(trialId: "{trial_id}") {{
             id
-            name
+            key
             value
             projectId
+            experimentId
             trialId
             runId
             step
@@ -313,4 +326,5 @@ def test_query_trial_metrics():
     assert len(response.data["trialMetrics"]) == 2
     for metric in response.data["trialMetrics"]:
         assert metric["projectId"] == str(project_id)
+        assert metric["experimentId"] == str(experiment_id)
         assert metric["trialId"] == str(trial_id)

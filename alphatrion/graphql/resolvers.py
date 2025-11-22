@@ -128,6 +128,7 @@ class GraphQLResolvers:
                 id=r.uuid,
                 trial_id=r.trial_id,
                 project_id=r.project_id,
+                experiment_id=r.experiment_id,
                 meta=r.meta,
                 created_at=r.created_at,
             )
@@ -143,6 +144,7 @@ class GraphQLResolvers:
                 id=run.uuid,
                 trial_id=run.trial_id,
                 project_id=run.project_id,
+                experiment_id=run.experiment_id,
                 meta=run.meta,
                 created_at=run.created_at,
             )
@@ -155,13 +157,14 @@ class GraphQLResolvers:
         return [
             Metric(
                 id=m.uuid,
-                name=m.key,
+                key=m.key,
                 value=m.value,
-                created_at=m.created_at,
                 project_id=m.project_id,
+                experiment_id=m.experiment_id,
                 trial_id=m.trial_id,
                 run_id=m.run_id,
                 step=m.step,
+                created_at=m.created_at,
             )
             for m in metrics
         ]

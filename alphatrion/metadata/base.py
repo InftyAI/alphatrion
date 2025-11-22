@@ -93,17 +93,25 @@ class MetaStore(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def create_run(self, project_id: uuid.UUID, trial_id: uuid.UUID) -> int:
+    def create_run(
+        self,
+        project_id: uuid.UUID,
+        trial_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        meta: dict | None = None,
+    ) -> int:
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
     def create_metric(
         self,
+        project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
         trial_id: uuid.UUID,
-        name: str,
+        run_id: uuid.UUID,
+        key: str,
         value: float,
         step: int | None = None,
-        timestamp: int | None = None,
     ) -> int:
         raise NotImplementedError("Subclasses must implement this method.")
 

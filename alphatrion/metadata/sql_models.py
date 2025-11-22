@@ -89,6 +89,7 @@ class Run(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
 
@@ -126,6 +127,7 @@ class Metric(Base):
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
     project_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
     step = Column(Integer, nullable=False, default=0)
