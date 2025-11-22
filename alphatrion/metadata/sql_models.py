@@ -64,9 +64,13 @@ class Trial(Base):
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
-    duration = Column(Float, nullable=True, comment="Duration of the trial in seconds")
+    duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
     status = Column(
-        Enum(TrialStatus),
+        Enum(
+            TrialStatus,
+            name="trial_status",
+            values_callable=lambda enum: [e.value for e in enum],
+        ),
         default=TrialStatus.PENDING,
         nullable=False,
         comment="Status of the trial",
@@ -86,6 +90,7 @@ class Run(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
+    meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(

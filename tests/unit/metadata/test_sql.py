@@ -59,7 +59,10 @@ def test_create_trial(db):
     project_id = uuid.uuid4()
     exp_id = db.create_exp("test_exp", project_id, "test description")
     trial_id = db.create_trial(
-        exp_id=exp_id, project_id=project_id, name="test-trial", params={"lr": 0.01}
+        experiment_id=exp_id,
+        project_id=project_id,
+        name="test-trial",
+        params={"lr": 0.01},
     )
     trial = db.get_trial(trial_id)
     assert trial is not None
@@ -73,7 +76,9 @@ def test_create_trial(db):
 def test_update_trial(db):
     project_id = uuid.uuid4()
     exp_id = db.create_exp("test_exp", project_id, "test description")
-    trial_id = db.create_trial(exp_id=exp_id, project_id=project_id, name="test-trial")
+    trial_id = db.create_trial(
+        experiment_id=exp_id, project_id=project_id, name="test-trial"
+    )
     trial = db.get_trial(trial_id)
     assert trial.status == TrialStatus.PENDING
     assert trial.meta is None
@@ -87,12 +92,14 @@ def test_update_trial(db):
 def test_create_metric(db):
     project_id = uuid.uuid4()
     exp_id = db.create_exp("test_exp", project_id, "test description")
-    trial_id = db.create_trial(exp_id=exp_id, project_id=project_id, name="test-trial")
+    trial_id = db.create_trial(
+        experiment_id=exp_id, project_id=project_id, name="test-trial"
+    )
     run_id = db.create_run(trial_id=trial_id, project_id=project_id)
     db.create_metric(project_id, trial_id, run_id, "accuracy", 0.95, 1)
     db.create_metric(project_id, trial_id, run_id, "accuracy", 0.85, 2)
 
-    metrics = db.list_metrics(trial_id)
+    metrics = db.list_metrics_by_trial_id(trial_id)
     assert len(metrics) == 2
     assert metrics[0].key == "accuracy"
     assert metrics[0].value == 0.95
