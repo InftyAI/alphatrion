@@ -2,8 +2,8 @@
 
 import uuid
 
-from alphatrion.graphql.runtime import graphql_runtime, init
-from alphatrion.graphql.schema import schema
+from alphatrion.server.graphql.runtime import graphql_runtime, init
+from alphatrion.server.graphql.schema import schema
 
 
 def test_query_single_project():
