@@ -1,12 +1,7 @@
-import uvicorn
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
-from .graphql.schema import schema
-
-load_dotenv()
-
+from alphatrion.graphql.schema import schema
 
 app = FastAPI()
 
@@ -21,7 +16,3 @@ app.include_router(graphql_app, prefix="/graphql")
 @app.get("/")
 def root():
     return {"message": "AlphaTrion API running"}
-
-
-if __name__ == "__main__":
-    uvicorn.run("alphatrion.main:app", host="0.0.0.0", port=8000)
