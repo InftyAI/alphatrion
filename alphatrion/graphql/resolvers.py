@@ -1,3 +1,8 @@
+"""
+GraphQL Resolvers – v0.1 Implementation
+This file implements the read-only resolvers defined in the design document.
+"""
+
 from typing import List, Optional
 
 from alphatrion.metadata.sql import SQLStore
@@ -16,12 +21,13 @@ store = SQLStore(
     "postgresql+psycopg2://alphatrion:alphatr1on@localhost:5432/alphatrion"
 )
 
-# ---------------------------
-# Helpers: SQLAlchemy → GraphQL
-# ---------------------------
+# ---------------------------------------
+# Helpers: SQLAlchemy model --> GraphQL type
+# ---------------------------------------
 
 
 def to_gql_project(p: ProjectModel) -> Project:
+    """Convert SQLAlchemy Project → GraphQL Project."""
     return Project(
         id=str(p.uuid),
         name=p.name,
@@ -32,6 +38,7 @@ def to_gql_project(p: ProjectModel) -> Project:
 
 
 def to_gql_experiment(e: ExperimentModel) -> Experiment:
+    """Convert SQLAlchemy Experiment → GraphQL Experiment."""
     return Experiment(
         id=str(e.uuid),
         project_id=str(e.project_id),
@@ -44,6 +51,7 @@ def to_gql_experiment(e: ExperimentModel) -> Experiment:
 
 
 def to_gql_trial(t: TrialModel) -> Trial:
+    """Convert SQLAlchemy Trial → GraphQL Trial."""
     return Trial(
         id=str(t.uuid),
         experiment_id=str(t.experiment_id),
@@ -54,6 +62,7 @@ def to_gql_trial(t: TrialModel) -> Trial:
 
 
 def to_gql_run(r: RunModel) -> Run:
+    """Convert SQLAlchemy Run → GraphQL Run."""
     return Run(
         id=str(r.uuid),
         trial_id=str(r.trial_id),
@@ -63,6 +72,7 @@ def to_gql_run(r: RunModel) -> Run:
 
 
 def to_gql_metric(m: MetricModel) -> Metric:
+    """Convert SQLAlchemy Metric → GraphQL Metric."""
     return Metric(
         id=str(m.uuid),
         trial_id=str(m.trial_id),
@@ -72,37 +82,54 @@ def to_gql_metric(m: MetricModel) -> Metric:
     )
 
 
-# ---------------------------
-# GraphQL Resolvers
-# ---------------------------
+# ---------------------------------------
+# Resolvers
+# ---------------------------------------
 
 class GraphQLResolvers:
 
-    # --- Project ---
+    # -------------------------
+    # Project
+    # -------------------------
+
     @staticmethod
     def list_projects() -> List[Project]:
+        """Return all projects."""
         rows = store.list_projects()
         return [to_gql_project(p) for p in rows]
 
     @staticmethod
     def get_project(id: str) -> Optional[Project]:
+        """Return a single project by ID."""
         p = store.get_project(id)
         return to_gql_project(p) if p else None
 
-    # --- Experiment ---
+    # -------------------------
+    # Experiment
+    # -------------------------
+
     @staticmethod
     def list_experiments(project_id: str) -> List[Experiment]:
+        """
+        Return all experiments belonging to a project.
+        This satisfies the v0.1 'experiments(project_id)' query.
+        """
         rows = store.list_exps(project_id, page=0, page_size=100)
         return [to_gql_experiment(e) for e in rows]
 
     @staticmethod
     def get_experiment(id: str) -> Optional[Experiment]:
+        """Return a single experiment by ID."""
         e = store.get_exp(id)
         return to_gql_experiment(e) if e else None
 
-    # --- Trial ---
+    # -------------------------
+    # Trial
+    # -------------------------
+
     @staticmethod
     def list_trials(experiment_id: str) -> List[Trial]:
+        """Return all trials for a given experiment."""
         session = store._session()
         rows = (
             session.query(TrialModel)
@@ -114,14 +141,19 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_trial(id: str) -> Optional[Trial]:
+        """Return a single trial by ID."""
         session = store._session()
         row = session.query(TrialModel).filter(TrialModel.uuid == id).first()
         session.close()
         return to_gql_trial(row) if row else None
 
-    # --- Run ---
+    # -------------------------
+    # Run
+    # -------------------------
+
     @staticmethod
     def list_runs(trial_id: str) -> List[Run]:
+        """Return all runs under a trial."""
         session = store._session()
         rows = (
             session.query(RunModel)
@@ -133,14 +165,19 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_run(id: str) -> Optional[Run]:
+        """Return a single run by ID."""
         session = store._session()
         row = session.query(RunModel).filter(RunModel.uuid == id).first()
         session.close()
         return to_gql_run(row) if row else None
 
-    # --- Metric ---
+    # -------------------------
+    # Metric
+    # -------------------------
+
     @staticmethod
     def list_trial_metrics(trial_id: str) -> List[Metric]:
+        """Return all metrics for a trial."""
         session = store._session()
         rows = (
             session.query(MetricModel)
