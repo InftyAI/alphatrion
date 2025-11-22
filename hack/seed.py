@@ -12,7 +12,7 @@ from faker import Faker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from alphatrion import consts, experiment
+from alphatrion import consts
 from alphatrion.metadata.sql_models import (
     Base,
     Experiment,
