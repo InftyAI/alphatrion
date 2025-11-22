@@ -3,7 +3,7 @@ from importlib.metadata import version
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
-from alphatrion.graphql.schema import schema
+from alphatrion.server.graphql.schema import schema
 
 app = FastAPI()
 

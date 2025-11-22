@@ -1,6 +1,6 @@
 import uuid
 
-from alphatrion.graphql import runtime
+from alphatrion.server.graphql import runtime
 
 from .types import Experiment, Metric, Project, Run, Trial
 

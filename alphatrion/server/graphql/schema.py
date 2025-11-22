@@ -1,7 +1,7 @@
 import strawberry
 
-from alphatrion.graphql.resolvers import GraphQLResolvers
-from alphatrion.graphql.types import Experiment, Metric, Project, Run, Trial
+from alphatrion.server.graphql.resolvers import GraphQLResolvers
+from alphatrion.server.graphql.types import Experiment, Metric, Project, Run, Trial
 
 
 @strawberry.type

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.text import Text
 
-from alphatrion.graphql.runtime import init as graphql_init
+from alphatrion.server.graphql.runtime import init as graphql_init
 
 load_dotenv()
 console = Console()
@@ -37,4 +37,4 @@ def run_server(args):
     )
     console.print(msg)
     graphql_init()
-    uvicorn.run("alphatrion.cmd.app:app", host=args.host, port=args.port)
+    uvicorn.run("alphatrion.server.cmd.app:app", host=args.host, port=args.port)
