@@ -28,7 +28,13 @@ class Experiment:
 class Trial:
     id: strawberry.ID
     experiment_id: strawberry.ID
+    project_id: strawberry.ID
+    name: str
+    description: str | None
     meta: JSON | None
+    params: JSON | None
+    duration: float
+    status: str
     created_at: datetime
     updated_at: datetime
 
@@ -37,6 +43,7 @@ class Trial:
 class Run:
     id: strawberry.ID
     trial_id: strawberry.ID
+    project_id: strawberry.ID
     meta: JSON | None
     created_at: datetime
 
@@ -46,4 +53,8 @@ class Metric:
     id: strawberry.ID
     name: str | None
     value: float | None
+    project_id: strawberry.ID
+    trial_id: strawberry.ID
+    run_id: strawberry.ID
+    step: int
     created_at: datetime

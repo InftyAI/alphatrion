@@ -79,6 +79,7 @@ def generate_trial(exps: list[Experiment]) -> Trial:
         params=make_json_serializable(
             fake.pydict(nb_elements=3, variable_nb_elements=True)
         ),
+        duration=random.uniform(0.1, 1000.0),
         status=random.choice(list(TrialStatus)),
     )
 

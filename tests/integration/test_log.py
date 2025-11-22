@@ -105,13 +105,13 @@ async def test_log_metrics():
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.1}
 
-        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
         assert len(metrics) == 0
 
         run = trial.start_run(lambda: log_metric({"accuracy": 0.95, "loss": 0.1}))
         await run.wait()
 
-        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
         assert len(metrics) == 2
         assert metrics[0].key == "accuracy"
         assert metrics[0].value == 0.95
@@ -126,7 +126,7 @@ async def test_log_metrics():
         run = trial.start_run(lambda: log_metric({"accuracy": 0.96}))
         await run.wait()
 
-        metrics = exp._runtime._metadb.list_metrics(trial_id=trial._id)
+        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
         assert len(metrics) == 3
         assert metrics[2].key == "accuracy"
         assert metrics[2].value == 0.96
@@ -304,7 +304,10 @@ async def test_log_metrics_with_early_stopping():
             # trigger early stopping
             await trial.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 6
+            assert (
+                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                == 6
+            )
 
 
 @pytest.mark.asyncio
@@ -336,7 +339,10 @@ async def test_log_metrics_with_early_stopping_never_triggered():
             # running in parallel.
             await trial.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+            assert (
+                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                == 3
+            )
             assert datetime.now() - start_time >= timedelta(seconds=3)
 
 
@@ -361,7 +367,10 @@ async def test_log_metrics_with_max_run_number():
                 run = trial.start_run(lambda: fake_work(1))
                 await run.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 5
+            assert (
+                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                == 5
+            )
 
 
 @pytest.mark.asyncio
@@ -391,7 +400,10 @@ async def test_log_metrics_with_max_target_meet():
             trial.start_run(lambda: fake_work(0.9))
             await trial.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+            assert (
+                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                == 3
+            )
 
 
 @pytest.mark.asyncio
@@ -422,4 +434,7 @@ async def test_log_metrics_with_min_target_meet():
             trial.start_run(lambda: fake_work(0.2))
             await trial.wait()
 
-            assert len(trial._runtime._metadb.list_metrics(trial_id=trial.id)) == 3
+            assert (
+                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                == 3
+            )

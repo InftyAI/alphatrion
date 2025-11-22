@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
@@ -12,7 +14,12 @@ graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 
-# root endpoint for testing
-@app.get("/")
-def root():
-    return {"message": "AlphaTrion API running"}
+# health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+# version endpoint
+@app.get("/version")
+def get_version():
+    return {"version": version("alphatrion"), "status": "ok"}

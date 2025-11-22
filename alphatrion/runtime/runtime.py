@@ -68,3 +68,7 @@ class Runtime:
     @current_exp.setter
     def current_exp(self, value) -> None:
         self.__current_exp = value
+
+    @property
+    def metadb(self) -> SQLStore:
+        return self._metadb

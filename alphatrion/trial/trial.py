@@ -287,7 +287,7 @@ class Trial:
         params: dict | None = None,
     ):
         trial_obj = self._runtime._metadb.get_trial_by_name(
-            trial_name=name, exp_id=self._exp_id
+            trial_name=name, experiment_id=self._exp_id
         )
         # FIXME: what if the existing trial is completed, will lead to confusion?
         if trial_obj:
@@ -295,7 +295,7 @@ class Trial:
         else:
             self._id = self._runtime._metadb.create_trial(
                 project_id=self._runtime._project_id,
-                exp_id=self._exp_id,
+                experiment_id=self._exp_id,
                 name=name,
                 description=description,
                 meta=meta,
