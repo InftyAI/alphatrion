@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 66179d0a8f18
+Revision ID: 744ee8cfa1c6
 Revises: 
-Create Date: 2025-11-22 17:07:27.775517
+Create Date: 2025-11-22 19:27:56.309292
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '66179d0a8f18'
+revision: str = '744ee8cfa1c6'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -37,6 +37,7 @@ def upgrade() -> None:
     sa.Column('key', sa.String(), nullable=False),
     sa.Column('value', sa.Float(), nullable=False),
     sa.Column('project_id', sa.UUID(), nullable=False),
+    sa.Column('experiment_id', sa.UUID(), nullable=False),
     sa.Column('trial_id', sa.UUID(), nullable=False),
     sa.Column('run_id', sa.UUID(), nullable=False),
     sa.Column('step', sa.Integer(), nullable=False),
@@ -68,6 +69,7 @@ def upgrade() -> None:
     op.create_table('runs',
     sa.Column('uuid', sa.UUID(), nullable=False),
     sa.Column('project_id', sa.UUID(), nullable=False),
+    sa.Column('experiment_id', sa.UUID(), nullable=False),
     sa.Column('trial_id', sa.UUID(), nullable=False),
     sa.Column('meta', sa.JSON(), nullable=True, comment='Additional metadata for the run'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),

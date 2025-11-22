@@ -89,6 +89,7 @@ async def log_metrics(metrics: dict[str, float]):
             key=key,
             value=value,
             project_id=runtime._project_id,
+            experiment_id=exp.id,
             trial_id=trial_id,
             run_id=run_id,
             step=step,

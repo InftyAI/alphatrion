@@ -18,7 +18,9 @@ class Run:
 
     def _start(self, call_func: callable) -> asyncio.Task | None:
         self._id = self._runtime._metadb.create_run(
-            project_id=self._runtime._project_id, trial_id=self._trial_id
+            project_id=self._runtime._project_id,
+            experiment_id=self._runtime.current_exp.id,
+            trial_id=self._trial_id,
         )
 
         # current_run_id context var is used in tracing workflow/task decorators.

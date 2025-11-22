@@ -290,11 +290,16 @@ class SQLStore(MetaStore):
         session.close()
 
     def create_run(
-        self, project_id: uuid.UUID, trial_id: uuid.UUID, meta: dict | None = None
+        self,
+        project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        trial_id: uuid.UUID,
+        meta: dict | None = None,
     ) -> uuid.UUID:
         session = self._session()
         new_run = Run(
             project_id=project_id,
+            experiment_id=experiment_id,
             trial_id=trial_id,
             meta=meta,
         )
@@ -328,6 +333,7 @@ class SQLStore(MetaStore):
     def create_metric(
         self,
         project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
         trial_id: uuid.UUID,
         run_id: uuid.UUID,
         key: str,
@@ -337,6 +343,7 @@ class SQLStore(MetaStore):
         session = self._session()
         new_metric = Metric(
             project_id=project_id,
+            experiment_id=experiment_id,
             trial_id=trial_id,
             run_id=run_id,
             key=key,

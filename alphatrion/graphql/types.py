@@ -44,6 +44,7 @@ class Run:
     id: strawberry.ID
     trial_id: strawberry.ID
     project_id: strawberry.ID
+    experiment_id: strawberry.ID
     meta: JSON | None
     created_at: datetime
 
@@ -51,9 +52,10 @@ class Run:
 @strawberry.type
 class Metric:
     id: strawberry.ID
-    name: str | None
+    key: str | None
     value: float | None
     project_id: strawberry.ID
+    experiment_id: strawberry.ID
     trial_id: strawberry.ID
     run_id: strawberry.ID
     step: int

@@ -88,6 +88,7 @@ def generate_run(trials: list[Trial]) -> Run:
     trial = random.choice(trials)
     return Run(
         project_id=trial.project_id,
+        experiment_id=trial.experiment_id,
         trial_id=trial.uuid,
     )
 
@@ -96,6 +97,7 @@ def generate_metric(runs: list[Run]) -> Metric:
     run = random.choice(runs)
     return Metric(
         project_id=run.project_id,
+        experiment_id=run.experiment_id,
         trial_id=run.trial_id,
         run_id=run.uuid,
         key=random.choice(["accuracy", "loss", "precision", "fitness"]),
