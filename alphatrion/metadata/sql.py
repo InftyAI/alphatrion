@@ -171,8 +171,7 @@ class SQLStore(MetaStore):
 
     def list_models(self, page: int, page_size: int) -> list[Model]:
         session = self._session()
-        models = session.query(Model).offset(
-            page * page_size).limit(page_size).all()
+        models = session.query(Model).offset(page * page_size).limit(page_size).all()
         session.close()
         return models
 
@@ -283,8 +282,7 @@ class SQLStore(MetaStore):
 
     def list_metrics(self, trial_id: uuid.UUID) -> list[Metric]:
         session = self._session()
-        metrics = session.query(Metric).filter(
-            Metric.trial_id == trial_id).all()
+        metrics = session.query(Metric).filter(Metric.trial_id == trial_id).all()
         session.close()
         return metrics
 

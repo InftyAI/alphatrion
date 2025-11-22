@@ -3,19 +3,25 @@ GraphQL Resolvers – v0.1 Implementation
 This file implements the read-only resolvers defined in the design document.
 """
 
-from typing import List, Optional
 
 from alphatrion.metadata.sql import SQLStore
 from alphatrion.metadata.sql_models import (
-    Project as ProjectModel,
     Experiment as ExperimentModel,
-    Trial as TrialModel,
-    Run as RunModel,
+)
+from alphatrion.metadata.sql_models import (
     Metric as MetricModel,
 )
+from alphatrion.metadata.sql_models import (
+    Project as ProjectModel,
+)
+from alphatrion.metadata.sql_models import (
+    Run as RunModel,
+)
+from alphatrion.metadata.sql_models import (
+    Trial as TrialModel,
+)
 
-from .types import Project, Experiment, Trial, Run, Metric
-
+from .types import Experiment, Metric, Project, Run, Trial
 
 store = SQLStore(
     "postgresql+psycopg2://alphatrion:alphatr1on@localhost:5432/alphatrion"
@@ -86,20 +92,20 @@ def to_gql_metric(m: MetricModel) -> Metric:
 # Resolvers
 # ---------------------------------------
 
-class GraphQLResolvers:
 
+class GraphQLResolvers:
     # -------------------------
     # Project
     # -------------------------
 
     @staticmethod
-    def list_projects() -> List[Project]:
+    def list_projects() -> list[Project]:
         """Return all projects."""
         rows = store.list_projects()
         return [to_gql_project(p) for p in rows]
 
     @staticmethod
-    def get_project(id: str) -> Optional[Project]:
+    def get_project(id: str) -> Project | None:
         """Return a single project by ID."""
         p = store.get_project(id)
         return to_gql_project(p) if p else None
@@ -109,7 +115,7 @@ class GraphQLResolvers:
     # -------------------------
 
     @staticmethod
-    def list_experiments(project_id: str) -> List[Experiment]:
+    def list_experiments(project_id: str) -> list[Experiment]:
         """
         Return all experiments belonging to a project.
         This satisfies the v0.1 'experiments(project_id)' query.
@@ -118,7 +124,7 @@ class GraphQLResolvers:
         return [to_gql_experiment(e) for e in rows]
 
     @staticmethod
-    def get_experiment(id: str) -> Optional[Experiment]:
+    def get_experiment(id: str) -> Experiment | None:
         """Return a single experiment by ID."""
         e = store.get_exp(id)
         return to_gql_experiment(e) if e else None
@@ -128,7 +134,7 @@ class GraphQLResolvers:
     # -------------------------
 
     @staticmethod
-    def list_trials(experiment_id: str) -> List[Trial]:
+    def list_trials(experiment_id: str) -> list[Trial]:
         """Return all trials for a given experiment."""
         session = store._session()
         rows = (
@@ -140,7 +146,7 @@ class GraphQLResolvers:
         return [to_gql_trial(t) for t in rows]
 
     @staticmethod
-    def get_trial(id: str) -> Optional[Trial]:
+    def get_trial(id: str) -> Trial | None:
         """Return a single trial by ID."""
         session = store._session()
         row = session.query(TrialModel).filter(TrialModel.uuid == id).first()
@@ -152,19 +158,15 @@ class GraphQLResolvers:
     # -------------------------
 
     @staticmethod
-    def list_runs(trial_id: str) -> List[Run]:
+    def list_runs(trial_id: str) -> list[Run]:
         """Return all runs under a trial."""
         session = store._session()
-        rows = (
-            session.query(RunModel)
-            .filter(RunModel.trial_id == trial_id)
-            .all()
-        )
+        rows = session.query(RunModel).filter(RunModel.trial_id == trial_id).all()
         session.close()
         return [to_gql_run(r) for r in rows]
 
     @staticmethod
-    def get_run(id: str) -> Optional[Run]:
+    def get_run(id: str) -> Run | None:
         """Return a single run by ID."""
         session = store._session()
         row = session.query(RunModel).filter(RunModel.uuid == id).first()
@@ -176,13 +178,9 @@ class GraphQLResolvers:
     # -------------------------
 
     @staticmethod
-    def list_trial_metrics(trial_id: str) -> List[Metric]:
+    def list_trial_metrics(trial_id: str) -> list[Metric]:
         """Return all metrics for a trial."""
         session = store._session()
-        rows = (
-            session.query(MetricModel)
-            .filter(MetricModel.trial_id == trial_id)
-            .all()
-        )
+        rows = session.query(MetricModel).filter(MetricModel.trial_id == trial_id).all()
         session.close()
         return [to_gql_metric(m) for m in rows]
