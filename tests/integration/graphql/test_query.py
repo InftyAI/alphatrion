@@ -2,14 +2,13 @@
 
 import uuid
 
-from alphatrion.graphql.runtime import init
+from alphatrion.graphql.runtime import graphql_runtime, init
 from alphatrion.graphql.schema import schema
-from alphatrion.runtime import runtime
 
 
 def test_query_single_project():
     init()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     id = metadb.create_project(name="Test Project", description="A project for testing")
 
     query = f"""
@@ -34,7 +33,7 @@ def test_query_single_project():
 
 def test_query_projects():
     init()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     _ = metadb.create_project(name="Test Project1", description="A project for testing")
     _ = metadb.create_project(name="Test Project2", description="A project for testing")
 
@@ -61,7 +60,7 @@ def test_query_projects():
 def test_query_single_experiment():
     init()
     project_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     id = metadb.create_exp(
         name="Test Experiment",
         description="A experiment for testing",
@@ -93,7 +92,7 @@ def test_query_single_experiment():
 def test_query_experiments():
     init()
     project_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     _ = metadb.create_exp(
         name="Test Experiment1",
         description="A experiment for testing",
@@ -135,7 +134,7 @@ def test_query_single_trial():
     init()
     project_id = uuid.uuid4()
     experiment_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
 
     trial_id = metadb.create_trial(
         name="Test Trial",
@@ -174,7 +173,7 @@ def test_query_trials():
     init()
     project_id = uuid.uuid4()
     experiment_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     _ = metadb.create_trial(
         name="Test Trial1",
         experiment_id=experiment_id,
@@ -214,7 +213,7 @@ def test_query_single_run():
     init()
     project_id = uuid.uuid4()
     trial_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     run_id = metadb.create_run(
         project_id=project_id,
         trial_id=trial_id,
@@ -243,7 +242,7 @@ def test_query_runs():
     init()
     project_id = uuid.uuid4()
     trial_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
     _ = metadb.create_run(
         project_id=project_id,
         trial_id=trial_id,
@@ -275,7 +274,7 @@ def test_query_trial_metrics():
     init()
     project_id = uuid.uuid4()
     trial_id = uuid.uuid4()
-    metadb = runtime.global_runtime().metadb
+    metadb = graphql_runtime().metadb
 
     _ = metadb.create_metric(
         project_id=project_id,
