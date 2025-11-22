@@ -4,18 +4,22 @@ from alphatrion.metadata.sql import SQLStore
 from alphatrion.metadata.sql_models import (
     Project as ProjectModel,
     Experiment as ExperimentModel,
+    Trial as TrialModel,
+    Run as RunModel,
+    Metric as MetricModel,
 )
 
-from .types import Project, Experiment
+from .types import Project, Experiment, Trial, Run, Metric
 
 
 store = SQLStore(
-    "postgresql+psycopg2://alphatrion:alphatr1on@localhost:5432/alphatrion")
-
+    "postgresql+psycopg2://alphatrion:alphatr1on@localhost:5432/alphatrion"
+)
 
 # ---------------------------
 # Helpers: SQLAlchemy → GraphQL
 # ---------------------------
+
 
 def to_gql_project(p: ProjectModel) -> Project:
     return Project(
@@ -39,6 +43,35 @@ def to_gql_experiment(e: ExperimentModel) -> Experiment:
     )
 
 
+def to_gql_trial(t: TrialModel) -> Trial:
+    return Trial(
+        id=str(t.uuid),
+        experiment_id=str(t.experiment_id),
+        meta=t.meta,
+        created_at=t.created_at,
+        updated_at=t.updated_at,
+    )
+
+
+def to_gql_run(r: RunModel) -> Run:
+    return Run(
+        id=str(r.uuid),
+        trial_id=str(r.trial_id),
+        meta=r.meta,
+        created_at=r.created_at,
+    )
+
+
+def to_gql_metric(m: MetricModel) -> Metric:
+    return Metric(
+        id=str(m.uuid),
+        trial_id=str(m.trial_id),
+        name=m.key,
+        value=m.value,
+        created_at=m.created_at,
+    )
+
+
 # ---------------------------
 # GraphQL Resolvers
 # ---------------------------
@@ -46,7 +79,6 @@ def to_gql_experiment(e: ExperimentModel) -> Experiment:
 class GraphQLResolvers:
 
     # --- Project ---
-
     @staticmethod
     def list_projects() -> List[Project]:
         rows = store.list_projects()
@@ -58,7 +90,6 @@ class GraphQLResolvers:
         return to_gql_project(p) if p else None
 
     # --- Experiment ---
-
     @staticmethod
     def list_experiments(project_id: str) -> List[Experiment]:
         rows = store.list_exps(project_id, page=0, page_size=100)
@@ -69,24 +100,52 @@ class GraphQLResolvers:
         e = store.get_exp(id)
         return to_gql_experiment(e) if e else None
 
-    # --- Leave Trials/Runs/Metrics empty for now ---
+    # --- Trial ---
+    @staticmethod
+    def list_trials(experiment_id: str) -> List[Trial]:
+        session = store._session()
+        rows = (
+            session.query(TrialModel)
+            .filter(TrialModel.experiment_id == experiment_id)
+            .all()
+        )
+        session.close()
+        return [to_gql_trial(t) for t in rows]
 
     @staticmethod
-    def list_trials(experiment_id: str) -> list:
-        return []
+    def get_trial(id: str) -> Optional[Trial]:
+        session = store._session()
+        row = session.query(TrialModel).filter(TrialModel.uuid == id).first()
+        session.close()
+        return to_gql_trial(row) if row else None
+
+    # --- Run ---
+    @staticmethod
+    def list_runs(trial_id: str) -> List[Run]:
+        session = store._session()
+        rows = (
+            session.query(RunModel)
+            .filter(RunModel.trial_id == trial_id)
+            .all()
+        )
+        session.close()
+        return [to_gql_run(r) for r in rows]
 
     @staticmethod
-    def get_trial(id: str):
-        return None
+    def get_run(id: str) -> Optional[Run]:
+        session = store._session()
+        row = session.query(RunModel).filter(RunModel.uuid == id).first()
+        session.close()
+        return to_gql_run(row) if row else None
 
+    # --- Metric ---
     @staticmethod
-    def list_runs(trial_id: str) -> list:
-        return []
-
-    @staticmethod
-    def get_run(id: str):
-        return None
-
-    @staticmethod
-    def list_trial_metrics(trial_id: str) -> list:
-        return []
+    def list_trial_metrics(trial_id: str) -> List[Metric]:
+        session = store._session()
+        rows = (
+            session.query(MetricModel)
+            .filter(MetricModel.trial_id == trial_id)
+            .all()
+        )
+        session.close()
+        return [to_gql_metric(m) for m in rows]
