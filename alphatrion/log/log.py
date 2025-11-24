@@ -113,4 +113,4 @@ async def log_metrics(metrics: dict[str, float]):
         )
 
     if should_early_stop or should_stop_on_target:
-        trial.complete()
+        trial.done()

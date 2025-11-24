@@ -140,6 +140,8 @@ class Trial:
         "_early_stopping_counter",
         # Only work when max_runs_per_trial > 0
         "_total_runs_counter",
+        # Only set to true once called done_with_err.
+        "_done_with_err"
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -152,12 +154,13 @@ class Trial:
         self._running_tasks = dict()
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
+        self._done_with_err = False
 
     async def __aenter__(self):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.complete()
+        self.done()
         if self._token:
             current_trial_id.reset(self._token)
 
@@ -275,7 +278,7 @@ class Trial:
     async def wait(self):
         await self._context.wait()
 
-    def done(self) -> bool:
+    def is_done(self) -> bool:
         return self._context.cancelled()
 
     # If the name is same in the same experiment, it will refer to the existing trial.
@@ -312,10 +315,14 @@ class Trial:
         # each trial runs in its own context.
         self._token = current_trial_id.set(self._id)
 
-    # complete function should be called manually as a pair of start
+    # done function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the trial gracefully,
     # or it could lead to trial not being marked as completed.
-    def complete(self):
+    def done(self):
+        self._context.cancel()
+
+    def done_with_err(self):
+        self._done_with_err = True
         self._context.cancel()
 
     def _stop(self):
@@ -324,8 +331,13 @@ class Trial:
             duration = (
                 datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
             ).total_seconds()
+
+            status = TrialStatus.COMPLETED
+            if self._done_with_err:
+                status = TrialStatus.FAILED
+
             self._runtime._metadb.update_trial(
-                trial_id=self._id, status=TrialStatus.COMPLETED, duration=duration
+                trial_id=self._id, status=status, duration=duration
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
@@ -360,7 +372,7 @@ class Trial:
             task.add_done_callback(
                 lambda t: (
                     setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                    self.complete()
+                    self.done()
                     if self._total_runs_counter >= self._config.max_runs_per_trial
                     else None,
                 )
