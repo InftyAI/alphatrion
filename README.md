@@ -69,7 +69,7 @@ async def log():
   # Run your code here then log metrics.
   await alpha.log_metrics({"accuracy": 0.95})
 
-async with alpha.CraftExperiment.setup(name="my_first_experiment") as exp:
+async with alpha.CraftExperiment.setup(name="my_experiment") as exp:
   async with exp.start_trial(name="my_trial") as trial:
     run = trial.start_run(lambda: log())
     await run.wait()
