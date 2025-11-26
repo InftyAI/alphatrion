@@ -2,19 +2,28 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Enum, Float, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
 
-class TrialStatus(enum.Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
+class TrialStatus(enum.IntEnum):
+    UNKNOWN = 0
+    PENDING = 1
+    RUNNING = 2
+    COMPLETED = 9
+    FAILED = 10
 
+
+TrialStatusMap = {
+    TrialStatus.UNKNOWN: "UNKNOWN",
+    TrialStatus.PENDING: "PENDING",
+    TrialStatus.RUNNING: "RUNNING",
+    TrialStatus.COMPLETED: "COMPLETED",
+    TrialStatus.FAILED: "FAILED",
+}
 
 FINISHED_STATUS = [TrialStatus.COMPLETED, TrialStatus.FAILED]
 
@@ -66,14 +75,11 @@ class Trial(Base):
     params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
     status = Column(
-        Enum(
-            TrialStatus,
-            name="trial_status",
-            values_callable=lambda enum: [e.value for e in enum],
-        ),
+        Integer,
         default=TrialStatus.PENDING,
         nullable=False,
-        comment="Status of the trial",
+        comment="Status of the trial, \
+            0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, 10: FAILED",
     )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

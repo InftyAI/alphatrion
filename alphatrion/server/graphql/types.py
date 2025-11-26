@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 
 import strawberry
 from strawberry.scalars import JSON
@@ -24,6 +25,17 @@ class Experiment:
     updated_at: datetime
 
 
+class GraphQLTrialStatus(Enum):
+    UNKNOWN = "UNKNOWN"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+GraphQLTrialStatusEnum = strawberry.enum(GraphQLTrialStatus)
+
+
 @strawberry.type
 class Trial:
     id: strawberry.ID
@@ -34,7 +46,7 @@ class Trial:
     meta: JSON | None
     params: JSON | None
     duration: float
-    status: str
+    status: GraphQLTrialStatusEnum
     created_at: datetime
     updated_at: datetime
 

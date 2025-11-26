@@ -80,7 +80,7 @@ def generate_trial(exps: list[Experiment]) -> Trial:
             fake.pydict(nb_elements=3, variable_nb_elements=True)
         ),
         duration=random.uniform(0.1, 1000.0),
-        status=random.choice(list(TrialStatus)),
+        status=random.choice(list(TrialStatus)).value,
     )
 
 

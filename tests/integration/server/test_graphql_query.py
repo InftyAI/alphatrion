@@ -2,6 +2,7 @@
 
 import uuid
 
+from alphatrion.metadata.sql_models import TrialStatus
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
 
@@ -139,6 +140,7 @@ def test_query_single_trial():
         name="Test Trial",
         project_id=project_id,
         experiment_id=experiment_id,
+        status=TrialStatus.RUNNING,
         meta={},
     )
 
