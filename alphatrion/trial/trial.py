@@ -5,12 +5,10 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion.log.log import log_artifact_sync
 from alphatrion.metadata.sql_models import FINISHED_STATUS, TrialStatus
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import context
-from alphatrion.utils import time as utime
 
 # Used in log/log.py to log params/metrics
 current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
