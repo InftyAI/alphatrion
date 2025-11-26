@@ -1,9 +1,16 @@
 import uuid
 
-from alphatrion.metadata.sql_models import TrialStatusMap
+from alphatrion.metadata.sql_models import TrialStatus
 from alphatrion.server.graphql import runtime
 
-from .types import Experiment, Metric, Project, Run, Trial
+from .types import (
+    Experiment,
+    GraphQLTrialStatusEnum,
+    Metric,
+    Project,
+    Run,
+    Trial,
+)
 
 
 class GraphQLResolvers:
@@ -91,7 +98,7 @@ class GraphQLResolvers:
                 meta=t.meta,
                 params=t.params,
                 duration=t.duration,
-                status=TrialStatusMap[t.status],
+                status=GraphQLTrialStatusEnum[TrialStatus(t.status).name],
                 created_at=t.created_at,
                 updated_at=t.updated_at,
             )
@@ -112,7 +119,7 @@ class GraphQLResolvers:
                 meta=trial.meta,
                 params=trial.params,
                 duration=trial.duration,
-                status=trial.status,
+                status=GraphQLTrialStatusEnum[TrialStatus(trial.status).name],
                 created_at=trial.created_at,
                 updated_at=trial.updated_at,
             )
