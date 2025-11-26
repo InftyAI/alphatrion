@@ -40,7 +40,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: alphatrion@inftyai.com
       PGADMIN_DEFAULT_PASSWORD: alphatr1on
     ports:
-      - 8080:80
+      - 8081:80
     depends_on:
       - postgres
   registry:

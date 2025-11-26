@@ -44,14 +44,14 @@ Run the following command for setup:
 ```bash
 cp .env.example .env & make up
 ```
-
-You can login to pgAdmin at `http://localhost:8080` to see the Postgres database with following credentials:
+You can login to pgAdmin at `http://localhost:8081` to see the Postgres database with following credentials. Remember to register the server first.
 
 ```shell
-Email:     alphatrion@inftyai.com
-Username:  alphatrion
-Password:  alphatr1on
-Server:    postgres
+Email:       alphatrion@inftyai.com
+Password:    alphatr1on
+ServerName:  alphatrion
+HostName:    postgres
+ServerPWD:   alphatr1on
 ```
 
 ### Run a Sample Experiment
