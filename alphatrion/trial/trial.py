@@ -5,10 +5,12 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+from alphatrion.log.log import log_artifact_sync
 from alphatrion.metadata.sql_models import FINISHED_STATUS, TrialStatus
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.utils.context import Context
+from alphatrion.utils import context
+from alphatrion.utils import time as utime
 
 # Used in log/log.py to log params/metrics
 current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
@@ -27,11 +29,12 @@ class CheckpointConfig(BaseModel):
     #     description="Interval in seconds to save checkpoints. \
     #         Default is None.",
     # )
-    # save_every_n_steps: int | None = Field(
-    #     default=None,
-    #     description="Interval in steps to save checkpoints. \
-    #         Default is None.",
-    # )
+    # TODO: implement save_every_n_runs
+    save_every_n_runs: int = Field(
+        default=-1,
+        description="Interval in runs to save checkpoints. \
+            Default is -1 (unlimited).",
+    )
     save_on_best: bool = Field(
         default=False,
         description="Once a best result is found, it will be saved. \
@@ -52,9 +55,9 @@ class MonitorMode(enum.Enum):
 class TrialConfig(BaseModel):
     """Configuration for a Trial."""
 
-    max_runtime_seconds: int = Field(
+    max_execution_seconds: int = Field(
         default=-1,
-        description="Maximum runtime seconds for the trial. \
+        description="Maximum execution seconds for the trial. \
         Trial timeout will override experiment timeout if both are set. \
         Default is -1 (no limit).",
     )
@@ -141,7 +144,7 @@ class Trial:
         # Only work when max_runs_per_trial > 0
         "_total_runs_counter",
         # Only set to true once called done_with_err.
-        "_done_with_err"
+        "_done_with_err",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -256,7 +259,7 @@ class Trial:
         return self._early_stopping_counter >= self._config.early_stopping_runs
 
     def _timeout(self) -> int | None:
-        timeout = self._config.max_runtime_seconds
+        timeout = self._config.max_execution_seconds
         if timeout is None or timeout < 0:
             return None
 
@@ -306,7 +309,7 @@ class Trial:
                 status=TrialStatus.RUNNING,
             )
 
-        self._context = Context(
+        self._context = context.Context(
             cancel_func=self._stop,
             timeout=self._timeout(),
         )
@@ -368,14 +371,18 @@ class Trial:
 
         task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
         task.add_done_callback(lambda t: self._runs.pop(run.id, None))
-        if self._config.max_runs_per_trial > 0:
-            task.add_done_callback(
-                lambda t: (
-                    setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                    self.done()
-                    if self._total_runs_counter >= self._config.max_runs_per_trial
-                    else None,
-                )
+        task.add_done_callback(
+            lambda t: (
+                setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
+                self._post_run(),
             )
+        )
 
         return run
+
+    def _post_run(self):
+        if (
+            self._config.max_runs_per_trial > 0
+            and self._total_runs_counter >= self._config.max_runs_per_trial
+        ):
+            self.done()

@@ -22,25 +22,25 @@ class TestTrial(unittest.IsolatedAsyncioTestCase):
             },
             {
                 "name": "Positive timeout",
-                "config": TrialConfig(max_runtime_seconds=10),
+                "config": TrialConfig(max_execution_seconds=10),
                 "created": False,
                 "expected": 10,
             },
             {
                 "name": "Zero timeout",
-                "config": TrialConfig(max_runtime_seconds=0),
+                "config": TrialConfig(max_execution_seconds=0),
                 "created": False,
                 "expected": 0,
             },
             {
                 "name": "Negative timeout",
-                "config": TrialConfig(max_runtime_seconds=-5),
+                "config": TrialConfig(max_execution_seconds=-5),
                 "created": False,
                 "expected": None,
             },
             {
                 "name": "With started_at, positive timeout",
-                "config": TrialConfig(max_runtime_seconds=5),
+                "config": TrialConfig(max_execution_seconds=5),
                 "created": True,
                 "expected": 3,
             },
@@ -54,7 +54,7 @@ class TestTrial(unittest.IsolatedAsyncioTestCase):
                 if case["created"]:
                     time.sleep(2)  # simulate elapsed time
                     self.assertEqual(
-                        trial._timeout(), case["config"].max_runtime_seconds - 2
+                        trial._timeout(), case["config"].max_execution_seconds - 2
                     )
                 else:
                     self.assertEqual(trial._timeout(), case["expected"])
