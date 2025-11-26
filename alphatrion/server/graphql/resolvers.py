@@ -1,7 +1,7 @@
 import uuid
 
-from alphatrion.server.graphql import runtime
 from alphatrion.metadata.sql_models import TrialStatusMap
+from alphatrion.server.graphql import runtime
 
 from .types import Experiment, Metric, Project, Run, Trial
 

@@ -16,6 +16,7 @@ class TrialStatus(enum.IntEnum):
     COMPLETED = 9
     FAILED = 10
 
+
 TrialStatusMap = {
     TrialStatus.UNKNOWN: "UNKNOWN",
     TrialStatus.PENDING: "PENDING",
