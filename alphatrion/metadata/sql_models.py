@@ -78,7 +78,7 @@ class Trial(Base):
         Integer,
         default=TrialStatus.PENDING,
         nullable=False,
-        comment="Status of the trial, 0: PENDING, 1: RUNNING, 9: COMPLETED, 10: FAILED",
+        comment="Status of the trial, 0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, 10: FAILED",
     )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
