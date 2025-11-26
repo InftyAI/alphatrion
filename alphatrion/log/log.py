@@ -20,6 +20,28 @@ async def log_artifact(
     :param version: the version (tag) to log the files
     """
 
+    return log_artifact_sync(
+        paths=paths,
+        version=version,
+    )
+
+
+def log_artifact_sync(
+    paths: str | list[str],
+    version: str = "latest",
+):
+    """
+    Log artifacts (files) to the artifact registry (synchronous version).
+
+    :param exp_id: the experiment ID
+    :param paths: list of file paths to log.
+        Support one or multiple files or a folder.
+        If a folder is provided, all files in the folder will be logged.
+        Don't support nested folders currently, only files in the first level
+        of the folder will be logged.
+    :param version: the version (tag) to log the files
+    """
+
     if not paths:
         raise ValueError("no files specified to log")
 

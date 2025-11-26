@@ -55,6 +55,7 @@ async def test_craft_experiment_with_done():
     assert trial_obj.duration is not None
     assert trial_obj.status == TrialStatus.COMPLETED
 
+
 @pytest.mark.asyncio
 async def test_craft_experiment_with_done_with_err():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
@@ -73,6 +74,7 @@ async def test_craft_experiment_with_done_with_err():
     trial_obj = global_runtime()._metadb.get_trial(trial_id=trial_id)
     assert trial_obj.duration is not None
     assert trial_obj.status == TrialStatus.FAILED
+
 
 @pytest.mark.asyncio
 async def test_craft_experiment_with_no_context():
@@ -170,7 +172,7 @@ async def test_craft_experiment_with_context():
         meta={"key": "value"},
     ) as exp:
         trial = exp.start_trial(
-            name="first-trial", config=TrialConfig(max_runtime_seconds=2)
+            name="first-trial", config=TrialConfig(max_execution_seconds=2)
         )
         await trial.wait()
         assert trial.is_done()
@@ -188,7 +190,7 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
 
         duration = random.randint(1, 5)
         trial = exp.start_trial(
-            name="first-trial", config=TrialConfig(max_runtime_seconds=duration)
+            name="first-trial", config=TrialConfig(max_execution_seconds=duration)
         )
         # double check current trial id.
         assert trial.id == current_trial_id.get()
