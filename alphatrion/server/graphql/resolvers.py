@@ -1,6 +1,7 @@
 import uuid
 
 from alphatrion.server.graphql import runtime
+from alphatrion.metadata.sql_models import TrialStatusMap
 
 from .types import Experiment, Metric, Project, Run, Trial
 
@@ -90,7 +91,7 @@ class GraphQLResolvers:
                 meta=t.meta,
                 params=t.params,
                 duration=t.duration,
-                status=t.status,
+                status=TrialStatusMap[t.status],
                 created_at=t.created_at,
                 updated_at=t.updated_at,
             )

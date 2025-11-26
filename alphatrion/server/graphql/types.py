@@ -1,5 +1,7 @@
 from datetime import datetime
+from enum import Enum
 
+from pg8000 import UNKNOWN
 import strawberry
 from strawberry.scalars import JSON
 
@@ -23,6 +25,14 @@ class Experiment:
     created_at: datetime
     updated_at: datetime
 
+class TrialStatus(Enum):
+    UNKNOWN = "UNKNOWN"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+TrialStatusEnum = strawberry.enum(TrialStatus)
 
 @strawberry.type
 class Trial:
@@ -34,7 +44,7 @@ class Trial:
     meta: JSON | None
     params: JSON | None
     duration: float
-    status: str
+    status: TrialStatusEnum
     created_at: datetime
     updated_at: datetime
 
