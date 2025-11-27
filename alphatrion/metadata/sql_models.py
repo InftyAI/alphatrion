@@ -46,6 +46,11 @@ class Project(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
+class ExperimentType(enum.IntEnum):
+    UNKNOWN = 0
+    CRAFT_EXPERIMENT = 1
+
+
 # Define the Experiment model for SQLAlchemy
 class Experiment(Base):
     __tablename__ = "experiments"
@@ -55,6 +60,12 @@ class Experiment(Base):
     description = Column(String, nullable=True)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the experiment")
+    kind = Column(
+        Integer,
+        default=ExperimentType.CRAFT_EXPERIMENT,
+        nullable=False,
+        comment="Type of the experiment",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -91,6 +102,7 @@ class Trial(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
 class Run(Base):
@@ -116,6 +128,7 @@ class Run(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
 class Model(Base):

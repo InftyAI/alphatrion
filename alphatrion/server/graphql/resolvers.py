@@ -5,6 +5,8 @@ from alphatrion.server.graphql import runtime
 
 from .types import (
     Experiment,
+    GraphQLExperimentType,
+    GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
     Metric,
     Project,
@@ -58,6 +60,7 @@ class GraphQLResolvers:
                 name=exp.name,
                 description=exp.description,
                 meta=exp.meta,
+                kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
                 created_at=exp.created_at,
                 updated_at=exp.updated_at,
             )
@@ -75,6 +78,7 @@ class GraphQLResolvers:
                 name=exp.name,
                 description=exp.description,
                 meta=exp.meta,
+                kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
                 created_at=exp.created_at,
                 updated_at=exp.updated_at,
             )
