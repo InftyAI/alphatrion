@@ -364,17 +364,17 @@ class Trial:
         run.start(call_func)
         self._runs[run.id] = run
 
-        run.add_done_callback(lambda t: run.done())
         run.add_done_callback(
             lambda t: (
                 setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                self._post_run(run.id),
+                self._post_run(run),
             )
         )
         return run
 
-    def _post_run(self, id: uuid.UUID):
-        self._runs.pop(id, None)
+    def _post_run(self, run: Run):
+        self._runs.pop(run.id, None)
+        run.done()
 
         if (
             self._config.max_runs_per_trial > 0

@@ -44,7 +44,6 @@ class Run:
             run_id=self._id,
             status=Status.COMPLETED,
         )
-        print(f"Run {self._id} completed.")
 
     def cancel(self):
         self._task.cancel()
