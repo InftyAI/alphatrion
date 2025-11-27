@@ -141,8 +141,8 @@ class Trial:
         "_early_stopping_counter",
         # Only work when max_runs_per_trial > 0
         "_total_runs_counter",
-        # Only set to true once called done_with_err.
-        "_done_with_err",
+        # Whether the trial is ended with error.
+        "_err",
     )
 
     def __init__(self, exp_id: int, config: TrialConfig | None = None):
@@ -155,7 +155,7 @@ class Trial:
         self._running_tasks = dict()
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
-        self._done_with_err = False
+        self._err = False
 
     async def __aenter__(self):
         return self
@@ -320,10 +320,13 @@ class Trial:
     # FIXME: watch for system signals to cancel the trial gracefully,
     # or it could lead to trial not being marked as completed.
     def done(self):
-        self._context.cancel()
+        self._cancel()
 
     def done_with_err(self):
-        self._done_with_err = True
+        self._err = True
+        self._cancel()
+
+    def _cancel(self):
         self._context.cancel()
 
     def _stop(self):
@@ -334,7 +337,7 @@ class Trial:
             ).total_seconds()
 
             status = TrialStatus.COMPLETED
-            if self._done_with_err:
+            if self._err:
                 status = TrialStatus.FAILED
 
             self._runtime._metadb.update_trial(
