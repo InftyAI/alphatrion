@@ -137,7 +137,7 @@ class SQLStore(MetaStore):
 
     # paginate the experiments in case of too many experiments.
     def list_exps(
-        self, project_id: uuid.UUID, page: int, page_size: int
+        self, project_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[Experiment]:
         session = self._session()
         exps = (
@@ -196,7 +196,7 @@ class SQLStore(MetaStore):
         session.close()
         return model
 
-    def list_models(self, page: int, page_size: int) -> list[Model]:
+    def list_models(self, page: int = 0, page_size: int = 10) -> list[Model]:
         session = self._session()
         models = session.query(Model).offset(page * page_size).limit(page_size).all()
         session.close()
@@ -267,7 +267,7 @@ class SQLStore(MetaStore):
         return trial
 
     def list_trials_by_experiment_id(
-        self, experiment_id: uuid.UUID, page: int, page_size: int
+        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[Trial]:
         session = self._session()
         trials = (
@@ -328,7 +328,7 @@ class SQLStore(MetaStore):
         return run
 
     def list_runs_by_trial_id(
-        self, trial_id: uuid.UUID, page: int, page_size: int
+        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[Run]:
         session = self._session()
         runs = (
@@ -367,8 +367,16 @@ class SQLStore(MetaStore):
         session.close()
         return new_metric_id
 
-    def list_metrics_by_trial_id(self, trial_id: uuid.UUID) -> list[Metric]:
+    def list_metrics_by_trial_id(
+        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[Metric]:
         session = self._session()
-        metrics = session.query(Metric).filter(Metric.trial_id == trial_id).all()
+        metrics = (
+            session.query(Metric)
+            .filter(Metric.trial_id == trial_id)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
         session.close()
         return metrics

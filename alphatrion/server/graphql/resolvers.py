@@ -155,15 +155,19 @@ class GraphQLResolvers:
                 project_id=run.project_id,
                 experiment_id=run.experiment_id,
                 meta=run.meta,
-                created_at=run.created_at,
                 status=GraphQLStatusEnum[Status(run.status).name],
+                created_at=run.created_at,
             )
         return None
 
     @staticmethod
-    def list_trial_metrics(trial_id: str) -> list[Metric]:
+    def list_trial_metrics(
+        trial_id: str, page: int = 0, page_size: int = 10
+    ) -> list[Metric]:
         metadb = runtime.graphql_runtime().metadb
-        metrics = metadb.list_metrics_by_trial_id(trial_id=uuid.UUID(trial_id))
+        metrics = metadb.list_metrics_by_trial_id(
+            trial_id=uuid.UUID(trial_id), page=page, page_size=page_size
+        )
         return [
             Metric(
                 id=m.uuid,
