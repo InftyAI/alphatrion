@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion.metadata.sql_models import FINISHED_STATUS, TrialStatus
+from alphatrion.metadata.sql_models import FINISHED_STATUS, Status
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import context
@@ -136,7 +136,6 @@ class Trial:
         "_meta",
         # key is run_id, value is Run instance
         "_runs",
-        "_running_tasks",
         # Only work when early_stopping_runs > 0
         "_early_stopping_counter",
         # Only work when max_runs_per_trial > 0
@@ -151,8 +150,7 @@ class Trial:
         self._runtime = global_runtime()
         self._step = 0
         self._construct_meta()
-        self._runs = dict()
-        self._running_tasks = dict()
+        self._runs = dict[uuid.UUID, Run]()
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
         self._err = False
@@ -304,7 +302,7 @@ class Trial:
                 description=description,
                 meta=meta,
                 params=params,
-                status=TrialStatus.RUNNING,
+                status=Status.RUNNING,
             )
 
         self._context = context.Context(
@@ -336,19 +334,18 @@ class Trial:
                 datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
             ).total_seconds()
 
-            status = TrialStatus.COMPLETED
+            status = Status.COMPLETED
             if self._err:
-                status = TrialStatus.FAILED
+                status = Status.FAILED
 
             self._runtime._metadb.update_trial(
                 trial_id=self._id, status=status, duration=duration
             )
 
         self._runtime.current_exp.unregister_trial(self._id)
+        for run in self._runs.values():
+            run.cancel()
         self._runs.clear()
-        for task in self._running_tasks.values():
-            task.cancel()
-        self._running_tasks.clear()
 
     def _get_obj(self):
         return self._runtime._metadb.get_trial(trial_id=self._id)
@@ -364,24 +361,21 @@ class Trial:
         :return: the Run instance."""
 
         run = Run(trial_id=self._id)
-        task = run._start(call_func)
-        if task is None:
-            raise RuntimeError("Failed to start the run task.")
+        run.start(call_func)
         self._runs[run.id] = run
-        self._running_tasks[run.id] = task
 
-        task.add_done_callback(lambda t: self._running_tasks.pop(run.id, None))
-        task.add_done_callback(lambda t: self._runs.pop(run.id, None))
-        task.add_done_callback(
+        run.add_done_callback(
             lambda t: (
                 setattr(self, "_total_runs_counter", self._total_runs_counter + 1),
-                self._post_run(),
+                self._post_run(run),
             )
         )
-
         return run
 
-    def _post_run(self):
+    def _post_run(self, run: Run):
+        self._runs.pop(run.id, None)
+        run.done()
+
         if (
             self._config.max_runs_per_trial > 0
             and self._total_runs_counter >= self._config.max_runs_per_trial

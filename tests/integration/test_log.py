@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import pytest
 
 import alphatrion as alpha
-from alphatrion.metadata.sql_models import TrialStatus
+from alphatrion.metadata.sql_models import Status
 from alphatrion.trial.trial import current_trial_id
 
 
@@ -61,7 +61,7 @@ async def test_log_artifact():
         got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
         assert got_trial is not None
         assert got_trial.name == "first-trial"
-        assert got_trial.status == TrialStatus.COMPLETED
+        assert got_trial.status == Status.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -81,7 +81,7 @@ async def test_log_params():
         new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
         assert new_trial is not None
         assert new_trial.params == {"param1": 0.2}
-        assert new_trial.status == TrialStatus.RUNNING
+        assert new_trial.status == Status.RUNNING
         assert current_trial_id.get() == trial.id
 
         trial.done()

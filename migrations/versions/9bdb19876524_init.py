@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 5a9f379c497c
+Revision ID: 9bdb19876524
 Revises: 
-Create Date: 2025-11-26 15:05:02.024182
+Create Date: 2025-11-27 11:40:37.154216
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5a9f379c497c'
+revision: str = '9bdb19876524'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -72,6 +72,7 @@ def upgrade() -> None:
     sa.Column('experiment_id', sa.UUID(), nullable=False),
     sa.Column('trial_id', sa.UUID(), nullable=False),
     sa.Column('meta', sa.JSON(), nullable=True, comment='Additional metadata for the run'),
+    sa.Column('status', sa.Integer(), nullable=False, comment='Status of the run,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('uuid')
@@ -85,7 +86,7 @@ def upgrade() -> None:
     sa.Column('meta', sa.JSON(), nullable=True, comment='Additional metadata for the trial'),
     sa.Column('params', sa.JSON(), nullable=True, comment='Parameters for the experiment'),
     sa.Column('duration', sa.Float(), nullable=True, comment='Duration of the trial in seconds'),
-    sa.Column('status', sa.Integer(), nullable=False, comment='Status of the trial, 0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, 10: FAILED'),
+    sa.Column('status', sa.Integer(), nullable=False, comment='Status of the trial,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('uuid')
