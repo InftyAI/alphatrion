@@ -40,10 +40,18 @@ class Run:
             current_run_id.reset(token)
 
     def done(self):
+        # Callback will always be called even if the run is cancelled.
+        # Make sure we don't update the status if it's already cancelled.
+        if self.cancelled():
+            return
+
         self._runtime._metadb.update_run(
             run_id=self._id,
             status=Status.COMPLETED,
         )
+
+    def cancelled(self) -> bool:
+        return self._task.cancelled()
 
     def cancel(self):
         self._task.cancel()

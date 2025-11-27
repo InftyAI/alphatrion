@@ -348,7 +348,7 @@ class Trial:
         self._runs.clear()
 
     def _get_obj(self):
-        return self._runtime._metadb.get_trial(trial_id=self._id)
+        return self._runtime.metadb.get_trial(trial_id=self._id)
 
     def increment_step(self) -> int:
         self._step += 1
