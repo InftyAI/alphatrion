@@ -198,7 +198,13 @@ class SQLStore(MetaStore):
 
     def list_models(self, page: int = 0, page_size: int = 10) -> list[Model]:
         session = self._session()
-        models = session.query(Model).offset(page * page_size).limit(page_size).all()
+        models = (
+            session.query(Model)
+            .filter(Model.is_del == 0)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
         session.close()
         return models
 
@@ -244,7 +250,11 @@ class SQLStore(MetaStore):
 
     def get_trial(self, trial_id: uuid.UUID) -> Trial | None:
         session = self._session()
-        trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
+        trial = (
+            session.query(Trial)
+            .filter(Trial.uuid == trial_id, Trial.is_del == 0)
+            .first()
+        )
         session.close()
         return trial
 
@@ -260,7 +270,11 @@ class SQLStore(MetaStore):
         session = self._session()
         trial = (
             session.query(Trial)
-            .filter(Trial.name == trial_name, Trial.experiment_id == experiment_id)
+            .filter(
+                Trial.name == trial_name,
+                Trial.experiment_id == experiment_id,
+                Trial.is_del == 0,
+            )
             .first()
         )
         session.close()
@@ -272,7 +286,7 @@ class SQLStore(MetaStore):
         session = self._session()
         trials = (
             session.query(Trial)
-            .filter(Trial.experiment_id == experiment_id)
+            .filter(Trial.experiment_id == experiment_id, Trial.is_del == 0)
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -282,7 +296,11 @@ class SQLStore(MetaStore):
 
     def update_trial(self, trial_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
-        trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
+        trial = (
+            session.query(Trial)
+            .filter(Trial.uuid == trial_id, Trial.is_del == 0)
+            .first()
+        )
         if trial:
             for key, value in kwargs.items():
                 setattr(trial, key, value)
@@ -314,7 +332,7 @@ class SQLStore(MetaStore):
 
     def update_run(self, run_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
-        run = session.query(Run).filter(Run.uuid == run_id).first()
+        run = session.query(Run).filter(Run.uuid == run_id, Run.is_del == 0).first()
         if run:
             for key, value in kwargs.items():
                 setattr(run, key, value)
@@ -323,7 +341,7 @@ class SQLStore(MetaStore):
 
     def get_run(self, run_id: uuid.UUID) -> Run | None:
         session = self._session()
-        run = session.query(Run).filter(Run.uuid == run_id).first()
+        run = session.query(Run).filter(Run.uuid == run_id, Run.is_del == 0).first()
         session.close()
         return run
 
@@ -333,7 +351,7 @@ class SQLStore(MetaStore):
         session = self._session()
         runs = (
             session.query(Run)
-            .filter(Run.trial_id == trial_id)
+            .filter(Run.trial_id == trial_id, Run.is_del == 0)
             .offset(page * page_size)
             .limit(page_size)
             .all()

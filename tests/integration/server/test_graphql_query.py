@@ -75,6 +75,7 @@ def test_query_single_experiment():
             name
             description
             meta
+            kind
             createdAt
             updatedAt
         }}
@@ -117,6 +118,7 @@ def test_query_experiments():
             name
             description
             meta
+            kind
             createdAt
             updatedAt
         }}

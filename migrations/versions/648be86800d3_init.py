@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 9bdb19876524
+Revision ID: 648be86800d3
 Revises: 
-Create Date: 2025-11-27 11:40:37.154216
+Create Date: 2025-11-27 18:12:04.027865
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '9bdb19876524'
+revision: str = '648be86800d3'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,6 +27,7 @@ def upgrade() -> None:
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('project_id', sa.UUID(), nullable=False),
     sa.Column('meta', sa.JSON(), nullable=True, comment='Additional metadata for the experiment'),
+    sa.Column('kind', sa.Integer(), nullable=False, comment='Type of the experiment'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_del', sa.Integer(), nullable=True, comment='0 for not deleted, 1 for deleted'),
@@ -75,6 +76,7 @@ def upgrade() -> None:
     sa.Column('status', sa.Integer(), nullable=False, comment='Status of the run,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('is_del', sa.Integer(), nullable=True, comment='0 for not deleted, 1 for deleted'),
     sa.PrimaryKeyConstraint('uuid')
     )
     op.create_table('trials',
@@ -89,6 +91,7 @@ def upgrade() -> None:
     sa.Column('status', sa.Integer(), nullable=False, comment='Status of the trial,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('is_del', sa.Integer(), nullable=True, comment='0 for not deleted, 1 for deleted'),
     sa.PrimaryKeyConstraint('uuid')
     )
     # ### end Alembic commands ###

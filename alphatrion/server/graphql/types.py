@@ -14,11 +14,20 @@ class Project:
     updated_at: datetime
 
 
+class GraphQLExperimentType(Enum):
+    UNKNOWN = 0
+    CRAFT_EXPERIMENT = 1
+
+
+GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
+
+
 @strawberry.type
 class Experiment:
     id: strawberry.ID
     project_id: strawberry.ID | None
     name: str | None
+    kind: GraphQLExperimentTypeEnum
     description: str | None
     meta: JSON | None
     created_at: datetime
