@@ -312,7 +312,7 @@ class SQLStore(MetaStore):
 
         return run_id
 
-    def update_run(self, run_id: uuid.UUID, **kwargs) ->  None:
+    def update_run(self, run_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
         run = session.query(Run).filter(Run.uuid == run_id).first()
         if run:
