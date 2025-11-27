@@ -25,15 +25,16 @@ class Experiment:
     updated_at: datetime
 
 
-class GraphQLTrialStatus(Enum):
+class GraphQLStatus(Enum):
     UNKNOWN = "UNKNOWN"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
+    CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
 
-GraphQLTrialStatusEnum = strawberry.enum(GraphQLTrialStatus)
+GraphQLStatusEnum = strawberry.enum(GraphQLStatus)
 
 
 @strawberry.type
@@ -46,7 +47,7 @@ class Trial:
     meta: JSON | None
     params: JSON | None
     duration: float
-    status: GraphQLTrialStatusEnum
+    status: GraphQLStatusEnum
     created_at: datetime
     updated_at: datetime
 
@@ -58,6 +59,7 @@ class Run:
     project_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None
+    status: GraphQLStatusEnum
     created_at: datetime
 
 

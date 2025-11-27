@@ -9,23 +9,25 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
-class TrialStatus(enum.IntEnum):
+class Status(enum.IntEnum):
     UNKNOWN = 0
     PENDING = 1
     RUNNING = 2
     COMPLETED = 9
-    FAILED = 10
+    CANCELLED = 10
+    FAILED = 11
 
 
-TrialStatusMap = {
-    TrialStatus.UNKNOWN: "UNKNOWN",
-    TrialStatus.PENDING: "PENDING",
-    TrialStatus.RUNNING: "RUNNING",
-    TrialStatus.COMPLETED: "COMPLETED",
-    TrialStatus.FAILED: "FAILED",
+StatusMap = {
+    Status.UNKNOWN: "UNKNOWN",
+    Status.PENDING: "PENDING",
+    Status.RUNNING: "RUNNING",
+    Status.CANCELLED: "CANCELLED",
+    Status.COMPLETED: "COMPLETED",
+    Status.FAILED: "FAILED",
 }
 
-FINISHED_STATUS = [TrialStatus.COMPLETED, TrialStatus.FAILED]
+FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED]
 
 
 class Project(Base):
@@ -76,10 +78,11 @@ class Trial(Base):
     duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
     status = Column(
         Integer,
-        default=TrialStatus.PENDING,
+        default=Status.PENDING,
         nullable=False,
         comment="Status of the trial, \
-            0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, 10: FAILED",
+            0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
+            10: CANCELLED, 11: FAILED",
     )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -98,6 +101,14 @@ class Run(Base):
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
+    status = Column(
+        Integer,
+        default=Status.PENDING,
+        nullable=False,
+        comment="Status of the run, \
+            0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
+            10: CANCELLED, 11: FAILED",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(

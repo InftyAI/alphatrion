@@ -11,8 +11,8 @@ from alphatrion.metadata.sql_models import (
     Model,
     Project,
     Run,
+    Status,
     Trial,
-    TrialStatus,
 )
 
 
@@ -97,7 +97,7 @@ class SQLStore(MetaStore):
         session.close()
 
     # We don't support append-only update, the complete fields should be provided.
-    def update_exp(self, exp_id: uuid.UUID, **kwargs):
+    def update_exp(self, exp_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
         exp = (
             session.query(Experiment)
@@ -173,7 +173,7 @@ class SQLStore(MetaStore):
 
         return model_id
 
-    def update_model(self, model_id: uuid.UUID, **kwargs):
+    def update_model(self, model_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
         model = (
             session.query(Model)
@@ -222,7 +222,7 @@ class SQLStore(MetaStore):
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
-        status: TrialStatus = TrialStatus.PENDING,
+        status: Status = Status.PENDING,
     ) -> uuid.UUID:
         session = self._session()
         new_trial = Trial(
@@ -280,7 +280,7 @@ class SQLStore(MetaStore):
         session.close()
         return trials
 
-    def update_trial(self, trial_id: uuid.UUID, **kwargs):
+    def update_trial(self, trial_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
         trial = session.query(Trial).filter(Trial.uuid == trial_id).first()
         if trial:
@@ -295,6 +295,7 @@ class SQLStore(MetaStore):
         experiment_id: uuid.UUID,
         trial_id: uuid.UUID,
         meta: dict | None = None,
+        status: Status = Status.PENDING,
     ) -> uuid.UUID:
         session = self._session()
         new_run = Run(
@@ -302,6 +303,7 @@ class SQLStore(MetaStore):
             experiment_id=experiment_id,
             trial_id=trial_id,
             meta=meta,
+            status=status,
         )
         session.add(new_run)
         session.commit()
@@ -309,6 +311,15 @@ class SQLStore(MetaStore):
         session.close()
 
         return run_id
+
+    def update_run(self, run_id: uuid.UUID, **kwargs) ->  None:
+        session = self._session()
+        run = session.query(Run).filter(Run.uuid == run_id).first()
+        if run:
+            for key, value in kwargs.items():
+                setattr(run, key, value)
+            session.commit()
+        session.close()
 
     def get_run(self, run_id: uuid.UUID) -> Run | None:
         session = self._session()

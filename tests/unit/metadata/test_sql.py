@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from alphatrion.metadata.sql import SQLStore
-from alphatrion.metadata.sql_models import TrialStatus
+from alphatrion.metadata.sql_models import Status
 
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def test_create_trial(db):
     assert trial is not None
     assert trial.experiment_id == exp_id
     assert trial.name == "test-trial"
-    assert trial.status == TrialStatus.PENDING
+    assert trial.status == Status.PENDING
     assert trial.meta is None
     assert trial.params == {"lr": 0.01}
 
@@ -80,12 +80,12 @@ def test_update_trial(db):
         experiment_id=exp_id, project_id=project_id, name="test-trial"
     )
     trial = db.get_trial(trial_id)
-    assert trial.status == TrialStatus.PENDING
+    assert trial.status == Status.PENDING
     assert trial.meta is None
 
-    db.update_trial(trial_id, status=TrialStatus.RUNNING, meta={"note": "started"})
+    db.update_trial(trial_id, status=Status.RUNNING, meta={"note": "started"})
     trial = db.get_trial(trial_id)
-    assert trial.status == TrialStatus.RUNNING
+    assert trial.status == Status.RUNNING
     assert trial.meta == {"note": "started"}
 
 
