@@ -138,7 +138,8 @@ async def test_create_experiment_with_trial_wait():
 async def test_create_experiment_with_run():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async def fake_work(cancel_func: callable):
+    async def fake_work(cancel_func: callable, trial_id: uuid.UUID):
+        assert current_trial_id.get() == trial_id
         await asyncio.sleep(3)
         cancel_func()
 
@@ -148,10 +149,10 @@ async def test_create_experiment_with_run():
     ):
         start_time = datetime.now()
 
-        trial.start_run(lambda: fake_work(trial.done))
+        trial.start_run(lambda: fake_work(trial.done, trial.id))
         assert len(trial._runs) == 1
 
-        trial.start_run(lambda: fake_work(trial.done))
+        trial.start_run(lambda: fake_work(trial.done, trial.id))
         assert len(trial._runs) == 2
 
         await trial.wait()
