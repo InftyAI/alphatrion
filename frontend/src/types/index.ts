@@ -1,94 +1,92 @@
-// ---- Shared domain types ----
-export type Experiment = {
-    id: number;
-    name: string;
-    project_id: string;
-    created_at: string;
-    is_deleted: boolean;
-    total_trials: number;
-    total_runs: number;
-    total_cost: number;
-    avg_accuracy: number | null;
-};
+// GraphQL Status Enum
+export type GraphQLStatus =
+    | "UNKNOWN"
+    | "PENDING"
+    | "RUNNING"
+    | "CANCELLED"
+    | "COMPLETED"
+    | "FAILED";
 
-export type Trial = {
-    id: number;
-    experiment_id: number;
-    status: "pending" | "running" | "finished" | "failed";
-    created_at: string;
-    accuracy: number | null;
-    duration_seconds?: number | null;
-    total_cost?: number;
-    total_tokens?: number;
-    avg_latency_ms?: number | null;
-    run_count?: number;
-};
-
-export type Run = {
-    id: number;
-    trial_id: number;
-    tokens: number;
-    costs: number;
-    latency_ms: number;
-    created_at: string;
-};
-
-// ---- Dashboard + Charts ----
-export type DashboardStats = {
-    total_experiments: number;
-    total_trials: number;
-    total_runs: number;
-    total_cost: number;
-    avg_accuracy: number | null;
-    avg_latency_ms: number | null;
-    active_trials: number;
-    failed_trials: number;
-    success_rate: number;
-};
-
-export type CostByExperiment = {
-    experiment_id: number;
-    experiment_name: string;
-    total_cost: number;
-    percentage: number;
-    run_count: number;
-};
-
-export type DailyCost = {
-    date: string; // 'YYYY-MM-DD'
-    total_cost: number;
-    run_count: number;
-    experiment_count: number;
-};
-
-export type AccuracyPoint = {
-    trial_id: number;
-    timestamp: string; // ISO
-    accuracy: number;  // 0..1
-    status: "pending" | "running" | "finished" | "failed";
-};
-
-
-// ---- Chat Types ----
-export type ChatMessage = {
+// Base Types matching Alphatrion GraphQL Schema
+export interface Project {
     id: string;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: Date;
-};
+    name: string | null;
+    description: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
 
-export type ChatRequest = {
-    message: string;
-    context: {
-        experiments?: Experiment[];
-        trials?: Trial[];
-        runs?: Run[];
-        [key: string]: any;
-    };
-};
+export interface Experiment {
+    id: string;
+    projectId: string | null;
+    name: string | null;
+    description: string | null;
+    meta: Record<string, unknown> | null;
+    createdAt: string;
+    updatedAt: string;
+}
 
-export type ChatResponse = {
-    response: string;
-    context_used: string[];
-    relevant_experiments: string[];
-};
+export interface Trial {
+    id: string;
+    experimentId: string;
+    projectId: string;
+    name: string;
+    description: string | null;
+    meta: Record<string, unknown> | null;
+    params: Record<string, unknown> | null;
+    duration: number;
+    status: GraphQLStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Run {
+    id: string;
+    trialId: string;
+    projectId: string;
+    experimentId: string;
+    meta: Record<string, unknown> | null;
+    status: GraphQLStatus;
+    createdAt: string;
+}
+
+export interface Metric {
+    id: string;
+    key: string | null;
+    value: number | null;
+    projectId: string;
+    experimentId: string;
+    trialId: string;
+    runId: string;
+    step: number;
+    createdAt: string;
+}
+
+// GraphQL Response Types
+export interface GraphQLResponse<T> {
+    data: T;
+    errors?: Array<{ message: string }>;
+}
+
+// Paginated List Params
+export interface PaginationParams {
+    page?: number;
+    pageSize?: number;
+}
+
+// Query Params for each entity
+export interface ExperimentsQueryParams extends PaginationParams {
+    projectId: string;
+}
+
+export interface TrialsQueryParams extends PaginationParams {
+    experimentId: string;
+}
+
+export interface RunsQueryParams extends PaginationParams {
+    trialId: string;
+}
+
+export interface TrialMetricsQueryParams extends PaginationParams {
+    trialId: string;
+}
