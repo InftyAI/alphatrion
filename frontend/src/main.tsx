@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./pages/App";
 import "./styles/index.css";
 
+import { fetchProjects } from './services/graphql';
+fetchProjects().then(console.log).catch(console.error);
+
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
