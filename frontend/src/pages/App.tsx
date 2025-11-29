@@ -5,6 +5,7 @@ import type { Project } from "../types";
 
 // Components
 import ExperimentsPage from "../components/Experiments/ExperimentsPage";
+import ExperimentDetail from "../components/Experiments/ExperimentDetail";
 
 // Placeholder for pages not yet implemented
 function Placeholder({ title }: { title: string }) {
@@ -177,10 +178,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<ProjectsDashboard />} />
                     <Route path="/experiments" element={<ExperimentsPage />} />
-                    <Route
-                        path="/experiments/:id"
-                        element={<Placeholder title="Experiment Detail" />}
-                    />
+                    <Route path="/experiments/:id" element={<ExperimentDetail />} />
                     <Route path="/trials" element={<Placeholder title="Trials" />} />
                     <Route
                         path="/trials/:id"
