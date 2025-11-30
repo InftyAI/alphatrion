@@ -1,125 +1,146 @@
-import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import apiService from '../../services/api';
+import { Link, useParams } from "react-router-dom";
+import { useTrialDetail } from "../../hooks/useTrialDetail";
+import { format } from "date-fns";
+import type { Run, Metric } from "../../types";
+
+const StatusBadge = ({ status }: { status: string }) => {
+    const colors: Record<string, string> = {
+        COMPLETED: "bg-green-100 text-green-800",
+        RUNNING: "bg-blue-100 text-blue-800",
+        PENDING: "bg-yellow-100 text-yellow-800",
+        FAILED: "bg-red-100 text-red-800",
+        CANCELLED: "bg-gray-100 text-gray-800",
+        UNKNOWN: "bg-gray-100 text-gray-500",
+    };
+
+    return (
+        <span className={`px-2 py-1 text-xs rounded-full ${colors[status] || colors.UNKNOWN}`}>
+            {status}
+        </span>
+    );
+};
+
+// Simple line chart for metrics
+function MetricsChart({ metrics }: { metrics: Metric[] }) {
+    if (metrics.length === 0) {
+        return (
+            <div className="text-center text-gray-500 py-8">
+                No metrics data available.
+            </div>
+        );
+    }
+
+    // Group metrics by key
+    const metricsByKey: Record<string, Metric[]> = {};
+    metrics.forEach((m) => {
+        const key = m.key || "unknown";
+        if (!metricsByKey[key]) {
+            metricsByKey[key] = [];
+        }
+        metricsByKey[key].push(m);
+    });
+
+    // Sort each group by step
+    Object.values(metricsByKey).forEach((arr) => {
+        arr.sort((a, b) => a.step - b.step);
+    });
+
+    const keys = Object.keys(metricsByKey);
+
+    return (
+        <div>
+            <div className="mb-4 text-sm text-gray-600">
+                Found {metrics.length} metric points across {keys.length} metric(s): {keys.join(", ")}
+            </div>
+
+            {keys.map((key) => {
+                const data = metricsByKey[key];
+                const values = data.map((d) => d.value ?? 0);
+                const minVal = Math.min(...values);
+                const maxVal = Math.max(...values);
+                const range = maxVal - minVal || 1;
+
+                return (
+                    <div key={key} className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">{key}</h4>
+                        <div className="bg-gray-50 p-4 rounded">
+                            {/* Simple SVG chart */}
+                            <svg viewBox="0 0 400 100" className="w-full h-32">
+                                {/* Grid lines */}
+                                <line x1="40" y1="10" x2="40" y2="90" stroke="#e5e7eb" strokeWidth="1" />
+                                <line x1="40" y1="90" x2="390" y2="90" stroke="#e5e7eb" strokeWidth="1" />
+
+                                {/* Y axis labels */}
+                                <text x="35" y="15" textAnchor="end" className="text-xs fill-gray-500">
+                                    {maxVal.toFixed(2)}
+                                </text>
+                                <text x="35" y="92" textAnchor="end" className="text-xs fill-gray-500">
+                                    {minVal.toFixed(2)}
+                                </text>
+
+                                {/* Line */}
+                                <polyline
+                                    fill="none"
+                                    stroke="#3b82f6"
+                                    strokeWidth="2"
+                                    points={data
+                                        .map((d, i) => {
+                                            const x = 40 + (i / (data.length - 1 || 1)) * 350;
+                                            const y = 90 - ((d.value ?? 0) - minVal) / range * 80;
+                                            return `${x},${y}`;
+                                        })
+                                        .join(" ")}
+                                />
+
+                                {/* Points */}
+                                {data.map((d, i) => {
+                                    const x = 40 + (i / (data.length - 1 || 1)) * 350;
+                                    const y = 90 - ((d.value ?? 0) - minVal) / range * 80;
+                                    return (
+                                        <circle
+                                            key={i}
+                                            cx={x}
+                                            cy={y}
+                                            r="3"
+                                            fill="#3b82f6"
+                                        />
+                                    );
+                                })}
+                            </svg>
+
+                            {/* Stats */}
+                            <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                                <span>Steps: {data.length}</span>
+                                <span>Min: {minVal.toFixed(4)}</span>
+                                <span>Max: {maxVal.toFixed(4)}</span>
+                                <span>Latest: {(data[data.length - 1]?.value ?? 0).toFixed(4)}</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 export default function TrialDetail() {
     const { id } = useParams<{ id: string }>();
-    const trialId = parseInt(id || '0');
+    const { trial, runs, metrics, isLoading, error } = useTrialDetail(id ?? null);
 
-    // State for search, sort, and filter  
-    const [searchTerm, setSearchTerm] = useState('');
-    const [sortBy, setSortBy] = useState<'created_at' | 'costs' | 'tokens' | 'latency_ms'>('created_at');
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-    const [costFilter, setCostFilter] = useState<'all' | 'high' | 'low'>('all');
-
-    // Fetch trial details
-    const { data: trial, isLoading: trialLoading } = useQuery({
-        queryKey: ['trial', trialId],
-        queryFn: () => apiService.getTrialDetails(trialId),
-        enabled: !!trialId,
-    });
-
-    // Fetch runs for this trial
-    const { data: runsData, isLoading: runsLoading } = useQuery({
-        queryKey: ['trial-runs', trialId],
-        queryFn: () => apiService.getTrialRuns(trialId),
-        enabled: !!trialId,
-    });
-
-
-
-    
-
-    // Process runs with search and filters 
-    const processedRuns = useMemo(() => {
-        if (!runsData?.runs) return [];
-
-        let filtered = [...runsData.runs];
-
-        // Apply search
-        if (searchTerm) {
-            filtered = filtered.filter(run =>
-                run.id?.toString().includes(searchTerm) ||
-                run.tokens?.toString().includes(searchTerm)
-            );
-        }
-
-        // Apply cost filter
-        if (costFilter === 'high') {
-            const avgCost = runsData.stats?.total_cost / runsData.runs.length;
-            filtered = filtered.filter(run => run.costs > avgCost);
-        } else if (costFilter === 'low') {
-            const avgCost = runsData.stats?.total_cost / runsData.runs.length;
-            filtered = filtered.filter(run => run.costs <= avgCost);
-        }
-
-        // Apply sorting 
-        filtered.sort((a, b) => {
-            const aVal = a[sortBy] || 0;
-            const bVal = b[sortBy] || 0;
-            return sortOrder === 'asc' ?
-                (aVal > bVal ? 1 : -1) :
-                (aVal < bVal ? 1 : -1);
-        });
-
-        return filtered;
-    }, [runsData, searchTerm, sortBy, sortOrder, costFilter]);
-
-    // Calculate statistics 
-    const stats = useMemo(() => {
-        if (!runsData?.runs || runsData.runs.length === 0) {
-            return {
-                avgTokens: 0,
-                avgCost: 0,
-                avgLatency: 0,
-                totalRuns: 0,
-                totalCost: 0,
-                totalTokens: 0,
-                minLatency: 0,
-                maxLatency: 0,
-                costPerToken: 0
-            };
-        }
-
-        const runs = runsData.runs;
-        const totalRuns = runs.length;
-        const totalTokens = runs.reduce((sum, r) => sum + (r.tokens || 0), 0);
-        const totalCost = runs.reduce((sum, r) => sum + (r.costs || 0), 0);
-        const totalLatency = runs.reduce((sum, r) => sum + (r.latency_ms || 0), 0);
-
-        return {
-            avgTokens: Math.round(totalTokens / totalRuns),
-            avgCost: totalCost / totalRuns,
-            avgLatency: Math.round(totalLatency / totalRuns),
-            totalRuns,
-            totalCost,
-            totalTokens,
-            minLatency: Math.min(...runs.map(r => r.latency_ms || 0)),
-            maxLatency: Math.max(...runs.map(r => r.latency_ms || 0)),
-            costPerToken: totalTokens > 0 ? totalCost / totalTokens : 0
-        };
-    }, [runsData]);
-
-    const StatusBadge = ({ status }: { status: string }) => {
-        const colors: Record<string, string> = {
-            pending: 'bg-yellow-100 text-yellow-800',
-            running: 'bg-blue-100 text-blue-800',
-            finished: 'bg-green-100 text-green-800',
-            failed: 'bg-red-100 text-red-800',
-        };
-        return (
-            <span className={`px-2 py-1 text-xs rounded-full ${colors[status]}`}>
-                {status}
-            </span>
-        );
-    };
-
-    if (trialLoading || runsLoading) {
+    if (isLoading) {
         return (
             <div className="flex justify-center items-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <div className="bg-red-50 p-4 rounded">
+                    <p className="text-red-600">Error: {error.message}</p>
+                </div>
             </div>
         );
     }
@@ -127,8 +148,8 @@ export default function TrialDetail() {
     if (!trial) {
         return (
             <div className="p-6">
-                <div className="bg-red-50 p-4 rounded">
-                    <p className="text-red-600">Trial not found</p>
+                <div className="bg-yellow-50 p-4 rounded">
+                    <p className="text-yellow-800">Trial not found.</p>
                 </div>
             </div>
         );
@@ -137,207 +158,143 @@ export default function TrialDetail() {
     return (
         <div className="p-6">
             {/* Breadcrumb */}
-            <nav className="mb-4">
-                <ol className="flex items-center space-x-2">
-                    <li>
-                        <Link to="/experiments" className="text-primary-600 hover:text-primary-800">
-                            Experiments
-                        </Link>
-                    </li>
-                    <li className="text-gray-400">/</li>
-                    <li>
-                        <Link
-                            to={`/experiments/${trial.experiment_id}`}
-                            className="text-primary-600 hover:text-primary-800"
-                        >
-                            {trial.experiment_name || `Experiment ${trial.experiment_id}`}
-                        </Link>
-                    </li>
-                    <li className="text-gray-400">/</li>
-                    <li className="text-gray-700 font-medium">Trial #{trial.id}</li>
-                </ol>
-            </nav>
+            <div className="mb-4 text-sm text-gray-500">
+                <Link to="/" className="hover:text-blue-600">Projects</Link>
+                <span className="mx-2">/</span>
+                <Link
+                    to={`/experiments?projectId=${trial.projectId}`}
+                    className="hover:text-blue-600"
+                >
+                    Experiments
+                </Link>
+                <span className="mx-2">/</span>
+                <Link
+                    to={`/experiments/${trial.experimentId}`}
+                    className="hover:text-blue-600"
+                >
+                    Experiment
+                </Link>
+                <span className="mx-2">/</span>
+                <span className="text-gray-900">{trial.name}</span>
+            </div>
 
             {/* Header */}
+            <div className="mb-6 flex items-center gap-4">
+                <h1 className="text-2xl font-bold text-gray-900">{trial.name}</h1>
+                <StatusBadge status={trial.status} />
+            </div>
+            {trial.description && (
+                <p className="text-gray-600 mb-6">{trial.description}</p>
+            )}
+
+            {/* Trial Info Card */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <div className="flex justify-between items-start">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Trial Info</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Trial #{trial.id}</h1>
-                        <div className="mt-2 flex items-center gap-4">
-                            <StatusBadge status={trial.status} />
-                            {trial.accuracy && (
-                                <span className="text-sm text-gray-600">
-                                    Accuracy: <strong>{(trial.accuracy * 100).toFixed(1)}%</strong>
-                                </span>
-                            )}
-                            {trial.duration_seconds && (
-                                <span className="text-sm text-gray-600">
-                                    Duration: <strong>{trial.duration_seconds}s</strong>
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-sm text-gray-500 mt-2">
-                            Created: {format(new Date(trial.created_at), 'PPP')}
-                        </p>
+                        <p className="text-sm text-gray-500">ID</p>
+                        <p className="text-sm font-mono">{trial.id.slice(0, 8)}...</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Duration</p>
+                        <p className="text-sm">{trial.duration.toFixed(2)}s</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Created</p>
+                        <p className="text-sm">{format(new Date(trial.createdAt), "MMM d, yyyy HH:mm")}</p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500">Updated</p>
+                        <p className="text-sm">{format(new Date(trial.updatedAt), "MMM d, yyyy HH:mm")}</p>
                     </div>
                 </div>
-            </div>
 
-            {/* Table 1: Run Statistics */}
-            <div className="bg-white rounded-lg shadow mb-6">
-                <div className="px-6 py-4 border-b">
-                    <h2 className="text-lg font-semibold text-gray-900">Run Statistics</h2>
-                </div>
-                <div className="p-6">
-                    <div className="grid grid-cols-3 gap-6">
-                        {/* Average Tokens */}
-                        <div className="bg-blue-50 rounded-lg p-4">
-                            <div className="text-sm font-medium text-blue-600">Average Tokens</div>
-                            <div className="text-2xl font-bold text-gray-900 mt-1">
-                                {stats.avgTokens.toLocaleString()}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-2">
-                                Total: {stats.totalTokens.toLocaleString()} tokens
-                            </div>
-                        </div>
-
-                        {/* Average Cost */}
-                        <div className="bg-green-50 rounded-lg p-4">
-                            <div className="text-sm font-medium text-green-600">Average Cost</div>
-                            <div className="text-2xl font-bold text-gray-900 mt-1">
-                                ${stats.avgCost.toFixed(4)}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-2">
-                                Total: ${stats.totalCost.toFixed(2)} | Per token: ${stats.costPerToken.toFixed(6)}
-                            </div>
-                        </div>
-
-                        {/* Average Latency */}
-                        <div className="bg-purple-50 rounded-lg p-4">
-                            <div className="text-sm font-medium text-purple-600">Average Latency</div>
-                            <div className="text-2xl font-bold text-gray-900 mt-1">
-                                {stats.avgLatency}ms
-                            </div>
-                            <div className="text-xs text-gray-500 mt-2">
-                                Min: {stats.minLatency}ms | Max: {stats.maxLatency}ms
-                            </div>
-                        </div>
+                {/* Params */}
+                {trial.params && Object.keys(trial.params).length > 0 && (
+                    <div className="mt-4">
+                        <p className="text-sm text-gray-500 mb-2">Parameters</p>
+                        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                            {JSON.stringify(trial.params, null, 2)}
+                        </pre>
                     </div>
-                </div>
+                )}
+
+                {/* Meta */}
+                {trial.meta && Object.keys(trial.meta).length > 0 && (
+                    <div className="mt-4">
+                        <p className="text-sm text-gray-500 mb-2">Metadata</p>
+                        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                            {JSON.stringify(trial.meta, null, 2)}
+                        </pre>
+                    </div>
+                )}
             </div>
 
-            {/* Table 2: Runs List with Search/Filter/Sort */}
-            <div className="bg-white rounded-lg shadow">
+            {/* Metrics Chart */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Metrics ({metrics.length} points)
+                </h2>
+                <MetricsChart metrics={metrics} />
+            </div>
+
+            {/* Runs Section */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="px-6 py-4 border-b">
                     <h2 className="text-lg font-semibold text-gray-900">
-                        Runs ({processedRuns.length} of {runsData?.runs?.length || 0})
+                        Runs ({runs.length})
                     </h2>
                 </div>
 
-                {/* Search and Filter Bar */}
-                <div className="px-6 py-4 border-b bg-gray-50">
-                    <div className="flex gap-4">
-                        {/* Search */}
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="Search by ID or tokens..."
-                                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Cost Filter */}
-                        <select
-                            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            value={costFilter}
-                            onChange={(e) => setCostFilter(e.target.value as any)}
-                        >
-                            <option value="all">All Costs</option>
-                            <option value="high">Above Average</option>
-                            <option value="low">Below Average</option>
-                        </select>
-
-                        {/* Sort By */}
-                        <select
-                            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
-                        >
-                            <option value="created_at">Date</option>
-                            <option value="costs">Cost</option>
-                            <option value="tokens">Tokens</option>
-                            <option value="latency_ms">Latency</option>
-                        </select>
-
-                        {/* Sort Order */}
-                        <button
-                            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                            className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            {sortOrder === 'asc' ? '↑' : '↓'}
-                        </button>
+                {runs.length === 0 ? (
+                    <div className="p-6 text-center text-gray-500">
+                        No runs found for this trial.
                     </div>
-                </div>
-
-                {/* Runs Table */}
-                <div className="overflow-x-auto">
+                ) : (
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Run ID
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    ID
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tokens
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Status
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Cost
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Latency
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Cost/Token
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Created
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {processedRuns.map((run: any) => (
-                                <tr key={run.id || Math.random()} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        #{run.id || 'N/A'}
+                            {runs.map((run: Run) => (
+                                <tr key={run.id} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="text-sm font-mono">{run.id.slice(0, 8)}...</span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {run.tokens?.toLocaleString()}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <StatusBadge status={run.status} />
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        ${run.costs?.toFixed(4)}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="text-sm text-gray-500">
+                                            {format(new Date(run.createdAt), "MMM d, yyyy HH:mm")}
+                                        </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {run.latency_ms}ms
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        ${run.tokens > 0 ? (run.costs / run.tokens).toFixed(6) : '0'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {format(new Date(run.created_at), 'MMM d, HH:mm')}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <Link
+                                            to={`/runs/${run.id}`}
+                                            className="text-sm text-blue-600 hover:text-blue-900"
+                                        >
+                                            View Details
+                                        </Link>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-
-                    {processedRuns.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                            No runs found matching your criteria
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
         </div>
     );
