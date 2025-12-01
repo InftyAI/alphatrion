@@ -26,11 +26,14 @@ class SQLStore(MetaStore):
             # Mostly used in tests.
             Base.metadata.create_all(self._engine)
 
-    def create_project(self, name: str, description: str | None = None) -> uuid.UUID:
+    def create_project(
+        self, name: str, description: str | None = None, meta: dict | None = None
+    ) -> uuid.UUID:
         session = self._session()
         new_project = Project(
             name=name,
             description=description,
+            meta=meta,
         )
         session.add(new_project)
         session.commit()

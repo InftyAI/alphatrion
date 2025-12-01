@@ -52,6 +52,9 @@ def generate_project() -> Project:
         uuid=uuid.uuid4(),
         name=fake.bs().title(),
         description=fake.catch_phrase(),
+        meta=make_json_serializable(
+            fake.pydict(nb_elements=3, variable_nb_elements=True)
+        ),
     )
 
 

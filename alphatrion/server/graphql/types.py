@@ -10,6 +10,7 @@ class Project:
     id: strawberry.ID
     name: str | None
     description: str | None
+    meta: JSON | None
     created_at: datetime
     updated_at: datetime
 

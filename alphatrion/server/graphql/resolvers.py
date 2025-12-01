@@ -25,6 +25,7 @@ class GraphQLResolvers:
                 id=p.uuid,
                 name=p.name,
                 description=p.description,
+                meta=p.meta,
                 created_at=p.created_at,
                 updated_at=p.updated_at,
             )
@@ -40,6 +41,7 @@ class GraphQLResolvers:
                 id=project.uuid,
                 name=project.name,
                 description=project.description,
+                meta=project.meta,
                 created_at=project.created_at,
                 updated_at=project.updated_at,
             )
