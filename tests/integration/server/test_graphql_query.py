@@ -18,6 +18,7 @@ def test_query_single_project():
             id
             name
             description
+            meta
             createdAt
             updatedAt
         }}
@@ -35,8 +36,12 @@ def test_query_single_project():
 def test_query_projects():
     init(init_tables=True)
     metadb = graphql_runtime().metadb
-    _ = metadb.create_project(name="Test Project1", description="A project for testing")
-    _ = metadb.create_project(name="Test Project2", description="A project for testing")
+    _ = metadb.create_project(
+        name="Test Project1", description="A project for testing", meta={"foo": "bar"}
+    )
+    _ = metadb.create_project(
+        name="Test Project2", description="A project for testing", meta={"baz": 123}
+    )
 
     query = """
     query {
@@ -44,6 +49,7 @@ def test_query_projects():
             id
             name
             description
+            meta
             createdAt
             updatedAt
         }
