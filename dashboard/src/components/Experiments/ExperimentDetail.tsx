@@ -126,6 +126,9 @@ export default function ExperimentDetail() {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    ID
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -137,9 +140,6 @@ export default function ExperimentDetail() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Created
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    ID
-                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -148,10 +148,13 @@ export default function ExperimentDetail() {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <Link
                                             to={`/trials/${trial.id}`}
-                                            className="text-sm font-medium text-blue-600 hover:text-blue-900"
+                                            className="text-sm font-mono text-blue-600 hover:text-blue-900"
                                         >
-                                            {trial.name}
+                                            {trial.id}
                                         </Link>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="text-sm text-gray-900">{trial.name}</span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={trial.status} />
@@ -164,11 +167,6 @@ export default function ExperimentDetail() {
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="text-sm text-gray-500">
                                             {format(new Date(trial.createdAt), "MMM d, yyyy")}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm text-gray-500 font-mono">
-                                            {trial.id.slice(0, 8)}...
                                         </span>
                                     </td>
                                 </tr>

@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { fetchProjects } from "../services/graphql";
 import type { Project } from "../types";
@@ -8,33 +8,31 @@ import ExperimentsPage from "../components/Experiments/ExperimentsPage";
 import ExperimentDetail from "../components/Experiments/ExperimentDetail";
 import TrialDetail from "../components/Trials/TrialDetail";
 
-// Placeholder for pages not yet implemented
-function Placeholder({ title }: { title: string }) {
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-            <p className="text-gray-600 mt-2">Component under construction...</p>
-        </div>
-    );
-}
-
-// Projects Dashboard (home page)
+// Projects Dashboard
 function ProjectsDashboard() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
+        const isFirstVisit = sessionStorage.getItem("hasVisited") !== "true";
+
         fetchProjects()
             .then((data) => {
                 setProjects(data);
                 setLoading(false);
+                // Auto-navigate to first project only on first visit
+                if (isFirstVisit && data.length > 0) {
+                    sessionStorage.setItem("hasVisited", "true");
+                    navigate(`/experiments?projectId=${data[0].id}`);
+                }
             })
             .catch((err) => {
                 setError(err.message);
                 setLoading(false);
             });
-    }, []);
+    }, [navigate]);
 
     if (loading) {
         return (
@@ -58,7 +56,7 @@ function ProjectsDashboard() {
         <div className="p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Projects</h1>
             <p className="text-gray-600 mb-6">
-                Found {projects.length} projects. Select one to view experiments.
+                {projects.length} projects available.
             </p>
 
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -66,13 +64,13 @@ function ProjectsDashboard() {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Name
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                 ID
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                Actions
+                                Name
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                Description
                             </th>
                         </tr>
                     </thead>
@@ -80,22 +78,22 @@ function ProjectsDashboard() {
                         {projects.map((project) => (
                             <tr key={project.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm font-medium text-gray-900">
-                                        {project.name || "Unnamed Project"}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-500 font-mono">
-                                        {project.id.slice(0, 8)}...
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
                                     <Link
                                         to={`/experiments?projectId=${project.id}`}
-                                        className="text-blue-600 hover:text-blue-900 text-sm"
+                                        className="text-sm font-mono text-blue-600 hover:text-blue-900"
                                     >
-                                        View Experiments
+                                        {project.id}
                                     </Link>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-sm text-gray-900">
+                                        {project.name || "Unnamed"}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <span className="text-sm text-gray-500">
+                                        {project.description || "-"}
+                                    </span>
                                 </td>
                             </tr>
                         ))}
@@ -111,10 +109,7 @@ function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const navigation = [
-        { name: "Projects", href: "/", icon: "P" },
-        { name: "Experiments", href: "/experiments", icon: "E" },
-        { name: "Trials", href: "/trials", icon: "T" },
-        { name: "Runs", href: "/runs", icon: "R" },
+        { name: "Projects", href: "/" },
     ];
 
     return (
@@ -152,9 +147,6 @@ function App() {
                                         : "hover:bg-gray-100 text-gray-700"
                                         }`}
                                 >
-                                    <span className="w-6 h-6 flex items-center justify-center bg-gray-200 rounded text-xs font-bold">
-                                        {item.icon}
-                                    </span>
                                     {sidebarOpen && (
                                         <span className="font-medium">{item.name}</span>
                                     )}
@@ -180,10 +172,7 @@ function App() {
                     <Route path="/" element={<ProjectsDashboard />} />
                     <Route path="/experiments" element={<ExperimentsPage />} />
                     <Route path="/experiments/:id" element={<ExperimentDetail />} />
-                    <Route path="/trials" element={<Placeholder title="Trials" />} />
                     <Route path="/trials/:id" element={<TrialDetail />} />
-                    <Route path="/runs" element={<Placeholder title="Runs" />} />
-                    <Route path="/runs/:id" element={<Placeholder title="Run Detail" />} />
                 </Routes>
             </div>
         </div>

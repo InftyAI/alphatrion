@@ -193,7 +193,7 @@ export default function TrialDetail() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                         <p className="text-sm text-gray-500">ID</p>
-                        <p className="text-sm font-mono">{trial.id.slice(0, 8)}...</p>
+                        <p className="text-sm font-mono">{trial.id}</p>
                     </div>
                     <div>
                         <p className="text-sm text-gray-500">Duration</p>
@@ -263,16 +263,15 @@ export default function TrialDetail() {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                     Created
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Actions
-                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {runs.map((run: Run) => (
                                 <tr key={run.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm font-mono">{run.id.slice(0, 8)}...</span>
+                                        <span className="text-sm font-mono text-gray-900">
+                                            {run.id}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={run.status} />
@@ -281,14 +280,6 @@ export default function TrialDetail() {
                                         <span className="text-sm text-gray-500">
                                             {format(new Date(run.createdAt), "MMM d, yyyy HH:mm")}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <Link
-                                            to={`/runs/${run.id}`}
-                                            className="text-sm text-blue-600 hover:text-blue-900"
-                                        >
-                                            View Details
-                                        </Link>
                                     </td>
                                 </tr>
                             ))}

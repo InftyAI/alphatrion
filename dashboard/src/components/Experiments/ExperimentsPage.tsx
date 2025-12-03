@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useExperiments } from "../../hooks/useExperiments";
-import { useTrials } from "../../hooks/useTrials";
 import { format } from "date-fns";
 import type { Experiment } from "../../types";
 
@@ -53,7 +52,7 @@ export default function ExperimentsPage() {
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Experiments</h1>
                 <p className="text-gray-600">
-                    Project ID: <span className="font-mono text-sm">{projectId.slice(0, 8)}...</span>
+                    Project ID: <span className="font-mono text-sm">{projectId}</span>
                 </p>
             </div>
 
@@ -95,7 +94,6 @@ export default function ExperimentsPage() {
 function OverviewTable({ experiments }: { experiments: Experiment[] }) {
     const totalExperiments = experiments.length;
 
-    // For MVP, we show basic stats. In future, can add more aggregations.
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
@@ -158,6 +156,9 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                 <thead className="bg-gray-50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            ID
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                             Name
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -165,9 +166,6 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                             Created
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                            ID
                         </th>
                     </tr>
                 </thead>
@@ -177,25 +175,25 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <Link
                                     to={`/experiments/${exp.id}`}
-                                    className="text-sm font-medium text-blue-600 hover:text-blue-900"
+                                    className="text-sm font-mono text-blue-600 hover:text-blue-900"
                                 >
-                                    {exp.name || "Unnamed Experiment"}
+                                    {exp.id}
                                 </Link>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-900">
+                                    {exp.name || "Unnamed Experiment"}
+                                </span>
+                            </td>
                             <td className="px-6 py-4">
-                                <div className="text-sm text-gray-500 truncate max-w-xs">
+                                <span className="text-sm text-gray-500 truncate max-w-xs">
                                     {exp.description || "-"}
-                                </div>
+                                </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-500">
+                                <span className="text-sm text-gray-500">
                                     {format(new Date(exp.createdAt), "MMM d, yyyy")}
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-500 font-mono">
-                                    {exp.id.slice(0, 8)}...
-                                </div>
+                                </span>
                             </td>
                         </tr>
                     ))}
