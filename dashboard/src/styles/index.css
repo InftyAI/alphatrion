@@ -2,15 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 专业浅色背景 - Notion/Linear 风格 */
+
 body {
     min-height: 100vh !important;
-    /* 非常浅的渐变 */
     background: linear-gradient(180deg, #fafbfc 0%, #f4f5f7 100%) !important;
     background-attachment: fixed !important;
 }
 
-/* 添加微妙的噪点纹理 */
+
 body::before {
     content: '';
     position: fixed;
@@ -26,7 +25,7 @@ body::before {
     z-index: 0;
 }
 
-/* 右上角微妙的网格装饰 */
+
 body::after {
     content: '';
     position: fixed;
