@@ -159,7 +159,7 @@ function App() {
                     <div className="p-4 border-t">
                         {sidebarOpen && (
                             <div className="text-sm text-gray-500">
-                                <p>Version 0.1.0 MVP</p>
+                                <p>Version 0.1.0</p>
                             </div>
                         )}
                     </div>
