@@ -26,11 +26,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 /* ----------------------------- METRICS CHART ----------------------------- */
 function MetricsChart({ metrics }: { metrics: Metric[] }) {
     if (metrics.length === 0) {
-        return (
-            <div className="text-center text-gray-500 py-8">
-                No metrics data available.
-            </div>
-        );
+        return <div className="text-center text-gray-500 py-8">No metrics data available.</div>;
     }
 
     const metricsByKey: Record<string, Metric[]> = {};
@@ -40,17 +36,13 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
         metricsByKey[key].push(m);
     });
 
-    Object.values(metricsByKey).forEach((arr) => {
-        arr.sort((a, b) => a.step - b.step);
-    });
-
+    Object.values(metricsByKey).forEach((arr) => arr.sort((a, b) => a.step - b.step));
     const keys = Object.keys(metricsByKey);
 
     return (
         <div>
             <div className="mb-4 text-sm text-gray-600">
-                Found {metrics.length} metric points across {keys.length} metric(s):{" "}
-                {keys.join(", ")}
+                Found {metrics.length} metric points across {keys.length} metric(s): {keys.join(", ")}
             </div>
 
             {keys.map((key) => {
@@ -82,8 +74,7 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
                                     points={data
                                         .map((d, i) => {
                                             const x = 40 + (i / (data.length - 1 || 1)) * 350;
-                                            const y =
-                                                90 - (((d.value ?? 0) - minVal) / range) * 80;
+                                            const y = 90 - (((d.value ?? 0) - minVal) / range) * 80;
                                             return `${x},${y}`;
                                         })
                                         .join(" ")}
@@ -91,8 +82,7 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
 
                                 {data.map((d, i) => {
                                     const x = 40 + (i / (data.length - 1 || 1)) * 350;
-                                    const y =
-                                        90 - (((d.value ?? 0) - minVal) / range) * 80;
+                                    const y = 90 - (((d.value ?? 0) - minVal) / range) * 80;
                                     return <circle key={i} cx={x} cy={y} r="3" fill="#3b82f6" />;
                                 })}
                             </svg>
@@ -117,7 +107,7 @@ export default function TrialDetail() {
     const { trial, runs, metrics, isLoading, error } = useTrialDetail(id ?? null);
     const { setExperimentId, setTrialId } = useSelection();
 
-    const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "runs">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "runs">("overview");
 
     useEffect(() => {
         if (trial) {
@@ -126,148 +116,120 @@ export default function TrialDetail() {
         }
     }, [trial, setExperimentId, setTrialId]);
 
-    if (isLoading) {
-        return (
-            <div className="flex justify-center items-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            </div>
-        );
-    }
+    if (isLoading) return <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+    </div>;
 
-    if (error) {
-        return (
-            <div className="p-6">
-                <div className="bg-red-50 p-4 rounded">
-                    <p className="text-red-600">Error: {error.message}</p>
-                </div>
+    if (error) return (
+        <div className="p-6">
+            <div className="bg-red-50 p-4 rounded">
+                <p className="text-red-600">Error: {error.message}</p>
             </div>
-        );
-    }
+        </div>
+    );
 
-    if (!trial) {
-        return (
-            <div className="p-6">
-                <div className="bg-yellow-50 p-4 rounded">
-                    <p className="text-yellow-800">Trial not found.</p>
-                </div>
+    if (!trial) return (
+        <div className="p-6">
+            <div className="bg-yellow-50 p-4 rounded">
+                <p className="text-yellow-800">Trial not found.</p>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
         <div className="p-6">
-            {/* ----------------------------- Breadcrumb ----------------------------- */}
+            {/* Breadcrumb */}
             <div className="mb-4 text-sm text-gray-500">
                 <Link to="/" className="hover:text-blue-600">Projects</Link>
                 <span className="mx-2">/</span>
-
-                <Link
-                    to={`/experiments?projectId=${trial.projectId}`}
-                    className="hover:text-blue-600"
-                >
-                    Experiments
-                </Link>
-
+                <Link to={`/experiments?projectId=${trial.projectId}`} className="hover:text-blue-600">Experiments</Link>
                 <span className="mx-2">/</span>
-
-                <Link
-                    to={`/experiments/${trial.experimentId}`}
-                    className="hover:text-blue-600"
-                >
-                    Experiment
-                </Link>
-
+                <Link to={`/experiments/${trial.experimentId}`} className="hover:text-blue-600">Experiment</Link>
                 <span className="mx-2">/</span>
                 <span className="text-gray-900">{trial.name}</span>
             </div>
 
-            {/* ----------------------------- Header ----------------------------- */}
+            {/* Header */}
             <div className="mb-6 flex items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">{trial.name}</h1>
                 <StatusBadge status={trial.status} />
             </div>
 
-            {trial.description && (
-                <p className="text-gray-600 mb-6">{trial.description}</p>
-            )}
+            {trial.description && <p className="text-gray-600 mb-6">{trial.description}</p>}
 
             {/* ----------------------------- Tabs ----------------------------- */}
             <Tabs
                 tabs={[
                     { id: "overview", label: "Overview" },
-                    { id: "metrics", label: `Metrics (${metrics.length})` },
                     { id: "runs", label: `Runs (${runs.length})` },
                 ]}
                 active={activeTab}
                 onChange={(id) => setActiveTab(id as any)}
             />
 
-
-            {/* ----------------------------- TAB CONTENT ----------------------------- */}
+            {/* ----------------------------- OVERVIEW ----------------------------- */}
             {activeTab === "overview" && (
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Trial Info</h2>
+                <>
+                    <div className="bg-white rounded-lg shadow p-6 mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Trial Info</h2>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-500">ID</p>
-                            <p className="text-sm font-mono">{trial.id}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p className="text-sm text-gray-500">ID</p>
+                                <p className="text-sm font-mono">{trial.id}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Duration</p>
+                                <p className="text-sm">{trial.duration.toFixed(2)}s</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Created</p>
+                                <p className="text-sm">{format(new Date(trial.createdAt), "MMM d, yyyy HH:mm")}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">Updated</p>
+                                <p className="text-sm">{format(new Date(trial.updatedAt), "MMM d, yyyy HH:mm")}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Duration</p>
-                            <p className="text-sm">{trial.duration.toFixed(2)}s</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Created</p>
-                            <p className="text-sm">{format(new Date(trial.createdAt), "MMM d, yyyy HH:mm")}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Updated</p>
-                            <p className="text-sm">{format(new Date(trial.updatedAt), "MMM d, yyyy HH:mm")}</p>
-                        </div>
+
+                        {trial.params && Object.keys(trial.params).length > 0 && (
+                            <div className="mt-4">
+                                <p className="text-sm text-gray-500 mb-2">Parameters</p>
+                                <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                                    {JSON.stringify(trial.params, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+
+                        {trial.meta && Object.keys(trial.meta).length > 0 && (
+                            <div className="mt-4">
+                                <p className="text-sm text-gray-500 mb-2">Metadata</p>
+                                <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                                    {JSON.stringify(trial.meta, null, 2)}
+                                </pre>
+                            </div>
+                        )}
                     </div>
 
-                    {trial.params && Object.keys(trial.params).length > 0 && (
-                        <div className="mt-4">
-                            <p className="text-sm text-gray-500 mb-2">Parameters</p>
-                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-                                {JSON.stringify(trial.params, null, 2)}
-                            </pre>
-                        </div>
-                    )}
-
-                    {trial.meta && Object.keys(trial.meta).length > 0 && (
-                        <div className="mt-4">
-                            <p className="text-sm text-gray-500 mb-2">Metadata</p>
-                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-                                {JSON.stringify(trial.meta, null, 2)}
-                            </pre>
-                        </div>
-                    )}
-                </div>
+                    {/* Metrics merged into overview */}
+                    <div className="bg-white rounded-lg shadow p-6 mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                            Metrics ({metrics.length} points)
+                        </h2>
+                        <MetricsChart metrics={metrics} />
+                    </div>
+                </>
             )}
 
-            {activeTab === "metrics" && (
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                        Metrics ({metrics.length} points)
-                    </h2>
-                    <MetricsChart metrics={metrics} />
-                </div>
-            )}
-
+            {/* ----------------------------- RUNS ----------------------------- */}
             {activeTab === "runs" && (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="px-6 py-4 border-b">
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            Runs ({runs.length})
-                        </h2>
+                        <h2 className="text-lg font-semibold text-gray-900">Runs ({runs.length})</h2>
                     </div>
 
                     {runs.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">
-                            No runs found for this trial.
-                        </div>
+                        <div className="p-6 text-center text-gray-500">No runs found for this trial.</div>
                     ) : (
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">

@@ -75,7 +75,7 @@ export default function ExperimentsPage() {
             <Tabs
                 tabs={[
                     { id: "overview", label: "Overview" },
-                    { id: "list", label: `List (${experiments?.length ?? 0})` },
+                    { id: "list", label: `Experiments (${experiments?.length ?? 0})` },
                 ]}
                 active={activeTab}
                 onChange={(id) => setActiveTab(id as "overview" | "list")}
