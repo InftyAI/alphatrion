@@ -8,6 +8,8 @@ import ExperimentsPage from "../components/Experiments/ExperimentsPage";
 import ExperimentDetail from "../components/Experiments/ExperimentDetail";
 import TrialsPage from "../components/Trials/TrialsPage";
 import TrialDetail from "../components/Trials/TrialDetail";
+import RunsPage from "../components/Runs/RunsPage";
+import RunDetail from "../components/Runs/RunDetail";
 
 // Context for selected IDs
 interface SelectionContextType {
@@ -240,24 +242,6 @@ function App() {
     );
 }
 
-// Placeholder for RunsPage - will create next
-function RunsPage() {
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Runs</h1>
-            <p className="text-gray-600 mt-2">Coming soon...</p>
-        </div>
-    );
-}
 
-// Placeholder for RunDetail - will create next
-function RunDetail() {
-    return (
-        <div className="p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Run Detail</h1>
-            <p className="text-gray-600 mt-2">Coming soon...</p>
-        </div>
-    );
-}
 
 export default App;
