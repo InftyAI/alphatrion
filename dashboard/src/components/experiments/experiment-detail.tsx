@@ -67,8 +67,6 @@ export default function ExperimentDetail() {
         <div className="p-6">
             {/* Breadcrumb */}
             <div className="mb-4 text-sm text-gray-500">
-                <Link to="/" className="hover:text-blue-600">Projects</Link>
-                <span className="mx-2">/</span>
                 <Link
                     to={`/experiments?projectId=${experiment.projectId}`}
                     className="hover:text-blue-600"
