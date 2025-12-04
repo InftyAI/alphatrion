@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useExperiments } from "../../hooks/useExperiments";
+import { useExperiments } from "../../hooks/use-experiments";
 import { format } from "date-fns";
 import type { Experiment } from "../../types";
 import { FlaskConical, Calendar, Hash, AlertCircle, Clock, ArrowRight } from "lucide-react";

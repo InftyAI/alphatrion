@@ -1,8 +1,8 @@
 import { Link, useParams } from "react-router-dom";
-import { useTrialDetail } from "../../hooks/useTrialDetail";
+import { useTrialDetail } from "../../hooks/use-trial-detail";
 import { format } from "date-fns";
 import type { Run, Metric } from "../../types";
-import { useSelection } from "../../pages/App";
+import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 
 /* ----------------------------- STATUS BADGE ----------------------------- */

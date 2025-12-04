@@ -1,8 +1,8 @@
 import { Link, useParams } from "react-router-dom";
-import { useExperimentDetail } from "../../hooks/useExperimentDetail";
+import { useExperimentDetail } from "../../hooks/use-experiment-detail";
 import { format } from "date-fns";
 import type { Trial } from "../../types";
-import { useSelection } from "../../pages/App";
+import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 
 // Status badge component

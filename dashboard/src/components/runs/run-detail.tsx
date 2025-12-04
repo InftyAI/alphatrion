@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useRun } from "../../hooks/useRuns";
+import { useRun } from "../../hooks/use-runs";
 import { format } from "date-fns";
 import { useState } from "react";
 

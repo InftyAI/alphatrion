@@ -6,12 +6,12 @@ import { ChevronLeft, ChevronRight, Beaker, FlaskConical } from "lucide-react";
 import packageJson from "../../package.json";
 
 // Components
-import ExperimentsPage from "../components/Experiments/ExperimentsPage";
-import ExperimentDetail from "../components/Experiments/ExperimentDetail";
-import TrialsPage from "../components/Trials/TrialsPage";
-import TrialDetail from "../components/Trials/TrialDetail";
-import RunsPage from "../components/Runs/RunsPage";
-import RunDetail from "../components/Runs/RunDetail";
+import ExperimentsPage from "../components/experiments/experiments-page";
+import ExperimentDetail from "../components/experiments/experiment-detail";
+import TrialsPage from "../components/trials/trials-page";
+import TrialDetail from "../components/trials/trial-detail";
+import RunsPage from "../components/runs/runs-page";
+import RunDetail from "../components/runs/run-detail";
 
 // Context for selected IDs
 interface SelectionContextType {
