@@ -77,7 +77,25 @@ async with alpha.CraftExperiment.setup(name="my_experiment") as exp:
 
 ### View Results
 
-Dashboard is coming soon! Meanwhile, you can query the results directly from the database.
+The dashboard is under active development.  
+You can already run the frontend locally to explore experiments, trials, runs, and metrics through the UI.
+
+### Prerequisites
+Make sure the following are installed:
+
+- **Node.js ≥ 18**
+- **npm ≥ 9** 
+- **Vite**
+- Backend (`alphatrion server`) running
+
+### Running the Frontend
+
+Inside the `dashboard` directory:
+```bash
+npm install
+npm run dev
+```
+Dashboard is available at `http://localhost:5173`
 
 ### Cleanup
 
