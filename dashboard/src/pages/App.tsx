@@ -2,6 +2,7 @@ import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom"
 import { useState, useEffect, createContext, useContext } from "react";
 import { fetchProjects } from "../services/graphql";
 import type { Project } from "../types";
+import { ChevronLeft, ChevronRight, Beaker, FlaskConical, Zap, Layers } from "lucide-react";
 
 // Components
 import ExperimentsPage from "../components/Experiments/ExperimentsPage";
@@ -77,7 +78,6 @@ function App() {
         if (experimentId) setSelectedExperimentId(experimentId);
         if (trialId) setSelectedTrialId(trialId);
 
-        // Extract IDs from path like /experiments/:id or /trials/:id
         const pathParts = location.pathname.split("/");
         if (pathParts[1] === "experiments" && pathParts[2]) {
             setSelectedExperimentId(pathParts[2]);
@@ -91,11 +91,41 @@ function App() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-100">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="flex justify-center items-center h-screen">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600"></div>
+                    <Beaker className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-indigo-600" />
+                </div>
             </div>
         );
     }
+
+    const navItems = [
+        {
+            key: "experiments",
+            label: "Experiments",
+            icon: FlaskConical,
+            path: `/experiments?projectId=${selectedProjectId || ""}`,
+            active: location.pathname.startsWith("/experiments"),
+            enabled: true,
+        },
+        {
+            key: "trials",
+            label: "Trials",
+            icon: Layers,
+            path: `/trials?experimentId=${selectedExperimentId}`,
+            active: location.pathname.startsWith("/trials"),
+            enabled: !!selectedExperimentId,
+        },
+        {
+            key: "runs",
+            label: "Runs",
+            icon: Zap,
+            path: `/runs?trialId=${selectedTrialId}`,
+            active: location.pathname.startsWith("/runs"),
+            enabled: !!selectedTrialId,
+        },
+    ];
 
     return (
         <SelectionContext.Provider
@@ -108,30 +138,41 @@ function App() {
                 setTrialId: setSelectedTrialId,
             }}
         >
-            <div className="flex h-screen bg-gray-100">
+            <div className="flex h-screen">
                 {/* Sidebar */}
                 <div
-                    className={`${sidebarOpen ? "w-64" : "w-16"} transition-all duration-300 bg-white shadow-lg flex-shrink-0`}
+                    className={`${sidebarOpen ? "w-64" : "w-20"} 
+                    transition-all duration-300 flex-shrink-0 
+                    bg-white/70 backdrop-blur-xl 
+                    border-r border-gray-200/50
+                    shadow-[1px_0_30px_-15px_rgba(0,0,0,0.1)]`}
                 >
                     <div className="flex flex-col h-full">
                         {/* Logo */}
-                        <div className="flex items-center justify-between h-14 px-4 border-b">
-                            {sidebarOpen && (
-                                <span className="font-semibold text-gray-800">Alphatrion</span>
-                            )}
+                        <div className="flex items-center justify-between h-16 px-3 border-b border-gray-200/50">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 flex-shrink-0">
+                                    <Beaker className="w-5 h-5 text-white" />
+                                </div>
+                                {sidebarOpen && (
+                                    <span className="font-bold text-lg bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                                        Alphatrion
+                                    </span>
+                                )}
+                            </div>
                             <button
                                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                                className="p-1 rounded hover:bg-gray-100 text-gray-500"
+                                className="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
                             >
-                                {sidebarOpen ? "<" : ">"}
+                                {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
                             </button>
                         </div>
 
                         {/* Project Selector */}
-                        <div className="px-3 py-3 border-b">
+                        <div className="px-3 py-4 border-b border-gray-200/50">
                             {sidebarOpen ? (
                                 <div>
-                                    <label className="text-xs text-gray-500 uppercase tracking-wide">
+                                    <label className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                                         Project
                                     </label>
                                     <select
@@ -143,7 +184,9 @@ function App() {
                                             setSelectedTrialId(null);
                                             navigate(`/experiments?projectId=${id}`);
                                         }}
-                                        className="mt-1 block w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        className="mt-2 block w-full px-3 py-2 text-sm bg-gray-50/80 border border-gray-200 rounded-lg 
+                                        focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400
+                                        transition-all cursor-pointer hover:bg-gray-100/80"
                                     >
                                         {projects.map((p) => (
                                             <option key={p.id} value={p.id}>
@@ -154,72 +197,65 @@ function App() {
                                 </div>
                             ) : (
                                 <div
-                                    className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center text-blue-600 text-xs font-medium cursor-pointer"
+                                    className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex items-center justify-center 
+                                    text-indigo-600 text-sm font-semibold cursor-pointer border border-gray-200
+                                    hover:shadow-md transition-all mx-auto"
                                     title={selectedProject?.name || "Select Project"}
                                 >
-                                    {selectedProject?.name?.charAt(0) || "P"}
+                                    {selectedProject?.name?.charAt(0).toUpperCase() || "P"}
                                 </div>
                             )}
                         </div>
 
                         {/* Navigation */}
-                        <nav className="flex-1 py-2">
-                            {/* Experiments - always available */}
-                            <Link
-                                to={`/experiments?projectId=${selectedProjectId || ""}`}
-                                className={`flex items-center h-10 px-4 text-sm transition-colors ${location.pathname.startsWith("/experiments")
-                                    ? "text-blue-600 bg-blue-50 border-r-2 border-blue-600"
-                                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                                    }`}
-                            >
-                                {sidebarOpen && "Experiments"}
-                            </Link>
+                        <nav className="flex-1 py-4 px-3 space-y-1">
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
 
-                            {/* Trials - needs experimentId */}
-                            {selectedExperimentId ? (
-                                <Link
-                                    to={`/trials?experimentId=${selectedExperimentId}`}
-                                    className={`flex items-center h-10 px-4 text-sm transition-colors ${location.pathname.startsWith("/trials")
-                                        ? "text-blue-600 bg-blue-50 border-r-2 border-blue-600"
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                                        }`}
-                                >
-                                    {sidebarOpen && "Trials"}
-                                </Link>
-                            ) : (
-                                <div
-                                    className="flex items-center h-10 px-4 text-sm text-gray-300 cursor-not-allowed"
-                                    title="Select an experiment first"
-                                >
-                                    {sidebarOpen && "Trials"}
-                                </div>
-                            )}
+                                if (!item.enabled) {
+                                    return (
+                                        <div
+                                            key={item.key}
+                                            className={`flex items-center gap-3 h-11 px-3 rounded-lg text-gray-300 cursor-not-allowed
+                                                ${!sidebarOpen && "justify-center"}`}
+                                            title={`Select ${item.key === "trials" ? "an experiment" : "a trial"} first`}
+                                        >
+                                            <Icon size={20} />
+                                            {sidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
+                                        </div>
+                                    );
+                                }
 
-                            {/* Runs - needs trialId */}
-                            {selectedTrialId ? (
-                                <Link
-                                    to={`/runs?trialId=${selectedTrialId}`}
-                                    className={`flex items-center h-10 px-4 text-sm transition-colors ${location.pathname.startsWith("/runs")
-                                        ? "text-blue-600 bg-blue-50 border-r-2 border-blue-600"
-                                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                                        }`}
-                                >
-                                    {sidebarOpen && "Runs"}
-                                </Link>
-                            ) : (
-                                <div
-                                    className="flex items-center h-10 px-4 text-sm text-gray-300 cursor-not-allowed"
-                                    title="Select a trial first"
-                                >
-                                    {sidebarOpen && "Runs"}
-                                </div>
-                            )}
+                                return (
+                                    <Link
+                                        key={item.key}
+                                        to={item.path}
+                                        className={`flex items-center gap-3 h-11 px-3 rounded-lg transition-all duration-200
+                                            ${!sidebarOpen && "justify-center"}
+                                            ${item.active
+                                                ? "bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25"
+                                                : "text-gray-600 hover:bg-gray-100/80 hover:text-gray-900"
+                                            }`}
+                                    >
+                                        <Icon size={20} />
+                                        {sidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
+                                    </Link>
+                                );
+                            })}
                         </nav>
 
                         {/* Footer */}
-                        <div className="border-t p-3">
-                            {sidebarOpen && (
-                                <div className="text-xs text-gray-400">Version 0.1.0</div>
+                        <div className="border-t border-gray-200/50 p-4">
+                            {sidebarOpen ? (
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs text-gray-400">v0.1.0</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                                        <span className="text-xs text-gray-500">Connected</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mx-auto" title="Connected"></div>
                             )}
                         </div>
                     </div>
@@ -241,7 +277,5 @@ function App() {
         </SelectionContext.Provider>
     );
 }
-
-
 
 export default App;
