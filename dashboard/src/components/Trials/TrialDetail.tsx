@@ -2,6 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { useTrialDetail } from "../../hooks/useTrialDetail";
 import { format } from "date-fns";
 import type { Run, Metric } from "../../types";
+import { useSelection } from "../../pages/App";
+import { useEffect } from "react";
 
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
@@ -126,6 +128,15 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
 export default function TrialDetail() {
     const { id } = useParams<{ id: string }>();
     const { trial, runs, metrics, isLoading, error } = useTrialDetail(id ?? null);
+    const { setExperimentId, setTrialId } = useSelection();
+
+    // Set context when trial loads
+    useEffect(() => {
+        if (trial) {
+            setExperimentId(trial.experimentId);
+            setTrialId(trial.id);
+        }
+    }, [trial, setExperimentId, setTrialId]);
 
     if (isLoading) {
         return (
@@ -269,9 +280,12 @@ export default function TrialDetail() {
                             {runs.map((run: Run) => (
                                 <tr key={run.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm font-mono text-gray-900">
+                                        <Link
+                                            to={`/runs/${run.id}`}
+                                            className="text-sm font-mono text-blue-600 hover:text-blue-900"
+                                        >
                                             {run.id}
-                                        </span>
+                                        </Link>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <StatusBadge status={run.status} />

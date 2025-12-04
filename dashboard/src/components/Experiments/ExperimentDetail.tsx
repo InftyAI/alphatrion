@@ -2,6 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { useExperimentDetail } from "../../hooks/useExperimentDetail";
 import { format } from "date-fns";
 import type { Trial } from "../../types";
+import { useSelection } from "../../pages/App";
+import { useEffect } from "react";
 
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
@@ -23,6 +25,13 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function ExperimentDetail() {
     const { id } = useParams<{ id: string }>();
     const { experiment, trials, isLoading, error } = useExperimentDetail(id ?? null);
+    const { setExperimentId } = useSelection();
+
+    useEffect(() => {
+        if (experiment) {
+            setExperimentId(experiment.id);
+        }
+    }, [experiment, setExperimentId]);
 
     if (isLoading) {
         return (
