@@ -39,6 +39,3 @@
 - [ ] Background gradient/pattern visible through content
 - [ ] Hover effects on cards and table rows
 
-### Known Limitations
-- Styling not yet applied to Trials/Runs pages 
-- Metrics/ Plotting layout could be improved
