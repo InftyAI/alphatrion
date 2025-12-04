@@ -5,8 +5,9 @@ import type { Trial } from "../../types";
 import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 import Tabs from "../ui/tabs";
+import Breadcrumb from "../ui/breadcrumb";
 
-// Status badge component
+// Status badge
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
         COMPLETED: "bg-green-100 text-green-800",
@@ -63,29 +64,30 @@ export default function ExperimentDetail() {
         );
     }
 
+    const shortId = experiment.id.slice(0, 8);
+
     return (
         <div className="p-6">
-            {/* Breadcrumb */}
-            <div className="mb-4 text-sm text-gray-500">
-                <Link
-                    to={`/experiments?projectId=${experiment.projectId}`}
-                    className="hover:text-blue-600"
-                >
-                    Experiments
-                </Link>
-                <span className="mx-2">/</span>
-                <span className="text-gray-900">{experiment.name || "Detail"}</span>
-            </div>
 
-            {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    {experiment.name || "Unnamed Experiment"}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                    {experiment.description || "No description"}
-                </p>
-            </div>
+            {/* Fixed Breadcrumb with tooltip */}
+            <Breadcrumb
+                items={[
+                    {
+                        label: "Experiments",
+                        href: `/experiments?projectId=${experiment.projectId}`,
+                    },
+                    {
+                        label: (
+                            <span
+                                className="cursor-default text-gray-900 font-medium"
+                                title={experiment.id}
+                            >
+                                Exp {shortId}
+                            </span>
+                        ),
+                    },
+                ]}
+            />
 
             {/* Tabs */}
             <Tabs
@@ -96,6 +98,11 @@ export default function ExperimentDetail() {
                 active={activeTab}
                 onChange={(id) => setActiveTab(id as "overview" | "trials")}
             />
+
+            {/* Description (under tabs) */}
+            {experiment.description && (
+                <p className="text-gray-600 mt-4 mb-6">{experiment.description}</p>
+            )}
 
             {/* Tab content */}
             {activeTab === "overview" ? (

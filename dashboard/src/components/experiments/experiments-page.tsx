@@ -3,8 +3,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useExperiments } from "../../hooks/use-experiments";
 import { format } from "date-fns";
 import type { Experiment } from "../../types";
-import { FlaskConical, Calendar, Hash, AlertCircle, Clock, ArrowRight } from "lucide-react";
+import { FlaskConical, Calendar, Hash, AlertCircle, Clock } from "lucide-react";
 import Tabs from "../ui/tabs";
+import Breadcrumb from "../ui/breadcrumb";
 
 type TabType = "overview" | "list";
 
@@ -58,18 +59,8 @@ export default function ExperimentsPage() {
 
     return (
         <div className="p-8">
-            {/* Header */}
-            <div className="mb-8">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                        <FlaskConical className="w-5 h-5 text-white" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Experiments</h1>
-                </div>
-                <p className="text-gray-500 text-sm ml-[52px]">
-                    Project: <code className="px-2 py-0.5 bg-gray-100 rounded-md text-xs font-mono">{projectId}</code>
-                </p>
-            </div>
+            {/* Breadcrumb */}
+            <Breadcrumb items={[{ label: "Experiments" }]} />
 
             {/* Tabs */}
             <Tabs
@@ -78,7 +69,7 @@ export default function ExperimentsPage() {
                     { id: "list", label: `Experiments (${experiments?.length ?? 0})` },
                 ]}
                 active={activeTab}
-                onChange={(id) => setActiveTab(id as "overview" | "list")}
+                onChange={(id) => setActiveTab(id as TabType)}
             />
 
             {/* Tab Content */}
@@ -91,10 +82,11 @@ export default function ExperimentsPage() {
     );
 }
 
-// Overview Section - Cards + Recent Table
+/* -------------------------- OVERVIEW SECTION -------------------------- */
+
 function OverviewSection({ experiments }: { experiments: Experiment[] }) {
-    const latestExp = experiments.length > 0 ? experiments[0] : null;
-    const oldestExp = experiments.length > 0 ? experiments[experiments.length - 1] : null;
+    const latestExp = experiments[0] ?? null;
+    const oldestExp = experiments[experiments.length - 1] ?? null;
     const recentExperiments = experiments.slice(0, 5);
 
     const stats = [
@@ -154,8 +146,7 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                             <Link
                                 key={index}
                                 to={stat.link}
-                                className="group bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 
-                                    hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 hover:-translate-y-1 block"
+                                className="group bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 hover:-translate-y-1 block"
                             >
                                 {CardContent}
                             </Link>
@@ -182,23 +173,21 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                 </div>
 
                 {recentExperiments.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                        No experiments yet
-                    </div>
+                    <div className="p-8 text-center text-gray-500">No experiments yet</div>
                 ) : (
                     <table className="min-w-full">
                         <thead>
                             <tr className="border-b border-gray-100">
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                                     ID
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                                     Name
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                                     Description
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                                     Created
                                 </th>
                                 <th className="px-6 py-3"></th>
@@ -210,39 +199,25 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                                 <tr
                                     key={exp.id}
                                     className="group hover:bg-indigo-50/50 transition-colors cursor-pointer"
-                                    onClick={() => window.location.href = `/experiments/${exp.id}`}
+                                    onClick={() => (window.location.href = `/experiments/${exp.id}`)}
                                 >
-                                    {/* ID */}
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm font-mono text-indigo-600">
-                                            {exp.id}
-                                        </span>
+                                        <span className="text-sm font-mono text-indigo-600">{exp.id}</span>
                                     </td>
-
-                                    {/* Name */}
                                     <td className="px-6 py-4">
                                         <span className="text-sm font-medium text-gray-900">
                                             {exp.name || "Unnamed Experiment"}
                                         </span>
                                     </td>
-
-                                    {/* Description */}
                                     <td className="px-6 py-4">
                                         <span className="text-sm text-gray-500 line-clamp-1">
                                             {exp.description || "-"}
                                         </span>
                                     </td>
-
-                                    {/* Created */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="text-sm text-gray-500">
                                             {format(new Date(exp.createdAt), "MMM d, yyyy")}
                                         </span>
-                                    </td>
-
-                                    {/* Empty cell — removed arrow */}
-                                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        {/* remind: arrow removed — reusable ArrowCell will be added later */}
                                     </td>
                                 </tr>
                             ))}
@@ -254,7 +229,8 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
     );
 }
 
-// List Table Component
+/* -------------------------- LIST TABLE -------------------------- */
+
 function ListTable({ experiments }: { experiments: Experiment[] }) {
     if (experiments.length === 0) {
         return (
@@ -273,16 +249,16 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
             <table className="min-w-full">
                 <thead>
                     <tr className="border-b border-gray-200/50">
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
                             ID
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
                             Name
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
                             Description
                         </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
                             Created
                         </th>
                         <th className="px-6 py-4"></th>

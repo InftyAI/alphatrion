@@ -5,6 +5,7 @@ import type { Run, Metric } from "../../types";
 import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 import Tabs from "../ui/tabs";
+import Breadcrumb from "../ui/breadcrumb";
 
 /* ----------------------------- STATUS BADGE ----------------------------- */
 const StatusBadge = ({ status }: { status: string }) => {
@@ -139,15 +140,23 @@ export default function TrialDetail() {
     return (
         <div className="p-6">
             {/* Breadcrumb */}
-            <div className="mb-4 text-sm text-gray-500">
-                <Link to="/" className="hover:text-blue-600">Projects</Link>
-                <span className="mx-2">/</span>
-                <Link to={`/experiments?projectId=${trial.projectId}`} className="hover:text-blue-600">Experiments</Link>
-                <span className="mx-2">/</span>
-                <Link to={`/experiments/${trial.experimentId}`} className="hover:text-blue-600">Experiment</Link>
-                <span className="mx-2">/</span>
-                <span className="text-gray-900">{trial.name}</span>
-            </div>
+            <Breadcrumb
+                items={[
+                    {
+                        label: "Experiments",
+                        href: `/experiments?projectId=${trial.projectId}`,
+                    },
+                    {
+                        label: `Exp ${trial.experimentId.slice(0, 8)}`,
+                        href: `/experiments/${trial.experimentId}`,
+                    },
+                    {
+                        label: `Trial ${trial.id.slice(0, 8)}`,
+                    },
+                ]}
+            />
+
+
 
             {/* Header */}
             <div className="mb-6 flex items-center gap-4">

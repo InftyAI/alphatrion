@@ -3,6 +3,7 @@ import { useRun } from "../../hooks/use-runs";
 import { format } from "date-fns";
 import { useState } from "react";
 import Tabs from "../ui/tabs";
+import Breadcrumb from "../ui/breadcrumb";
 
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -59,19 +60,37 @@ export default function RunDetail() {
     return (
         <div className="p-6">
             {/* Breadcrumb */}
-            <div className="mb-4 text-sm text-gray-500">
-                <Link to="/experiments" className="hover:text-blue-600">Experiments</Link>
-                <span className="mx-2">/</span>
-                <Link to={`/experiments/${run.experimentId}`} className="hover:text-blue-600">
-                    Experiment
-                </Link>
-                <span className="mx-2">/</span>
-                <Link to={`/trials/${run.trialId}`} className="hover:text-blue-600">
-                    Trial
-                </Link>
-                <span className="mx-2">/</span>
-                <span className="text-gray-900">Run</span>
-            </div>
+            <Breadcrumb
+                items={[
+                    {
+                        label: "Experiments",
+                        href: `/experiments?projectId=${run.projectId}`,
+                    },
+                    {
+                        label: (
+                            <span title={run.experimentId}>
+                                Exp {run.experimentId.slice(0, 8)}
+                            </span>
+                        ),
+                        href: `/experiments/${run.experimentId}`,
+                    },
+                    {
+                        label: (
+                            <span title={run.trialId}>
+                                Trial {run.trialId.slice(0, 8)}
+                            </span>
+                        ),
+                        href: `/trials/${run.trialId}`,
+                    },
+                    {
+                        label: (
+                            <span title={run.id} className="text-gray-900">
+                                Run {run.id.slice(0, 8)}
+                            </span>
+                        ),
+                    },
+                ]}
+            />
 
             {/* Header */}
             <div className="mb-6 flex items-center gap-4">
