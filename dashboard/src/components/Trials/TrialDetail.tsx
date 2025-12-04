@@ -3,8 +3,9 @@ import { useTrialDetail } from "../../hooks/useTrialDetail";
 import { format } from "date-fns";
 import type { Run, Metric } from "../../types";
 import { useSelection } from "../../pages/App";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+/* ----------------------------- STATUS BADGE ----------------------------- */
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
         COMPLETED: "bg-green-100 text-green-800",
@@ -14,7 +15,6 @@ const StatusBadge = ({ status }: { status: string }) => {
         CANCELLED: "bg-gray-100 text-gray-800",
         UNKNOWN: "bg-gray-100 text-gray-500",
     };
-
     return (
         <span className={`px-2 py-1 text-xs rounded-full ${colors[status] || colors.UNKNOWN}`}>
             {status}
@@ -22,7 +22,7 @@ const StatusBadge = ({ status }: { status: string }) => {
     );
 };
 
-// Simple line chart for metrics
+/* ----------------------------- METRICS CHART ----------------------------- */
 function MetricsChart({ metrics }: { metrics: Metric[] }) {
     if (metrics.length === 0) {
         return (
@@ -32,17 +32,13 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
         );
     }
 
-    // Group metrics by key
     const metricsByKey: Record<string, Metric[]> = {};
     metrics.forEach((m) => {
         const key = m.key || "unknown";
-        if (!metricsByKey[key]) {
-            metricsByKey[key] = [];
-        }
+        if (!metricsByKey[key]) metricsByKey[key] = [];
         metricsByKey[key].push(m);
     });
 
-    // Sort each group by step
     Object.values(metricsByKey).forEach((arr) => {
         arr.sort((a, b) => a.step - b.step);
     });
@@ -52,7 +48,8 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
     return (
         <div>
             <div className="mb-4 text-sm text-gray-600">
-                Found {metrics.length} metric points across {keys.length} metric(s): {keys.join(", ")}
+                Found {metrics.length} metric points across {keys.length} metric(s):{" "}
+                {keys.join(", ")}
             </div>
 
             {keys.map((key) => {
@@ -66,13 +63,10 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
                     <div key={key} className="mb-6">
                         <h4 className="text-sm font-medium text-gray-700 mb-2">{key}</h4>
                         <div className="bg-gray-50 p-4 rounded">
-                            {/* Simple SVG chart */}
                             <svg viewBox="0 0 400 100" className="w-full h-32">
-                                {/* Grid lines */}
                                 <line x1="40" y1="10" x2="40" y2="90" stroke="#e5e7eb" strokeWidth="1" />
                                 <line x1="40" y1="90" x2="390" y2="90" stroke="#e5e7eb" strokeWidth="1" />
 
-                                {/* Y axis labels */}
                                 <text x="35" y="15" textAnchor="end" className="text-xs fill-gray-500">
                                     {maxVal.toFixed(2)}
                                 </text>
@@ -80,7 +74,6 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
                                     {minVal.toFixed(2)}
                                 </text>
 
-                                {/* Line */}
                                 <polyline
                                     fill="none"
                                     stroke="#3b82f6"
@@ -88,29 +81,21 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
                                     points={data
                                         .map((d, i) => {
                                             const x = 40 + (i / (data.length - 1 || 1)) * 350;
-                                            const y = 90 - ((d.value ?? 0) - minVal) / range * 80;
+                                            const y =
+                                                90 - (((d.value ?? 0) - minVal) / range) * 80;
                                             return `${x},${y}`;
                                         })
                                         .join(" ")}
                                 />
 
-                                {/* Points */}
                                 {data.map((d, i) => {
                                     const x = 40 + (i / (data.length - 1 || 1)) * 350;
-                                    const y = 90 - ((d.value ?? 0) - minVal) / range * 80;
-                                    return (
-                                        <circle
-                                            key={i}
-                                            cx={x}
-                                            cy={y}
-                                            r="3"
-                                            fill="#3b82f6"
-                                        />
-                                    );
+                                    const y =
+                                        90 - (((d.value ?? 0) - minVal) / range) * 80;
+                                    return <circle key={i} cx={x} cy={y} r="3" fill="#3b82f6" />;
                                 })}
                             </svg>
 
-                            {/* Stats */}
                             <div className="flex gap-4 mt-2 text-xs text-gray-500">
                                 <span>Steps: {data.length}</span>
                                 <span>Min: {minVal.toFixed(4)}</span>
@@ -125,12 +110,14 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
     );
 }
 
+/* ----------------------------- TRIAL DETAIL PAGE ----------------------------- */
 export default function TrialDetail() {
     const { id } = useParams<{ id: string }>();
     const { trial, runs, metrics, isLoading, error } = useTrialDetail(id ?? null);
     const { setExperimentId, setTrialId } = useSelection();
 
-    // Set context when trial loads
+    const [activeTab, setActiveTab] = useState<"overview" | "metrics" | "runs">("overview");
+
     useEffect(() => {
         if (trial) {
             setExperimentId(trial.experimentId);
@@ -141,7 +128,7 @@ export default function TrialDetail() {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-full">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
             </div>
         );
     }
@@ -168,139 +155,182 @@ export default function TrialDetail() {
 
     return (
         <div className="p-6">
-            {/* Breadcrumb */}
+            {/* ----------------------------- Breadcrumb ----------------------------- */}
             <div className="mb-4 text-sm text-gray-500">
                 <Link to="/" className="hover:text-blue-600">Projects</Link>
                 <span className="mx-2">/</span>
+
                 <Link
                     to={`/experiments?projectId=${trial.projectId}`}
                     className="hover:text-blue-600"
                 >
                     Experiments
                 </Link>
+
                 <span className="mx-2">/</span>
+
                 <Link
                     to={`/experiments/${trial.experimentId}`}
                     className="hover:text-blue-600"
                 >
                     Experiment
                 </Link>
+
                 <span className="mx-2">/</span>
                 <span className="text-gray-900">{trial.name}</span>
             </div>
 
-            {/* Header */}
+            {/* ----------------------------- Header ----------------------------- */}
             <div className="mb-6 flex items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-900">{trial.name}</h1>
                 <StatusBadge status={trial.status} />
             </div>
+
             {trial.description && (
                 <p className="text-gray-600 mb-6">{trial.description}</p>
             )}
 
-            {/* Trial Info Card */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Trial Info</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <p className="text-sm text-gray-500">ID</p>
-                        <p className="text-sm font-mono">{trial.id}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Duration</p>
-                        <p className="text-sm">{trial.duration.toFixed(2)}s</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Created</p>
-                        <p className="text-sm">{format(new Date(trial.createdAt), "MMM d, yyyy HH:mm")}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Updated</p>
-                        <p className="text-sm">{format(new Date(trial.updatedAt), "MMM d, yyyy HH:mm")}</p>
-                    </div>
-                </div>
+            {/* ----------------------------- Tabs ----------------------------- */}
+            <div className="border-b border-gray-200 mb-6">
+                <nav className="flex gap-4">
+                    <button
+                        onClick={() => setActiveTab("overview")}
+                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "overview"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
+                            }`}
+                    >
+                        Overview
+                    </button>
 
-                {/* Params */}
-                {trial.params && Object.keys(trial.params).length > 0 && (
-                    <div className="mt-4">
-                        <p className="text-sm text-gray-500 mb-2">Parameters</p>
-                        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-                            {JSON.stringify(trial.params, null, 2)}
-                        </pre>
-                    </div>
-                )}
+                    <button
+                        onClick={() => setActiveTab("metrics")}
+                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "metrics"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
+                            }`}
+                    >
+                        Metrics ({metrics.length})
+                    </button>
 
-                {/* Meta */}
-                {trial.meta && Object.keys(trial.meta).length > 0 && (
-                    <div className="mt-4">
-                        <p className="text-sm text-gray-500 mb-2">Metadata</p>
-                        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-                            {JSON.stringify(trial.meta, null, 2)}
-                        </pre>
-                    </div>
-                )}
-            </div>
-
-            {/* Metrics Chart */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Metrics ({metrics.length} points)
-                </h2>
-                <MetricsChart metrics={metrics} />
-            </div>
-
-            {/* Runs Section */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b">
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <button
+                        onClick={() => setActiveTab("runs")}
+                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "runs"
+                            ? "border-blue-600 text-blue-600"
+                            : "border-transparent text-gray-500 hover:text-gray-700"
+                            }`}
+                    >
                         Runs ({runs.length})
-                    </h2>
-                </div>
-
-                {runs.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">
-                        No runs found for this trial.
-                    </div>
-                ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    ID
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Created
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {runs.map((run: Run) => (
-                                <tr key={run.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <Link
-                                            to={`/runs/${run.id}`}
-                                            className="text-sm font-mono text-blue-600 hover:text-blue-900"
-                                        >
-                                            {run.id}
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge status={run.status} />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm text-gray-500">
-                                            {format(new Date(run.createdAt), "MMM d, yyyy HH:mm")}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
+                    </button>
+                </nav>
             </div>
+
+            {/* ----------------------------- TAB CONTENT ----------------------------- */}
+            {activeTab === "overview" && (
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Trial Info</h2>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <p className="text-sm text-gray-500">ID</p>
+                            <p className="text-sm font-mono">{trial.id}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Duration</p>
+                            <p className="text-sm">{trial.duration.toFixed(2)}s</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Created</p>
+                            <p className="text-sm">{format(new Date(trial.createdAt), "MMM d, yyyy HH:mm")}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-gray-500">Updated</p>
+                            <p className="text-sm">{format(new Date(trial.updatedAt), "MMM d, yyyy HH:mm")}</p>
+                        </div>
+                    </div>
+
+                    {trial.params && Object.keys(trial.params).length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-sm text-gray-500 mb-2">Parameters</p>
+                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                                {JSON.stringify(trial.params, null, 2)}
+                            </pre>
+                        </div>
+                    )}
+
+                    {trial.meta && Object.keys(trial.meta).length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-sm text-gray-500 mb-2">Metadata</p>
+                            <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                                {JSON.stringify(trial.meta, null, 2)}
+                            </pre>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {activeTab === "metrics" && (
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                        Metrics ({metrics.length} points)
+                    </h2>
+                    <MetricsChart metrics={metrics} />
+                </div>
+            )}
+
+            {activeTab === "runs" && (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                            Runs ({runs.length})
+                        </h2>
+                    </div>
+
+                    {runs.length === 0 ? (
+                        <div className="p-6 text-center text-gray-500">
+                            No runs found for this trial.
+                        </div>
+                    ) : (
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        ID
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Status
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Created
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {runs.map((run: Run) => (
+                                    <tr key={run.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <Link
+                                                to={`/runs/${run.id}`}
+                                                className="text-sm font-mono text-blue-600 hover:text-blue-900"
+                                            >
+                                                {run.id}
+                                            </Link>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <StatusBadge status={run.status} />
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm text-gray-500">
+                                                {format(new Date(run.createdAt), "MMM d, yyyy HH:mm")}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

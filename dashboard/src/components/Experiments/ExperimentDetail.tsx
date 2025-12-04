@@ -3,8 +3,9 @@ import { useExperimentDetail } from "../../hooks/useExperimentDetail";
 import { format } from "date-fns";
 import type { Trial } from "../../types";
 import { useSelection } from "../../pages/App";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
+// Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
         COMPLETED: "bg-green-100 text-green-800",
@@ -27,10 +28,10 @@ export default function ExperimentDetail() {
     const { experiment, trials, isLoading, error } = useExperimentDetail(id ?? null);
     const { setExperimentId } = useSelection();
 
+    const [activeTab, setActiveTab] = useState<"overview" | "trials">("overview");
+
     useEffect(() => {
-        if (experiment) {
-            setExperimentId(experiment.id);
-        }
+        if (experiment) setExperimentId(experiment.id);
     }, [experiment, setExperimentId]);
 
     if (isLoading) {
@@ -87,103 +88,135 @@ export default function ExperimentDetail() {
                 </p>
             </div>
 
-            {/* Experiment Info Card */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Experiment Info</h2>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-sm text-gray-500">ID</p>
-                        <p className="text-sm font-mono">{experiment.id}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Project ID</p>
-                        <p className="text-sm font-mono">{experiment.projectId}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Created</p>
-                        <p className="text-sm">{format(new Date(experiment.createdAt), "MMM d, yyyy HH:mm")}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500">Updated</p>
-                        <p className="text-sm">{format(new Date(experiment.updatedAt), "MMM d, yyyy HH:mm")}</p>
-                    </div>
-                </div>
-                {experiment.meta && Object.keys(experiment.meta).length > 0 && (
-                    <div className="mt-4">
-                        <p className="text-sm text-gray-500 mb-2">Metadata</p>
-                        <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
-                            {JSON.stringify(experiment.meta, null, 2)}
-                        </pre>
-                    </div>
-                )}
+            {/* Tabs */}
+            <div className="inline-flex p-1 bg-gray-100/80 rounded-xl mb-6">
+                <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "overview"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
+                >
+                    Overview
+                </button>
+                <button
+                    onClick={() => setActiveTab("trials")}
+                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "trials"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
+                >
+                    Trials
+                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600">
+                        {trials.length}
+                    </span>
+                </button>
             </div>
 
-            {/* Trials Section */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                        Trials ({trials.length})
-                    </h2>
-                </div>
-
-                {trials.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">
-                        No trials found for this experiment.
-                    </div>
-                ) : (
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    ID
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Name
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Status
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Duration
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    Created
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {trials.map((trial: Trial) => (
-                                <tr key={trial.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <Link
-                                            to={`/trials/${trial.id}`}
-                                            className="text-sm font-mono text-blue-600 hover:text-blue-900"
-                                        >
-                                            {trial.id}
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm text-gray-900">{trial.name}</span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <StatusBadge status={trial.status} />
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm text-gray-900">
-                                            {trial.duration.toFixed(2)}s
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="text-sm text-gray-500">
-                                            {format(new Date(trial.createdAt), "MMM d, yyyy")}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
+            {/* Tab content */}
+            {activeTab === "overview" ? (
+                <OverviewTab experiment={experiment} />
+            ) : (
+                <TrialsTab trials={trials} />
+            )}
         </div>
     );
+}
+
+/* -------------------- OVERVIEW TAB -------------------- */
+
+function OverviewTab({ experiment }: { experiment: any }) {
+    return (
+        <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Experiment Info</h2>
+
+            <div className="grid grid-cols-2 gap-4">
+                <InfoItem label="ID" value={experiment.id} mono />
+                <InfoItem label="Project ID" value={experiment.projectId} mono />
+                <InfoItem
+                    label="Created"
+                    value={format(new Date(experiment.createdAt), "MMM d, yyyy HH:mm")}
+                />
+                <InfoItem
+                    label="Updated"
+                    value={format(new Date(experiment.updatedAt), "MMM d, yyyy HH:mm")}
+                />
+            </div>
+
+            {experiment.meta && Object.keys(experiment.meta).length > 0 && (
+                <div className="mt-4">
+                    <p className="text-sm text-gray-500 mb-2">Metadata</p>
+                    <pre className="text-xs bg-gray-50 p-3 rounded overflow-auto">
+                        {JSON.stringify(experiment.meta, null, 2)}
+                    </pre>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function InfoItem({ label, value, mono = false }: any) {
+    return (
+        <div>
+            <p className="text-sm text-gray-500">{label}</p>
+            <p className={`text-sm ${mono ? "font-mono" : ""}`}>{value}</p>
+        </div>
+    );
+}
+
+/* -------------------- TRIALS TAB -------------------- */
+
+function TrialsTab({ trials }: { trials: Trial[] }) {
+    return (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+            {trials.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">
+                    No trials found for this experiment.
+                </div>
+            ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <Th>ID</Th>
+                            <Th>Name</Th>
+                            <Th>Status</Th>
+                            <Th>Duration</Th>
+                            <Th>Created</Th>
+                        </tr>
+                    </thead>
+
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {trials.map((trial) => (
+                            <tr key={trial.id} className="group hover:bg-indigo-50/50">
+                                <Td>
+                                    <Link
+                                        to={`/trials/${trial.id}`}
+                                        className="text-sm font-mono text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        {trial.id}
+                                    </Link>
+                                </Td>
+                                <Td>{trial.name}</Td>
+                                <Td><StatusBadge status={trial.status} /></Td>
+                                <Td>{trial.duration.toFixed(2)}s</Td>
+                                <Td>{format(new Date(trial.createdAt), "MMM d, yyyy")}</Td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </div>
+    );
+}
+
+function Th({ children }: any) {
+    return (
+        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+            {children}
+        </th>
+    );
+}
+
+function Td({ children }: any) {
+    return <td className="px-6 py-4 whitespace-nowrap text-sm">{children}</td>;
 }

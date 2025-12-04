@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useExperiments } from "../../hooks/useExperiments";
 import { format } from "date-fns";
 import type { Experiment } from "../../types";
-import { FlaskConical, Calendar, Hash, ArrowRight, AlertCircle, Clock } from "lucide-react";
+import { FlaskConical, Calendar, Hash, AlertCircle, Clock, ArrowRight } from "lucide-react";
 
 type TabType = "overview" | "list";
 
@@ -157,9 +157,6 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                                 <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center shadow-lg ${colors.shadow}`}>
                                     <Icon className="w-5 h-5 text-white" />
                                 </div>
-                                {stat.link && (
-                                    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 group-hover:translate-x-1 transition-all" />
-                                )}
                             </div>
                             <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
                             <p className="text-xl font-bold text-gray-900 break-words" title={stat.value}>
@@ -174,7 +171,7 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                                 key={index}
                                 to={stat.link}
                                 className="group bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6 
-                                hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 hover:-translate-y-1 block"
+                                    hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 hover:-translate-y-1 block"
                             >
                                 {CardContent}
                             </Link>
@@ -209,6 +206,9 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                         <thead>
                             <tr className="border-b border-gray-100">
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    ID
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -220,6 +220,7 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                                 <th className="px-6 py-3"></th>
                             </tr>
                         </thead>
+
                         <tbody className="divide-y divide-gray-100">
                             {recentExperiments.map((exp) => (
                                 <tr
@@ -227,23 +228,37 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                                     className="group hover:bg-indigo-50/50 transition-colors cursor-pointer"
                                     onClick={() => window.location.href = `/experiments/${exp.id}`}
                                 >
+                                    {/* ID */}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <span className="text-sm font-mono text-indigo-600">
+                                            {exp.id}
+                                        </span>
+                                    </td>
+
+                                    {/* Name */}
                                     <td className="px-6 py-4">
                                         <span className="text-sm font-medium text-gray-900">
                                             {exp.name || "Unnamed Experiment"}
                                         </span>
                                     </td>
+
+                                    {/* Description */}
                                     <td className="px-6 py-4">
                                         <span className="text-sm text-gray-500 line-clamp-1">
                                             {exp.description || "-"}
                                         </span>
                                     </td>
+
+                                    {/* Created */}
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className="text-sm text-gray-500">
                                             {format(new Date(exp.createdAt), "MMM d, yyyy")}
                                         </span>
                                     </td>
+
+                                    {/* Empty cell — removed arrow */}
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 inline-block" />
+                                        {/* remind: arrow removed — reusable ArrowCell will be added later */}
                                     </td>
                                 </tr>
                             ))}
@@ -289,12 +304,10 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                         <th className="px-6 py-4"></th>
                     </tr>
                 </thead>
+
                 <tbody className="divide-y divide-gray-100">
                     {experiments.map((exp) => (
-                        <tr
-                            key={exp.id}
-                            className="group hover:bg-indigo-50/50 transition-colors"
-                        >
+                        <tr key={exp.id} className="group hover:bg-indigo-50/50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <Link
                                     to={`/experiments/${exp.id}`}
@@ -303,29 +316,23 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                                     {exp.id}
                                 </Link>
                             </td>
+
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <span className="text-sm font-medium text-gray-900">
                                     {exp.name || "Unnamed Experiment"}
                                 </span>
                             </td>
+
                             <td className="px-6 py-4">
                                 <span className="text-sm text-gray-500 line-clamp-1 max-w-xs">
                                     {exp.description || "-"}
                                 </span>
                             </td>
+
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <span className="text-sm text-gray-500">
                                     {format(new Date(exp.createdAt), "MMM d, yyyy")}
                                 </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                <Link
-                                    to={`/experiments/${exp.id}`}
-                                    className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-indigo-600 transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                    View
-                                    <ArrowRight size={14} />
-                                </Link>
                             </td>
                         </tr>
                     ))}

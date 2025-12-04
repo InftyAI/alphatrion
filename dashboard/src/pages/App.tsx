@@ -2,7 +2,7 @@ import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom"
 import { useState, useEffect, createContext, useContext } from "react";
 import { fetchProjects } from "../services/graphql";
 import type { Project } from "../types";
-import { ChevronLeft, ChevronRight, Beaker, FlaskConical, Zap, Layers } from "lucide-react";
+import { ChevronLeft, ChevronRight, Beaker, FlaskConical } from "lucide-react";
 import packageJson from "../../package.json";
 
 // Components
@@ -101,6 +101,7 @@ function App() {
         );
     }
 
+    // Sidebar now only has Experiments — Trials and Runs removed
     const navItems = [
         {
             key: "experiments",
@@ -109,23 +110,7 @@ function App() {
             path: `/experiments?projectId=${selectedProjectId || ""}`,
             active: location.pathname.startsWith("/experiments"),
             enabled: true,
-        },
-        {
-            key: "trials",
-            label: "Trials",
-            icon: Layers,
-            path: `/trials?experimentId=${selectedExperimentId}`,
-            active: location.pathname.startsWith("/trials"),
-            enabled: !!selectedExperimentId,
-        },
-        {
-            key: "runs",
-            label: "Runs",
-            icon: Zap,
-            path: `/runs?trialId=${selectedTrialId}`,
-            active: location.pathname.startsWith("/runs"),
-            enabled: !!selectedTrialId,
-        },
+        }
     ];
 
     return (
@@ -213,20 +198,6 @@ function App() {
                             {navItems.map((item) => {
                                 const Icon = item.icon;
 
-                                if (!item.enabled) {
-                                    return (
-                                        <div
-                                            key={item.key}
-                                            className={`flex items-center gap-3 h-11 px-3 rounded-lg text-gray-300 cursor-not-allowed
-                                                ${!sidebarOpen && "justify-center"}`}
-                                            title={`Select ${item.key === "trials" ? "an experiment" : "a trial"} first`}
-                                        >
-                                            <Icon size={20} />
-                                            {sidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
-                                        </div>
-                                    );
-                                }
-
                                 return (
                                     <Link
                                         key={item.key}
@@ -250,7 +221,9 @@ function App() {
                             {sidebarOpen ? (
                                 <span className="text-xs text-gray-400">v{packageJson.version}</span>
                             ) : (
-                                <span className="text-xs text-gray-400 block text-center">v{packageJson.version.split('.')[0]}</span>
+                                <span className="text-xs text-gray-400 block text-center">
+                                    v{packageJson.version.split('.')[0]}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -262,6 +235,8 @@ function App() {
                         <Route path="/" element={<div />} />
                         <Route path="/experiments" element={<ExperimentsPage />} />
                         <Route path="/experiments/:id" element={<ExperimentDetail />} />
+
+                        {/* Still keep routes — only removed from sidebar */}
                         <Route path="/trials" element={<TrialsPage />} />
                         <Route path="/trials/:id" element={<TrialDetail />} />
                         <Route path="/runs" element={<RunsPage />} />
