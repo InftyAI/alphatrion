@@ -4,6 +4,7 @@ import { useExperiments } from "../../hooks/use-experiments";
 import { format } from "date-fns";
 import type { Experiment } from "../../types";
 import { FlaskConical, Calendar, Hash, AlertCircle, Clock, ArrowRight } from "lucide-react";
+import Tabs from "../ui/tabs";
 
 type TabType = "overview" | "list";
 
@@ -71,31 +72,14 @@ export default function ExperimentsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="mb-6">
-                <div className="inline-flex p-1 bg-gray-100/80 rounded-xl">
-                    <button
-                        onClick={() => setActiveTab("overview")}
-                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "overview"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Overview
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("list")}
-                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "list"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        List
-                        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600">
-                            {experiments?.length ?? 0}
-                        </span>
-                    </button>
-                </div>
-            </div>
+            <Tabs
+                tabs={[
+                    { id: "overview", label: "Overview" },
+                    { id: "list", label: `List (${experiments?.length ?? 0})` },
+                ]}
+                active={activeTab}
+                onChange={(id) => setActiveTab(id as "overview" | "list")}
+            />
 
             {/* Tab Content */}
             {activeTab === "overview" ? (

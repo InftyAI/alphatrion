@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import type { Trial } from "../../types";
 import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
+import Tabs from "../ui/tabs";
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -89,29 +90,14 @@ export default function ExperimentDetail() {
             </div>
 
             {/* Tabs */}
-            <div className="inline-flex p-1 bg-gray-100/80 rounded-xl mb-6">
-                <button
-                    onClick={() => setActiveTab("overview")}
-                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "overview"
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                        }`}
-                >
-                    Overview
-                </button>
-                <button
-                    onClick={() => setActiveTab("trials")}
-                    className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "trials"
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                        }`}
-                >
-                    Trials
-                    <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-200 text-gray-600">
-                        {trials.length}
-                    </span>
-                </button>
-            </div>
+            <Tabs
+                tabs={[
+                    { id: "overview", label: "Overview" },
+                    { id: "trials", label: `Trials (${trials.length})` },
+                ]}
+                active={activeTab}
+                onChange={(id) => setActiveTab(id as "overview" | "trials")}
+            />
 
             {/* Tab content */}
             {activeTab === "overview" ? (

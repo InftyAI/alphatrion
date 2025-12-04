@@ -2,6 +2,8 @@ import { Link, useParams } from "react-router-dom";
 import { useRun } from "../../hooks/use-runs";
 import { format } from "date-fns";
 import { useState } from "react";
+import Tabs from "../ui/tabs";
+
 
 const StatusBadge = ({ status }: { status: string }) => {
     const colors: Record<string, string> = {
@@ -78,28 +80,16 @@ export default function RunDetail() {
             </div>
 
             {/* Tabs */}
-            <div className="mb-6">
-                <div className="inline-flex p-1 bg-gray-100/80 rounded-xl">
-                    <button
-                        onClick={() => setActiveTab("overview")}
-                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "overview"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Overview
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("metrics")}
-                        className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === "metrics"
-                            ? "bg-white text-gray-900 shadow-sm"
-                            : "text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Metrics
-                    </button>
-                </div>
-            </div>
+            <Tabs
+                tabs={[
+                    { id: "overview", label: "Overview" },
+                    { id: "metrics", label: "Metrics" },
+                ]}
+                active={activeTab}
+                onChange={(id) => setActiveTab(id as "overview" | "metrics")}
+            />
+
+
 
             {/* Tab Content */}
             {activeTab === "overview" ? (

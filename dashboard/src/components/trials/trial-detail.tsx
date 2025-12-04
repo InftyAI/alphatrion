@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import type { Run, Metric } from "../../types";
 import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
+import Tabs from "../ui/tabs";
 
 /* ----------------------------- STATUS BADGE ----------------------------- */
 const StatusBadge = ({ status }: { status: string }) => {
@@ -191,39 +192,16 @@ export default function TrialDetail() {
             )}
 
             {/* ----------------------------- Tabs ----------------------------- */}
-            <div className="border-b border-gray-200 mb-6">
-                <nav className="flex gap-4">
-                    <button
-                        onClick={() => setActiveTab("overview")}
-                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "overview"
-                            ? "border-blue-600 text-blue-600"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Overview
-                    </button>
+            <Tabs
+                tabs={[
+                    { id: "overview", label: "Overview" },
+                    { id: "metrics", label: `Metrics (${metrics.length})` },
+                    { id: "runs", label: `Runs (${runs.length})` },
+                ]}
+                active={activeTab}
+                onChange={(id) => setActiveTab(id as any)}
+            />
 
-                    <button
-                        onClick={() => setActiveTab("metrics")}
-                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "metrics"
-                            ? "border-blue-600 text-blue-600"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Metrics ({metrics.length})
-                    </button>
-
-                    <button
-                        onClick={() => setActiveTab("runs")}
-                        className={`py-2 px-4 border-b-2 font-medium text-sm ${activeTab === "runs"
-                            ? "border-blue-600 text-blue-600"
-                            : "border-transparent text-gray-500 hover:text-gray-700"
-                            }`}
-                    >
-                        Runs ({runs.length})
-                    </button>
-                </nav>
-            </div>
 
             {/* ----------------------------- TAB CONTENT ----------------------------- */}
             {activeTab === "overview" && (
