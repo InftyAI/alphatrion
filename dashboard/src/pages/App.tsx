@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { fetchProjects } from "../services/graphql";
 import type { Project } from "../types";
 import { ChevronLeft, ChevronRight, Beaker, FlaskConical, Zap, Layers } from "lucide-react";
+import packageJson from "../../package.json";
 
 // Components
 import ExperimentsPage from "../components/Experiments/ExperimentsPage";
@@ -247,15 +248,9 @@ function App() {
                         {/* Footer */}
                         <div className="border-t border-gray-200/50 p-4">
                             {sidebarOpen ? (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-400">v0.1.0</span>
-                                    <div className="flex items-center gap-1.5">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        <span className="text-xs text-gray-500">Connected</span>
-                                    </div>
-                                </div>
+                                <span className="text-xs text-gray-400">v{packageJson.version}</span>
                             ) : (
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mx-auto" title="Connected"></div>
+                                <span className="text-xs text-gray-400 block text-center">v{packageJson.version.split('.')[0]}</span>
                             )}
                         </div>
                     </div>
