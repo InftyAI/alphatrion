@@ -83,6 +83,16 @@ export default function ExperimentDetail() {
                 ]}
             />
 
+            {/* Name and Description */}
+            <div className="mb-6">
+                {experiment.name && (
+                    <h1 className="text-2xl font-bold text-gray-900">{experiment.name}</h1>
+                )}
+                {experiment.description && (
+                    <p className="text-gray-600 mt-1">{experiment.description}</p>
+                )}
+            </div>
+
             {/* Tabs */}
             <Tabs
                 tabs={[
@@ -92,11 +102,6 @@ export default function ExperimentDetail() {
                 active={activeTab}
                 onChange={(id) => setActiveTab(id as "overview" | "trials")}
             />
-
-            {/* Description (under tabs) */}
-            {experiment.description && (
-                <p className="text-gray-600 mt-4 mb-6">{experiment.description}</p>
-            )}
 
             {/* Tab content */}
             {activeTab === "overview" ? (

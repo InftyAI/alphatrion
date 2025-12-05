@@ -160,12 +160,16 @@ export default function TrialDetail() {
 
 
             {/* Header */}
-            <div className="mb-6 flex items-center gap-4">
-                <h1 className="text-2xl font-bold text-gray-900">{trial.name}</h1>
-                <StatusBadge status={trial.status} />
+            {/* Name and Description */}
+            <div className="mb-6">
+                <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold text-gray-900">{trial.name}</h1>
+                    <StatusBadge status={trial.status} />
+                </div>
+                {trial.description && (
+                    <p className="text-gray-600 mt-1">{trial.description}</p>
+                )}
             </div>
-
-            {trial.description && <p className="text-gray-600 mb-6">{trial.description}</p>}
 
             {/* ----------------------------- Tabs ----------------------------- */}
             <Tabs
