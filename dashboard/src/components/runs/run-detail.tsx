@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { useState } from "react";
 import Tabs from "../ui/tabs";
 import Breadcrumb from "../ui/breadcrumb";
+import { formatId } from "../../utils/format";
 
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -67,27 +68,17 @@ export default function RunDetail() {
                         href: `/experiments?projectId=${run.projectId}`,
                     },
                     {
-                        label: (
-                            <span title={run.experimentId}>
-                                Exp {run.experimentId.slice(0, 8)}
-                            </span>
-                        ),
+                        label: formatId(run.experimentId),
                         href: `/experiments/${run.experimentId}`,
                     },
+                    { label: "Trials" },
                     {
-                        label: (
-                            <span title={run.trialId}>
-                                Trial {run.trialId.slice(0, 8)}
-                            </span>
-                        ),
+                        label: formatId(run.trialId),
                         href: `/trials/${run.trialId}`,
                     },
+                    { label: "Runs" },
                     {
-                        label: (
-                            <span title={run.id} className="text-gray-900">
-                                Run {run.id.slice(0, 8)}
-                            </span>
-                        ),
+                        label: formatId(run.id),
                     },
                 ]}
             />

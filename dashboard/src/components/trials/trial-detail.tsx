@@ -6,6 +6,7 @@ import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 import Tabs from "../ui/tabs";
 import Breadcrumb from "../ui/breadcrumb";
+import { formatId } from "../../utils/format";
 
 /* ----------------------------- STATUS BADGE ----------------------------- */
 const StatusBadge = ({ status }: { status: string }) => {
@@ -147,15 +148,15 @@ export default function TrialDetail() {
                         href: `/experiments?projectId=${trial.projectId}`,
                     },
                     {
-                        label: `Exp ${trial.experimentId.slice(0, 8)}`,
+                        label: formatId(trial.experimentId),
                         href: `/experiments/${trial.experimentId}`,
                     },
+                    { label: "Trials" },
                     {
-                        label: `Trial ${trial.id.slice(0, 8)}`,
+                        label: formatId(trial.id),
                     },
                 ]}
             />
-
 
 
             {/* Header */}

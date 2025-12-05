@@ -6,6 +6,8 @@ import { useSelection } from "../../pages/app";
 import { useEffect, useState } from "react";
 import Tabs from "../ui/tabs";
 import Breadcrumb from "../ui/breadcrumb";
+import { formatId } from "../../utils/format";
+
 
 // Status badge
 const StatusBadge = ({ status }: { status: string }) => {
@@ -64,7 +66,6 @@ export default function ExperimentDetail() {
         );
     }
 
-    const shortId = experiment.id.slice(0, 8);
 
     return (
         <div className="p-6">
@@ -77,14 +78,7 @@ export default function ExperimentDetail() {
                         href: `/experiments?projectId=${experiment.projectId}`,
                     },
                     {
-                        label: (
-                            <span
-                                className="cursor-default text-gray-900 font-medium"
-                                title={experiment.id}
-                            >
-                                Exp {shortId}
-                            </span>
-                        ),
+                        label: formatId(experiment.id),
                     },
                 ]}
             />
