@@ -2,7 +2,7 @@ import { Routes, Route, Link, useLocation, useNavigate } from "react-router-dom"
 import { useState, useEffect, createContext, useContext } from "react";
 import { fetchProjects } from "../services/graphql";
 import type { Project } from "../types";
-import { ChevronLeft, ChevronRight, Beaker, FlaskConical } from "lucide-react";
+import { ChevronLeft, ChevronRight, FlaskConical } from "lucide-react";
 import packageJson from "../../package.json";
 
 // Components
@@ -95,7 +95,7 @@ function App() {
             <div className="flex justify-center items-center h-screen">
                 <div className="relative">
                     <div className="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600"></div>
-                    <Beaker className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-indigo-600" />
+                    <img src="/logo.png" alt="Loading" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6" />
                 </div>
             </div>
         );
@@ -137,9 +137,7 @@ function App() {
                         {/* Logo */}
                         <div className="flex items-center justify-between h-16 px-3 border-b border-gray-200/50">
                             <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 flex-shrink-0">
-                                    <Beaker className="w-5 h-5 text-white" />
-                                </div>
+                                <img src="/logo.png" alt="Alphatrion" className="w-9 h-9 rounded-xl flex-shrink-0" />
                                 {sidebarOpen && (
                                     <span className="font-bold text-lg bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                                         Alphatrion
