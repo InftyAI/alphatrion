@@ -43,3 +43,6 @@ tmp
 python-version
 testenv/
 ptest/
+/node_modules/
+/package.json
+/package-lock.json

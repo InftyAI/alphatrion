@@ -1,26 +1,43 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { useExperiments } from "../../hooks/useExperiments";
+import { useTrials } from "../../hooks/use-trials";
 import { format } from "date-fns";
-import type { Experiment } from "../../types";
+import type { Trial } from "../../types";
 
 type TabType = "overview" | "list";
 
-export default function ExperimentsPage() {
+const StatusBadge = ({ status }: { status: string }) => {
+    const colors: Record<string, string> = {
+        COMPLETED: "bg-green-100 text-green-800",
+        RUNNING: "bg-blue-100 text-blue-800",
+        PENDING: "bg-yellow-100 text-yellow-800",
+        FAILED: "bg-red-100 text-red-800",
+        CANCELLED: "bg-gray-100 text-gray-800",
+        UNKNOWN: "bg-gray-100 text-gray-500",
+    };
+
+    return (
+        <span className={`px-2 py-1 text-xs rounded-full ${colors[status] || colors.UNKNOWN}`}>
+            {status}
+        </span>
+    );
+};
+
+export default function TrialsPage() {
     const [searchParams] = useSearchParams();
-    const projectId = searchParams.get("projectId");
+    const experimentId = searchParams.get("experimentId");
     const [activeTab, setActiveTab] = useState<TabType>("overview");
 
-    const { data: experiments, isLoading, error } = useExperiments(projectId);
+    const { data: trials, isLoading, error } = useTrials(experimentId);
 
-    if (!projectId) {
+    if (!experimentId) {
         return (
             <div className="p-6">
                 <div className="bg-yellow-50 p-4 rounded">
                     <p className="text-yellow-800">
-                        No project selected. Please select a project from the{" "}
-                        <Link to="/" className="text-blue-600 underline">
-                            Projects page
+                        No experiment selected. Please select an experiment from the{" "}
+                        <Link to="/experiments" className="text-blue-600 underline">
+                            Experiments page
                         </Link>
                         .
                     </p>
@@ -41,7 +58,7 @@ export default function ExperimentsPage() {
         return (
             <div className="p-6">
                 <div className="bg-red-50 p-4 rounded">
-                    <p className="text-red-600">Error loading experiments: {error.message}</p>
+                    <p className="text-red-600">Error loading trials: {error.message}</p>
                 </div>
             </div>
         );
@@ -50,9 +67,9 @@ export default function ExperimentsPage() {
     return (
         <div className="p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Experiments</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Trials</h1>
                 <p className="text-gray-600">
-                    Project ID: <span className="font-mono text-sm">{projectId}</span>
+                    Experiment ID: <span className="font-mono text-sm">{experimentId}</span>
                 </p>
             </div>
 
@@ -75,24 +92,30 @@ export default function ExperimentsPage() {
                             : "border-transparent text-gray-500 hover:text-gray-700"
                             }`}
                     >
-                        List ({experiments?.length ?? 0})
+                        List ({trials?.length ?? 0})
                     </button>
                 </nav>
             </div>
 
             {/* Tab Content */}
             {activeTab === "overview" ? (
-                <OverviewTable experiments={experiments ?? []} />
+                <OverviewTable trials={trials ?? []} />
             ) : (
-                <ListTable experiments={experiments ?? []} />
+                <ListTable trials={trials ?? []} />
             )}
         </div>
     );
 }
 
 // Overview Table Component
-function OverviewTable({ experiments }: { experiments: Experiment[] }) {
-    const totalExperiments = experiments.length;
+function OverviewTable({ trials }: { trials: Trial[] }) {
+    const totalTrials = trials.length;
+    const completedTrials = trials.filter((t) => t.status === "COMPLETED").length;
+    const runningTrials = trials.filter((t) => t.status === "RUNNING").length;
+    const failedTrials = trials.filter((t) => t.status === "FAILED").length;
+    const avgDuration = trials.length > 0
+        ? trials.reduce((sum, t) => sum + t.duration, 0) / trials.length
+        : 0;
 
     return (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -110,29 +133,33 @@ function OverviewTable({ experiments }: { experiments: Experiment[] }) {
                 <tbody className="bg-white divide-y divide-gray-200">
                     <tr>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            Total Experiments
+                            Total Trials
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{totalExperiments}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{totalTrials}</td>
                     </tr>
                     <tr>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            Latest Experiment
+                            Completed
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                            {experiments.length > 0
-                                ? experiments[0].name || "Unnamed"
-                                : "-"}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-green-600">{completedTrials}</td>
                     </tr>
                     <tr>
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                            Oldest Experiment
+                            Running
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                            {experiments.length > 0
-                                ? experiments[experiments.length - 1].name || "Unnamed"
-                                : "-"}
+                        <td className="px-6 py-4 text-sm text-blue-600">{runningTrials}</td>
+                    </tr>
+                    <tr>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            Failed
                         </td>
+                        <td className="px-6 py-4 text-sm text-red-600">{failedTrials}</td>
+                    </tr>
+                    <tr>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                            Average Duration
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{avgDuration.toFixed(2)}s</td>
                     </tr>
                 </tbody>
             </table>
@@ -141,11 +168,11 @@ function OverviewTable({ experiments }: { experiments: Experiment[] }) {
 }
 
 // List Table Component
-function ListTable({ experiments }: { experiments: Experiment[] }) {
-    if (experiments.length === 0) {
+function ListTable({ trials }: { trials: Trial[] }) {
+    if (trials.length === 0) {
         return (
             <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
-                No experiments found for this project.
+                No trials found for this experiment.
             </div>
         );
     }
@@ -162,7 +189,10 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                             Name
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                            Description
+                            Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Duration
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                             Created
@@ -170,29 +200,28 @@ function ListTable({ experiments }: { experiments: Experiment[] }) {
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {experiments.map((exp) => (
-                        <tr key={exp.id} className="hover:bg-gray-50">
+                    {trials.map((trial) => (
+                        <tr key={trial.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <Link
-                                    to={`/experiments/${exp.id}`}
+                                    to={`/trials/${trial.id}`}
                                     className="text-sm font-mono text-blue-600 hover:text-blue-900"
                                 >
-                                    {exp.id}
+                                    {trial.id}
                                 </Link>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="text-sm text-gray-900">
-                                    {exp.name || "Unnamed Experiment"}
-                                </span>
+                                <span className="text-sm text-gray-900">{trial.name}</span>
                             </td>
-                            <td className="px-6 py-4">
-                                <span className="text-sm text-gray-500 truncate max-w-xs">
-                                    {exp.description || "-"}
-                                </span>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <StatusBadge status={trial.status} />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm text-gray-900">{trial.duration.toFixed(2)}s</span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <span className="text-sm text-gray-500">
-                                    {format(new Date(exp.createdAt), "MMM d, yyyy")}
+                                    {format(new Date(trial.createdAt), "MMM d, yyyy")}
                                 </span>
                             </td>
                         </tr>

@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./pages/App";
+import App from "./pages/app";
 import "./styles/index.css";
 
 import { fetchProjects } from './services/graphql';
