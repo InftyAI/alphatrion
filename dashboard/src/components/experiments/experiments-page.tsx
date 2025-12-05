@@ -7,6 +7,7 @@ import { FlaskConical, Calendar, Hash, AlertCircle, Clock } from "lucide-react";
 import Tabs from "../ui/tabs";
 import Breadcrumb from "../ui/breadcrumb";
 
+
 type TabType = "overview" | "list";
 
 export default function ExperimentsPage() {
@@ -18,7 +19,7 @@ export default function ExperimentsPage() {
 
     if (!projectId) {
         return (
-            <div className="p-8">
+            <div className="p-6">
                 <div className="bg-amber-50/80 backdrop-blur border border-amber-200 p-5 rounded-xl flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                     <div>
@@ -45,7 +46,7 @@ export default function ExperimentsPage() {
 
     if (error) {
         return (
-            <div className="p-8">
+            <div className="p-6">
                 <div className="bg-red-50/80 backdrop-blur border border-red-200 p-5 rounded-xl flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                     <div>
@@ -58,7 +59,7 @@ export default function ExperimentsPage() {
     }
 
     return (
-        <div className="p-8">
+        <div className="p-6">
             {/* Breadcrumb */}
             <Breadcrumb items={[{ label: "Experiments" }]} />
 
@@ -173,7 +174,7 @@ function OverviewSection({ experiments }: { experiments: Experiment[] }) {
                 </div>
 
                 {recentExperiments.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">No experiments yet</div>
+                    <div className="p-6 text-center text-gray-500">No experiments yet</div>
                 ) : (
                     <table className="min-w-full">
                         <thead>
