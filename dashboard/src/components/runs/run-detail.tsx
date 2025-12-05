@@ -28,7 +28,7 @@ export default function RunDetail() {
     const { id } = useParams<{ id: string }>();
     const { data: run, isLoading, error } = useRun(id ?? null);
 
-    const [activeTab, setActiveTab] = useState<"overview" | "metrics">("overview");
+    const [activeTab, setActiveTab] = useState<"overview">("overview");
 
     if (isLoading) {
         return (
@@ -93,20 +93,15 @@ export default function RunDetail() {
             <Tabs
                 tabs={[
                     { id: "overview", label: "Overview" },
-                    { id: "metrics", label: "Metrics" },
                 ]}
                 active={activeTab}
-                onChange={(id) => setActiveTab(id as "overview" | "metrics")}
+                onChange={(id) => setActiveTab(id as "overview")}
             />
 
 
 
             {/* Tab Content */}
-            {activeTab === "overview" ? (
-                <RunOverview run={run} />
-            ) : (
-                <RunMetrics />
-            )}
+            <RunOverview run={run} />
         </div>
     );
 }
@@ -149,14 +144,4 @@ function RunOverview({ run }: { run: any }) {
     );
 }
 
-/* Metrics Section now as Empty State, can be expanded in the future */
-function RunMetrics() {
-    return (
-        <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
-            <p className="font-medium">No metrics available for this run.</p>
-            <p className="text-sm text-gray-400 mt-1">
-                Metrics are only recorded at the trial level.
-            </p>
-        </div>
-    );
-}
+
