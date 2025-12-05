@@ -9,10 +9,12 @@
 ### Sidebar
 - [ ] Alphatrion logo with gradient icon displays correctly
 - [ ] Project selector dropdown works (below logo)
-- [ ] Experiments/Trials/Runs navigation with icons
-- [ ] Collapsible sidebar: click `<` to collapse, `>` to expand
-- [ ] Version number displays in footer (from package.json)
-- [ ] Active nav item has gradient background
+
+### Sidebar Navigation
+- [ ] Experiments button highlights on `/experiments` and `/experiments/:id` pages
+- [ ] Experiments button does NOT highlight on `/trials/:id` and `/runs/:id` pages
+- [ ] Clicking Experiments button navigates back to Experiments Overview
+
 
 ### Experiments Page
 - [ ] Overview tab: 3 metric cards (Total/Latest/Oldest Experiment)
