@@ -140,7 +140,7 @@ function App() {
                                 <img src="/logo.png" alt="Alphatrion" className="w-9 h-9 rounded-xl flex-shrink-0" />
                                 {sidebarOpen && (
                                     <span className="font-bold text-lg bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                                        Alphatrion
+                                        AlphaTrion
                                     </span>
                                 )}
                             </div>
