@@ -18,8 +18,8 @@ if os.getenv("ENABLE_TRACING") == "true":
         # TODO: make this configurable
         exporter=ConsoleSpanExporter(),
         disable_batch=True,
-    telemetry_enabled=False,
-)
+        telemetry_enabled=False,
+    )
 
 
 def task(
