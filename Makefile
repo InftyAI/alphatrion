@@ -3,7 +3,7 @@ RUFF := .venv/bin/ruff
 PYTEST := .venv/bin/pytest
 
 .PHONY: build
-build: lint
+build: lint build-dashboard
 	$(POETRY) build
 
 .PHONY: publish
