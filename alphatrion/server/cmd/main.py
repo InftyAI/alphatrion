@@ -6,10 +6,10 @@ from pathlib import Path
 import uvicorn
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
-from fastapi.responses import FileResponse
 
 from alphatrion.server.graphql.runtime import init as graphql_init
 
