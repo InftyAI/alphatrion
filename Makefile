@@ -52,3 +52,6 @@ seed:
 .PHONY: seed-cleanup
 seed-cleanup:
 	python hack/seed.py cleanup
+
+build-dashboard:
+	cd dashboard && npm install && npm run build
