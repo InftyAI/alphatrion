@@ -1,6 +1,6 @@
 [project]
 name = "alphatrion"
-version = "0.0.5"
+version = "0.1.0"
 description = "⚒️ AlphaTrion is an open-source framework to help build GenAI applications, including experiment tracking, adaptive model routing, prompt optimization and performance evaluation."
 license = {text = "Apache-2.0"}
 readme = "README.md"
