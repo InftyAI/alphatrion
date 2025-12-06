@@ -1,7 +1,9 @@
 import inspect
+import os
 import uuid
 from functools import wraps
 
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk import Traceloop
 from traceloop.sdk.decorators import task as _task
@@ -9,13 +11,15 @@ from traceloop.sdk.decorators import workflow as _workflow
 
 from alphatrion.run.run import current_run_id
 
-Traceloop.init(
-    app_name="alphatrion",
-    # TODO: make this configurable
-    # exporter=ConsoleSpanExporter(),
-    disable_batch=True,
-    telemetry_enabled=False,
-)
+# Disable tracing by default now
+if os.getenv("ENABLE_TRACING", "false").lower() == "true":
+    Traceloop.init(
+        app_name="alphatrion",
+        # TODO: make this configurable
+        exporter=ConsoleSpanExporter(),
+        disable_batch=True,
+        telemetry_enabled=False,
+    )
 
 
 def task(
