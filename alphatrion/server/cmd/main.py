@@ -1,6 +1,7 @@
 import argparse
 import os
 import webbrowser
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 import uvicorn
@@ -15,6 +16,11 @@ from alphatrion.server.graphql.runtime import init as graphql_init
 
 load_dotenv()
 console = Console()
+
+try:
+    __version__ = version("alphatrion")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
 
 def main():
@@ -36,8 +42,15 @@ def main():
     )
     dashboard.set_defaults(func=start_dashboard)
 
+    # version command
+    version = subparsers.add_parser("version", help="Show the version of AlphaTrion")
+    version.set_defaults(func=lambda args: print(f"AlphaTrion version {__version__}"))
+
     args = parser.parse_args()
-    args.func(args)
+    if hasattr(args, "func"):
+        args.func(args)
+    else:
+        parser.print_help()
 
 
 def run_server(args):
