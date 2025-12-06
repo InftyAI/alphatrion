@@ -95,7 +95,7 @@ function App() {
             <div className="flex justify-center items-center h-screen">
                 <div className="relative">
                     <div className="w-16 h-16 border-4 border-indigo-200 rounded-full animate-spin border-t-indigo-600"></div>
-                    <img src="/logo.png" alt="Loading" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6" />
+                    <img src="/static/logo.png" alt="Loading" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6" />
                 </div>
             </div>
         );
@@ -127,9 +127,9 @@ function App() {
             <div className="flex h-screen">
                 {/* Sidebar */}
                 <div
-                    className={`${sidebarOpen ? "w-64" : "w-19"} 
-                    transition-all duration-300 flex-shrink-0 
-                    bg-white/70 backdrop-blur-xl 
+                    className={`${sidebarOpen ? "w-64" : "w-19"}
+                    transition-all duration-300 flex-shrink-0
+                    bg-white/70 backdrop-blur-xl
                     border-r border-gray-200/50
                     shadow-[1px_0_30px_-15px_rgba(0,0,0,0.1)]`}
                 >
@@ -137,7 +137,7 @@ function App() {
                         {/* Logo */}
                         <div className="flex items-center justify-between h-16 px-3 border-b border-gray-200/50">
                             <div className="flex items-center gap-3">
-                                <img src="/logo.png" alt="Alphatrion" className="w-9 h-9 rounded-xl flex-shrink-0" />
+                                <img src="/static/logo.png" alt="AlphaTrion" className="w-9 h-9 rounded-xl flex-shrink-0" />
                                 {sidebarOpen && (
                                     <span className="font-bold text-lg bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                                         AlphaTrion
@@ -170,7 +170,7 @@ function App() {
                                             setSelectedTrialId(null);
                                             navigate(`/experiments?projectId=${id}`);
                                         }}
-                                        className="mt-2 block w-full px-3 py-2 text-sm bg-gray-50/80 border border-gray-200 rounded-lg 
+                                        className="mt-2 block w-full px-3 py-2 text-sm bg-gray-50/80 border border-gray-200 rounded-lg
                                         focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400
                                         transition-all cursor-pointer hover:bg-gray-100/80"
                                     >
@@ -183,7 +183,7 @@ function App() {
                                 </div>
                             ) : (
                                 <div
-                                    className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex items-center justify-center 
+                                    className="w-10 h-10 bg-gradient-to-br from-gray-100 to-gray-50 rounded-lg flex items-center justify-center
                                     text-indigo-600 text-sm font-semibold cursor-pointer border border-gray-200
                                     hover:shadow-md transition-all mx-auto"
                                     title={selectedProject?.name || "Select Project"}
