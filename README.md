@@ -54,7 +54,7 @@ HostName:    postgres
 ServerPWD:   alphatr1on
 ```
 
-### Run a Sample Experiment
+### Run a Simple Experiment
 
 Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
 
@@ -75,27 +75,25 @@ async with alpha.CraftExperiment.setup(name="my_experiment") as exp:
     await run.wait()
 ```
 
-### View Results
+### View Dashboard
 
-The dashboard is under active development.  
+The dashboard is under active development.
 You can already run the frontend locally to explore experiments, trials, runs, and metrics through the UI.
 
 ### Prerequisites
 Make sure the following are installed:
 
 - **Node.js ≥ 18**
-- **npm ≥ 9** 
+- **npm ≥ 9**
 - **Vite**
-- Backend (`alphatrion server`) running
 
-### Running the Frontend
+### Launch Dashboard
 
-Inside the `dashboard` directory:
 ```bash
-npm install
-npm run dev
+alphatrion server # Start the backend server
+alphatrion dashboard # Start the dashboard
 ```
-Dashboard is available at `http://localhost:5173`
+Dashboard is available at `http://localhost:3000` by default.
 
 ### Cleanup
 

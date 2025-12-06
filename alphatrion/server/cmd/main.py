@@ -1,4 +1,5 @@
 import argparse
+import os
 import webbrowser
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
+from fastapi.responses import FileResponse
 
 from alphatrion.server.graphql.runtime import init as graphql_init
 
@@ -52,9 +54,14 @@ def start_dashboard(args):
     static_path = Path(__file__).resolve().parents[2] / "static"
 
     app = FastAPI()
+    app.mount("/static", StaticFiles(directory=static_path, html=True), name="static")
 
-    # app.include_router(graphql_app, prefix="/graphql")
-    app.mount("/", StaticFiles(directory=static_path, html=True), name="static")
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str):
+        index_file = os.path.join(static_path, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return {"error": "index.html not found"}
 
     url = f"http://localhost:{args.port}"
     webbrowser.open(url)
