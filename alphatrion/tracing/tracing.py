@@ -10,9 +10,10 @@ from traceloop.sdk.decorators import task as _task
 from traceloop.sdk.decorators import workflow as _workflow
 
 from alphatrion.run.run import current_run_id
+from alphatrion import consts
 
 # Disable tracing by default now
-if os.getenv("ENABLE_TRACING", "false").lower() == "true":
+if os.getenv(consts.ENABLE_TRACING, "false").lower() == "true":
     Traceloop.init(
         app_name="alphatrion",
         # TODO: make this configurable
