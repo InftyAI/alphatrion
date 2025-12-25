@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from alphatrion.experiment.craft_exp import CraftExperiment
+from alphatrion.experiment.craft_exp import CraftExperiment, ExperimentConfig
 from alphatrion.metadata.sql_models import Status
 from alphatrion.runtime.runtime import global_runtime, init
 from alphatrion.trial.trial import Trial, TrialConfig, current_trial_id
@@ -192,7 +192,7 @@ async def test_create_experiment_with_run_cancelled():
 
 
 @pytest.mark.asyncio
-async def test_craft_experiment_with_context():
+async def test_craft_experiment_with_max_execution_seconds():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async with CraftExperiment.setup(
@@ -243,3 +243,70 @@ async def test_craft_experiment_with_multi_trials_in_parallel():
             fake_work(),
         )
         print("All trials finished.")
+
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_config():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async with CraftExperiment.setup(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+        config=ExperimentConfig(max_execution_seconds=2),
+    ) as exp:
+        trial = exp.start_trial(name="first-trial")
+        await trial.wait()
+        assert trial.is_done()
+
+        trial = trial._get_obj()
+        assert trial.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_hierarchy_timeout():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    async with CraftExperiment.setup(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+        config=ExperimentConfig(max_execution_seconds=2),
+    ) as exp:
+        start_time = datetime.now()
+        trial = exp.start_trial(
+            name="first-trial", config=TrialConfig(max_execution_seconds=5)
+        )
+        await trial.wait()
+        assert trial.is_done()
+
+        assert (datetime.now() - start_time).total_seconds() >= 2
+        assert (datetime.now() - start_time).total_seconds() < 5
+
+        trial = trial._get_obj()
+        assert trial.status == Status.COMPLETED
+
+@pytest.mark.asyncio
+async def test_craft_experiment_with_hierarchy_timeout_2():
+    init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+
+    start_time = datetime.now()
+
+    async with CraftExperiment.setup(
+        name="context_exp",
+        description="Context manager test",
+        meta={"key": "value"},
+        config=ExperimentConfig(max_execution_seconds=5),
+    ) as exp:
+        trial = exp.start_trial(
+            name="first-trial", config=TrialConfig(max_execution_seconds=2)
+        )
+        await trial.wait()
+        assert trial.is_done()
+
+        assert (datetime.now() - start_time).total_seconds() >= 2
+
+        trial = trial._get_obj()
+        assert trial.status == Status.COMPLETED
+
+    assert (datetime.now() - start_time).total_seconds() < 5

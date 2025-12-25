@@ -3,6 +3,7 @@ from collections.abc import Callable
 
 
 # Inspired by golang context package
+# TODO: support inheritable context
 class Context:
     def __init__(self, cancel_func: Callable | None = None, timeout: int | None = None):
         """A context for managing cancellation and timeouts.

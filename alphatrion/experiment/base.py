@@ -2,8 +2,22 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+from pydantic import BaseModel, Field
+
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.trial import trial
+from alphatrion.utils import context
+
+
+class ExperimentConfig(BaseModel):
+    """Configuration for a Experiment."""
+
+    max_execution_seconds: int = Field(
+        default=-1,
+        description="Maximum execution seconds for the experiment. \
+            Once exceeded, the experiment and all its trials will be cancelled. \
+            Default is -1 (no limit).",
+    )
 
 
 @dataclass
@@ -12,13 +26,33 @@ class Experiment(ABC):
     Base Experiment class. One instance one experiment, multiple trials.
     """
 
-    __slots__ = ("_runtime", "_id", "_trials")
+    __slots__ = ("_runtime", "_id", "_trials", "_config")
 
-    def __init__(self):
+    @classmethod
+    @abstractmethod
+    def setup(
+        cls,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        config: ExperimentConfig | None = None,
+    ) -> "Experiment":
+        """Return a new experiment."""
+        ...
+
+    def __init__(self, config: ExperimentConfig | None = None):
         self._runtime = global_runtime()
         # All trials in this experiment, key is trial_id, value is Trial instance.
-        self._trials = dict()
+        self._trials: dict[int, trial.Trial] = {}
+        self._config = config or ExperimentConfig()
         self._runtime.current_exp = self
+
+        self._context = context.Context(
+            cancel_func=self._stop,
+            timeout=self._config.max_execution_seconds
+            if self._config.max_execution_seconds > 0
+            else None,
+        )
 
     @property
     def id(self):
@@ -40,21 +74,20 @@ class Experiment(ABC):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
 
+    # done() is safe to call multiple times.
     def done(self):
+        self._cancel()
+
+    def _cancel(self):
+        return self._context.cancel()
+
+    def _stop(self):
         for t in list(self._trials.values()):
             t.done()
         self._trials = dict()
         # Set to None at the end of the experiment because
         # it will be used in trial.done().
         self._runtime.current_exp = None
-
-    @classmethod
-    @abstractmethod
-    def setup(
-        cls, name: str, description: str | None = None, meta: dict | None = None
-    ) -> "Experiment":
-        """Return a new experiment."""
-        ...
 
     def register_trial(self, id: uuid.UUID, instance: trial.Trial):
         self._trials[id] = instance
