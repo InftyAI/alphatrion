@@ -338,6 +338,7 @@ class SQLStore(MetaStore):
         run = session.query(Run).filter(Run.uuid == run_id, Run.is_del == 0).first()
         if run:
             for key, value in kwargs.items():
+                # TODO: meta update should be merged instead of replaced
                 setattr(run, key, value)
             session.commit()
         session.close()

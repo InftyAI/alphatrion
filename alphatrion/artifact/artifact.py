@@ -21,7 +21,7 @@ class Artifact:
         repo_name: str,
         paths: str | list[str],
         version: str = "latest",
-    ):
+    ) -> str:
         """
         Push files or all files in a folder to the artifact registry.
         You can specify either files or folder, but not both.
@@ -48,12 +48,15 @@ class Artifact:
             raise ValueError("No files to push.")
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{repo_name}:{version}"
+        path = f"{self._project_id}/{repo_name}:{version}"
+        target = f"{url}{path}"
 
         try:
             self._client.push(target, files=files_to_push)
         except Exception as e:
             raise RuntimeError("Failed to push artifacts") from e
+
+        return path
 
     # TODO: should we store it in the metadb instead?
     def list_versions(self, repo_name: str) -> list[str]:

@@ -286,6 +286,7 @@ async def test_craft_experiment_with_hierarchy_timeout():
         trial = trial._get_obj()
         assert trial.status == Status.COMPLETED
 
+
 @pytest.mark.asyncio
 async def test_craft_experiment_with_hierarchy_timeout_2():
     init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
