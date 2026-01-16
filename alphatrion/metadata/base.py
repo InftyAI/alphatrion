@@ -111,7 +111,6 @@ class MetaStore(ABC):
         run_id: uuid.UUID,
         key: str,
         value: float,
-        step: int | None = None,
     ) -> int:
         raise NotImplementedError("Subclasses must implement this method.")
 

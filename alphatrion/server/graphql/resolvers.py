@@ -183,7 +183,6 @@ class GraphQLResolvers:
                 experiment_id=m.experiment_id,
                 trial_id=m.trial_id,
                 run_id=m.run_id,
-                step=m.step,
                 created_at=m.created_at,
             )
             for m in metrics

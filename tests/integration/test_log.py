@@ -115,10 +115,8 @@ async def test_log_metrics():
         assert len(metrics) == 2
         assert metrics[0].key == "accuracy"
         assert metrics[0].value == 0.95
-        assert metrics[0].step == 1
         assert metrics[1].key == "loss"
         assert metrics[1].value == 0.1
-        assert metrics[1].step == 1
         run_id_1 = metrics[0].run_id
         assert run_id_1 is not None
         assert metrics[0].run_id == metrics[1].run_id
@@ -130,7 +128,6 @@ async def test_log_metrics():
         assert len(metrics) == 3
         assert metrics[2].key == "accuracy"
         assert metrics[2].value == 0.96
-        assert metrics[2].step == 2
         run_id_2 = metrics[2].run_id
         assert run_id_2 is not None
         assert run_id_2 != run_id_1

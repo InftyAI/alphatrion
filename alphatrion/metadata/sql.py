@@ -370,7 +370,6 @@ class SQLStore(MetaStore):
         run_id: uuid.UUID,
         key: str,
         value: float,
-        step: int,
     ) -> uuid.UUID:
         session = self._session()
         new_metric = Metric(
@@ -380,7 +379,6 @@ class SQLStore(MetaStore):
             run_id=run_id,
             key=key,
             value=value,
-            step=step,
         )
         session.add(new_metric)
         session.commit()

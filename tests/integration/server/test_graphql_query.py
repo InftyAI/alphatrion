@@ -304,7 +304,6 @@ def test_query_trial_metrics():
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
-        step=0,
     )
     _ = metadb.create_metric(
         project_id=project_id,
@@ -313,7 +312,6 @@ def test_query_trial_metrics():
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
-        step=1,
     )
     query = f"""
     query {{
@@ -325,7 +323,6 @@ def test_query_trial_metrics():
             experimentId
             trialId
             runId
-            step
             createdAt
         }}
     }}

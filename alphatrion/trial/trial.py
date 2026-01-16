@@ -122,8 +122,6 @@ class Trial:
         "_exp_id",
         "_config",
         "_runtime",
-        # step is used to track the round, e.g. the step in metric logging.
-        "_step",
         "_context",
         "_token",
         # _meta stores the runtime meta information of the trial.
@@ -148,7 +146,6 @@ class Trial:
         self._exp_id = exp_id
         self._config = config or TrialConfig()
         self._runtime = global_runtime()
-        self._step = 0
         self._construct_meta()
         self._runs = dict[uuid.UUID, Run]()
         self._early_stopping_counter = 0
@@ -349,10 +346,6 @@ class Trial:
 
     def _get_obj(self):
         return self._runtime.metadb.get_trial(trial_id=self._id)
-
-    def increment_step(self) -> int:
-        self._step += 1
-        return self._step
 
     def start_run(self, call_func: callable) -> Run:
         """Start a new run for the trial.
