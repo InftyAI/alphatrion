@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import pytest
 
 import alphatrion as alpha
+from alphatrion.log.log import ARTIFACT_PATH
 from alphatrion.metadata.sql_models import Status
 from alphatrion.trial.trial import current_trial_id
 
@@ -137,10 +138,17 @@ async def test_log_metrics():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_max():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    project_id = uuid.uuid4()
+    alpha.init(project_id=project_id, artifact_insecure=True, init_tables=True)
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
+
+    def find_unused_version(used_versions, all_versions):
+        for v in all_versions:
+            if v not in used_versions:
+                return v
+        return None
 
     async with alpha.CraftExperiment.setup(
         name="log_metrics_with_save_on_max",
@@ -171,8 +179,17 @@ async def test_log_metrics_with_save_on_max():
             run = trial.start_run(lambda: log_metric(0.90))
             await run.wait()
 
+            # We need this because the returned version is unordered.
+            used_version = []
+
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 1
+            run_obj = run._get_obj()
+            fixed_version = versions[0]
+            used_version.append(fixed_version)
+            assert (
+                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+            )
 
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
@@ -191,6 +208,13 @@ async def test_log_metrics_with_save_on_max():
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 2
 
+            fixed_version = find_unused_version(used_version, versions)
+            used_version.append(fixed_version)
+            run_obj = run._get_obj()
+            assert (
+                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+            )
+
             time.sleep(1)
 
             run = trial.start_run(lambda: log_metric(0.98))
@@ -198,6 +222,13 @@ async def test_log_metrics_with_save_on_max():
 
             versions = exp._runtime._artifact.list_versions(exp.id)
             assert len(versions) == 3
+            run_obj = run._get_obj()
+
+            fixed_version = find_unused_version(used_version, versions)
+            used_version.append(fixed_version)
+            assert (
+                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+            )
 
             trial.done()
 

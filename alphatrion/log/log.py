@@ -3,11 +3,13 @@ from alphatrion.runtime.runtime import global_runtime
 from alphatrion.trial.trial import current_trial_id
 from alphatrion.utils import time as utime
 
+ARTIFACT_PATH = "artifact_path"
+
 
 async def log_artifact(
     paths: str | list[str],
     version: str = "latest",
-):
+) -> str:
     """
     Log artifacts (files) to the artifact registry.
 
@@ -20,16 +22,16 @@ async def log_artifact(
     :param version: the version (tag) to log the files
     """
 
-    return log_artifact_sync(
+    return log_artifact_in_sync(
         paths=paths,
         version=version,
     )
 
 
-def log_artifact_sync(
+def log_artifact_in_sync(
     paths: str | list[str],
     version: str = "latest",
-):
+) -> str:
     """
     Log artifacts (files) to the artifact registry (synchronous version).
 
@@ -61,7 +63,7 @@ def log_artifact_sync(
     if exp is None:
         raise RuntimeError("No running experiment found in the current context.")
 
-    runtime._artifact.push(repo_name=str(exp.id), paths=paths, version=version)
+    return runtime._artifact.push(repo_name=str(exp.id), paths=paths, version=version)
 
 
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
@@ -128,9 +130,13 @@ async def log_metrics(metrics: dict[str, float]):
 
     # TODO: we should save the artifact path in the metrics as well.
     if should_checkpoint:
-        await log_artifact(
+        address = await log_artifact(
             paths=trial.config().checkpoint.path,
             version=utime.now_2_hash(),
+        )
+        runtime._metadb.update_run(
+            run_id=run_id,
+            meta={ARTIFACT_PATH: address},
         )
 
     if should_early_stop or should_stop_on_target:
