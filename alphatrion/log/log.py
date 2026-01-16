@@ -105,7 +105,6 @@ async def log_metrics(metrics: dict[str, float]):
     should_checkpoint = False
     should_early_stop = False
     should_stop_on_target = False
-    step = trial.increment_step()
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
@@ -114,7 +113,6 @@ async def log_metrics(metrics: dict[str, float]):
             experiment_id=exp.id,
             trial_id=trial_id,
             run_id=run_id,
-            step=step,
         )
 
         # TODO: should we save the checkpoint path for the best metric?
@@ -128,6 +126,7 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=value
         )
 
+    # TODO: we should save the artifact path in the metrics as well.
     if should_checkpoint:
         await log_artifact(
             paths=trial.config().checkpoint.path,

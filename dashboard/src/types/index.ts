@@ -58,7 +58,6 @@ export interface Metric {
     experimentId: string;
     trialId: string;
     runId: string;
-    step: number;
     createdAt: string;
 }
 

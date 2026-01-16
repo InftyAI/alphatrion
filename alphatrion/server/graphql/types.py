@@ -82,5 +82,4 @@ class Metric:
     experiment_id: strawberry.ID
     trial_id: strawberry.ID
     run_id: strawberry.ID
-    step: int
     created_at: datetime

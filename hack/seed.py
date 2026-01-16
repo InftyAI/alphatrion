@@ -109,7 +109,6 @@ def generate_metric(runs: list[Run]) -> Metric:
         run_id=run.uuid,
         key=random.choice(["accuracy", "loss", "precision", "fitness"]),
         value=random.uniform(0, 1),
-        step=random.randint(1, 1000),
     )
 
 

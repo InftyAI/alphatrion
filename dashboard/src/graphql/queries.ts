@@ -139,7 +139,6 @@ export const LIST_TRIAL_METRICS = `
       experimentId
       trialId
       runId
-      step
       createdAt
     }
   }

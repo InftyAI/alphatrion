@@ -151,6 +151,7 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
+# TODO: key, project_id, experiment_id, trial_id, run_id should be unique together
 class Metric(Base):
     __tablename__ = "metrics"
 
@@ -161,5 +162,4 @@ class Metric(Base):
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     trial_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
-    step = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))

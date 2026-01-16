@@ -38,7 +38,6 @@ function MetricsChart({ metrics }: { metrics: Metric[] }) {
         metricsByKey[key].push(m);
     });
 
-    Object.values(metricsByKey).forEach((arr) => arr.sort((a, b) => a.step - b.step));
     const keys = Object.keys(metricsByKey);
 
     return (
