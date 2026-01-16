@@ -96,7 +96,7 @@ def start_dashboard(args):
             return FileResponse(index_file)
         return {"error": "index.html not found"}
 
-    url = f"http://localhost:{args.port}"
+    url = f"http://127.0.0.1:{args.port}"
     webbrowser.open(url)
 
     uvicorn.run(app, host="127.0.0.1", port=args.port)
