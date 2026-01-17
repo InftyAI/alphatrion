@@ -62,6 +62,7 @@ lint.select = [
 lint.ignore = [
     "PLR0913",  # Too many arguments in function definition
     "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
+    "PLR0915", # Too many statements in function
 ]
 exclude = ["venv", "migrations", "__pycache__"]
 

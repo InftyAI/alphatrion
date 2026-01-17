@@ -1,6 +1,7 @@
 import contextvars
 import enum
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
@@ -42,6 +43,11 @@ class CheckpointConfig(BaseModel):
     path: str = Field(
         default="checkpoints",
         description="The path to save checkpoints. Default is 'checkpoints'.",
+    )
+    pre_save_hook: Callable | None = Field(
+        default=None,
+        description="A callable function to be called before saving a checkpoint. \
+            The function should take no arguments. Default is None.",
     )
 
 
