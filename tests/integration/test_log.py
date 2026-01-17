@@ -157,6 +157,11 @@ async def test_log_metrics_with_save_on_max():
     ) as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
+            file = "file.txt"
+
+            def pre_save_hook():
+                with open(file, "a") as f:
+                    f.write("This is pre_save_hook modified file.\n")
 
             trial = exp.start_trial(
                 name="trial-with-save_on_best",
@@ -165,6 +170,7 @@ async def test_log_metrics_with_save_on_max():
                         enabled=True,
                         path=tmpdir,
                         save_on_best=True,
+                        pre_save_hook=pre_save_hook,
                     ),
                     monitor_metric="accuracy",
                     # Make sure raw max also works.
@@ -172,9 +178,8 @@ async def test_log_metrics_with_save_on_max():
                 ),
             )
 
-            file1 = "file1.txt"
-            with open(file1, "w") as f:
-                f.write("This is file1.")
+            with open(file, "w") as f:
+                f.write("This is file.\n")
 
             run = trial.start_run(lambda: log_metric(0.90))
             await run.wait()
@@ -190,6 +195,8 @@ async def test_log_metrics_with_save_on_max():
             assert (
                 run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
             )
+            with open(file) as f:
+                assert len(f.readlines()) == 2
 
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
@@ -215,6 +222,9 @@ async def test_log_metrics_with_save_on_max():
                 run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
             )
 
+            with open(file) as f:
+                assert len(f.readlines()) == 3
+
             time.sleep(1)
 
             run = trial.start_run(lambda: log_metric(0.98))
@@ -229,6 +239,8 @@ async def test_log_metrics_with_save_on_max():
             assert (
                 run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
             )
+            with open(file) as f:
+                assert len(f.readlines()) == 4
 
             trial.done()
 

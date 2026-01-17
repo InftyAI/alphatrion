@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.trial.trial import current_trial_id
@@ -9,6 +11,7 @@ ARTIFACT_PATH = "artifact_path"
 async def log_artifact(
     paths: str | list[str],
     version: str = "latest",
+    pre_save_hook: Callable | None = None,
 ) -> str:
     """
     Log artifacts (files) to the artifact registry.
@@ -22,15 +25,23 @@ async def log_artifact(
     :param version: the version (tag) to log the files
     """
 
+    if pre_save_hook is not None:
+        if callable(pre_save_hook):
+            pre_save_hook()
+        else:
+            raise ValueError("pre_save_hook must be a callable function")
+
     return log_artifact_in_sync(
         paths=paths,
         version=version,
+        pre_save_hook=pre_save_hook,
     )
 
 
 def log_artifact_in_sync(
     paths: str | list[str],
     version: str = "latest",
+    pre_save_hook: Callable | None = None,
 ) -> str:
     """
     Log artifacts (files) to the artifact registry (synchronous version).
@@ -128,11 +139,11 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=value
         )
 
-    # TODO: we should save the artifact path in the metrics as well.
     if should_checkpoint:
         address = await log_artifact(
             paths=trial.config().checkpoint.path,
             version=utime.now_2_hash(),
+            pre_save_hook=trial.config().checkpoint.pre_save_hook,
         )
         runtime._metadb.update_run(
             run_id=run_id,
