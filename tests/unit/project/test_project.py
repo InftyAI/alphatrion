@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from alphatrion.experiment import experiment
+from alphatrion.experiment import base as experiment
+from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.metadata.sql_models import Status
 from alphatrion.project.project import Project, ProjectConfig
 from alphatrion.runtime.runtime import global_runtime, init
@@ -25,7 +26,7 @@ async def test_project():
         assert proj1.name == "context_proj"
         assert proj1.description == "Context manager test"
 
-        exp = proj.start_experiment(name="first-experiment")
+        exp = CraftExperiment.start(name="first-experiment")
         exp_obj = exp._get_obj()
         assert exp_obj is not None
         assert exp_obj.name == "first-experiment"
@@ -46,12 +47,12 @@ async def test_project_with_done():
         name="context_proj",
         description="Context manager test",
         meta={"key": "value"},
-    ) as proj:
-        exp = proj.start_experiment(name="first-experiment")
+    ):
+        exp = CraftExperiment.start(name="first-experiment")
         exp_id = exp.id
 
     # exit the exp context, trial should be done automatically
-    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
     assert exp_obj.duration is not None
     assert exp_obj.status == Status.COMPLETED
 
@@ -65,8 +66,8 @@ async def test_project_with_done_with_err():
         name="context_proj",
         description="Context manager test",
         meta={"key": "value"},
-    ) as proj:
-        exp = proj.start_experiment(name="first-experiment")
+    ):
+        exp = CraftExperiment.start(name="first-experiment")
         exp_id = exp.id
         exp.done_with_err()
 
@@ -85,15 +86,15 @@ async def test_project_with_no_context():
         exp.done()
 
     proj = Project.setup(name="no_context_proj")
-    async with proj.start_experiment(name="first-trial") as exp:
-        exp.start_run(lambda: fake_work(exp))
+    async with CraftExperiment.start(name="first-trial") as exp:
+        exp.run(lambda: fake_work(exp))
         await exp.wait()
 
         exp_obj = exp._get_obj()
         assert exp_obj.duration is not None
         assert exp_obj.status == Status.COMPLETED
 
-    exp.done()
+    proj.done()
 
 
 @pytest.mark.asyncio
@@ -102,7 +103,7 @@ async def test_project_with_exp():
 
     exp_id = None
     async with Project.setup(name="context_proj") as proj:
-        async with proj.start_experiment(name="first-exp") as exp:
+        async with CraftExperiment.start(name="first-exp") as exp:
             exp_obj = exp._get_obj()
             assert exp_obj is not None
             assert exp_obj.name == "first-exp"
@@ -121,8 +122,8 @@ async def test_create_project_with_exp_wait():
         exp.done()
 
     exp_id = None
-    async with Project.setup(name="context_proj") as proj:
-        async with proj.start_experiment(name="first-experiment") as exp:
+    async with Project.setup(name="context_proj"):
+        async with CraftExperiment.start(name="first-experiment") as exp:
             exp_id = experiment.current_exp_id.get()
             start_time = datetime.now()
 
@@ -132,7 +133,7 @@ async def test_create_project_with_exp_wait():
             await exp.wait()
             assert datetime.now() - start_time >= timedelta(seconds=3)
 
-        exp_obj = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
+        exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
         assert exp_obj.status == Status.COMPLETED
 
 
@@ -146,15 +147,15 @@ async def test_create_project_with_run():
         cancel_func()
 
     async with (
-        Project.setup(name="context_proj") as proj,
-        proj.start_experiment(name="first-experiment") as exp,
+        Project.setup(name="context_proj"),
+        CraftExperiment.start(name="first-experiment") as exp,
     ):
         start_time = datetime.now()
 
-        exp.start_run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 1
 
-        exp.start_run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 2
 
         await exp.wait()
@@ -170,16 +171,16 @@ async def test_create_project_with_run_cancelled():
         await asyncio.sleep(timeout)
 
     async with (
-        Project.setup(name="context_proj") as proj,
-        proj.start_experiment(
+        Project.setup(name="context_proj"),
+        CraftExperiment.start(
             name="first-experiment",
             config=experiment.ExperimentConfig(max_execution_seconds=2),
         ) as exp,
     ):
-        run_0 = exp.start_run(lambda: fake_work(1))
-        run_1 = exp.start_run(lambda: fake_work(4))
-        run_2 = exp.start_run(lambda: fake_work(5))
-        run_3 = exp.start_run(lambda: fake_work(6))
+        run_0 = exp.run(lambda: fake_work(1))
+        run_1 = exp.run(lambda: fake_work(4))
+        run_2 = exp.run(lambda: fake_work(5))
+        run_3 = exp.run(lambda: fake_work(6))
         # At this point, 4 runs are started.
         assert len(exp._runs) == 4
         await exp.wait()
@@ -202,8 +203,8 @@ async def test_create_project_with_max_execution_seconds():
         name="context_proj",
         description="Context manager test",
         meta={"key": "value"},
-    ) as proj:
-        exp = proj.start_experiment(
+    ):
+        exp = CraftExperiment.start(
             name="first-experiment",
             config=experiment.ExperimentConfig(max_execution_seconds=2),
         )
@@ -219,10 +220,8 @@ async def test_project_with_multi_trials_in_parallel():
     init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work():
-        proj = global_runtime().current_proj
-
         duration = random.randint(1, 5)
-        exp = proj.start_experiment(
+        exp = CraftExperiment.start(
             name="first-experiment",
             config=experiment.ExperimentConfig(max_execution_seconds=duration),
         )
@@ -259,8 +258,8 @@ async def test_project_with_config():
         description="Context manager test",
         meta={"key": "value"},
         config=ProjectConfig(max_execution_seconds=2),
-    ) as proj:
-        exp = proj.start_experiment(name="first-experiment")
+    ):
+        exp = CraftExperiment.start(name="first-experiment")
         await exp.wait()
         assert exp.is_done()
 
@@ -277,9 +276,9 @@ async def test_project_with_hierarchy_timeout():
         description="Context manager test",
         meta={"key": "value"},
         config=ProjectConfig(max_execution_seconds=2),
-    ) as proj:
+    ):
         start_time = datetime.now()
-        exp = proj.start_experiment(
+        exp = CraftExperiment.start(
             name="first-experiment",
             config=experiment.ExperimentConfig(max_execution_seconds=5),
         )
@@ -304,8 +303,8 @@ async def test_project_with_hierarchy_timeout_2():
         description="Context manager test",
         meta={"key": "value"},
         config=ProjectConfig(max_execution_seconds=5),
-    ) as proj:
-        exp = proj.start_experiment(
+    ):
+        exp = CraftExperiment.start(
             name="first-experiment",
             config=experiment.ExperimentConfig(max_execution_seconds=2),
         )

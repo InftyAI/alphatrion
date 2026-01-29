@@ -1,6 +1,7 @@
 import contextvars
 import enum
 import uuid
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -122,10 +123,13 @@ class ExperimentConfig(BaseModel):
         return self
 
 
-class Experiment:
+class Experiment(ABC):
+    """
+    Base Experiment class. An Experiment manages multiple Runs and their configurations.
+    """
+
     __slots__ = (
         "_id",
-        "_proj_id",
         "_config",
         "_runtime",
         "_context",
@@ -148,8 +152,7 @@ class Experiment:
         "_err",
     )
 
-    def __init__(self, proj_id: uuid.UUID, config: ExperimentConfig | None = None):
-        self._proj_id = proj_id
+    def __init__(self, config: ExperimentConfig | None = None):
         self._config = config or ExperimentConfig()
         self._runtime = global_runtime()
         self._construct_meta()
@@ -165,6 +168,40 @@ class Experiment:
         self.done()
         if self._token:
             current_exp_id.reset(self._token)
+
+    def _start(
+        self,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        params: dict | None = None,
+    ):
+        proj = self._runtime.current_proj
+        exp_obj = self._runtime.metadb.get_exp_by_name(name=name, project_id=proj.id)
+
+        # FIXME: what if the existing Experiment is completed, will lead to confusion?
+        if exp_obj:
+            self._id = exp_obj.uuid
+        else:
+            self._id = self._runtime._metadb.create_experiment(
+                team_id=self._runtime._team_id,
+                project_id=proj.id,
+                name=name,
+                description=description,
+                meta=meta,
+                params=params,
+                status=Status.RUNNING,
+            )
+
+        self._context = context.Context(
+            cancel_func=self._stop,
+            timeout=self._timeout(),
+        )
+
+        # We don't reset the Experiment id context var,
+        # because each experiment runs in its own context.
+        self._token = current_exp_id.set(self._id)
+        proj.register_exp(id=self.id, instance=self)
 
     @property
     def id(self) -> uuid.UUID:
@@ -284,41 +321,6 @@ class Experiment:
     def is_done(self) -> bool:
         return self._context.cancelled()
 
-    # If the name is same in the same experiment,
-    # it will refer to the existing experiment.
-    def _start(
-        self,
-        name: str,
-        description: str | None = None,
-        meta: dict | None = None,
-        params: dict | None = None,
-    ):
-        exp_obj = self._runtime._metadb.get_exp_by_name(
-            name=name, project_id=self._proj_id
-        )
-        # FIXME: what if the existing Experiment is completed, will lead to confusion?
-        if exp_obj:
-            self._id = exp_obj.uuid
-        else:
-            self._id = self._runtime._metadb.create_experiment(
-                team_id=self._runtime._team_id,
-                project_id=self._proj_id,
-                name=name,
-                description=description,
-                meta=meta,
-                params=params,
-                status=Status.RUNNING,
-            )
-
-        self._context = context.Context(
-            cancel_func=self._stop,
-            timeout=self._timeout(),
-        )
-
-        # We don't reset the Experiment id context var here, because
-        # each experiment runs in its own context.
-        self._token = current_exp_id.set(self._id)
-
     # done function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the Experiment gracefully,
     # or it could lead to experiment not being marked as completed.
@@ -355,7 +357,7 @@ class Experiment:
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self._id)
 
-    def start_run(self, call_func: callable) -> Run:
+    def run(self, call_func: callable) -> Run:
         """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.
@@ -382,3 +384,14 @@ class Experiment:
             and self._total_runs_counter >= self._config.max_runs_per_experiment
         ):
             self.done()
+
+    @classmethod
+    @abstractmethod
+    def start(
+        cls,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        params: dict | None = None,
+    ) -> "Experiment":
+        raise NotImplementedError

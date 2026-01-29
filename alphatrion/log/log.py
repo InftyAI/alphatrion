@@ -1,6 +1,6 @@
 from collections.abc import Callable
 
-from alphatrion.experiment.experiment import current_exp_id
+from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import time as utime

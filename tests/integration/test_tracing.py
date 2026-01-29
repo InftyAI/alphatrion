@@ -53,8 +53,8 @@ async def joke_workflow():
 @pytest.mark.asyncio
 async def test_workflow():
     async with alpha.Project.setup("demo_joke_workflow") as proj:
-        async with proj.start_experiment("demo_joke_experiment") as exp:
-            run = exp.start_run(lambda: joke_workflow())
+        async with alpha.CraftExperiment.start("demo_joke_experiment") as exp:
+            run = exp.run(lambda: joke_workflow())
             await run.wait()
 
         assert proj.get_experiment(exp.id) is None

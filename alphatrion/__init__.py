@@ -1,9 +1,9 @@
-from alphatrion.experiment.experiment import (
+from alphatrion.experiment.base import (
     CheckpointConfig,
-    Experiment,
     ExperimentConfig,
     MonitorMode,
 )
+from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.log.log import log_artifact, log_metrics, log_params
 from alphatrion.metadata.sql_models import Status
 from alphatrion.project.project import Project
@@ -16,7 +16,7 @@ __all__ = [
     "log_params",
     "log_metrics",
     "Project",
-    "Experiment",
+    "CraftExperiment",
     "ExperimentConfig",
     "CheckpointConfig",
     "MonitorMode",

@@ -7,11 +7,12 @@ import uuid
 import faker
 import pytest
 
-from alphatrion.experiment.experiment import (
+from alphatrion.experiment.base import (
     CheckpointConfig,
-    Experiment,
     ExperimentConfig,
 )
+from alphatrion.experiment.craft_experiment import CraftExperiment
+from alphatrion.project.project import Project
 from alphatrion.runtime.runtime import init
 
 
@@ -55,8 +56,12 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
 
         for case in test_cases:
             with self.subTest(name=case["name"]):
-                exp = Experiment(proj_id=uuid.uuid4(), config=case["config"])
-                exp._start(name=faker.Faker().word())
+
+                proj = Project.setup(
+                    name=faker.Faker().word(),
+                    description="Test Project",
+                )
+                exp = CraftExperiment.start(name=faker.Faker().word(), config=case["config"])
 
                 if case["created"]:
                     time.sleep(2)  # simulate elapsed time
@@ -65,6 +70,8 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
                     )
                 else:
                     self.assertEqual(exp._timeout(), case["expected"])
+
+                proj.done()
 
     def test_config(self):
         test_cases = [
@@ -109,8 +116,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
             with self.subTest(name=case["name"]):
                 if case["error"]:
                     with self.assertRaises(ValueError):
-                        Experiment(
-                            proj_id=uuid.uuid4(),
+                        CraftExperiment(
                             config=ExperimentConfig(
                                 monitor_metric=case["config"].get(
                                     "monitor_metric", None
@@ -126,8 +132,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
                             ),
                         )
                 else:
-                    _ = Experiment(
-                        proj_id=uuid.uuid4(),
+                    _ = CraftExperiment(
                         config=ExperimentConfig(
                             monitor_metric=case["config"].get("monitor_metric", None),
                             checkpoint=CheckpointConfig(
