@@ -22,7 +22,7 @@ async def test_log_artifact():
         description="Context manager test",
         meta={"key": "value"},
     ) as proj:
-        exp = proj.start_experiment(name="first-exp")
+        exp = alpha.CraftExperiment.start(name="first-exp")
 
         proj_obj = proj._runtime._metadb.get_project(project_id=proj._id)
         assert proj_obj is not None
@@ -70,7 +70,7 @@ async def test_log_params():
     alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async with alpha.Project.setup(name="log_params_proj") as proj:
-        exp = proj.start_experiment(name="first-exp", params={"param1": 0.1})
+        exp = alpha.CraftExperiment.start(name="first-exp", params={"param1": 0.1})
 
         new_exp = proj._runtime._metadb.get_experiment(experiment_id=exp.id)
         assert new_exp is not None
@@ -87,7 +87,7 @@ async def test_log_params():
 
         exp.done()
 
-        exp = proj.start_experiment(name="second-exp", params={"param1": 0.1})
+        exp = alpha.CraftExperiment.start(name="second-exp", params={"param1": 0.1})
         assert current_exp_id.get() == exp.id
         exp.done()
 
@@ -100,7 +100,7 @@ async def test_log_metrics():
         await alpha.log_metrics(metrics)
 
     async with alpha.Project.setup(name="log_metrics_exp") as proj:
-        exp = proj.start_experiment(name="first-exp", params={"param1": 0.1})
+        exp = alpha.CraftExperiment.start(name="first-exp", params={"param1": 0.1})
 
         new_exp = exp._runtime._metadb.get_experiment(experiment_id=exp.id)
         assert new_exp is not None
@@ -169,7 +169,7 @@ async def test_log_metrics_with_save_on_max():
                 with open(file, "a") as f:
                     f.write("This is pre_save_hook modified file.\n")
 
-            exp = proj.start_experiment(
+            exp = alpha.CraftExperiment.start(
                 name="exp-with-save_on_best",
                 config=alpha.ExperimentConfig(
                     checkpoint=alpha.CheckpointConfig(
@@ -266,7 +266,7 @@ async def test_log_metrics_with_save_on_min():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            exp = proj.start_experiment(
+            exp = alpha.CraftExperiment.start(
                 name="exp-with-save_on_best",
                 config=alpha.ExperimentConfig(
                     checkpoint=alpha.CheckpointConfig(
@@ -327,8 +327,8 @@ async def test_log_metrics_with_early_stopping():
         await asyncio.sleep(100)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.Project.setup(name="log_metrics_with_early_stopping") as proj:
-        async with proj.start_experiment(
+    async with alpha.Project.setup(name="log_metrics_with_early_stopping"):
+        async with alpha.CraftExperiment.start(
             name="exp-with-early-stopping",
             config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
@@ -371,8 +371,8 @@ async def test_log_metrics_with_early_stopping_never_triggered():
 
     async with alpha.Project.setup(
         name="log_metrics_with_both_early_stopping_and_timeout"
-    ) as proj:
-        async with proj.start_experiment(
+    ):
+        async with alpha.CraftExperiment.start(
             name="exp-with-early-stopping",
             config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
@@ -405,8 +405,8 @@ async def test_log_metrics_with_max_run_number():
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.Project.setup(name="log_metrics_with_max_run_number") as proj:
-        async with proj.start_experiment(
+    async with alpha.Project.setup(name="log_metrics_with_max_run_number"):
+        async with alpha.CraftExperiment.start(
             name="exp-with-max-run-number",
             config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
@@ -438,8 +438,8 @@ async def test_log_metrics_with_max_target_meet():
         await asyncio.sleep(10)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.Project.setup(name="log_metrics_with_max_target_meet") as proj:
-        async with proj.start_experiment(
+    async with alpha.Project.setup(name="log_metrics_with_max_target_meet"):
+        async with alpha.CraftExperiment.start(
             name="exp-with-max-target-meet",
             config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
@@ -473,8 +473,8 @@ async def test_log_metrics_with_min_target_meet():
         await asyncio.sleep(3)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.Project.setup(name="log_metrics_with_min_target_meet") as proj:
-        async with proj.start_experiment(
+    async with alpha.Project.setup(name="log_metrics_with_min_target_meet"):
+        async with alpha.CraftExperiment.start(
             name="exp-with-min-target-meet",
             config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",

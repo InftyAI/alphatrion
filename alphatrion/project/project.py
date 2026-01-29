@@ -20,7 +20,8 @@ class ProjectConfig(BaseModel):
 
 class Project:
     """
-    Project represents a collection of experiments.
+    Project represents a collection of experiments. Only one project can be active
+    at a time in the runtime.
     """
 
     def __init__(self, config: ProjectConfig | None = None):
@@ -41,6 +42,34 @@ class Project:
     @property
     def id(self):
         return self._id
+
+    @classmethod
+    def setup(
+        cls,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        config: ProjectConfig | None = None,
+    ) -> "Project":
+        """
+        Setup the experiment. If the name already exists in the same project,
+        it will refer to the existing experiment instead of creating a new one.
+        """
+
+        proj = Project(config)
+        proj_obj = proj._get_by_name(name=name)
+
+        # If project with the same name exists in the project, use it.
+        if proj_obj:
+            proj._id = proj_obj.uuid
+        else:
+            proj._create(
+                name=name,
+                description=description,
+                meta=meta,
+            )
+
+        return proj
 
     async def __aenter__(self):
         if self._id is None:
@@ -118,58 +147,3 @@ class Project:
         # TODO: Should we make this optional as a parameter?
         tags = self._runtime._artifact.list_versions(repo_name=str(self._id))
         self._runtime._artifact.delete(repo_name=str(self._id), versions=tags)
-
-    @classmethod
-    def setup(
-        cls,
-        name: str,
-        description: str | None = None,
-        meta: dict | None = None,
-        config: ProjectConfig | None = None,
-    ) -> "Project":
-        """
-        Setup the experiment. If the name already exists in the same project,
-        it will refer to the existing experiment instead of creating a new one.
-        """
-
-        proj = Project(config)
-        proj_obj = proj._get_by_name(name=name)
-
-        # If project with the same name exists in the project, use it.
-        if proj_obj:
-            proj._id = proj_obj.uuid
-        else:
-            proj._create(
-                name=name,
-                description=description,
-                meta=meta,
-            )
-
-        return proj
-
-    def start_experiment(
-        self,
-        name: str,
-        description: str | None = None,
-        meta: dict | None = None,
-        params: dict | None = None,
-        config: experiment.ExperimentConfig | None = None,
-    ) -> experiment.Experiment:
-        """
-        start_experiment starts a new experiment in this project.
-        You need to call experiment.cancel() to stop the experiment for proper cleanup,
-        unless it's a timeout experiment.
-        Or you can use 'async with exp.start_experiment(...) as experiment', which will
-        automatically stop the experiment at the end of the context.
-
-        :params description: the description of the experiment
-        :params meta: the metadata of the experiment
-        :params config: the configuration of the Experiment
-
-        :return: the Experiment instance
-        """
-
-        exp = experiment.Experiment(proj_id=self._id, config=config)
-        exp._start(name=name, description=description, meta=meta, params=params)
-        self.register_exp(id=exp.id, instance=exp)
-        return exp

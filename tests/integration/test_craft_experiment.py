@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 import alphatrion as alpha
+from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.runtime.runtime import global_runtime
 
 
@@ -18,8 +19,8 @@ async def test_integration_project():
         name="integration_test_project",
         description="Integration test for Project",
         meta={"test_case": "integration_project"},
-    ) as proj:
-        async with proj.start_experiment(
+    ):
+        async with CraftExperiment.start(
             name="integration_test_experiment",
             description="Experiment for integration test",
             meta={"experiment_case": "integration_project_experiment"},
