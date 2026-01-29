@@ -18,10 +18,10 @@ Open, modular framework to build GenAI applications.
 
 ## Concepts
 
-- **Project**: A Project is a namespace-level abstraction that isolates experiments from different users or teams.
-- **Experiment**: An Experiment is a logic-level abstraction for organizing and managing a series of related trials. It serves as a way to group together multiple trials that share a common goal or objective.
-- **Trial**: A Trial represents a config-level abstraction for a specific set of hyperparameters or configurations within an experiment. It is a single execution of a particular configuration.
-- **Run**: A Run is a real execution instance of a trial. It represents the actual execution of the code with the specified configuration and hyperparameters defined in the trial.
+- **Team**: A Team is the highest-level organizational unit in AlphaTrion. It represents a group of users collaborating on projects and experiments.
+- **Project**: A Project is a namespace-level abstraction that contains multiple experiments. It helps organize experiments related to a specific goal or topic.
+- **Experiment**: An Experiment is a logic-level abstraction for organizing and managing a series of related runs. It allows users to group runs that share a common purpose or configuration.
+- **Run**: A Run is a real execution instance of an experiment. It represents the actual execution of the code with the specified configuration and hyperparameters defined in the experiment.
 
 ## Quick Start
 
@@ -62,23 +62,23 @@ Below is a simple example with two approaches demonstrating how to create an exp
 import alphatrion as alpha
 import uuid
 
-# Better to use a fixed UUID to identify your project.
-alpha.init(project_id=uuid.uuid4(), artifact_insecure=True)
+# Better to use a fixed UUID to identify your team.
+alpha.init(team_id=uuid.uuid4(), artifact_insecure=True)
 
 async def log():
   # Run your code here then log metrics.
   await alpha.log_metrics({"accuracy": 0.95})
 
-async with alpha.CraftExperiment.setup(name="my_experiment") as exp:
-  async with exp.start_trial(name="my_trial") as trial:
-    run = trial.run(lambda: log())
-    await run.wait()
+async with alpha.Project.setup(name="my_project"):
+  async with alpha.CraftExperiment.start(name="my_experiment") as exp:
+    task = exp.run(lambda: log())
+    await task.wait()
 ```
 
 ### View Dashboard
 
 The dashboard is under active development.
-You can already run the frontend locally to explore experiments, trials, runs, and metrics through the UI.
+You can already run the frontend locally to explore projects, experiments, runs, and metrics through the UI.
 
 ### Prerequisites
 Make sure the following are installed:
