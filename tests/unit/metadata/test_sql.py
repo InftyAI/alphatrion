@@ -12,96 +12,103 @@ def db():
     yield db
 
 
-def test_create_exp(db):
-    project_id = uuid.uuid4()
-    id = db.create_exp("test_exp", project_id, "test description", {"key": "value"})
-    exp = db.get_exp(id)
-    assert exp is not None
-    assert exp.name == "test_exp"
-    assert exp.project_id == project_id
-    assert exp.description == "test description"
-    assert exp.meta == {"key": "value"}
-    assert exp.uuid is not None
+def test_create_project(db):
+    team_id = uuid.uuid4()
+    id = db.create_project("test_proj", team_id, "test description", {"key": "value"})
+    proj = db.get_project(id)
+    assert proj is not None
+    assert proj.name == "test_proj"
+    assert proj.team_id == team_id
+    assert proj.description == "test description"
+    assert proj.meta == {"key": "value"}
+    assert proj.uuid is not None
 
 
-def test_delete_exp(db):
-    id = db.create_exp("test_exp", uuid.uuid4(), "test description", {"key": "value"})
-    db.delete_exp(id)
-    exp = db.get_exp(id)
-    assert exp is None
+def test_delete_project(db):
+    id = db.create_project(
+        "test_proj", uuid.uuid4(), "test description", {"key": "value"}
+    )
+    db.delete_project(id)
+    proj = db.get_project(id)
+    assert proj is None
 
 
-def test_update_exp(db):
-    id = db.create_exp("test_exp", uuid.uuid4(), "test description", {"key": "value"})
-    db.update_exp(id, name="new_name")
-    exp = db.get_exp(id)
-    assert exp.name == "new_name"
+def test_update_project(db):
+    id = db.create_project(
+        "test_proj", uuid.uuid4(), "test description", {"key": "value"}
+    )
+    db.update_project(id, name="new_name")
+    proj = db.get_project(id)
+    assert proj.name == "new_name"
 
 
-def test_list_exps(db):
-    project_id1 = uuid.uuid4()
-    project_id2 = uuid.uuid4()
-    db.create_exp("exp1", project_id1, None, None)
-    db.create_exp("exp2", project_id1, None, None)
-    db.create_exp("exp3", project_id2, None, None)
+def test_list_projects(db):
+    team_id1 = uuid.uuid4()
+    team_id2 = uuid.uuid4()
+    db.create_project("proj1", team_id1, None, None)
+    db.create_project("proj2", team_id1, None, None)
+    db.create_project("proj3", team_id2, None, None)
 
-    exps = db.list_exps(project_id1, 0, 10)
-    assert len(exps) == 2
+    projs = db.list_projects(team_id1, 0, 10)
+    assert len(projs) == 2
 
-    exps = db.list_exps(project_id2, 0, 10)
-    assert len(exps) == 1
+    projs = db.list_projects(team_id2, 0, 10)
+    assert len(projs) == 1
 
-    exps = db.list_exps(uuid.uuid4(), 0, 10)
-    assert len(exps) == 0
+    projs = db.list_projects(uuid.uuid4(), 0, 10)
+    assert len(projs) == 0
 
 
-def test_create_trial(db):
-    project_id = uuid.uuid4()
-    exp_id = db.create_exp("test_exp", project_id, "test description")
-    trial_id = db.create_trial(
-        experiment_id=exp_id,
-        project_id=project_id,
-        name="test-trial",
+def test_create_experiment(db):
+    team_id = uuid.uuid4()
+    proj_id = db.create_project(
+        "test_proj", team_id, "test description", {"key": "value"}
+    )
+    exp_id = db.create_experiment(
+        team_id=team_id,
+        project_id=proj_id,
+        name="test-exp",
         params={"lr": 0.01},
     )
-    trial = db.get_trial(trial_id)
-    assert trial is not None
-    assert trial.experiment_id == exp_id
-    assert trial.name == "test-trial"
-    assert trial.status == Status.PENDING
-    assert trial.meta is None
-    assert trial.params == {"lr": 0.01}
+    exp = db.get_experiment(exp_id)
+    assert exp is not None
+    assert exp.project_id == proj_id
+    assert exp.name == "test-exp"
+    assert exp.status == Status.PENDING
+    assert exp.meta is None
+    assert exp.params == {"lr": 0.01}
 
 
-def test_update_trial(db):
-    project_id = uuid.uuid4()
-    exp_id = db.create_exp("test_exp", project_id, "test description")
-    trial_id = db.create_trial(
-        experiment_id=exp_id, project_id=project_id, name="test-trial"
+def test_update_experiment(db):
+    team_id = uuid.uuid4()
+    proj_id = db.create_project("test_proj", team_id, "test description")
+    exp_id = db.create_experiment(
+        team_id=team_id,
+        project_id=proj_id,
+        name="test_exp",
+        description="test description",
     )
-    trial = db.get_trial(trial_id)
-    assert trial.status == Status.PENDING
-    assert trial.meta is None
+    exp = db.get_experiment(exp_id)
+    assert exp.status == Status.PENDING
+    assert exp.meta is None
 
-    db.update_trial(trial_id, status=Status.RUNNING, meta={"note": "started"})
-    trial = db.get_trial(trial_id)
-    assert trial.status == Status.RUNNING
-    assert trial.meta == {"note": "started"}
+    db.update_experiment(exp_id, status=Status.RUNNING, meta={"note": "started"})
+    exp = db.get_experiment(exp_id)
+    assert exp.status == Status.RUNNING
+    assert exp.meta == {"note": "started"}
 
 
 def test_create_metric(db):
-    project_id = uuid.uuid4()
-    exp_id = db.create_exp("test_exp", project_id, "test description")
-    trial_id = db.create_trial(
-        experiment_id=exp_id, project_id=project_id, name="test-trial"
+    team_id = uuid.uuid4()
+    proj_id = db.create_project(
+        "test_proj", team_id, "test description", {"key": "value"}
     )
-    run_id = db.create_run(
-        trial_id=trial_id, project_id=project_id, experiment_id=exp_id
-    )
-    db.create_metric(project_id, exp_id, trial_id, run_id, "accuracy", 0.95)
-    db.create_metric(project_id, exp_id, trial_id, run_id, "accuracy", 0.85)
+    exp_id = db.create_experiment(team_id=team_id, project_id=proj_id, name="test-exp")
+    run_id = db.create_run(team_id=team_id, project_id=proj_id, experiment_id=exp_id)
+    db.create_metric(team_id, proj_id, exp_id, run_id, "accuracy", 0.95)
+    db.create_metric(team_id, proj_id, exp_id, run_id, "accuracy", 0.85)
 
-    metrics = db.list_metrics_by_trial_id(trial_id)
+    metrics = db.list_metrics_by_experiment_id(exp_id)
     assert len(metrics) == 2
     assert metrics[0].key == "accuracy"
     assert metrics[0].value == 0.95

@@ -3,21 +3,20 @@ import uuid
 import pytest
 
 from alphatrion.model.model import Model
-from alphatrion.runtime.runtime import Runtime
+from alphatrion.runtime.runtime import global_runtime, init
 
 
 @pytest.fixture
 def model():
-    runtime = Runtime(project_id="test_project", init_tables=True)
+    init(team_id=uuid.uuid4(), init_tables=True)
+    runtime = global_runtime()
     model = Model(runtime=runtime)
     yield model
 
 
 def test_model(model):
-    project_id = uuid.uuid4()
-    id = model.create(
-        "test_model", project_id, "A test model", {"tags": {"foo": "bar"}}
-    )
+    team_id = uuid.uuid4()
+    id = model.create("test_model", team_id, "A test model", {"tags": {"foo": "bar"}})
     model1 = model.get(id)
     assert model1 is not None
     assert model1.name == "test_model"

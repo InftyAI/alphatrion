@@ -8,8 +8,8 @@ SUCCESS_CODE = 201
 
 
 class Artifact:
-    def __init__(self, project_id: str, insecure: bool = False):
-        self._project_id = project_id
+    def __init__(self, team_id: str, insecure: bool = False):
+        self._team_id = team_id
         self._url = os.environ.get(consts.ARTIFACT_REGISTRY_URL)
         self._url = self._url.replace("https://", "").replace("http://", "")
         self._client = oras.client.OrasClient(
@@ -48,7 +48,7 @@ class Artifact:
             raise ValueError("No files to push.")
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        path = f"{self._project_id}/{repo_name}:{version}"
+        path = f"{self._team_id}/{repo_name}:{version}"
         target = f"{url}{path}"
 
         try:
@@ -61,7 +61,7 @@ class Artifact:
     # TODO: should we store it in the metadb instead?
     def list_versions(self, repo_name: str) -> list[str]:
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{repo_name}"
+        target = f"{url}{self._team_id}/{repo_name}"
         try:
             tags = self._client.get_tags(target)
             return tags
@@ -70,7 +70,7 @@ class Artifact:
 
     def delete(self, repo_name: str, versions: str | list[str]):
         url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._project_id}/{repo_name}"
+        target = f"{url}{self._team_id}/{repo_name}"
 
         try:
             self._client.delete_tags(target, tags=versions)

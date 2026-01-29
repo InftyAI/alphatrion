@@ -30,12 +30,31 @@ StatusMap = {
 FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED]
 
 
+class Team(Base):
+    __tablename__ = "teams"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    meta = Column(JSON, nullable=True, comment="Additional metadata for the team")
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
+# Define the Project model for SQLAlchemy
 class Project(Base):
     __tablename__ = "projects"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the project")
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -52,41 +71,22 @@ class ExperimentType(enum.IntEnum):
     CRAFT_EXPERIMENT = 1
 
 
-# Define the Experiment model for SQLAlchemy
 class Experiment(Base):
     __tablename__ = "experiments"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    project_id = Column(UUID(as_uuid=True), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the experiment")
+    meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
+    params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     kind = Column(
         Integer,
         default=ExperimentType.CRAFT_EXPERIMENT,
         nullable=False,
         comment="Type of the experiment",
     )
-
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
-
-
-class Trial(Base):
-    __tablename__ = "trials"
-
-    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
-    experiment_id = Column(UUID(as_uuid=True), nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
-    params = Column(JSON, nullable=True, comment="Parameters for the experiment")
     duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
     status = Column(
         Integer,
@@ -110,9 +110,9 @@ class Run(Base):
     __tablename__ = "runs"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
-    trial_id = Column(UUID(as_uuid=True), nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
     status = Column(
         Integer,
@@ -138,7 +138,7 @@ class Model(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
     version = Column(String, nullable=False)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the model")
 
@@ -151,15 +151,15 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-# TODO: key, project_id, experiment_id, trial_id, run_id should be unique together
+# TODO: key, team_id, project_id, experiment_id, run_id should be unique together
 class Metric(Base):
     __tablename__ = "metrics"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
-    trial_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))

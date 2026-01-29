@@ -8,24 +8,24 @@ from datetime import datetime, timedelta
 import pytest
 
 import alphatrion as alpha
+from alphatrion.experiment.experiment import current_exp_id
 from alphatrion.log.log import ARTIFACT_PATH
 from alphatrion.metadata.sql_models import Status
-from alphatrion.trial.trial import current_trial_id
 
 
 @pytest.mark.asyncio
 async def test_log_artifact():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.setup(
-        name="log_artifact_exp",
+    async with alpha.Project.setup(
+        name="log_artifact_project",
         description="Context manager test",
         meta={"key": "value"},
-    ) as exp:
-        trial = exp.start_trial(name="first-trial")
+    ) as proj:
+        exp = proj.start_experiment(name="first-exp")
 
-        exp_obj = exp._runtime._metadb.get_exp(exp_id=exp._id)
-        assert exp_obj is not None
+        proj_obj = proj._runtime._metadb.get_project(project_id=proj._id)
+        assert proj_obj is not None
 
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
@@ -35,7 +35,7 @@ async def test_log_artifact():
                 f.write("This is file1.")
 
             await alpha.log_artifact(paths="file1.txt", version="v1")
-            versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
+            versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v1" in versions
 
             with open("file1.txt", "w") as f:
@@ -43,76 +43,80 @@ async def test_log_artifact():
 
             # push folder instead
             await alpha.log_artifact(paths=["file1.txt"], version="v2")
-            versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
+            versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v2" in versions
 
         exp._runtime._artifact.delete(
-            repo_name=exp_obj.uuid,
+            repo_name=proj_obj.uuid,
             versions=["v1", "v2"],
         )
-        versions = exp._runtime._artifact.list_versions(exp_obj.uuid)
+        versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
         assert len(versions) == 0
 
-        trial.done()
+        exp.done()
 
-        got_exp = exp._runtime._metadb.get_exp(exp_id=exp._id)
+        got_proj = proj._runtime._metadb.get_project(project_id=proj._id)
+        assert got_proj is not None
+        assert got_proj.name == "log_artifact_project"
+
+        got_exp = proj._runtime._metadb.get_experiment(experiment_id=exp.id)
         assert got_exp is not None
-        assert got_exp.name == "log_artifact_exp"
-
-        got_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
-        assert got_trial is not None
-        assert got_trial.name == "first-trial"
-        assert got_trial.status == Status.COMPLETED
+        assert got_exp.name == "first-exp"
+        assert got_exp.status == Status.COMPLETED
 
 
 @pytest.mark.asyncio
 async def test_log_params():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
-    async with alpha.CraftExperiment.setup(name="log_params_exp") as exp:
-        trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
+    async with alpha.Project.setup(name="log_params_proj") as proj:
+        exp = proj.start_experiment(name="first-exp", params={"param1": 0.1})
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
-        assert new_trial is not None
-        assert new_trial.params == {"param1": 0.1}
+        new_exp = proj._runtime._metadb.get_experiment(experiment_id=exp.id)
+        assert new_exp is not None
+        assert new_exp.params == {"param1": 0.1}
 
         params = {"param1": 0.2}
         await alpha.log_params(params=params)
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial.id)
-        assert new_trial is not None
-        assert new_trial.params == {"param1": 0.2}
-        assert new_trial.status == Status.RUNNING
-        assert current_trial_id.get() == trial.id
+        new_exp = exp._runtime._metadb.get_experiment(experiment_id=exp.id)
+        assert new_exp is not None
+        assert new_exp.params == {"param1": 0.2}
+        assert new_exp.status == Status.RUNNING
+        assert current_exp_id.get() == exp.id
 
-        trial.done()
+        exp.done()
 
-        trial = exp.start_trial(name="second-trial", params={"param1": 0.1})
-        assert current_trial_id.get() == trial.id
-        trial.done()
+        exp = proj.start_experiment(name="second-exp", params={"param1": 0.1})
+        assert current_exp_id.get() == exp.id
+        exp.done()
 
 
 @pytest.mark.asyncio
 async def test_log_metrics():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def log_metric(metrics: dict):
         await alpha.log_metrics(metrics)
 
-    async with alpha.CraftExperiment.setup(name="log_metrics_exp") as exp:
-        trial = exp.start_trial(name="first-trial", params={"param1": 0.1})
+    async with alpha.Project.setup(name="log_metrics_exp") as proj:
+        exp = proj.start_experiment(name="first-exp", params={"param1": 0.1})
 
-        new_trial = exp._runtime._metadb.get_trial(trial_id=trial._id)
-        assert new_trial is not None
-        assert new_trial.params == {"param1": 0.1}
+        new_exp = exp._runtime._metadb.get_experiment(experiment_id=exp.id)
+        assert new_exp is not None
+        assert new_exp.params == {"param1": 0.1}
 
-        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
+        metrics = proj._runtime._metadb.list_metrics_by_experiment_id(
+            experiment_id=exp.id
+        )
         assert len(metrics) == 0
 
-        run = trial.start_run(lambda: log_metric({"accuracy": 0.95, "loss": 0.1}))
+        run = exp.start_run(lambda: log_metric({"accuracy": 0.95, "loss": 0.1}))
         await run.wait()
 
-        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
+        metrics = exp._runtime._metadb.list_metrics_by_experiment_id(
+            experiment_id=exp.id
+        )
         assert len(metrics) == 2
         assert metrics[0].key == "accuracy"
         assert metrics[0].value == 0.95
@@ -122,10 +126,12 @@ async def test_log_metrics():
         assert run_id_1 is not None
         assert metrics[0].run_id == metrics[1].run_id
 
-        run = trial.start_run(lambda: log_metric({"accuracy": 0.96}))
+        run = exp.start_run(lambda: log_metric({"accuracy": 0.96}))
         await run.wait()
 
-        metrics = exp._runtime._metadb.list_metrics_by_trial_id(trial_id=trial._id)
+        metrics = proj._runtime._metadb.list_metrics_by_experiment_id(
+            experiment_id=exp.id
+        )
         assert len(metrics) == 3
         assert metrics[2].key == "accuracy"
         assert metrics[2].value == 0.96
@@ -133,13 +139,13 @@ async def test_log_metrics():
         assert run_id_2 is not None
         assert run_id_2 != run_id_1
 
-        trial.done()
+        exp.done()
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_max():
-    project_id = uuid.uuid4()
-    alpha.init(project_id=project_id, artifact_insecure=True, init_tables=True)
+    team_id = uuid.uuid4()
+    alpha.init(team_id=team_id, artifact_insecure=True, init_tables=True)
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -150,11 +156,11 @@ async def test_log_metrics_with_save_on_max():
                 return v
         return None
 
-    async with alpha.CraftExperiment.setup(
+    async with alpha.Project.setup(
         name="log_metrics_with_save_on_max",
         description="Context manager test",
         meta={"key": "value"},
-    ) as exp:
+    ) as proj:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             file = "file.txt"
@@ -163,9 +169,9 @@ async def test_log_metrics_with_save_on_max():
                 with open(file, "a") as f:
                     f.write("This is pre_save_hook modified file.\n")
 
-            trial = exp.start_trial(
-                name="trial-with-save_on_best",
-                config=alpha.TrialConfig(
+            exp = proj.start_experiment(
+                name="exp-with-save_on_best",
+                config=alpha.ExperimentConfig(
                     checkpoint=alpha.CheckpointConfig(
                         enabled=True,
                         path=tmpdir,
@@ -181,19 +187,19 @@ async def test_log_metrics_with_save_on_max():
             with open(file, "w") as f:
                 f.write("This is file.\n")
 
-            run = trial.start_run(lambda: log_metric(0.90))
+            run = exp.start_run(lambda: log_metric(0.90))
             await run.wait()
 
             # We need this because the returned version is unordered.
             used_version = []
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 1
             run_obj = run._get_obj()
             fixed_version = versions[0]
             used_version.append(fixed_version)
             assert (
-                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+                run_obj.meta[ARTIFACT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 2
@@ -201,25 +207,25 @@ async def test_log_metrics_with_save_on_max():
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
 
-            run = trial.start_run(lambda: log_metric(0.78))
+            run = exp.start_run(lambda: log_metric(0.78))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 1
 
             time.sleep(1)
 
-            run = trial.start_run(lambda: log_metric(0.91))
+            run = exp.start_run(lambda: log_metric(0.91))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 2
 
             fixed_version = find_unused_version(used_version, versions)
             used_version.append(fixed_version)
             run_obj = run._get_obj()
             assert (
-                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+                run_obj.meta[ARTIFACT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
             )
 
             with open(file) as f:
@@ -227,42 +233,42 @@ async def test_log_metrics_with_save_on_max():
 
             time.sleep(1)
 
-            run = trial.start_run(lambda: log_metric(0.98))
+            run = exp.start_run(lambda: log_metric(0.98))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 3
             run_obj = run._get_obj()
 
             fixed_version = find_unused_version(used_version, versions)
             used_version.append(fixed_version)
             assert (
-                run_obj.meta[ARTIFACT_PATH] == f"{project_id}/{exp.id}:" + fixed_version
+                run_obj.meta[ARTIFACT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 4
 
-            trial.done()
+            exp.done()
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_min():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
+    async with alpha.Project.setup(
         name="log_metrics_with_save_on_min",
         description="Context manager test",
         meta={"key": "value"},
-    ) as exp:
+    ) as proj:
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            trial = exp.start_trial(
-                name="trial-with-save_on_best",
-                config=alpha.TrialConfig(
+            exp = proj.start_experiment(
+                name="exp-with-save_on_best",
+                config=alpha.ExperimentConfig(
                     checkpoint=alpha.CheckpointConfig(
                         enabled=True,
                         path=tmpdir,
@@ -277,42 +283,42 @@ async def test_log_metrics_with_save_on_min():
             with open(file1, "w") as f:
                 f.write("This is file1.")
 
-            run = trial.start_run(lambda: log_metric(0.30))
+            run = exp.start_run(lambda: log_metric(0.30))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 1
 
             # To avoid the same timestamp hash, we wait for 1 second
             time.sleep(1)
 
-            run = trial.start_run(lambda: log_metric(0.58))
+            run = exp.start_run(lambda: log_metric(0.58))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 1
 
             time.sleep(1)
 
-            run = trial.start_run(lambda: log_metric(0.21))
+            run = exp.start_run(lambda: log_metric(0.21))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = exp._runtime._artifact.list_versions(proj.id)
             assert len(versions) == 2
 
             time.sleep(1)
 
-            task = trial.start_run(lambda: log_metric(0.18))
+            task = exp.start_run(lambda: log_metric(0.18))
             await task.wait()
-            versions = exp._runtime._artifact.list_versions(exp.id)
+            versions = proj._runtime._artifact.list_versions(str(proj.id))
             assert len(versions) == 3
 
-            trial.done()
+            exp.done()
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -321,38 +327,40 @@ async def test_log_metrics_with_early_stopping():
         await asyncio.sleep(100)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
-        name="log_metrics_with_early_stopping"
-    ) as exp:
-        async with exp.start_trial(
-            name="trial-with-early-stopping",
-            config=alpha.TrialConfig(
+    async with alpha.Project.setup(name="log_metrics_with_early_stopping") as proj:
+        async with proj.start_experiment(
+            name="exp-with-early-stopping",
+            config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=2,
             ),
-        ) as trial:
-            trial.start_run(lambda: fake_work(0.5))
-            trial.start_run(lambda: fake_work(0.6))
-            trial.start_run(lambda: fake_work(0.2))
-            trial.start_run(lambda: fake_work(0.7))
-            trial.start_run(lambda: fake_sleep(0.2))
+        ) as exp:
+            exp.start_run(lambda: fake_work(0.5))
+            exp.start_run(lambda: fake_work(0.6))
+            exp.start_run(lambda: fake_work(0.2))
+            exp.start_run(lambda: fake_work(0.7))
+            exp.start_run(lambda: fake_sleep(0.2))
             # The first run that is worse than 0.6
-            trial.start_run(lambda: fake_work(0.4))
+            exp.start_run(lambda: fake_work(0.4))
             # The second run that is worse than 0.6, should trigger early stopping
-            trial.start_run(lambda: fake_work(0.1))
-            trial.start_run(lambda: fake_work(0.2))
+            exp.start_run(lambda: fake_work(0.1))
+            exp.start_run(lambda: fake_work(0.2))
             # trigger early stopping
-            await trial.wait()
+            await exp.wait()
 
             assert (
-                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                len(
+                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                        experiment_id=exp.id
+                    )
+                )
                 == 6
             )
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping_never_triggered():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -361,26 +369,30 @@ async def test_log_metrics_with_early_stopping_never_triggered():
         await asyncio.sleep(value)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
+    async with alpha.Project.setup(
         name="log_metrics_with_both_early_stopping_and_timeout"
-    ) as exp:
-        async with exp.start_trial(
-            name="trial-with-early-stopping",
-            config=alpha.TrialConfig(
+    ) as proj:
+        async with proj.start_experiment(
+            name="exp-with-early-stopping",
+            config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
                 early_stopping_runs=3,
                 max_execution_seconds=3,
             ),
-        ) as trial:
+        ) as exp:
             start_time = datetime.now()
-            trial.start_run(lambda: fake_work(1))
-            trial.start_run(lambda: fake_work(2))
-            trial.start_run(lambda: fake_sleep(2))
+            exp.start_run(lambda: fake_work(1))
+            exp.start_run(lambda: fake_work(2))
+            exp.start_run(lambda: fake_sleep(2))
             # running in parallel.
-            await trial.wait()
+            await exp.wait()
 
             assert (
-                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                len(
+                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                        experiment_id=exp.id
+                    )
+                )
                 == 3
             )
             assert datetime.now() - start_time >= timedelta(seconds=3)
@@ -388,34 +400,36 @@ async def test_log_metrics_with_early_stopping_never_triggered():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_max_run_number():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
-        name="log_metrics_with_max_run_number"
-    ) as exp:
-        async with exp.start_trial(
-            name="trial-with-max-run-number",
-            config=alpha.TrialConfig(
+    async with alpha.Project.setup(name="log_metrics_with_max_run_number") as proj:
+        async with proj.start_experiment(
+            name="exp-with-max-run-number",
+            config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
-                max_runs_per_trial=5,
+                max_runs_per_experiment=5,
             ),
-        ) as trial:
-            while not trial.is_done():
-                run = trial.start_run(lambda: fake_work(1))
+        ) as exp:
+            while not exp.is_done():
+                run = exp.start_run(lambda: fake_work(1))
                 await run.wait()
 
             assert (
-                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                len(
+                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                        experiment_id=exp.id
+                    )
+                )
                 == 5
             )
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_max_target_meet():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -424,31 +438,33 @@ async def test_log_metrics_with_max_target_meet():
         await asyncio.sleep(10)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
-        name="log_metrics_with_max_target_meet"
-    ) as exp:
-        async with exp.start_trial(
-            name="trial-with-max-target-meet",
-            config=alpha.TrialConfig(
+    async with alpha.Project.setup(name="log_metrics_with_max_target_meet") as proj:
+        async with proj.start_experiment(
+            name="exp-with-max-target-meet",
+            config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
                 target_metric_value=0.9,
             ),
-        ) as trial:
-            trial.start_run(lambda: fake_work(0.5))
-            trial.start_run(lambda: fake_work(0.3))
-            trial.start_run(lambda: fake_sleep(0.4))
-            trial.start_run(lambda: fake_work(0.9))
-            await trial.wait()
+        ) as exp:
+            exp.start_run(lambda: fake_work(0.5))
+            exp.start_run(lambda: fake_work(0.3))
+            exp.start_run(lambda: fake_sleep(0.4))
+            exp.start_run(lambda: fake_work(0.9))
+            await exp.wait()
 
             assert (
-                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                len(
+                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                        experiment_id=exp.id
+                    )
+                )
                 == 3
             )
 
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_min_target_meet():
-    alpha.init(project_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -457,24 +473,26 @@ async def test_log_metrics_with_min_target_meet():
         await asyncio.sleep(3)
         await alpha.log_metrics({"accuracy": value})
 
-    async with alpha.CraftExperiment.setup(
-        name="log_metrics_with_min_target_meet"
-    ) as exp:
-        async with exp.start_trial(
-            name="trial-with-min-target-meet",
-            config=alpha.TrialConfig(
+    async with alpha.Project.setup(name="log_metrics_with_min_target_meet") as proj:
+        async with proj.start_experiment(
+            name="exp-with-min-target-meet",
+            config=alpha.ExperimentConfig(
                 monitor_metric="accuracy",
                 target_metric_value=0.2,
                 monitor_mode=alpha.MonitorMode.MIN,
             ),
-        ) as trial:
-            trial.start_run(lambda: fake_work(0.5))
-            trial.start_run(lambda: fake_work(0.3))
-            trial.start_run(lambda: fake_sleep(0.4))
-            trial.start_run(lambda: fake_work(0.2))
-            await trial.wait()
+        ) as exp:
+            exp.start_run(lambda: fake_work(0.5))
+            exp.start_run(lambda: fake_work(0.3))
+            exp.start_run(lambda: fake_sleep(0.4))
+            exp.start_run(lambda: fake_work(0.2))
+            await exp.wait()
 
             assert (
-                len(trial._runtime._metadb.list_metrics_by_trial_id(trial_id=trial.id))
+                len(
+                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                        experiment_id=exp.id
+                    )
+                )
                 == 3
             )
