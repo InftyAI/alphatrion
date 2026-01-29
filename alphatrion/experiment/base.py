@@ -357,7 +357,7 @@ class Experiment(ABC):
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self._id)
 
-    def start_run(self, call_func: callable) -> Run:
+    def run(self, call_func: callable) -> Run:
         """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.

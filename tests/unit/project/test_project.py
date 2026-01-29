@@ -87,7 +87,7 @@ async def test_project_with_no_context():
 
     proj = Project.setup(name="no_context_proj")
     async with CraftExperiment.start(name="first-trial") as exp:
-        exp.start_run(lambda: fake_work(exp))
+        exp.run(lambda: fake_work(exp))
         await exp.wait()
 
         exp_obj = exp._get_obj()
@@ -152,10 +152,10 @@ async def test_create_project_with_run():
     ):
         start_time = datetime.now()
 
-        exp.start_run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 1
 
-        exp.start_run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 2
 
         await exp.wait()
@@ -177,10 +177,10 @@ async def test_create_project_with_run_cancelled():
             config=experiment.ExperimentConfig(max_execution_seconds=2),
         ) as exp,
     ):
-        run_0 = exp.start_run(lambda: fake_work(1))
-        run_1 = exp.start_run(lambda: fake_work(4))
-        run_2 = exp.start_run(lambda: fake_work(5))
-        run_3 = exp.start_run(lambda: fake_work(6))
+        run_0 = exp.run(lambda: fake_work(1))
+        run_1 = exp.run(lambda: fake_work(4))
+        run_2 = exp.run(lambda: fake_work(5))
+        run_3 = exp.run(lambda: fake_work(6))
         # At this point, 4 runs are started.
         assert len(exp._runs) == 4
         await exp.wait()

@@ -28,11 +28,11 @@ async def test_integration_project():
         ) as exp:
             exp_id = exp.id
 
-            exp.start_run(lambda: fake_work(1))
-            exp.start_run(lambda: fake_work(2))
-            exp.start_run(lambda: fake_work(4))
-            exp.start_run(lambda: fake_work(5))
-            exp.start_run(lambda: fake_work(6))
+            exp.run(lambda: fake_work(1))
+            exp.run(lambda: fake_work(2))
+            exp.run(lambda: fake_work(4))
+            exp.run(lambda: fake_work(5))
+            exp.run(lambda: fake_work(6))
 
             await exp.wait()
 

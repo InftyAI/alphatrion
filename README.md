@@ -71,7 +71,7 @@ async def log():
 
 async with alpha.CraftExperiment.setup(name="my_experiment") as exp:
   async with exp.start_trial(name="my_trial") as trial:
-    run = trial.start_run(lambda: log())
+    run = trial.run(lambda: log())
     await run.wait()
 ```
 
