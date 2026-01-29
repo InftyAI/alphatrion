@@ -12,7 +12,7 @@ from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import context
 
 # Used in log/log.py to log params/metrics
-current_trial_id = contextvars.ContextVar("current_trial_id", default=None)
+current_exp_id = contextvars.ContextVar("current_exp_id", default=None)
 
 
 class CheckpointConfig(BaseModel):
@@ -56,24 +56,24 @@ class MonitorMode(enum.Enum):
     MIN = "min"
 
 
-class TrialConfig(BaseModel):
-    """Configuration for a Trial."""
+class ExperimentConfig(BaseModel):
+    """Configuration for a Experiment."""
 
     max_execution_seconds: int = Field(
         default=-1,
-        description="Maximum execution seconds for the trial. \
-        Trial timeout will override experiment timeout if both are set. \
+        description="Maximum execution seconds for the Experiment. \
+        Experiment timeout will override project timeout if both are set. \
         Default is -1 (no limit).",
     )
     early_stopping_runs: int = Field(
         default=-1,
         description="Number of runs with no improvement \
-        after which the trial will be stopped. Default is -1 (no early stopping). \
+        after which the Experiment will be stopped. Default is -1 (no early stopping). \
         Count each time when calling log_metrics with the monitored metric.",
     )
-    max_runs_per_trial: int = Field(
+    max_runs_per_experiment: int = Field(
         default=-1,
-        description="Maximum number of runs for each trial. \
+        description="Maximum number of runs for each Experiment. \
         Default is -1 (no limit). Count by the finished runs.",
     )
     monitor_metric: str | None = Field(
@@ -90,11 +90,11 @@ class TrialConfig(BaseModel):
     )
     target_metric_value: float | None = Field(
         default=None,
-        description="If specified, the trial will stop when \
+        description="If specified, the Experiment will stop when \
             the monitored metric reaches this target value. \
-            If monitor_mode is 'max', the trial will stop when \
+            If monitor_mode is 'max', the Experiment will stop when \
             the metric >= target_metric_value. If monitor_mode is 'min', \
-            the trial will stop when the metric <= target_metric_value. \
+            the Experiment will stop when the metric <= target_metric_value. \
             Default is None (no target).",
     )
     checkpoint: CheckpointConfig = Field(
@@ -122,15 +122,15 @@ class TrialConfig(BaseModel):
         return self
 
 
-class Trial:
+class Experiment:
     __slots__ = (
         "_id",
-        "_exp_id",
+        "_proj_id",
         "_config",
         "_runtime",
         "_context",
         "_token",
-        # _meta stores the runtime meta information of the trial.
+        # _meta stores the runtime meta information of the experiment.
         # * best_metrics: dict of best metric values, used for checkpointing and
         #   early stopping. When the workload(e.g. Pod) restarts, the meta info
         #   will be lost and start from scratch. Then once some features like
@@ -142,15 +142,15 @@ class Trial:
         "_runs",
         # Only work when early_stopping_runs > 0
         "_early_stopping_counter",
-        # Only work when max_runs_per_trial > 0
+        # Only work when max_runs_per_experiment > 0
         "_total_runs_counter",
-        # Whether the trial is ended with error.
+        # Whether the Experiment is ended with error.
         "_err",
     )
 
-    def __init__(self, exp_id: int, config: TrialConfig | None = None):
-        self._exp_id = exp_id
-        self._config = config or TrialConfig()
+    def __init__(self, proj_id: uuid.UUID, config: ExperimentConfig | None = None):
+        self._proj_id = proj_id
+        self._config = config or ExperimentConfig()
         self._runtime = global_runtime()
         self._construct_meta()
         self._runs = dict[uuid.UUID, Run]()
@@ -164,7 +164,7 @@ class Trial:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
         if self._token:
-            current_trial_id.reset(self._token)
+            current_exp_id.reset(self._token)
 
     @property
     def id(self) -> uuid.UUID:
@@ -173,7 +173,8 @@ class Trial:
     def _construct_meta(self):
         self._meta = dict()
 
-        # TODO: if restart from existing trial, load the best_metrics from database.
+        # TODO: if restart from existing experiment,
+        # load the best_metrics from database.
         if self._config.monitor_mode == MonitorMode.MAX:
             self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
         elif self._config.monitor_mode == MonitorMode.MIN:
@@ -181,7 +182,7 @@ class Trial:
         else:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
-    def config(self) -> TrialConfig:
+    def config(self) -> ExperimentConfig:
         return self._config
 
     def should_checkpoint_on_best(self, metric_key: str, metric_value: float) -> bool:
@@ -275,15 +276,16 @@ class Trial:
 
     # Make sure you have termination condition, either by timeout or by calling cancel()
     # Before we have logic like once all the tasks are done, we'll call the cancel()
-    # automatically, however, this is unpredictable because some tasks may be waiting
-    # for external events, so we leave it to the user to decide when to stop the trial.
+    # automatically, however, this is unpredictable because some tasks may wait for
+    # external events, so we leave it to the user to decide when to stop the experiment.
     async def wait(self):
         await self._context.wait()
 
     def is_done(self) -> bool:
         return self._context.cancelled()
 
-    # If the name is same in the same experiment, it will refer to the existing trial.
+    # If the name is same in the same experiment,
+    # it will refer to the existing experiment.
     def _start(
         self,
         name: str,
@@ -291,16 +293,16 @@ class Trial:
         meta: dict | None = None,
         params: dict | None = None,
     ):
-        trial_obj = self._runtime._metadb.get_trial_by_name(
-            trial_name=name, experiment_id=self._exp_id
+        exp_obj = self._runtime._metadb.get_exp_by_name(
+            name=name, project_id=self._proj_id
         )
-        # FIXME: what if the existing trial is completed, will lead to confusion?
-        if trial_obj:
-            self._id = trial_obj.uuid
+        # FIXME: what if the existing Experiment is completed, will lead to confusion?
+        if exp_obj:
+            self._id = exp_obj.uuid
         else:
-            self._id = self._runtime._metadb.create_trial(
-                project_id=self._runtime._project_id,
-                experiment_id=self._exp_id,
+            self._id = self._runtime._metadb.create_experiment(
+                team_id=self._runtime._team_id,
+                project_id=self._proj_id,
                 name=name,
                 description=description,
                 meta=meta,
@@ -313,13 +315,13 @@ class Trial:
             timeout=self._timeout(),
         )
 
-        # We don't reset the trial id context var here, because
-        # each trial runs in its own context.
-        self._token = current_trial_id.set(self._id)
+        # We don't reset the Experiment id context var here, because
+        # each experiment runs in its own context.
+        self._token = current_exp_id.set(self._id)
 
     # done function should be called manually as a pair of start
-    # FIXME: watch for system signals to cancel the trial gracefully,
-    # or it could lead to trial not being marked as completed.
+    # FIXME: watch for system signals to cancel the Experiment gracefully,
+    # or it could lead to experiment not being marked as completed.
     def done(self):
         self._cancel()
 
@@ -331,35 +333,35 @@ class Trial:
         self._context.cancel()
 
     def _stop(self):
-        trial = self._runtime._metadb.get_trial(trial_id=self._id)
-        if trial is not None and trial.status not in FINISHED_STATUS:
+        exp = self._runtime._metadb.get_experiment(experiment_id=self._id)
+        if exp is not None and exp.status not in FINISHED_STATUS:
             duration = (
-                datetime.now(UTC) - trial.created_at.replace(tzinfo=UTC)
+                datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
             ).total_seconds()
 
             status = Status.COMPLETED
             if self._err:
                 status = Status.FAILED
 
-            self._runtime._metadb.update_trial(
-                trial_id=self._id, status=status, duration=duration
+            self._runtime._metadb.update_experiment(
+                experiment_id=self._id, status=status, duration=duration
             )
 
-        self._runtime.current_exp.unregister_trial(self._id)
+        self._runtime.current_proj.unregister_exp(self._id)
         for run in self._runs.values():
             run.cancel()
         self._runs.clear()
 
     def _get_obj(self):
-        return self._runtime.metadb.get_trial(trial_id=self._id)
+        return self._runtime._metadb.get_experiment(experiment_id=self._id)
 
     def start_run(self, call_func: callable) -> Run:
-        """Start a new run for the trial.
+        """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.
         :return: the Run instance."""
 
-        run = Run(trial_id=self._id)
+        run = Run(exp_id=self.id)
         run.start(call_func)
         self._runs[run.id] = run
 
@@ -376,7 +378,7 @@ class Trial:
         run.done()
 
         if (
-            self._config.max_runs_per_trial > 0
-            and self._total_runs_counter >= self._config.max_runs_per_trial
+            self._config.max_runs_per_experiment > 0
+            and self._total_runs_counter >= self._config.max_runs_per_experiment
         ):
             self.done()

@@ -6,7 +6,7 @@ from strawberry.scalars import JSON
 
 
 @strawberry.type
-class Project:
+class Team:
     id: strawberry.ID
     name: str | None
     description: str | None
@@ -15,20 +15,11 @@ class Project:
     updated_at: datetime
 
 
-class GraphQLExperimentType(Enum):
-    UNKNOWN = 0
-    CRAFT_EXPERIMENT = 1
-
-
-GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
-
-
 @strawberry.type
-class Experiment:
+class Project:
     id: strawberry.ID
-    project_id: strawberry.ID | None
+    team_id: strawberry.ID
     name: str | None
-    kind: GraphQLExperimentTypeEnum
     description: str | None
     meta: JSON | None
     created_at: datetime
@@ -47,13 +38,22 @@ class GraphQLStatus(Enum):
 GraphQLStatusEnum = strawberry.enum(GraphQLStatus)
 
 
+class GraphQLExperimentType(Enum):
+    UNKNOWN = 0
+    CRAFT_EXPERIMENT = 1
+
+
+GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
+
+
 @strawberry.type
-class Trial:
+class Experiment:
     id: strawberry.ID
-    experiment_id: strawberry.ID
+    team_id: strawberry.ID
     project_id: strawberry.ID
     name: str
     description: str | None
+    kind: GraphQLExperimentTypeEnum
     meta: JSON | None
     params: JSON | None
     duration: float
@@ -65,7 +65,7 @@ class Trial:
 @strawberry.type
 class Run:
     id: strawberry.ID
-    trial_id: strawberry.ID
+    team_id: strawberry.ID
     project_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None
@@ -78,8 +78,8 @@ class Metric:
     id: strawberry.ID
     key: str | None
     value: float | None
+    team_id: strawberry.ID
     project_id: strawberry.ID
     experiment_id: strawberry.ID
-    trial_id: strawberry.ID
     run_id: strawberry.ID
     created_at: datetime

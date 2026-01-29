@@ -8,13 +8,13 @@ class Model:
     def create(
         self,
         name: str,
-        project_id: str,
+        team_id: str,
         description: str | None = None,
         meta: dict | None = None,
     ):
         return self._runtime._metadb.create_model(
             name=name,
-            project_id=project_id,
+            team_id=team_id,
             description=description,
             meta=meta,
         )

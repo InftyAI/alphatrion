@@ -20,7 +20,7 @@ from alphatrion.metadata.sql_models import (
     Project,
     Run,
     Status,
-    Trial,
+    Team,
 )
 
 load_dotenv()
@@ -47,8 +47,8 @@ def make_json_serializable(obj):
         return obj
 
 
-def generate_project() -> Project:
-    return Project(
+def generate_team() -> Team:
+    return Team(
         uuid=uuid.uuid4(),
         name=fake.bs().title(),
         description=fake.catch_phrase(),
@@ -58,22 +58,22 @@ def generate_project() -> Project:
     )
 
 
-def generate_experiment(projects: list[Project]) -> Experiment:
-    return Experiment(
+def generate_project(teams: list[Team]) -> Project:
+    return Project(
         name=fake.bs().title(),
         description=fake.catch_phrase(),
         meta=make_json_serializable(
             fake.pydict(nb_elements=3, variable_nb_elements=True)
         ),
-        project_id=random.choice(projects).uuid,
+        team_id=random.choice(teams).uuid,
     )
 
 
-def generate_trial(exps: list[Experiment]) -> Trial:
-    exp = random.choice(exps)
-    return Trial(
-        project_id=exp.project_id,
-        experiment_id=exp.uuid,
+def generate_experiment(projects: list[Project]) -> Experiment:
+    proj = random.choice(projects)
+    return Experiment(
+        team_id=proj.team_id,
+        project_id=proj.uuid,
         name=fake.bs().title(),
         description=fake.catch_phrase(),
         meta=make_json_serializable(
@@ -87,12 +87,12 @@ def generate_trial(exps: list[Experiment]) -> Trial:
     )
 
 
-def generate_run(trials: list[Trial]) -> Run:
-    trial = random.choice(trials)
+def generate_run(exps: list[Experiment]) -> Run:
+    exp = random.choice(exps)
     return Run(
-        project_id=trial.project_id,
-        experiment_id=trial.experiment_id,
-        trial_id=trial.uuid,
+        team_id=exp.team_id,
+        project_id=exp.project_id,
+        experiment_id=exp.uuid,
         meta=make_json_serializable(
             fake.pydict(nb_elements=2, variable_nb_elements=True)
         ),
@@ -103,9 +103,9 @@ def generate_run(trials: list[Trial]) -> Run:
 def generate_metric(runs: list[Run]) -> Metric:
     run = random.choice(runs)
     return Metric(
+        team_id=run.team_id,
         project_id=run.project_id,
         experiment_id=run.experiment_id,
-        trial_id=run.trial_id,
         run_id=run.uuid,
         key=random.choice(["accuracy", "loss", "precision", "fitness"]),
         value=random.uniform(0, 1),
@@ -113,39 +113,37 @@ def generate_metric(runs: list[Run]) -> Metric:
 
 
 def seed_all(
-    num_projects: int,
-    num_exps_per_project: int,
-    num_trials_per_exp: int,
-    num_runs_per_trial: int,
+    num_teams: int,
+    num_projs_per_team: int,
+    num_exps_per_proj: int,
+    num_runs_per_exp: int,
     num_metrics_per_run: int,
 ):
     Base.metadata.create_all(bind=engine)
 
     print("🌱 generating seeds ...")
-    projects = [generate_project() for _ in range(num_projects)]
-    session.add_all(projects)
+    teams = [generate_team() for _ in range(num_teams)]
+    session.add_all(teams)
     session.commit()
 
-    experiments = [
-        generate_experiment(projects)
-        for _ in range(num_exps_per_project)
-        for _ in range(len(projects))
+    projs = [
+        generate_project(teams)
+        for _ in range(num_projs_per_team)
+        for _ in range(len(teams))
     ]
-    session.add_all(experiments)
+    session.add_all(projs)
     session.commit()
 
-    trials = [
-        generate_trial(experiments)
-        for _ in range(num_trials_per_exp)
-        for _ in range(len(experiments))
+    exps = [
+        generate_experiment(projs)
+        for _ in range(num_exps_per_proj)
+        for _ in range(len(projs))
     ]
-    session.add_all(trials)
+    session.add_all(exps)
     session.commit()
 
     runs = [
-        generate_run(trials)
-        for _ in range(num_runs_per_trial)
-        for _ in range(len(trials))
+        generate_run(exps) for _ in range(num_runs_per_exp) for _ in range(len(exps))
     ]
     session.add_all(runs)
     session.commit()
@@ -165,7 +163,7 @@ def cleanup():
     print("🧹 cleaning up seeded data ...")
     session.query(Metric).delete()
     session.query(Run).delete()
-    session.query(Trial).delete()
+    session.query(Team).delete()
     session.query(Experiment).delete()
     session.query(Project).delete()
     session.commit()
@@ -183,10 +181,10 @@ if __name__ == "__main__":
         cleanup()
     elif action == "seed":
         seed_all(
-            num_projects=3,
-            num_exps_per_project=10,
-            num_trials_per_exp=10,
-            num_runs_per_trial=20,
+            num_teams=3,
+            num_projs_per_team=10,
+            num_exps_per_proj=10,
+            num_runs_per_exp=20,
             num_metrics_per_run=30,
         )
     else:

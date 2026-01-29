@@ -10,7 +10,7 @@ __RUNTIME__ = None
 
 
 def init(
-    project_id: uuid.UUID,
+    team_id: uuid.UUID,
     artifact_insecure: bool = False,
     init_tables: bool = False,
 ):
@@ -24,7 +24,7 @@ def init(
     """
     global __RUNTIME__
     __RUNTIME__ = Runtime(
-        project_id=project_id,
+        team_id=team_id,
         artifact_insecure=artifact_insecure,
         init_tables=init_tables,
     )
@@ -37,37 +37,35 @@ def global_runtime():
 
 
 # Runtime contains all kinds of clients, e.g., metadb client, artifact client, etc.
-# Stateful information will also be stored here, e.g., current running experiment ID.
+# Stateful information will also be stored here, e.g., current running Project.
 class Runtime:
-    __slots__ = ("_project_id", "_metadb", "_artifact", "__current_exp")
+    __slots__ = ("_team_id", "_metadb", "_artifact", "__current_proj")
 
     def __init__(
         self,
-        project_id: str,
+        team_id: uuid.UUID,
         artifact_insecure: bool = False,
         init_tables: bool = False,
     ):
-        self._project_id = project_id
+        self._team_id = team_id
         self._metadb = SQLStore(
             os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
         )
 
         if self.artifact_storage_enabled():
-            self._artifact = Artifact(
-                project_id=self._project_id, insecure=artifact_insecure
-            )
+            self._artifact = Artifact(team_id=self._team_id, insecure=artifact_insecure)
 
     def artifact_storage_enabled(self) -> bool:
         return os.getenv(consts.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
 
-    # current_exp is the current running experiment.
+    # current_proj is the current running Project.
     @property
-    def current_exp(self):
-        return self.__current_exp
+    def current_proj(self):
+        return self.__current_proj
 
-    @current_exp.setter
-    def current_exp(self, value) -> None:
-        self.__current_exp = value
+    @current_proj.setter
+    def current_proj(self, value) -> None:
+        self.__current_proj = value
 
     @property
     def metadb(self) -> SQLStore:

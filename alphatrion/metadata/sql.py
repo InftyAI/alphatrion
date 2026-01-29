@@ -12,7 +12,7 @@ from alphatrion.metadata.sql_models import (
     Project,
     Run,
     Status,
-    Trial,
+    Team,
 )
 
 
@@ -26,37 +26,124 @@ class SQLStore(MetaStore):
             # Mostly used in tests.
             Base.metadata.create_all(self._engine)
 
-    def create_project(
+    def create_team(
         self, name: str, description: str | None = None, meta: dict | None = None
     ) -> uuid.UUID:
         session = self._session()
-        new_project = Project(
+        new_team = Team(
             name=name,
             description=description,
             meta=meta,
         )
-        session.add(new_project)
+        session.add(new_team)
         session.commit()
-        project_id = new_project.uuid
+        team_id = new_team.uuid
         session.close()
 
-        return project_id
+        return team_id
 
+    def get_team(self, team_id: uuid.UUID) -> Team | None:
+        session = self._session()
+        team = (
+            session.query(Team).filter(Team.uuid == team_id, Team.is_del == 0).first()
+        )
+        session.close()
+        return team
+
+    def list_teams(self, page: int, page_size: int) -> list[Team]:
+        session = self._session()
+        teams = (
+            session.query(Team)
+            .filter(Team.is_del == 0)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return teams
+
+    def create_project(
+        self,
+        name: str,
+        team_id: uuid.UUID,
+        description: str | None = None,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        session = self._session()
+        new_proj = Project(
+            name=name,
+            team_id=team_id,
+            description=description,
+            meta=meta,
+        )
+        session.add(new_proj)
+        session.commit()
+
+        exp_id = new_proj.uuid
+        session.close()
+
+        return exp_id
+
+    # Soft delete the project now.
+    def delete_project(self, project_id: uuid.UUID):
+        session = self._session()
+        proj = (
+            session.query(Project)
+            .filter(Project.uuid == project_id, Project.is_del == 0)
+            .first()
+        )
+        if proj:
+            proj.is_del = 1
+            session.commit()
+        session.close()
+
+    # We don't support append-only update, the complete fields should be provided.
+    def update_project(self, project_id: uuid.UUID, **kwargs) -> None:
+        session = self._session()
+        proj = (
+            session.query(Project)
+            .filter(Project.uuid == project_id, Project.is_del == 0)
+            .first()
+        )
+        if proj:
+            for key, value in kwargs.items():
+                setattr(proj, key, value)
+            session.commit()
+        session.close()
+
+    # get function will ignore the deleted ones.
     def get_project(self, project_id: uuid.UUID) -> Project | None:
         session = self._session()
-        project = (
+        proj = (
             session.query(Project)
             .filter(Project.uuid == project_id, Project.is_del == 0)
             .first()
         )
         session.close()
-        return project
+        return proj
 
-    def list_projects(self, page: int, page_size: int) -> list[Project]:
+    def get_proj_by_name(self, name: str, team_id: uuid.UUID) -> Project | None:
+        session = self._session()
+        proj = (
+            session.query(Project)
+            .filter(
+                Project.name == name,
+                Project.team_id == team_id,
+                Project.is_del == 0,
+            )
+            .first()
+        )
+        session.close()
+        return proj
+
+    # paginate the projects in case of too many projects.
+    def list_projects(
+        self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[Project]:
         session = self._session()
         projects = (
             session.query(Project)
-            .filter(Project.is_del == 0)
+            .filter(Project.team_id == team_id, Project.is_del == 0)
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -64,99 +151,10 @@ class SQLStore(MetaStore):
         session.close()
         return projects
 
-    def create_exp(
-        self,
-        name: str,
-        project_id: uuid.UUID,
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> uuid.UUID:
-        session = self._session()
-        new_exp = Experiment(
-            name=name,
-            project_id=project_id,
-            description=description,
-            meta=meta,
-        )
-        session.add(new_exp)
-        session.commit()
-
-        exp_id = new_exp.uuid
-        session.close()
-
-        return exp_id
-
-    # Soft delete the experiment now. In the future, we may implement hard delete.
-    def delete_exp(self, exp_id: uuid.UUID):
-        session = self._session()
-        exp = (
-            session.query(Experiment)
-            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
-            .first()
-        )
-        if exp:
-            exp.is_del = 1
-            session.commit()
-        session.close()
-
-    # We don't support append-only update, the complete fields should be provided.
-    def update_exp(self, exp_id: uuid.UUID, **kwargs) -> None:
-        session = self._session()
-        exp = (
-            session.query(Experiment)
-            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
-            .first()
-        )
-        if exp:
-            for key, value in kwargs.items():
-                setattr(exp, key, value)
-            session.commit()
-        session.close()
-
-    # get_exp will ignore the deleted experiments.
-    def get_exp(self, exp_id: uuid.UUID) -> Experiment | None:
-        session = self._session()
-        exp = (
-            session.query(Experiment)
-            .filter(Experiment.uuid == exp_id, Experiment.is_del == 0)
-            .first()
-        )
-        session.close()
-        return exp
-
-    def get_exp_by_name(self, name: str, project_id: uuid.UUID) -> Experiment | None:
-        session = self._session()
-        exp = (
-            session.query(Experiment)
-            .filter(
-                Experiment.name == name,
-                Experiment.project_id == project_id,
-                Experiment.is_del == 0,
-            )
-            .first()
-        )
-        session.close()
-        return exp
-
-    # paginate the experiments in case of too many experiments.
-    def list_exps(
-        self, project_id: uuid.UUID, page: int = 0, page_size: int = 10
-    ) -> list[Experiment]:
-        session = self._session()
-        exps = (
-            session.query(Experiment)
-            .filter(Experiment.project_id == project_id, Experiment.is_del == 0)
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-        session.close()
-        return exps
-
     def create_model(
         self,
         name: str,
-        project_id: uuid.UUID,
+        team_id: uuid.UUID,
         version: str = "latest",
         description: str | None = None,
         meta: dict | None = None,
@@ -164,7 +162,7 @@ class SQLStore(MetaStore):
         session = self._session()
         new_model = Model(
             name=name,
-            project_id=project_id,
+            team_id=team_id,
             version=version,
             description=description,
             meta=meta,
@@ -223,106 +221,104 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
-    def create_trial(
+    def create_experiment(
         self,
         name: str,
+        team_id: uuid.UUID,
         project_id: uuid.UUID,
-        experiment_id: uuid.UUID,
         description: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
         status: Status = Status.PENDING,
     ) -> uuid.UUID:
         session = self._session()
-        new_trial = Trial(
+        new_exp = Experiment(
+            team_id=team_id,
             project_id=project_id,
-            experiment_id=experiment_id,
             name=name,
             description=description,
             meta=meta,
             params=params,
             status=status,
         )
-        session.add(new_trial)
+        session.add(new_exp)
         session.commit()
 
-        trial_id = new_trial.uuid
+        exp_id = new_exp.uuid
         session.close()
 
-        return trial_id
+        return exp_id
 
-    def get_trial(self, trial_id: uuid.UUID) -> Trial | None:
+    def get_experiment(self, experiment_id: uuid.UUID) -> Experiment | None:
         session = self._session()
-        trial = (
-            session.query(Trial)
-            .filter(Trial.uuid == trial_id, Trial.is_del == 0)
+        exp = (
+            session.query(Experiment)
+            .filter(Experiment.uuid == experiment_id, Experiment.is_del == 0)
             .first()
         )
         session.close()
-        return trial
+        return exp
 
-    # TODO: should we use join to get the trial by experiment name?
-    def get_trial_by_name(
-        self, trial_name: str, experiment_id: uuid.UUID
-    ) -> Trial | None:
-        # make sure the experiment exists
-        exp = self.get_exp(experiment_id)
-        if exp is None:
+    # Different project may have the same experiment name.
+    def get_exp_by_name(self, name: str, project_id: uuid.UUID) -> Experiment | None:
+        # make sure the project exists
+        proj = self.get_project(project_id)
+        if proj is None:
             return None
 
         session = self._session()
         trial = (
-            session.query(Trial)
+            session.query(Experiment)
             .filter(
-                Trial.name == trial_name,
-                Trial.experiment_id == experiment_id,
-                Trial.is_del == 0,
+                Experiment.name == name,
+                Experiment.project_id == project_id,
+                Experiment.is_del == 0,
             )
             .first()
         )
         session.close()
         return trial
 
-    def list_trials_by_experiment_id(
-        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 10
-    ) -> list[Trial]:
+    def list_exps_by_project_id(
+        self, project_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[Experiment]:
         session = self._session()
-        trials = (
-            session.query(Trial)
-            .filter(Trial.experiment_id == experiment_id, Trial.is_del == 0)
+        exps = (
+            session.query(Experiment)
+            .filter(Experiment.project_id == project_id, Experiment.is_del == 0)
             .offset(page * page_size)
             .limit(page_size)
             .all()
         )
         session.close()
-        return trials
+        return exps
 
-    def update_trial(self, trial_id: uuid.UUID, **kwargs) -> None:
+    def update_experiment(self, experiment_id: uuid.UUID, **kwargs) -> None:
         session = self._session()
-        trial = (
-            session.query(Trial)
-            .filter(Trial.uuid == trial_id, Trial.is_del == 0)
+        exp = (
+            session.query(Experiment)
+            .filter(Experiment.uuid == experiment_id, Experiment.is_del == 0)
             .first()
         )
-        if trial:
+        if exp:
             for key, value in kwargs.items():
-                setattr(trial, key, value)
+                setattr(exp, key, value)
             session.commit()
         session.close()
 
     def create_run(
         self,
+        team_id: uuid.UUID,
         project_id: uuid.UUID,
         experiment_id: uuid.UUID,
-        trial_id: uuid.UUID,
         meta: dict | None = None,
         status: Status = Status.PENDING,
     ) -> uuid.UUID:
         session = self._session()
         new_run = Run(
             project_id=project_id,
+            team_id=team_id,
             experiment_id=experiment_id,
-            trial_id=trial_id,
             meta=meta,
             status=status,
         )
@@ -349,13 +345,13 @@ class SQLStore(MetaStore):
         session.close()
         return run
 
-    def list_runs_by_trial_id(
-        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10
+    def list_runs_by_exp_id(
+        self, exp_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[Run]:
         session = self._session()
         runs = (
             session.query(Run)
-            .filter(Run.trial_id == trial_id, Run.is_del == 0)
+            .filter(Run.experiment_id == exp_id, Run.is_del == 0)
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -365,18 +361,18 @@ class SQLStore(MetaStore):
 
     def create_metric(
         self,
+        team_id: uuid.UUID,
         project_id: uuid.UUID,
         experiment_id: uuid.UUID,
-        trial_id: uuid.UUID,
         run_id: uuid.UUID,
         key: str,
         value: float,
     ) -> uuid.UUID:
         session = self._session()
         new_metric = Metric(
+            team_id=team_id,
             project_id=project_id,
             experiment_id=experiment_id,
-            trial_id=trial_id,
             run_id=run_id,
             key=key,
             value=value,
@@ -387,13 +383,13 @@ class SQLStore(MetaStore):
         session.close()
         return new_metric_id
 
-    def list_metrics_by_trial_id(
-        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10
+    def list_metrics_by_experiment_id(
+        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[Metric]:
         session = self._session()
         metrics = (
             session.query(Metric)
-            .filter(Metric.trial_id == trial_id)
+            .filter(Metric.experiment_id == experiment_id)
             .offset(page * page_size)
             .limit(page_size)
             .all()

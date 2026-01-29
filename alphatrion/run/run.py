@@ -9,11 +9,11 @@ current_run_id = contextvars.ContextVar("current_run_id", default=None)
 
 
 class Run:
-    __slots__ = ("_id", "_task", "_runtime", "_trial_id")
+    __slots__ = ("_id", "_task", "_runtime", "_exp_id")
 
-    def __init__(self, trial_id: uuid.UUID):
+    def __init__(self, exp_id: uuid.UUID):
         self._runtime = global_runtime()
-        self._trial_id = trial_id
+        self._exp_id = exp_id
 
     @property
     def id(self) -> uuid.UUID:
@@ -24,9 +24,9 @@ class Run:
 
     def start(self, call_func: callable) -> None:
         self._id = self._runtime._metadb.create_run(
-            project_id=self._runtime._project_id,
-            experiment_id=self._runtime.current_exp.id,
-            trial_id=self._trial_id,
+            team_id=self._runtime._team_id,
+            project_id=self._runtime.current_proj.id,
+            experiment_id=self._exp_id,
             status=Status.RUNNING,
         )
 
@@ -34,7 +34,7 @@ class Run:
         token = current_run_id.set(self.id)
         try:
             # The created task will also inherit the current context,
-            # including the current_trial_id, current_run_id context var.
+            # including the current_exp_id, current_run_id context var.
             self._task = asyncio.create_task(call_func())
         finally:
             current_run_id.reset(token)
