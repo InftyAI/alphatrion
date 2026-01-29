@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel, Field
 
-from alphatrion.experiment import experiment
+from alphatrion.experiment import base as experiment
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import context
 
@@ -42,9 +42,6 @@ class Project:
     def id(self):
         return self._id
 
-    def get_experiment(self, id: int) -> experiment.Experiment | None:
-        return self._experiments.get(id)
-
     async def __aenter__(self):
         if self._id is None:
             raise RuntimeError("Project is not set. Did you call start()?")
@@ -57,6 +54,9 @@ class Project:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
+
+    def get_experiment(self, id: int) -> experiment.Experiment | None:
+        return self._experiments.get(id)
 
     # done() is safe to call multiple times.
     def done(self):
@@ -125,7 +125,7 @@ class Project:
         name: str,
         description: str | None = None,
         meta: dict | None = None,
-        config: experiment.ExperimentConfig | None = None,
+        config: ProjectConfig | None = None,
     ) -> "Project":
         """
         Setup the experiment. If the name already exists in the same project,

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from alphatrion.experiment import experiment
+from alphatrion.experiment import base as experiment
 from alphatrion.metadata.sql_models import Status
 from alphatrion.project.project import Project, ProjectConfig
 from alphatrion.runtime.runtime import global_runtime, init
@@ -93,7 +93,7 @@ async def test_project_with_no_context():
         assert exp_obj.duration is not None
         assert exp_obj.status == Status.COMPLETED
 
-    exp.done()
+    proj.done()
 
 
 @pytest.mark.asyncio

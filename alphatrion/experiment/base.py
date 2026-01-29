@@ -123,9 +123,12 @@ class ExperimentConfig(BaseModel):
 
 
 class Experiment:
+    """
+    Base Experiment class. An Experiment manages multiple Runs and their configurations.
+    """
+
     __slots__ = (
         "_id",
-        "_proj_id",
         "_config",
         "_runtime",
         "_context",
@@ -146,6 +149,7 @@ class Experiment:
         "_total_runs_counter",
         # Whether the Experiment is ended with error.
         "_err",
+        "_proj_id",
     )
 
     def __init__(self, proj_id: uuid.UUID, config: ExperimentConfig | None = None):
@@ -157,6 +161,11 @@ class Experiment:
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
         self._err = False
+
+    # @classmethod
+    # @abstractmethod
+    # def setup():
+    #     raise NotImplementedError
 
     async def __aenter__(self):
         return self
@@ -284,41 +293,6 @@ class Experiment:
     def is_done(self) -> bool:
         return self._context.cancelled()
 
-    # If the name is same in the same experiment,
-    # it will refer to the existing experiment.
-    def _start(
-        self,
-        name: str,
-        description: str | None = None,
-        meta: dict | None = None,
-        params: dict | None = None,
-    ):
-        exp_obj = self._runtime._metadb.get_exp_by_name(
-            name=name, project_id=self._proj_id
-        )
-        # FIXME: what if the existing Experiment is completed, will lead to confusion?
-        if exp_obj:
-            self._id = exp_obj.uuid
-        else:
-            self._id = self._runtime._metadb.create_experiment(
-                team_id=self._runtime._team_id,
-                project_id=self._proj_id,
-                name=name,
-                description=description,
-                meta=meta,
-                params=params,
-                status=Status.RUNNING,
-            )
-
-        self._context = context.Context(
-            cancel_func=self._stop,
-            timeout=self._timeout(),
-        )
-
-        # We don't reset the Experiment id context var here, because
-        # each experiment runs in its own context.
-        self._token = current_exp_id.set(self._id)
-
     # done function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the Experiment gracefully,
     # or it could lead to experiment not being marked as completed.
@@ -382,3 +356,41 @@ class Experiment:
             and self._total_runs_counter >= self._config.max_runs_per_experiment
         ):
             self.done()
+
+    def _start(
+        self,
+        name: str,
+        description: str | None = None,
+        meta: dict | None = None,
+        params: dict | None = None,
+    ):
+        """
+        If the name is same in the same experiment,
+        it will refer to the existing experiment.
+        """
+
+        exp_obj = self._runtime._metadb.get_exp_by_name(
+            name=name, project_id=self._proj_id
+        )
+        # FIXME: what if the existing Experiment is completed, will lead to confusion?
+        if exp_obj:
+            self._id = exp_obj.uuid
+        else:
+            self._id = self._runtime._metadb.create_experiment(
+                team_id=self._runtime._team_id,
+                project_id=self._proj_id,
+                name=name,
+                description=description,
+                meta=meta,
+                params=params,
+                status=Status.RUNNING,
+            )
+
+        self._context = context.Context(
+            cancel_func=self._stop,
+            timeout=self._timeout(),
+        )
+
+        # We don't reset the Experiment id context var here, because
+        # each experiment runs in its own context.
+        self._token = current_exp_id.set(self._id)

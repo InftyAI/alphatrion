@@ -7,7 +7,7 @@ import uuid
 import faker
 import pytest
 
-from alphatrion.experiment.experiment import (
+from alphatrion.experiment.base import (
     CheckpointConfig,
     Experiment,
     ExperimentConfig,

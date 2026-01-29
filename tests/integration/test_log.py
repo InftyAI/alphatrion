@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import pytest
 
 import alphatrion as alpha
-from alphatrion.experiment.experiment import current_exp_id
+from alphatrion.experiment.base import current_exp_id
 from alphatrion.log.log import ARTIFACT_PATH
 from alphatrion.metadata.sql_models import Status
 
