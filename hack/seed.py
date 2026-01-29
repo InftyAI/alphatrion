@@ -20,7 +20,7 @@ from alphatrion.metadata.sql_models import (
     Project,
     Run,
     Status,
-    Team
+    Team,
 )
 
 load_dotenv()
@@ -143,9 +143,7 @@ def seed_all(
     session.commit()
 
     runs = [
-        generate_run(exps)
-        for _ in range(num_runs_per_exp)
-        for _ in range(len(exps))
+        generate_run(exps) for _ in range(num_runs_per_exp) for _ in range(len(exps))
     ]
     session.add_all(runs)
     session.commit()
