@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from alphatrion.metadata.sql_models import Experiment, Model
+from alphatrion.metadata.sql_models import Experiment, Model, User
 
 
 class MetaStore(ABC):
@@ -18,10 +18,31 @@ class MetaStore(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
+    def create_user(
+        self,
+        username: str,
+        email: str,
+        team_id: uuid.UUID,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def get_user(self, user_id: uuid.UUID) -> User | None:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def list_users(
+        self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[User]:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
     def create_project(
         self,
         name: str,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         description: str | None = None,
         meta: dict | None = None,
     ) -> int:
@@ -78,6 +99,7 @@ class MetaStore(ABC):
     def create_experiment(
         self,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         project_id: uuid.UUID,
         name: str,
         description: str | None = None,
@@ -102,6 +124,7 @@ class MetaStore(ABC):
     def create_run(
         self,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         meta: dict | None = None,

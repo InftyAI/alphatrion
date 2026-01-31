@@ -52,16 +52,17 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
             },
         ]
 
-        init(team_id=uuid.uuid4(), init_tables=True)
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), init_tables=True)
 
         for case in test_cases:
             with self.subTest(name=case["name"]):
-
                 proj = Project.setup(
                     name=faker.Faker().word(),
                     description="Test Project",
                 )
-                exp = CraftExperiment.start(name=faker.Faker().word(), config=case["config"])
+                exp = CraftExperiment.start(
+                    name=faker.Faker().word(), config=case["config"]
+                )
 
                 if case["created"]:
                     time.sleep(2)  # simulate elapsed time
@@ -110,7 +111,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
             },
         ]
 
-        init(team_id=uuid.uuid4(), init_tables=True)
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), init_tables=True)
 
         for case in test_cases:
             with self.subTest(name=case["name"]):

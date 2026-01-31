@@ -12,6 +12,7 @@ from .types import (
     Project,
     Run,
     Team,
+    User,
 )
 
 
@@ -48,6 +49,22 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
+    def get_user(id: str) -> User | None:
+        metadb = runtime.graphql_runtime().metadb
+        user = metadb.get_user(user_id=uuid.UUID(id))
+        if user:
+            return User(
+                id=user.uuid,
+                username=user.username,
+                email=user.email,
+                team_id=user.team_id,
+                meta=user.meta,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+            )
+        return None
+
+    @staticmethod
     def list_projects(
         team_id: str, page: int = 0, page_size: int = 10
     ) -> list[Project]:
@@ -59,6 +76,7 @@ class GraphQLResolvers:
             Project(
                 id=proj.uuid,
                 team_id=proj.team_id,
+                creator_id=proj.creator_id,
                 name=proj.name,
                 description=proj.description,
                 meta=proj.meta,
@@ -76,6 +94,7 @@ class GraphQLResolvers:
             return Project(
                 id=proj.uuid,
                 team_id=proj.team_id,
+                creator_id=proj.creator_id,
                 name=proj.name,
                 description=proj.description,
                 meta=proj.meta,
@@ -96,6 +115,7 @@ class GraphQLResolvers:
             Experiment(
                 id=e.uuid,
                 team_id=e.team_id,
+                user_id=e.user_id,
                 project_id=e.project_id,
                 name=e.name,
                 description=e.description,
@@ -118,6 +138,7 @@ class GraphQLResolvers:
             return Experiment(
                 id=exp.uuid,
                 team_id=exp.team_id,
+                user_id=exp.user_id,
                 project_id=exp.project_id,
                 name=exp.name,
                 description=exp.description,
@@ -141,6 +162,7 @@ class GraphQLResolvers:
             Run(
                 id=r.uuid,
                 team_id=r.team_id,
+                user_id=r.user_id,
                 project_id=r.project_id,
                 experiment_id=r.experiment_id,
                 meta=r.meta,
@@ -158,6 +180,7 @@ class GraphQLResolvers:
             return Run(
                 id=run.uuid,
                 team_id=run.team_id,
+                user_id=run.user_id,
                 project_id=run.project_id,
                 experiment_id=run.experiment_id,
                 meta=run.meta,

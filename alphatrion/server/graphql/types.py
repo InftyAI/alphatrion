@@ -16,9 +16,21 @@ class Team:
 
 
 @strawberry.type
+class User:
+    id: strawberry.ID
+    username: str
+    email: str
+    team_id: strawberry.ID
+    meta: JSON | None
+    created_at: datetime
+    updated_at: datetime
+
+
+@strawberry.type
 class Project:
     id: strawberry.ID
     team_id: strawberry.ID
+    creator_id: strawberry.ID
     name: str | None
     description: str | None
     meta: JSON | None
@@ -50,6 +62,7 @@ GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
 class Experiment:
     id: strawberry.ID
     team_id: strawberry.ID
+    user_id: strawberry.ID
     project_id: strawberry.ID
     name: str
     description: str | None
@@ -66,6 +79,7 @@ class Experiment:
 class Run:
     id: strawberry.ID
     team_id: strawberry.ID
+    user_id: strawberry.ID
     project_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None

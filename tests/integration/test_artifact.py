@@ -11,14 +11,24 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.fixture
 def artifact():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
     artifact = global_runtime()._artifact
 
     yield artifact
 
 
 def test_push_with_files(artifact):
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
@@ -41,7 +51,12 @@ def test_push_with_files(artifact):
 
 
 def test_push_with_folder(artifact):
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)

@@ -21,6 +21,7 @@ from alphatrion.metadata.sql_models import (
     Run,
     Status,
     Team,
+    User,
 )
 
 load_dotenv()
@@ -58,21 +59,40 @@ def generate_team() -> Team:
     )
 
 
-def generate_project(teams: list[Team]) -> Project:
+def generate_user(teams: list[Team]) -> User:
+    return User(
+        uuid=uuid.uuid4(),
+        username=fake.user_name(),
+        email=fake.email(),
+        team_id=random.choice(teams).uuid,
+        meta=make_json_serializable(
+            fake.pydict(nb_elements=3, variable_nb_elements=True)
+        ),
+    )
+
+
+def generate_project(users: list[User]) -> Project:
+    user = random.choice(users)
+    team = (
+        session.query(Team).filter(Team.uuid == user.team_id, Team.is_del == 0).first()
+    )
     return Project(
         name=fake.bs().title(),
         description=fake.catch_phrase(),
         meta=make_json_serializable(
             fake.pydict(nb_elements=3, variable_nb_elements=True)
         ),
-        team_id=random.choice(teams).uuid,
+        creator_id=user.uuid,
+        team_id=team.uuid,
     )
 
 
 def generate_experiment(projects: list[Project]) -> Experiment:
     proj = random.choice(projects)
+    user_id = proj.creator_id
     return Experiment(
         team_id=proj.team_id,
+        user_id=user_id,
         project_id=proj.uuid,
         name=fake.bs().title(),
         description=fake.catch_phrase(),
@@ -89,8 +109,10 @@ def generate_experiment(projects: list[Project]) -> Experiment:
 
 def generate_run(exps: list[Experiment]) -> Run:
     exp = random.choice(exps)
+    user_id = exp.user_id
     return Run(
         team_id=exp.team_id,
+        user_id=user_id,
         project_id=exp.project_id,
         experiment_id=exp.uuid,
         meta=make_json_serializable(
@@ -114,6 +136,7 @@ def generate_metric(runs: list[Run]) -> Metric:
 
 def seed_all(
     num_teams: int,
+    num_users: int,
     num_projs_per_team: int,
     num_exps_per_proj: int,
     num_runs_per_exp: int,
@@ -122,12 +145,17 @@ def seed_all(
     Base.metadata.create_all(bind=engine)
 
     print("🌱 generating seeds ...")
+
     teams = [generate_team() for _ in range(num_teams)]
     session.add_all(teams)
     session.commit()
 
+    users = [generate_user(teams) for _ in range(num_users)]
+    session.add_all(users)
+    session.commit()
+
     projs = [
-        generate_project(teams)
+        generate_project(users)
         for _ in range(num_projs_per_team)
         for _ in range(len(teams))
     ]
@@ -182,6 +210,7 @@ if __name__ == "__main__":
     elif action == "seed":
         seed_all(
             num_teams=3,
+            num_users=15,
             num_projs_per_team=10,
             num_exps_per_proj=10,
             num_runs_per_exp=20,
