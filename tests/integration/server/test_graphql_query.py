@@ -65,6 +65,7 @@ def test_query_teams():
     assert response.errors is None
     assert len(response.data["teams"]) >= 2
 
+
 def test_query_user():
     init(init_tables=True)
 
@@ -74,7 +75,10 @@ def test_query_user():
     )
 
     user_id = metadb.create_user(
-        username="tester", email="tester@inftyai.com", team_id=team_id, meta={"foo": "bar"}
+        username="tester",
+        email="tester@inftyai.com",
+        team_id=team_id,
+        meta={"foo": "bar"},
     )
 
     query = f"""
@@ -99,6 +103,7 @@ def test_query_user():
     assert response.data["user"]["email"] == "tester@inftyai.com"
     assert response.data["user"]["teamId"] == str(team_id)
     assert response.data["user"]["meta"] == {"foo": "bar"}
+
 
 def test_query_single_project():
     init(init_tables=True)

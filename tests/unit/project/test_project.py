@@ -60,6 +60,7 @@ async def test_project_with_done():
     ):
         exp = CraftExperiment.start(name="first-experiment")
         exp_id = exp.id
+        exp.done()
 
     # exit the exp context, trial should be done automatically
     exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
@@ -382,3 +383,35 @@ async def test_project_with_hierarchy_timeout_2():
         assert exp_obj.status == Status.COMPLETED
 
     assert (datetime.now() - start_time).total_seconds() < 5
+
+
+@pytest.mark.asyncio
+async def test_project_with_signal():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
+
+    async def fake_work(proj: Project):
+        await asyncio.sleep(2)
+        proj._on_signal()
+
+    async with Project.setup(
+        name="proj_with_signal",
+        description="Test project with signal",
+    ) as proj:
+        start_time = datetime.now()
+
+        async with CraftExperiment.start(
+            name="first-experiment",
+        ) as exp:
+            exp.run(lambda: asyncio.sleep(5))
+            exp.run(lambda: fake_work(proj))
+            await exp.wait()
+
+        exp_obj = exp._get_obj()
+        assert exp_obj.status == Status.COMPLETED
+        assert (datetime.now() - start_time).total_seconds() >= 2
+        assert (datetime.now() - start_time).total_seconds() < 5

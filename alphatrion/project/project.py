@@ -1,3 +1,6 @@
+import asyncio
+import contextlib
+import signal
 import uuid
 
 from pydantic import BaseModel, Field
@@ -24,6 +27,16 @@ class Project:
     at a time in the runtime.
     """
 
+    __slots__ = (
+        "_id",
+        "_runtime",
+        "_experiments",
+        "_config",
+        "_context",
+        "_signal_task",
+        "_stopped",
+    )
+
     def __init__(self, config: ProjectConfig | None = None):
         self._runtime = global_runtime()
         # All experiments in this project,
@@ -38,6 +51,8 @@ class Project:
             if self._config.max_execution_seconds > 0
             else None,
         )
+        self._signal_task: asyncio.Task | None = None
+        self._stopped = asyncio.Event()
 
     @property
     def id(self):
@@ -71,6 +86,21 @@ class Project:
 
         return proj
 
+    def _start_signal_handlers(self):
+        loop = asyncio.get_running_loop()
+
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, self._on_signal)
+
+        return asyncio.create_task(self._wait_for_stop())
+
+    def _on_signal(self):
+        self._stopped.set()
+
+    async def _wait_for_stop(self):
+        await self._stopped.wait()
+        self.done()
+
     async def __aenter__(self):
         if self._id is None:
             raise RuntimeError("Project is not set. Did you call start()?")
@@ -79,10 +109,17 @@ class Project:
         if project is None:
             raise RuntimeError(f"Project {self._id} not found in the database.")
 
+        self._signal_task = self._start_signal_handlers()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
+
+        if self._signal_task:
+            self._signal_task.cancel()
+
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._signal_task
 
     def get_experiment(self, id: int) -> experiment.Experiment | None:
         return self._experiments.get(id)
@@ -102,10 +139,10 @@ class Project:
         # it will be used in experiment.done().
         self._runtime.current_proj = None
 
-    def register_exp(self, id: uuid.UUID, instance: experiment.Experiment):
+    def register_experiment(self, id: uuid.UUID, instance: experiment.Experiment):
         self._experiments[id] = instance
 
-    def unregister_exp(self, id: uuid.UUID):
+    def unregister_experiment(self, id: uuid.UUID):
         self._experiments.pop(id, None)
 
     def _create(

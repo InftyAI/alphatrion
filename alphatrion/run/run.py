@@ -55,6 +55,8 @@ class Run:
         return self._task.cancelled()
 
     def cancel(self):
+        # TODO: we should wait for the task to be actually cancelled
+        # and catch the CancelledError exception in the task function.
         self._task.cancel()
         self._runtime._metadb.update_run(
             run_id=self._id,
