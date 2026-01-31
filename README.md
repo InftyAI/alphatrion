@@ -59,18 +59,18 @@ ServerPWD:   alphatr1on
 Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
 
 ```python
-import alphatrion as alpha
 import uuid
+from alphatrion import init, log_metrics, Project, CraftExperiment
 
-# Better to use a fixed UUID to identify your team.
-alpha.init(team_id=uuid.uuid4(), artifact_insecure=True)
+# Better to use a fixed UUID for the team and user in real scenarios.
+init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), artifact_insecure=True)
 
 async def log():
   # Run your code here then log metrics.
-  await alpha.log_metrics({"accuracy": 0.95})
+  await log_metrics({"accuracy": 0.95})
 
-async with alpha.Project.setup(name="my_project"):
-  async with alpha.CraftExperiment.start(name="my_experiment") as exp:
+async with Project.setup(name="my_project"):
+  async with CraftExperiment.start(name="my_experiment") as exp:
     task = exp.run(lambda: log())
     await task.wait()
 ```
