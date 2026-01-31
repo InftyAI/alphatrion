@@ -11,6 +11,7 @@ __RUNTIME__ = None
 
 def init(
     team_id: uuid.UUID,
+    user_id: uuid.UUID,
     artifact_insecure: bool = False,
     init_tables: bool = False,
 ):
@@ -25,6 +26,7 @@ def init(
     global __RUNTIME__
     __RUNTIME__ = Runtime(
         team_id=team_id,
+        user_id=user_id,
         artifact_insecure=artifact_insecure,
         init_tables=init_tables,
     )
@@ -39,18 +41,21 @@ def global_runtime():
 # Runtime contains all kinds of clients, e.g., metadb client, artifact client, etc.
 # Stateful information will also be stored here, e.g., current running Project.
 class Runtime:
-    __slots__ = ("_team_id", "_metadb", "_artifact", "__current_proj")
+    __slots__ = ("_user_id", "_team_id", "_metadb", "_artifact", "__current_proj")
 
     def __init__(
         self,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         artifact_insecure: bool = False,
         init_tables: bool = False,
     ):
-        self._team_id = team_id
         self._metadb = SQLStore(
             os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
         )
+
+        self._user_id = user_id
+        self._team_id = team_id
 
         if self.artifact_storage_enabled():
             self._artifact = Artifact(team_id=self._team_id, insecure=artifact_insecure)
@@ -70,3 +75,11 @@ class Runtime:
     @property
     def metadb(self) -> SQLStore:
         return self._metadb
+
+    @property
+    def user_id(self) -> uuid.UUID:
+        return self._user_id
+
+    @property
+    def team_id(self) -> uuid.UUID:
+        return self._team_id

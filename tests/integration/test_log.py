@@ -15,7 +15,12 @@ from alphatrion.metadata.sql_models import Status
 
 @pytest.mark.asyncio
 async def test_log_artifact():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with alpha.Project.setup(
         name="log_artifact_project",
@@ -67,7 +72,12 @@ async def test_log_artifact():
 
 @pytest.mark.asyncio
 async def test_log_params():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with alpha.Project.setup(name="log_params_proj") as proj:
         exp = alpha.CraftExperiment.start(name="first-exp", params={"param1": 0.1})
@@ -94,7 +104,12 @@ async def test_log_params():
 
 @pytest.mark.asyncio
 async def test_log_metrics():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def log_metric(metrics: dict):
         await alpha.log_metrics(metrics)
@@ -145,7 +160,10 @@ async def test_log_metrics():
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_max():
     team_id = uuid.uuid4()
-    alpha.init(team_id=team_id, artifact_insecure=True, init_tables=True)
+    user_id = uuid.uuid4()
+    alpha.init(
+        team_id=team_id, user_id=user_id, artifact_insecure=True, init_tables=True
+    )
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -253,7 +271,12 @@ async def test_log_metrics_with_save_on_max():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_save_on_min():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -318,7 +341,12 @@ async def test_log_metrics_with_save_on_min():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -360,7 +388,12 @@ async def test_log_metrics_with_early_stopping():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping_never_triggered():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -400,7 +433,12 @@ async def test_log_metrics_with_early_stopping_never_triggered():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_max_run_number():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -429,7 +467,12 @@ async def test_log_metrics_with_max_run_number():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_max_target_meet():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -464,7 +507,12 @@ async def test_log_metrics_with_max_target_meet():
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_min_target_meet():
-    alpha.init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(value: float):
         await alpha.log_metrics({"accuracy": value})

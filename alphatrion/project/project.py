@@ -126,6 +126,7 @@ class Project:
             name=name,
             description=description,
             team_id=self._runtime._team_id,
+            user_id=self._runtime._user_id,
             meta=meta,
         )
         return self._id

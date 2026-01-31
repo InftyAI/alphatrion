@@ -8,7 +8,7 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.fixture
 def model():
-    init(team_id=uuid.uuid4(), init_tables=True)
+    init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), init_tables=True)
     runtime = global_runtime()
     model = Model(runtime=runtime)
     yield model

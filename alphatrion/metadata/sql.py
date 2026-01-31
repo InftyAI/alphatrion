@@ -13,6 +13,7 @@ from alphatrion.metadata.sql_models import (
     Run,
     Status,
     Team,
+    User,
 )
 
 
@@ -25,6 +26,8 @@ class SQLStore(MetaStore):
             # create tables if not exist, will not affect existing tables.
             # Mostly used in tests.
             Base.metadata.create_all(self._engine)
+
+    # ---------- Team APIs ----------
 
     def create_team(
         self, name: str, description: str | None = None, meta: dict | None = None
@@ -62,10 +65,74 @@ class SQLStore(MetaStore):
         session.close()
         return teams
 
+    def get_team_by_user_id(self, user_id: uuid.UUID) -> Team | None:
+        session = self._session()
+        user = (
+            session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
+        )
+        if not user:
+            session.close()
+            return None
+        team = (
+            session.query(Team)
+            .filter(Team.uuid == user.team_id, Team.is_del == 0)
+            .first()
+        )
+        session.close()
+        return team
+
+    # ---------- User APIs ----------
+
+    def create_user(
+        self,
+        username: str,
+        email: str,
+        team_id: uuid.UUID,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        session = self._session()
+        new_user = User(
+            username=username,
+            team_id=team_id,
+            email=email,
+            meta=meta,
+        )
+        session.add(new_user)
+        session.commit()
+        user_id = new_user.uuid
+        session.close()
+
+        return user_id
+
+    def get_user(self, user_id: uuid.UUID) -> User | None:
+        session = self._session()
+        user = (
+            session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
+        )
+        session.close()
+        return user
+
+    def list_users(
+        self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[User]:
+        session = self._session()
+        users = (
+            session.query(User)
+            .filter(User.team_id == team_id, User.is_del == 0)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return users
+
+    # ---------- Project APIs ----------
+
     def create_project(
         self,
         name: str,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         description: str | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
@@ -73,6 +140,7 @@ class SQLStore(MetaStore):
         new_proj = Project(
             name=name,
             team_id=team_id,
+            creator_id=user_id,
             description=description,
             meta=meta,
         )
@@ -151,6 +219,8 @@ class SQLStore(MetaStore):
         session.close()
         return projects
 
+    # ---------- Model APIs ----------
+
     def create_model(
         self,
         name: str,
@@ -221,10 +291,13 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
+    # ---------- Experiment APIs ----------
+
     def create_experiment(
         self,
         name: str,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         project_id: uuid.UUID,
         description: str | None = None,
         meta: dict | None = None,
@@ -234,6 +307,7 @@ class SQLStore(MetaStore):
         session = self._session()
         new_exp = Experiment(
             team_id=team_id,
+            user_id=user_id,
             project_id=project_id,
             name=name,
             description=description,
@@ -306,18 +380,23 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
+    # ---------- Run APIs ----------
+
     def create_run(
         self,
         team_id: uuid.UUID,
+        user_id: uuid.UUID,
         project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         meta: dict | None = None,
         status: Status = Status.PENDING,
     ) -> uuid.UUID:
         session = self._session()
+
         new_run = Run(
             project_id=project_id,
             team_id=team_id,
+            user_id=user_id,
             experiment_id=experiment_id,
             meta=meta,
             status=status,
@@ -358,6 +437,8 @@ class SQLStore(MetaStore):
         )
         session.close()
         return runs
+
+    # ---------- Metric APIs ----------
 
     def create_metric(
         self,

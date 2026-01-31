@@ -47,6 +47,24 @@ class Team(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username = Column(String, nullable=False, unique=True)
+    email = Column(String, nullable=False, unique=True)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    meta = Column(JSON, nullable=True, comment="Additional metadata for the user")
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
 # Define the Project model for SQLAlchemy
 class Project(Base):
     __tablename__ = "projects"
@@ -55,6 +73,7 @@ class Project(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     team_id = Column(UUID(as_uuid=True), nullable=False)
+    creator_id = Column(UUID(as_uuid=True), nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the project")
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -77,6 +96,7 @@ class Experiment(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     project_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
@@ -113,6 +133,7 @@ class Run(Base):
     team_id = Column(UUID(as_uuid=True), nullable=False)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=True)
     meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
     status = Column(
         Integer,

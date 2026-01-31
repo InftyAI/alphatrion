@@ -184,9 +184,10 @@ class Experiment(ABC):
             self._id = exp_obj.uuid
         else:
             self._id = self._runtime._metadb.create_experiment(
-                team_id=self._runtime._team_id,
-                project_id=proj.id,
                 name=name,
+                team_id=self._runtime._team_id,
+                user_id=self._runtime._user_id,
+                project_id=proj.id,
                 description=description,
                 meta=meta,
                 params=params,

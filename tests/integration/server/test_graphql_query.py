@@ -65,16 +65,52 @@ def test_query_teams():
     assert response.errors is None
     assert len(response.data["teams"]) >= 2
 
+def test_query_user():
+    init(init_tables=True)
+
+    metadb = graphql_runtime().metadb
+    team_id = metadb.create_team(
+        name="Test Team", description="A team for testing", meta={"foo": "bar"}
+    )
+
+    user_id = metadb.create_user(
+        username="tester", email="tester@inftyai.com", team_id=team_id, meta={"foo": "bar"}
+    )
+
+    query = f"""
+    query {{
+        user(id: "{user_id}") {{
+            id
+            username
+            email
+            meta
+            teamId
+            createdAt
+            updatedAt
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["user"]["username"] == "tester"
+    assert response.data["user"]["email"] == "tester@inftyai.com"
+    assert response.data["user"]["teamId"] == str(team_id)
+    assert response.data["user"]["meta"] == {"foo": "bar"}
 
 def test_query_single_project():
     init(init_tables=True)
 
     team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     id = metadb.create_project(
         name="Test Project",
         description="A project for testing",
         team_id=team_id,
+        user_id=user_id,
     )
 
     query = f"""
@@ -102,21 +138,26 @@ def test_query_single_project():
 def test_query_projects():
     init(init_tables=True)
     team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
+
     _ = metadb.create_project(
         name="Test Project1",
         description="A project for testing",
         team_id=team_id,
+        user_id=user_id,
     )
     _ = metadb.create_project(
         name="Test Project2",
         description="A project for testing",
         team_id=team_id,
+        user_id=user_id,
     )
     _ = metadb.create_project(
-        name="Test Project2",
+        name="Test Project3",
         description="A project for testing",
         team_id=uuid.uuid4(),
+        user_id=user_id,
     )
 
     query = f"""
@@ -143,12 +184,14 @@ def test_query_projects():
 def test_query_single_exp():
     init(init_tables=True)
     team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
 
     exp_id = metadb.create_experiment(
         name="Test Experiment",
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
         status=Status.RUNNING,
         meta={},
@@ -184,15 +227,18 @@ def test_query_experiments():
     init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     _ = metadb.create_experiment(
         name="Test Experiment1",
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
     )
     _ = metadb.create_experiment(
         name="Test Experiment2",
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
     )
 
@@ -224,11 +270,13 @@ def test_query_experiments():
 def test_query_single_run():
     init(init_tables=True)
     team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     run_id = metadb.create_run(
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
         experiment_id=exp_id,
     )
@@ -258,16 +306,19 @@ def test_query_single_run():
 def test_query_runs():
     init(init_tables=True)
     team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
     _ = metadb.create_run(
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
         experiment_id=exp_id,
     )
     _ = metadb.create_run(
         team_id=team_id,
+        user_id=user_id,
         project_id=project_id,
         experiment_id=exp_id,
     )

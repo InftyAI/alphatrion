@@ -14,7 +14,12 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.mark.asyncio
 async def test_project():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with Project.setup(
         name="context_proj",
@@ -40,7 +45,12 @@ async def test_project():
 
 @pytest.mark.asyncio
 async def test_project_with_done():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     exp_id = None
     async with Project.setup(
@@ -59,7 +69,12 @@ async def test_project_with_done():
 
 @pytest.mark.asyncio
 async def test_project_with_done_with_err():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     exp_id = None
     async with Project.setup(
@@ -79,7 +94,12 @@ async def test_project_with_done_with_err():
 
 @pytest.mark.asyncio
 async def test_project_with_no_context():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(exp: experiment.Experiment):
         await asyncio.sleep(3)
@@ -99,7 +119,12 @@ async def test_project_with_no_context():
 
 @pytest.mark.asyncio
 async def test_project_with_exp():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     exp_id = None
     async with Project.setup(name="context_proj") as proj:
@@ -115,7 +140,12 @@ async def test_project_with_exp():
 
 @pytest.mark.asyncio
 async def test_create_project_with_exp_wait():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(exp: experiment.Experiment):
         await asyncio.sleep(3)
@@ -139,7 +169,12 @@ async def test_create_project_with_exp_wait():
 
 @pytest.mark.asyncio
 async def test_create_project_with_run():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(cancel_func: callable, exp_id: uuid.UUID):
         assert experiment.current_exp_id.get() == exp_id
@@ -165,7 +200,12 @@ async def test_create_project_with_run():
 
 @pytest.mark.asyncio
 async def test_create_project_with_run_cancelled():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work(timeout: int):
         await asyncio.sleep(timeout)
@@ -197,7 +237,12 @@ async def test_create_project_with_run_cancelled():
 
 @pytest.mark.asyncio
 async def test_create_project_with_max_execution_seconds():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with Project.setup(
         name="context_proj",
@@ -217,7 +262,12 @@ async def test_create_project_with_max_execution_seconds():
 
 @pytest.mark.asyncio
 async def test_project_with_multi_trials_in_parallel():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async def fake_work():
         duration = random.randint(1, 5)
@@ -251,7 +301,12 @@ async def test_project_with_multi_trials_in_parallel():
 
 @pytest.mark.asyncio
 async def test_project_with_config():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with Project.setup(
         name="context_proj",
@@ -269,7 +324,12 @@ async def test_project_with_config():
 
 @pytest.mark.asyncio
 async def test_project_with_hierarchy_timeout():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     async with Project.setup(
         name="context_proj",
@@ -294,7 +354,12 @@ async def test_project_with_hierarchy_timeout():
 
 @pytest.mark.asyncio
 async def test_project_with_hierarchy_timeout_2():
-    init(team_id=uuid.uuid4(), artifact_insecure=True, init_tables=True)
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        artifact_insecure=True,
+        init_tables=True,
+    )
 
     start_time = datetime.now()
 

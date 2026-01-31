@@ -1,13 +1,15 @@
 import strawberry
 
 from alphatrion.server.graphql.resolvers import GraphQLResolvers
-from alphatrion.server.graphql.types import Experiment, Metric, Project, Run, Team
+from alphatrion.server.graphql.types import Experiment, Metric, Project, Run, Team, User
 
 
 @strawberry.type
 class Query:
     teams: list[Team] = strawberry.field(resolver=GraphQLResolvers.list_teams)
     team: Team | None = strawberry.field(resolver=GraphQLResolvers.get_team)
+
+    user: User | None = strawberry.field(resolver=GraphQLResolvers.get_user)
 
     @strawberry.field
     def projects(
