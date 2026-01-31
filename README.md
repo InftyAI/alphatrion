@@ -65,13 +65,13 @@ from alphatrion import init, log_metrics, Project, CraftExperiment
 # Better to use a fixed UUID for the team and user in real scenarios.
 init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), artifact_insecure=True)
 
-async def log():
+async def your_task():
   # Run your code here then log metrics.
   await log_metrics({"accuracy": 0.95})
 
 async with Project.setup(name="my_project"):
   async with CraftExperiment.start(name="my_experiment") as exp:
-    task = exp.run(lambda: log())
+    task = exp.run(lambda: your_task())
     await task.wait()
 ```
 
