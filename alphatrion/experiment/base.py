@@ -202,7 +202,7 @@ class Experiment(ABC):
         # We don't reset the Experiment id context var,
         # because each experiment runs in its own context.
         self._token = current_exp_id.set(self._id)
-        proj.register_exp(id=self.id, instance=self)
+        proj.register_experiment(id=self.id, instance=self)
 
     @property
     def id(self) -> uuid.UUID:
@@ -350,7 +350,7 @@ class Experiment(ABC):
                 experiment_id=self._id, status=status, duration=duration
             )
 
-        self._runtime.current_proj.unregister_exp(self._id)
+        self._runtime.current_proj.unregister_experiment(self._id)
         for run in self._runs.values():
             run.cancel()
         self._runs.clear()
