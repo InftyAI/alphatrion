@@ -35,19 +35,19 @@ async def test_log_artifact():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            file1 = "file1.txt"
-            with open(file1, "w") as f:
+            file = "file1.txt"
+            with open(file, "w") as f:
                 f.write("This is file1.")
 
-            await alpha.log_artifact(paths="file1.txt", version="v1")
+            await alpha.log_artifact(paths=file, version="v1")
             versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v1" in versions
 
-            with open("file1.txt", "w") as f:
+            with open(file, "w") as f:
                 f.write("This is modified file1.")
 
             # push folder instead
-            await alpha.log_artifact(paths=["file1.txt"], version="v2")
+            await alpha.log_artifact(paths=[file], version="v2")
             versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v2" in versions
 
