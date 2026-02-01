@@ -7,9 +7,9 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion.metadata.sql_models import FINISHED_STATUS, Status
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.utils import context
 
 # Used in log/log.py to log params/metrics

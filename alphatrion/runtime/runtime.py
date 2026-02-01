@@ -4,7 +4,7 @@ import uuid
 
 from alphatrion import consts
 from alphatrion.artifact.artifact import Artifact
-from alphatrion.metadata.sql import SQLStore
+from alphatrion.storage.sqlstore import SQLStore
 
 __RUNTIME__ = None
 

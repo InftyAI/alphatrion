@@ -2,8 +2,8 @@ import uuid
 
 import pytest
 
-from alphatrion.metadata.sql import SQLStore
-from alphatrion.metadata.sql_models import Status
+from alphatrion.storage.sql_models import Status
+from alphatrion.storage.sqlstore import SQLStore
 
 
 @pytest.fixture
@@ -120,14 +120,14 @@ def test_create_metric(db):
         team_id=team_id, user_id=user_id, project_id=proj_id, experiment_id=exp_id
     )
     db.create_metric(team_id, proj_id, exp_id, run_id, "accuracy", 0.95)
-    db.create_metric(team_id, proj_id, exp_id, run_id, "accuracy", 0.85)
+    db.create_metric(team_id, proj_id, exp_id, run_id, "loss", 0.1)
 
     metrics = db.list_metrics_by_experiment_id(exp_id)
     assert len(metrics) == 2
     assert metrics[0].key == "accuracy"
     assert metrics[0].value == 0.95
-    assert metrics[1].key == "accuracy"
-    assert metrics[1].value == 0.85
+    assert metrics[1].key == "loss"
+    assert metrics[1].value == 0.1
 
 
 def test_crud_run(db):

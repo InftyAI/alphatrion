@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import declarative_base
@@ -201,9 +201,9 @@ class Model(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-# TODO: key, team_id, project_id, experiment_id, run_id should be unique together
 class Metric(Base):
     __tablename__ = "metrics"
+    __table_args__ = (UniqueConstraint("run_id", "key", name="idx_unique_metric"),)
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)

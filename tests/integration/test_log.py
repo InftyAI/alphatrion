@@ -10,7 +10,7 @@ import pytest
 import alphatrion as alpha
 from alphatrion.experiment.base import current_exp_id
 from alphatrion.log.log import BEST_RESULT_PATH
-from alphatrion.metadata.sql_models import Status
+from alphatrion.storage.sql_models import Status
 
 
 @pytest.mark.asyncio

@@ -18,7 +18,7 @@ async def log_artifact(
     Log artifacts (files) to the artifact registry.
 
     :param paths: list of file paths to log.
-        Support one or multiple files or a folder.
+        Support one or multiple files or a folder, multiple folders is not supported.
         If a folder is provided, all files in the folder will be logged.
         Don't support nested folders currently, only files in the first level
         of the folder will be logged.

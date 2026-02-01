@@ -5,9 +5,9 @@ from alphatrion.experiment.base import (
 )
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.log.log import log_artifact, log_metrics, log_params
-from alphatrion.metadata.sql_models import Status
 from alphatrion.project.project import Project
 from alphatrion.runtime.runtime import init
+from alphatrion.storage.sql_models import Status
 from alphatrion.tracing.tracing import task, workflow
 
 __all__ = [

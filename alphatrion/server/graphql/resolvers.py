@@ -1,7 +1,7 @@
 import uuid
 
-from alphatrion.metadata.sql_models import Status
 from alphatrion.server.graphql import runtime
+from alphatrion.storage.sql_models import Status
 
 from .types import (
     Experiment,

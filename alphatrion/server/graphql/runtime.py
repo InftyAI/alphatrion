@@ -2,7 +2,7 @@
 import os
 
 from alphatrion import consts
-from alphatrion.metadata.sql import SQLStore
+from alphatrion.storage.sqlstore import SQLStore
 
 __GRAPHQL_RUNTIME__ = None
 

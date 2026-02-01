@@ -2,8 +2,8 @@ import asyncio
 import contextvars
 import uuid
 
-from alphatrion.metadata.sql_models import Status
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.storage.sql_models import Status
 
 current_run_id = contextvars.ContextVar("current_run_id", default=None)
 

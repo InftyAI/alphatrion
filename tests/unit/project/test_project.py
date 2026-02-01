@@ -7,9 +7,9 @@ import pytest
 
 from alphatrion.experiment import base as experiment
 from alphatrion.experiment.craft_experiment import CraftExperiment
-from alphatrion.metadata.sql_models import Status
 from alphatrion.project.project import Project, ProjectConfig
 from alphatrion.runtime.runtime import global_runtime, init
+from alphatrion.storage.sql_models import Status
 
 
 @pytest.mark.asyncio

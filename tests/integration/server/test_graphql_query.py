@@ -4,9 +4,9 @@
 
 import uuid
 
-from alphatrion.metadata.sql_models import Status
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
+from alphatrion.storage.sql_models import Status
 
 
 def test_query_single_team():

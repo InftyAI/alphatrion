@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from alphatrion.metadata.sql_models import Experiment, Model, User
+from alphatrion.storage.sql_models import Experiment, Model, User
 
 
 class MetaStore(ABC):
