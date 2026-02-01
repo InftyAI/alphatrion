@@ -2,7 +2,7 @@ import os
 
 import oras.client
 
-from alphatrion import consts
+from alphatrion import envs
 
 SUCCESS_CODE = 201
 
@@ -10,7 +10,7 @@ SUCCESS_CODE = 201
 class Artifact:
     def __init__(self, team_id: str, insecure: bool = False):
         self._team_id = team_id
-        self._url = os.environ.get(consts.ARTIFACT_REGISTRY_URL)
+        self._url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
         self._url = self._url.replace("https://", "").replace("http://", "")
         self._client = oras.client.OrasClient(
             hostname=self._url.strip("/"), auth_backend="token", insecure=insecure

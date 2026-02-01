@@ -1,7 +1,7 @@
 # ruff: noqa: PLW0603
 import os
 
-from alphatrion import consts
+from alphatrion import envs
 from alphatrion.storage.sqlstore import SQLStore
 
 __GRAPHQL_RUNTIME__ = None
@@ -12,7 +12,7 @@ class GraphQLRuntime:
 
     def __init__(self, init_tables: bool = False):
         self._metadb = SQLStore(
-            os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
+            os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
         )
 
     @property
