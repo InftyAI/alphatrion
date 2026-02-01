@@ -12,8 +12,6 @@ __RUNTIME__ = None
 def init(
     team_id: uuid.UUID,
     user_id: uuid.UUID,
-    artifact_insecure: bool = False,
-    init_tables: bool = False,
 ):
     """
     Initialize the AlphaTrion runtime environment.
@@ -27,8 +25,6 @@ def init(
     __RUNTIME__ = Runtime(
         team_id=team_id,
         user_id=user_id,
-        artifact_insecure=artifact_insecure,
-        init_tables=init_tables,
     )
 
 
@@ -54,9 +50,8 @@ class Runtime:
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        artifact_insecure: bool = False,
-        init_tables: bool = False,
     ):
+        init_tables = os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true"
         self._metadb = SQLStore(
             os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
         )
@@ -64,6 +59,8 @@ class Runtime:
         self._user_id = user_id
         self._team_id = team_id
         self._root_path = os.getenv(envs.ROOT_PATH, os.path.expanduser("~/.alphatrion"))
+
+        artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
 
         if self.artifact_storage_enabled():
             self._artifact = Artifact(team_id=self._team_id, insecure=artifact_insecure)

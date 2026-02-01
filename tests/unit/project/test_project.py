@@ -17,8 +17,6 @@ async def test_project():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async with Project.setup(
@@ -48,8 +46,6 @@ async def test_project_with_done():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     exp_id = None
@@ -73,8 +69,6 @@ async def test_project_with_done_with_err():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     exp_id = None
@@ -98,8 +92,6 @@ async def test_project_with_no_context():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work(exp: experiment.Experiment):
@@ -123,8 +115,6 @@ async def test_project_with_exp():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     exp_id = None
@@ -144,8 +134,6 @@ async def test_create_project_with_exp_wait():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work(exp: experiment.Experiment):
@@ -173,8 +161,6 @@ async def test_create_project_with_run():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work(cancel_func: callable, exp_id: uuid.UUID):
@@ -204,8 +190,6 @@ async def test_create_project_with_run_cancelled():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work(timeout: int):
@@ -241,8 +225,6 @@ async def test_create_project_with_max_execution_seconds():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async with Project.setup(
@@ -266,8 +248,6 @@ async def test_project_with_multi_trials_in_parallel():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work():
@@ -305,8 +285,6 @@ async def test_project_with_config():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async with Project.setup(
@@ -328,8 +306,6 @@ async def test_project_with_hierarchy_timeout():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async with Project.setup(
@@ -358,8 +334,6 @@ async def test_project_with_hierarchy_timeout_2():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     start_time = datetime.now()
@@ -390,8 +364,6 @@ async def test_project_with_signal():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
-        artifact_insecure=True,
-        init_tables=True,
     )
 
     async def fake_work(proj: Project):

@@ -2,7 +2,7 @@ import os
 
 import oras.client
 
-from alphatrion import envs
+from alphatrion import envs, utils
 
 SUCCESS_CODE = 201
 
@@ -20,7 +20,7 @@ class Artifact:
         self,
         repo_name: str,
         paths: str | list[str],
-        version: str = "latest",
+        version: str | None = None,
     ) -> str:
         """
         Push files or all files in a folder to the artifact registry.
@@ -46,6 +46,9 @@ class Artifact:
 
         if not files_to_push:
             raise ValueError("No files to push.")
+
+        if version is None:
+            version = utils.now_2_hash()
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
         path = f"{self._team_id}/{repo_name}:{version}"

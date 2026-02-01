@@ -52,7 +52,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
             },
         ]
 
-        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), init_tables=True)
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
 
         for case in test_cases:
             with self.subTest(name=case["name"]):
@@ -111,7 +111,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
             },
         ]
 
-        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), init_tables=True)
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
 
         for case in test_cases:
             with self.subTest(name=case["name"]):

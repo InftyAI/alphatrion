@@ -63,7 +63,7 @@ import uuid
 from alphatrion import init, log_metrics, Project, CraftExperiment
 
 # Better to use a fixed UUID for the team and user in real scenarios.
-init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), artifact_insecure=True)
+init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
 
 async def your_task():
   # Run your code here then log metrics.
