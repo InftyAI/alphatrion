@@ -219,7 +219,8 @@ async def test_log_metrics_with_save_on_max():
             fixed_version = versions[0]
             used_version.append(fixed_version)
             assert (
-                run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{team_id}/{proj.id}:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 2
@@ -245,7 +246,8 @@ async def test_log_metrics_with_save_on_max():
             used_version.append(fixed_version)
             run_obj = run._get_obj()
             assert (
-                run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{team_id}/{proj.id}:" + fixed_version
             )
 
             with open(file) as f:
@@ -263,7 +265,8 @@ async def test_log_metrics_with_save_on_max():
             fixed_version = find_unused_version(used_version, versions)
             used_version.append(fixed_version)
             assert (
-                run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/{proj.id}:" + fixed_version
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{team_id}/{proj.id}:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 4

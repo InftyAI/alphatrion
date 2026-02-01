@@ -128,3 +128,30 @@ def test_create_metric(db):
     assert metrics[0].value == 0.95
     assert metrics[1].key == "accuracy"
     assert metrics[1].value == 0.85
+
+
+def test_crud_run(db):
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    proj_id = db.create_project(
+        "test_proj", team_id, user_id, "test description", {"key": "value"}
+    )
+    exp_id = db.create_experiment(
+        team_id=team_id, user_id=user_id, project_id=proj_id, name="test-exp"
+    )
+    run_id = db.create_run(
+        team_id=team_id,
+        user_id=user_id,
+        project_id=proj_id,
+        experiment_id=exp_id,
+        meta={"foo": "bar"},
+    )
+    run = db.get_run(run_id)
+    assert run is not None
+    assert run.experiment_id == exp_id
+    assert run.status == Status.PENDING
+
+    db.update_run(run_id, status=Status.COMPLETED, meta={"result": "success"})
+    run = db.get_run(run_id)
+    assert run.status == Status.COMPLETED
+    assert run.meta == {"foo": "bar", "result": "success"}

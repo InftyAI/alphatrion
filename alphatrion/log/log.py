@@ -25,7 +25,8 @@ async def log_artifact(
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
 
-    :return: the path of the logged artifact in the format of {team_id}/{project_id}:{version}
+    :return: the path of the logged artifact in the format of
+    {team_id}/{project_id}:{version}
     """
 
     if not paths:
