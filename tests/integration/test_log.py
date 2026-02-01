@@ -39,7 +39,8 @@ async def test_log_artifact():
             with open(file, "w") as f:
                 f.write("This is file1.")
 
-            await alpha.log_artifact(paths=file, version="v1")
+            address = await alpha.log_artifact(paths=file, version="v1")
+            assert address == f"{proj._runtime._team_id}/{proj_obj.uuid}:v1"
             versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v1" in versions
 
@@ -47,7 +48,8 @@ async def test_log_artifact():
                 f.write("This is modified file1.")
 
             # push folder instead
-            await alpha.log_artifact(paths=[file], version="v2")
+            address = await alpha.log_artifact(paths=[file], version="v2")
+            assert address == f"{proj._runtime._team_id}/{proj_obj.uuid}:v2"
             versions = exp._runtime._artifact.list_versions(proj_obj.uuid)
             assert "v2" in versions
 

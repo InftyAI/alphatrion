@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Callable
 
 from alphatrion.experiment.base import current_exp_id
@@ -25,33 +26,6 @@ async def log_artifact(
     :param pre_save_hook: a callable function to be called before saving the artifact.
     """
 
-    if pre_save_hook is not None:
-        if callable(pre_save_hook):
-            pre_save_hook()
-        else:
-            raise ValueError("pre_save_hook must be a callable function")
-
-    return log_artifact_in_sync(
-        paths=paths,
-        version=version,
-    )
-
-
-def log_artifact_in_sync(
-    paths: str | list[str],
-    version: str = "latest",
-) -> str:
-    """
-    Log artifacts (files) to the artifact registry (synchronous version).
-
-    :param paths: list of file paths to log.
-        Support one or multiple files or a folder.
-        If a folder is provided, all files in the folder will be logged.
-        Don't support nested folders currently, only files in the first level
-        of the folder will be logged.
-    :param version: the version (tag) to log the files
-    """
-
     if not paths:
         raise ValueError("no files specified to log")
 
@@ -65,12 +39,22 @@ def log_artifact_in_sync(
             "Set ENABLE_ARTIFACT_STORAGE=true in the environment variables."
         )
 
+    if pre_save_hook is not None:
+        if callable(pre_save_hook):
+            pre_save_hook()
+        else:
+            raise ValueError("pre_save_hook must be a callable function")
+
     # We use project ID as the repo name rather than the project name,
-    # because project name is not unique
+    # because project name is not unique and might change over time.
     proj = runtime.current_proj
     if proj is None:
         raise RuntimeError("No running project found in the current context.")
-    return runtime._artifact.push(repo_name=str(proj.id), paths=paths, version=version)
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None, runtime._artifact.push, str(proj.id), paths, version
+    )
 
 
 # log_params is used to save a set of parameters, which is a dict of key-value pairs.
