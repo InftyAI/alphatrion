@@ -175,7 +175,12 @@ class SQLStore(MetaStore):
         )
         if proj:
             for key, value in kwargs.items():
-                setattr(proj, key, value)
+                if key == "meta" and isinstance(value, dict):
+                    meta = (proj.meta or {}).copy()
+                    meta.update(value)
+                    proj.meta = meta
+                else:
+                    setattr(proj, key, value)
             session.commit()
         session.close()
 
@@ -253,7 +258,12 @@ class SQLStore(MetaStore):
         )
         if model:
             for key, value in kwargs.items():
-                setattr(model, key, value)
+                if key == "meta" and isinstance(value, dict):
+                    meta = (model.meta or {}).copy()
+                    meta.update(value)
+                    model.meta = meta
+                else:
+                    setattr(model, key, value)
             session.commit()
         session.close()
 
@@ -376,7 +386,12 @@ class SQLStore(MetaStore):
         )
         if exp:
             for key, value in kwargs.items():
-                setattr(exp, key, value)
+                if key == "meta" and isinstance(value, dict):
+                    meta = (exp.meta or {}).copy()
+                    meta.update(value)
+                    exp.meta = meta
+                else:
+                    setattr(exp, key, value)
             session.commit()
         session.close()
 
@@ -413,8 +428,12 @@ class SQLStore(MetaStore):
         run = session.query(Run).filter(Run.uuid == run_id, Run.is_del == 0).first()
         if run:
             for key, value in kwargs.items():
-                # TODO: meta update should be merged instead of replaced
-                setattr(run, key, value)
+                if key == "meta" and isinstance(value, dict):
+                    meta = (run.meta or {}).copy()
+                    meta.update(value)
+                    run.meta = meta
+                else:
+                    setattr(run, key, value)
             session.commit()
         session.close()
 
