@@ -4,6 +4,7 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
+from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -44,8 +45,8 @@ class CheckpointConfig(BaseModel):
     path: str | None = Field(
         default=None,
         description="The path to save checkpoints. \
-                     If None, will be under the specified run directory. \
-                     Call run.snapshot_path() to get the path. Remember to create \
+                     If None, will be under the specified experiment directory. \
+                     Call exp.checkpoint_path() to get the path. Remember to create \
                      the directory if it does not exist. It's lazy created.",
     )
     pre_save_hook: Callable | None = Field(
@@ -173,6 +174,17 @@ class Experiment(ABC):
         self.done()
         if self._token:
             current_exp_id.reset(self._token)
+
+    def checkpoint_path(self) -> str:
+        return (
+            Path(self._runtime.root_path)
+            / "snapshots"
+            / f"team_{self._runtime.team_id}"
+            / f"project_{self._runtime.current_proj.id}"
+            / f"user_{self._runtime.user_id}"
+            / f"exp_{self.id}"
+            / "checkpoints"
+        )
 
     def _start(
         self,

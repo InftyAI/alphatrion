@@ -17,7 +17,7 @@ class CraftExperiment(base.Experiment):
         meta: dict | None = None,
         params: dict | None = None,
         config: base.ExperimentConfig | None = None,
-    ) -> base.Experiment:
+    ) -> "CraftExperiment":
         """
         If the name is same in the same experiment,
         it will refer to the existing experiment.

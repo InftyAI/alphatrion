@@ -1,7 +1,6 @@
 import asyncio
 import contextvars
 import uuid
-from pathlib import Path
 
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import Status
@@ -19,17 +18,6 @@ class Run:
     @property
     def id(self) -> uuid.UUID:
         return self._id
-
-    def snapshot_path(self) -> str:
-        return (
-            Path(self._runtime.root_path)
-            / "snapshots"
-            / f"team_{self._runtime.team_id}"
-            / f"project_{self._runtime.current_proj.id}"
-            / f"user_{self._runtime.user_id}"
-            / f"exp_{self._exp_id}"
-            / f"run_{self.id}"
-        )
 
     def _get_obj(self):
         return self._runtime._metadb.get_run(run_id=self._id)

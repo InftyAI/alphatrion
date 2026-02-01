@@ -2,7 +2,6 @@ import asyncio
 import random
 import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
 
 import pytest
 
@@ -177,17 +176,8 @@ async def test_create_project_with_run():
     ):
         start_time = datetime.now()
 
-        task = exp.run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 1
-        assert task.snapshot_path() == (
-            Path(exp._runtime.root_path)
-            / "snapshots"
-            / f"team_{team_id}"
-            / f"project_{exp._runtime.current_proj.id}"
-            / f"user_{user_id}"
-            / f"exp_{exp.id}"
-            / f"run_{task.id}"
-        )
 
         exp.run(lambda: fake_work(exp.done, exp.id))
         assert len(exp._runs) == 2

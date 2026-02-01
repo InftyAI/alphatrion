@@ -3,6 +3,7 @@
 import time
 import unittest
 import uuid
+from pathlib import Path
 
 import faker
 import pytest
@@ -146,3 +147,24 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
                             ),
                         ),
                     )
+
+@pytest.mark.asyncio
+async def test_snapshot_path():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(team_id=team_id, user_id=user_id)
+
+    async with Project.setup(
+        name=faker.Faker().word(),
+        description="Test Project",
+    ):
+        async with CraftExperiment.start(name=faker.Faker().word()) as exp:
+            assert exp.checkpoint_path() == (
+                Path(exp._runtime.root_path)
+                / "snapshots"
+                / f"team_{team_id}"
+                / f"project_{exp._runtime.current_proj.id}"
+                / f"user_{user_id}"
+                / f"exp_{exp.id}"
+                / "checkpoints"
+            )
