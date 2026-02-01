@@ -176,9 +176,9 @@ class SQLStore(MetaStore):
         if proj:
             for key, value in kwargs.items():
                 if key == "meta" and isinstance(value, dict):
-                    meta = (proj.meta or {}).copy()
-                    meta.update(value)
-                    proj.meta = meta
+                    if proj.meta is None:
+                        proj.meta = {}
+                    proj.meta.update(value)
                 else:
                     setattr(proj, key, value)
             session.commit()
@@ -259,9 +259,9 @@ class SQLStore(MetaStore):
         if model:
             for key, value in kwargs.items():
                 if key == "meta" and isinstance(value, dict):
-                    meta = (model.meta or {}).copy()
-                    meta.update(value)
-                    model.meta = meta
+                    if model.meta is None:
+                        model.meta = {}
+                    model.meta.update(value)
                 else:
                     setattr(model, key, value)
             session.commit()
@@ -387,9 +387,9 @@ class SQLStore(MetaStore):
         if exp:
             for key, value in kwargs.items():
                 if key == "meta" and isinstance(value, dict):
-                    meta = (exp.meta or {}).copy()
-                    meta.update(value)
-                    exp.meta = meta
+                    if exp.meta is None:
+                        exp.meta = {}
+                    exp.meta.update(value)
                 else:
                     setattr(exp, key, value)
             session.commit()
@@ -429,9 +429,9 @@ class SQLStore(MetaStore):
         if run:
             for key, value in kwargs.items():
                 if key == "meta" and isinstance(value, dict):
-                    meta = (run.meta or {}).copy()
-                    meta.update(value)
-                    run.meta = meta
+                    if run.meta is None:
+                        run.meta = {}
+                    run.meta.update(value)
                 else:
                     setattr(run, key, value)
             session.commit()
