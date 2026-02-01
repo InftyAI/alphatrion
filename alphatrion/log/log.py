@@ -6,7 +6,7 @@ from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.utils import time as utime
 
-ARTIFACT_PATH = "artifact_path"
+BEST_RESULT_PATH = "best_result_path"
 
 
 async def log_artifact(
@@ -24,6 +24,8 @@ async def log_artifact(
         of the folder will be logged.
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
+
+    :return: the path of the logged artifact in the format of {team_id}/{project_id}:{version}
     """
 
     if not paths:
@@ -120,14 +122,14 @@ async def log_metrics(metrics: dict[str, float]):
         )
 
     if should_checkpoint:
-        address = await log_artifact(
+        path = await log_artifact(
             paths=exp.config().checkpoint.path,
             version=utime.now_2_hash(),
             pre_save_hook=exp.config().checkpoint.pre_save_hook,
         )
         runtime._metadb.update_run(
             run_id=run_id,
-            meta={ARTIFACT_PATH: address},
+            meta={BEST_RESULT_PATH: path},
         )
 
     if should_early_stop or should_stop_on_target:
