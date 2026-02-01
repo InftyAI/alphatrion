@@ -24,6 +24,7 @@ async def log_artifact(
         of the folder will be logged.
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
+           If want to save something, make sure it's under the paths.
 
     :return: the path of the logged artifact in the format of
     {team_id}/{project_id}:{version}
@@ -122,6 +123,7 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=value
         )
 
+    # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
             paths=exp.config().checkpoint.path,

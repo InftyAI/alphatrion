@@ -41,14 +41,19 @@ class CheckpointConfig(BaseModel):
             The metric to monitor is specified by monitor_metric. Default is False. \
             Can be enabled together with save_every_n_steps/save_every_n_seconds.",
     )
-    path: str = Field(
-        default="checkpoints",
-        description="The path to save checkpoints. Default is 'checkpoints'.",
+    path: str | None = Field(
+        default=None,
+        description="The path to save checkpoints. \
+                     If None, will be under the specified run directory. \
+                     Call run.snapshot_path() to get the path. Remember to create \
+                     the directory if it does not exist. It's lazy created.",
     )
     pre_save_hook: Callable | None = Field(
         default=None,
         description="A callable function to be called before saving a checkpoint. \
-            The function should take no arguments. Default is None.",
+            The function should take no arguments. You can use partial if you want. \
+            If you want to save something, make sure it's under the path. \
+            Default is None. ",
     )
 
 

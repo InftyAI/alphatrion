@@ -91,3 +91,7 @@ class Runtime:
     @property
     def team_id(self) -> uuid.UUID:
         return self._team_id
+
+    @property
+    def root_path(self) -> str:
+        return self._root_path
