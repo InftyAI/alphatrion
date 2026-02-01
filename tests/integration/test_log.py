@@ -35,7 +35,7 @@ async def test_log_artifact():
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
-            file = "file1.txt"
+            file = "file.txt"
             with open(file, "w") as f:
                 f.write("This is file1.")
 
