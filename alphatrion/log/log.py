@@ -16,13 +16,13 @@ async def log_artifact(
     """
     Log artifacts (files) to the artifact registry.
 
-    :param exp_id: the experiment ID
     :param paths: list of file paths to log.
         Support one or multiple files or a folder.
         If a folder is provided, all files in the folder will be logged.
         Don't support nested folders currently, only files in the first level
         of the folder will be logged.
     :param version: the version (tag) to log the files
+    :param pre_save_hook: a callable function to be called before saving the artifact.
     """
 
     if pre_save_hook is not None:
@@ -44,7 +44,6 @@ def log_artifact_in_sync(
     """
     Log artifacts (files) to the artifact registry (synchronous version).
 
-    :param exp_id: the experiment ID
     :param paths: list of file paths to log.
         Support one or multiple files or a folder.
         If a folder is provided, all files in the folder will be logged.
