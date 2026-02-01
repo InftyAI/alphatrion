@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -36,7 +37,11 @@ class Team(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the team")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the team",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -54,7 +59,11 @@ class User(Base):
     username = Column(String, nullable=False, unique=True)
     email = Column(String, nullable=False, unique=True)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the user")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the user",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -74,7 +83,11 @@ class Project(Base):
     description = Column(String, nullable=True)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     creator_id = Column(UUID(as_uuid=True), nullable=True)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the project")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the project",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -99,8 +112,16 @@ class Experiment(Base):
     user_id = Column(UUID(as_uuid=True), nullable=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the trial")
-    params = Column(JSON, nullable=True, comment="Parameters for the experiment")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the trial",
+    )
+    params = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Parameters for the experiment",
+    )
     kind = Column(
         Integer,
         default=ExperimentType.CRAFT_EXPERIMENT,
@@ -134,7 +155,11 @@ class Run(Base):
     project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=True)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the run")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the run",
+    )
     status = Column(
         Integer,
         default=Status.PENDING,
@@ -161,7 +186,11 @@ class Model(Base):
     description = Column(String, nullable=True)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     version = Column(String, nullable=False)
-    meta = Column(JSON, nullable=True, comment="Additional metadata for the model")
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the model",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
