@@ -15,6 +15,7 @@ from alphatrion.experiment.base import (
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.project.project import Project
 from alphatrion.runtime.runtime import init
+from alphatrion.snapshot.snapshot import checkpoint_path
 
 
 class TestExperiment(unittest.IsolatedAsyncioTestCase):
@@ -148,6 +149,7 @@ class TestExperiment(unittest.IsolatedAsyncioTestCase):
                         ),
                     )
 
+
 @pytest.mark.asyncio
 async def test_snapshot_path():
     team_id = uuid.uuid4()
@@ -159,7 +161,7 @@ async def test_snapshot_path():
         description="Test Project",
     ):
         async with CraftExperiment.start(name=faker.Faker().word()) as exp:
-            assert exp.checkpoint_path() == (
+            assert checkpoint_path() == (
                 Path(exp._runtime.root_path)
                 / "snapshots"
                 / f"team_{team_id}"

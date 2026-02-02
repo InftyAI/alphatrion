@@ -2,7 +2,8 @@ import os
 
 import oras.client
 
-from alphatrion import envs, utils
+from alphatrion import envs
+from alphatrion.utils import time as utiltime
 
 SUCCESS_CODE = 201
 
@@ -48,7 +49,7 @@ class Artifact:
             raise ValueError("No files to push.")
 
         if version is None:
-            version = utils.now_2_hash()
+            version = utiltime.now_2_hash()
 
         url = self._url if self._url.endswith("/") else f"{self._url}/"
         path = f"{self._team_id}/{repo_name}:{version}"
@@ -61,7 +62,6 @@ class Artifact:
 
         return path
 
-    # TODO: should we store it in the metadb instead?
     def list_versions(self, repo_name: str) -> list[str]:
         url = self._url if self._url.endswith("/") else f"{self._url}/"
         target = f"{url}{self._team_id}/{repo_name}"

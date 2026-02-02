@@ -1,17 +1,26 @@
 import asyncio
+import os
 from collections.abc import Callable
+from typing import Any
 
 from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.utils import time as utime
+from alphatrion.snapshot.snapshot import (
+    Metric,
+    RecordKind,
+    build_run_record,
+    checkpoint_path,
+    snapshot_path,
+)
 
 BEST_RESULT_PATH = "best_result_path"
+RECORD_PATH = "record_path"
 
 
 async def log_artifact(
     paths: str | list[str],
-    version: str = "latest",
+    version: str | None = None,
     pre_save_hook: Callable | None = None,
 ) -> str:
     """
@@ -82,7 +91,8 @@ async def log_params(params: dict):
 # so far, the experiment will checkpoint the current data.
 #
 # Note: log_metrics can only be called inside a Run, because it needs a run_id.
-async def log_metrics(metrics: dict[str, float]):
+# Return bool indicates whether the metric is the best metric.
+async def log_metrics(metrics: dict[str, float]) -> bool:
     run_id = current_run_id.get()
     if run_id is None:
         raise RuntimeError("log_metrics must be called inside a Run.")
@@ -102,6 +112,7 @@ async def log_metrics(metrics: dict[str, float]):
     should_checkpoint = False
     should_early_stop = False
     should_stop_on_target = False
+    is_best_metric = False
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
@@ -112,12 +123,14 @@ async def log_metrics(metrics: dict[str, float]):
             run_id=run_id,
         )
 
-        # TODO: should we save the checkpoint path for the best metric?
         # Always call the should_checkpoint_on_best first because
         # it also updates the best metric.
-        should_checkpoint |= exp.should_checkpoint_on_best(
+        should_checkpoint_tmp, is_best_metric_tmp = exp.should_checkpoint_on_best(
             metric_key=key, metric_value=value
         )
+        should_checkpoint |= should_checkpoint_tmp
+        is_best_metric |= is_best_metric_tmp
+
         should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=value)
         should_stop_on_target |= exp.should_stop_on_target_metric(
             metric_key=key, metric_value=value
@@ -126,14 +139,55 @@ async def log_metrics(metrics: dict[str, float]):
     # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
-            paths=exp.config().checkpoint.path,
-            version=utime.now_2_hash(),
+            # If not provided, will use the default checkpoint path.
+            paths=exp.config().checkpoint.path or checkpoint_path(),
             pre_save_hook=exp.config().checkpoint.pre_save_hook,
         )
-        runtime._metadb.update_run(
+        runtime.metadb.update_run(
             run_id=run_id,
             meta={BEST_RESULT_PATH: path},
         )
 
     if should_early_stop or should_stop_on_target:
         exp.done()
+
+    return is_best_metric
+
+
+# log_record is used to log the record of a run/experiment/project.
+# For example, you want to save the code snippet. It will be stored
+# in the object storage as a JSON file if object storage is enabled.
+async def log_record(
+    metrics: list[Metric],
+    content: dict[str, Any] | None = None,
+    kind: RecordKind = RecordKind.RUN,
+):
+    save_path = ""
+    record = None
+
+    if kind == RecordKind.RUN:
+        save_path = snapshot_path()
+        record = build_run_record(metrics=metrics, content=content)
+    else:
+        raise NotImplementedError(
+            f"Logging record of kind {record.kind} is not implemented yet."
+        )
+
+    if os.path.exists(save_path) is False:
+        os.makedirs(save_path, exist_ok=True)
+
+    # TODO: Will this leads to increasing memory usage, especially for kubernetes?
+    with open(os.path.join(save_path, "record.json"), "w") as f:
+        f.write(record.model_dump_json())
+
+    runtime = global_runtime()
+
+    # If not enabled, only save to local disk.
+    if runtime.artifact_storage_enabled():
+        path = await log_artifact(
+            paths=os.path.join(save_path, "record.json"),
+        )
+        runtime.metadb.update_run(
+            run_id=current_run_id.get(),
+            meta={RECORD_PATH: path},
+        )

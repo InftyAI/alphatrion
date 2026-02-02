@@ -304,7 +304,7 @@ async def test_log_metrics_with_save_on_min():
             run = exp.run(lambda: log_metric(0.30))
             await run.wait()
 
-            versions = proj._runtime._artifact.list_versions(proj.id)
+            versions = proj._runtime._artifact.list_versions(str(proj.id))
             assert len(versions) == 1
 
             # To avoid the same timestamp hash, we wait for 1 second
@@ -313,7 +313,7 @@ async def test_log_metrics_with_save_on_min():
             run = exp.run(lambda: log_metric(0.58))
             await run.wait()
 
-            versions = proj._runtime._artifact.list_versions(proj.id)
+            versions = proj._runtime._artifact.list_versions(str(proj.id))
             assert len(versions) == 1
 
             time.sleep(1)
@@ -321,7 +321,7 @@ async def test_log_metrics_with_save_on_min():
             run = exp.run(lambda: log_metric(0.21))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(proj.id)
+            versions = exp._runtime._artifact.list_versions(str(proj.id))
             assert len(versions) == 2
 
             time.sleep(1)

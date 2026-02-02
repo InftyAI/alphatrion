@@ -4,7 +4,6 @@ import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from datetime import UTC, datetime
-from pathlib import Path
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -30,12 +29,11 @@ class CheckpointConfig(BaseModel):
     #     description="Interval in seconds to save checkpoints. \
     #         Default is None.",
     # )
-    # TODO: implement save_every_n_runs
-    save_every_n_runs: int = Field(
-        default=-1,
-        description="Interval in runs to save checkpoints. \
-            Default is -1 (unlimited).",
-    )
+    # save_every_n_runs: int = Field(
+    #     default=-1,
+    #     description="Interval in runs to save checkpoints. \
+    #         Default is -1 (unlimited).",
+    # )
     save_on_best: bool = Field(
         default=False,
         description="Once a best result is found, it will be saved. \
@@ -46,14 +44,14 @@ class CheckpointConfig(BaseModel):
         default=None,
         description="The path to save checkpoints. \
                      If None, will be under the specified experiment directory. \
-                     Call exp.checkpoint_path() to get the path. Remember to create \
-                     the directory if it does not exist. It's lazy created.",
+                     Call snapshot.checkpoint_path() to get the path. Remember to \
+                     create the directory if it does not exist. It's lazy created.",
     )
     pre_save_hook: Callable | None = Field(
         default=None,
         description="A callable function to be called before saving a checkpoint. \
             The function should take no arguments. You can use partial if you want. \
-            If you want to save something, make sure it's under the path. \
+            If you want to save something, make sure it's under the checkpoint path. \
             Default is None. ",
     )
 
@@ -175,17 +173,6 @@ class Experiment(ABC):
         if self._token:
             current_exp_id.reset(self._token)
 
-    def checkpoint_path(self) -> str:
-        return (
-            Path(self._runtime.root_path)
-            / "snapshots"
-            / f"team_{self._runtime.team_id}"
-            / f"project_{self._runtime.current_proj.id}"
-            / f"user_{self._runtime.user_id}"
-            / f"exp_{self.id}"
-            / "checkpoints"
-        )
-
     def _start(
         self,
         name: str,
@@ -240,15 +227,16 @@ class Experiment(ABC):
     def config(self) -> ExperimentConfig:
         return self._config
 
-    def should_checkpoint_on_best(self, metric_key: str, metric_value: float) -> bool:
-        is_best_metric = self._save_if_best_metric(metric_key, metric_value)
-        return (
-            self._config.checkpoint.enabled
-            and self._config.checkpoint.save_on_best
-            and is_best_metric
-        )
+    def should_checkpoint_on_best(
+        self, metric_key: str, metric_value: float
+    ) -> tuple[bool, bool]:
+        is_best_metric = self.save_if_best_metric(metric_key, metric_value)
+        return (self._checkpoint_on_best_enabled() and is_best_metric), is_best_metric
 
-    def _save_if_best_metric(self, metric_key: str, metric_value: float) -> bool:
+    def _checkpoint_on_best_enabled(self) -> bool:
+        return self._config.checkpoint.enabled and self._config.checkpoint.save_on_best
+
+    def save_if_best_metric(self, metric_key: str, metric_value: float) -> bool:
         """Save the metric if it is the best so far.
         Returns True if the metric is the best so far, False otherwise.
         """
@@ -342,6 +330,7 @@ class Experiment(ABC):
     # done function should be called manually as a pair of start
     # FIXME: watch for system signals to cancel the Experiment gracefully,
     # or it could lead to experiment not being marked as completed.
+    # TODO: Should we distinguish done and cancel?
     def done(self):
         self._cancel()
 
