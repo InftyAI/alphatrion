@@ -22,7 +22,7 @@ from alphatrion.runtime.runtime import global_runtime
         │   │   └── exp_f751ec9c-4aa2-46c5-8cab-1f92af6f001d
         │   │       ├── checkpoints
         │   │       ├── run_94a82594-01a7-463f-b63b-ab896be9830e
-        │   │       │   └── record.json
+        │   │       │   └── execution.json
         │   │       └── run_c0e3c730-c213-4a8e-9e10-7af57fcf8bf9
         │   └── user_f303c129-c4b5-4f24-957c-d28dd78cce89
         │       └── exp_efeb5430-6593-4675-969c-325aa25af986
@@ -32,9 +32,9 @@ from alphatrion.runtime.runtime import global_runtime
 """
 
 
-class RecordKind(enum.Enum):
+class ExecutionKind(enum.Enum):
     RUN = "run"
-    # CUSTOM_RECORD_DEFINITION = "crd"
+    # CUSTOM_EXECUTION_DEFINITION = "crd"
 
 
 # time information is recorded in the metadata database,
@@ -52,17 +52,17 @@ class Result(BaseModel):
     output: dict[str, Any]
 
 
-class Record(BaseModel):
+class Execution(BaseModel):
     schema_version: str
-    kind: RecordKind
+    kind: ExecutionKind
     metadata: Metadata
     spec: Spec
     result: Result
 
 
-def build_run_record(
+def build_run_execution(
     output: dict[str, Any], input: dict[str, Any] | None = None
-) -> Record:
+) -> Execution:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
     if run_obj is None:
@@ -76,9 +76,9 @@ def build_run_record(
             f"Experiment {run_obj.experiment_id} not found in the database."
         )
 
-    record = Record(
+    execution = Execution(
         schema_version="1.0",
-        kind=RecordKind.RUN,
+        kind=ExecutionKind.RUN,
         metadata=Metadata(
             id=str(run_id),
         ),
@@ -87,7 +87,7 @@ def build_run_record(
             output=output,
         ),
     )
-    return record
+    return execution
 
 
 def snapshot_path() -> str:

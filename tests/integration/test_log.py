@@ -536,7 +536,7 @@ async def test_log_metrics_with_min_target_meet():
 
 
 @pytest.mark.asyncio
-async def test_log_record():
+async def test_log_execution():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
@@ -548,7 +548,7 @@ async def test_log_record():
             os.makedirs(path, exist_ok=True)
         os.chdir(path)
 
-        await alpha.log_record(
+        await alpha.log_execution(
             content={
                 "example": "test",
                 "value": 123,
@@ -558,9 +558,9 @@ async def test_log_record():
             },
         )
 
-    async with project.Project.setup(name="log_record"):
+    async with project.Project.setup(name="log_execution"):
         async with experiment.CraftExperiment.start(
-            name="exp-log-record",
+            name="exp-log-execution",
         ) as exp:
             await alpha.log_params({"temp": 0.5, "lr": 0.01})
 
@@ -573,11 +573,11 @@ async def test_log_record():
             runtime = exp._runtime
 
             list_versions = runtime._artifact.list_versions(
-                f"{runtime.current_proj.id}/record"
+                f"{runtime.current_proj.id}/execution"
             )
             assert len(list_versions) == 1
             assert (
-                run_obj.meta["record_path"]
-                == f"{runtime.team_id}/{runtime.current_proj.id}/record:"
+                run_obj.meta["execution_path"]
+                == f"{runtime.team_id}/{runtime.current_proj.id}/execution:"
                 + list_versions[0]
             )

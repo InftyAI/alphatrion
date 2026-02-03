@@ -1,4 +1,4 @@
-from alphatrion.log.log import log_artifact, log_metrics, log_params, log_record
+from alphatrion.log.log import log_artifact, log_metrics, log_params, log_execution
 from alphatrion.runtime.runtime import init
 
 __all__ = [
@@ -6,5 +6,5 @@ __all__ = [
     "log_artifact",
     "log_params",
     "log_metrics",
-    "log_record",
+    "log_execution",
 ]

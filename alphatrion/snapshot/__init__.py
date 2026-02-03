@@ -1,14 +1,14 @@
 from alphatrion.snapshot.snapshot import (
     Metadata,
-    Record,
-    RecordKind,
+    ExecutionKind,
+    Execution,
     Result,
     Spec,
 )
 
 __all__ = [
-    "Record",
-    "RecordKind",
+    "ExecutionKind",
+    "Execution",
     "Metadata",
     "Spec",
     "Result",
