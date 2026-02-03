@@ -562,6 +562,8 @@ async def test_log_record():
         async with experiment.CraftExperiment.start(
             name="exp-log-record",
         ) as exp:
+            await alpha.log_params({"temp": 0.5, "lr": 0.01})
+
             run = exp.run(lambda: fake_worker())
             await run.wait()
 

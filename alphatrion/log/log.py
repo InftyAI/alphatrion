@@ -7,6 +7,7 @@ from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
+    Record,
     RecordKind,
     build_run_record,
     checkpoint_path,
@@ -158,26 +159,28 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 # log_record is used to log the record of a run/experiment/project.
 # For example, you want to save the code snippet. It will be stored
 # in the object storage as a JSON file if object storage is enabled.
+# If the kind is RecordKind.RUN, it will be called after the run is done.
 async def log_record(
-    content: dict[str, Any],
+    output: dict[str, Any], input: dict[str, Any] | None = None,
     kind: RecordKind = RecordKind.RUN,
 ):
-    save_path = ""
     record = None
 
     if kind == RecordKind.RUN:
-        save_path = snapshot_path()
-        record = build_run_record(content=content)
+        record = build_run_record(output=output, input=input)
     else:
         raise NotImplementedError(
             f"Logging record of kind {record.kind} is not implemented yet."
         )
 
-    if os.path.exists(save_path) is False:
-        os.makedirs(save_path, exist_ok=True)
+    path = snapshot_path()
+    if os.path.exists(path) is False:
+        os.makedirs(path, exist_ok=True)
 
-    # TODO: Will this leads to increasing memory usage, especially for kubernetes?
-    with open(os.path.join(save_path, "record.json"), "w") as f:
+    # Will eventually be cleanup on Project done() if AUTO_CLEANUP is enabled.
+    # Considering the record file is small, we just save it locally first.
+    # If this changes in the future, we should delete them after uploading.
+    with open(os.path.join(path, "record.json"), "w") as f:
         f.write(record.model_dump_json())
 
     runtime = global_runtime()
@@ -185,7 +188,7 @@ async def log_record(
     # If not enabled, only save to local disk.
     if runtime.artifact_storage_enabled():
         path = await log_artifact(
-            paths=os.path.join(save_path, "record.json"),
+            paths=os.path.join(path, "record.json"),
             repo_name=f"{str(runtime.current_proj.id)}/record",
         )
         runtime.metadb.update_run(

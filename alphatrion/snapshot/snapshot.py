@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.storage.sql_models import StatusMap
 
 """The snapshot is organized in a hierarchical directory structure as follows:
 └── snapshots
@@ -35,21 +34,22 @@ from alphatrion.storage.sql_models import StatusMap
 
 class RecordKind(enum.Enum):
     RUN = "run"
+    # CUSTOM_RECORD_DEFINITION = "crd"
 
 
+# time information is recorded in the metadata database,
+# we can not get the endtime in the run.
 class Metadata(BaseModel):
     id: str
-    start_time: str
-    end_time: str
 
 
 class Spec(BaseModel):
     parameters: dict[str, Any]
+    input: dict[str, Any] | None = None
 
 
 class Result(BaseModel):
-    status: str
-    content: dict[str, Any]
+    output: dict[str, Any]
 
 
 class Record(BaseModel):
@@ -60,7 +60,7 @@ class Record(BaseModel):
     result: Result
 
 
-def build_run_record(content: dict[str, Any]) -> Record:
+def build_run_record(output: dict[str, Any], input: dict[str, Any] | None = None) -> Record:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
     if run_obj is None:
@@ -79,13 +79,10 @@ def build_run_record(content: dict[str, Any]) -> Record:
         kind=RecordKind.RUN,
         metadata=Metadata(
             id=str(run_id),
-            start_time=run_obj.created_at.isoformat(),
-            end_time=run_obj.updated_at.isoformat(),
         ),
-        spec=Spec(parameters=exp_obj.params or {}),
+        spec=Spec(parameters=exp_obj.params or {}, input=input or {}),
         result=Result(
-            status=StatusMap[run_obj.status],
-            content=content,
+            output=output,
         ),
     )
     return record
@@ -115,3 +112,8 @@ def checkpoint_path() -> str:
         / f"exp_{current_exp_id.get()}"
         / "checkpoints"
     )
+
+
+def team_path() -> str:
+    runtime = global_runtime()
+    return Path(runtime.root_path) / "snapshots" / f"team_{runtime.team_id}"

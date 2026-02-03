@@ -1,4 +1,5 @@
 import asyncio
+import os
 import random
 import uuid
 from datetime import datetime, timedelta
@@ -9,6 +10,7 @@ from alphatrion.experiment import base as experiment
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.project.project import Project, ProjectConfig
 from alphatrion.runtime.runtime import global_runtime, init
+from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import Status
 
 
@@ -39,6 +41,9 @@ async def test_project():
         exp_obj = exp._get_obj()
         assert exp_obj.duration is not None
         assert exp_obj.status == Status.COMPLETED
+
+    if os.path.exists(team_path()):
+        raise AssertionError("Project path should be removed after done().")
 
 
 @pytest.mark.asyncio
