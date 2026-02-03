@@ -180,7 +180,7 @@ async def log_execution(
     # Will eventually be cleanup on Project done() if AUTO_CLEANUP is enabled.
     # Considering the record file is small, we just save it locally first.
     # If this changes in the future, we should delete them after uploading.
-    with open(os.path.join(path, "record.json"), "w") as f:
+    with open(os.path.join(path, "execution.json"), "w") as f:
         f.write(execution.model_dump_json())
 
     runtime = global_runtime()
