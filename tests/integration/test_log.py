@@ -549,12 +549,16 @@ async def test_log_execution():
         os.chdir(path)
 
         await alpha.log_execution(
-            content={
+            output={
                 "example": "test",
                 "value": 123,
                 "flag": True,
                 "list": [1, 2, 3],
                 "dict": {"a": 1, "b": 2},
+            },
+            input={
+                "input_example": "input_test",
+                "input_value": 456,
             },
         )
 
