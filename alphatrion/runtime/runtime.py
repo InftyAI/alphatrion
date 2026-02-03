@@ -2,9 +2,9 @@
 import os
 import uuid
 
-from alphatrion import consts
+from alphatrion import envs
 from alphatrion.artifact.artifact import Artifact
-from alphatrion.metadata.sql import SQLStore
+from alphatrion.storage.sqlstore import SQLStore
 
 __RUNTIME__ = None
 
@@ -12,8 +12,6 @@ __RUNTIME__ = None
 def init(
     team_id: uuid.UUID,
     user_id: uuid.UUID,
-    artifact_insecure: bool = False,
-    init_tables: bool = False,
 ):
     """
     Initialize the AlphaTrion runtime environment.
@@ -27,8 +25,6 @@ def init(
     __RUNTIME__ = Runtime(
         team_id=team_id,
         user_id=user_id,
-        artifact_insecure=artifact_insecure,
-        init_tables=init_tables,
     )
 
 
@@ -54,17 +50,17 @@ class Runtime:
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        artifact_insecure: bool = False,
-        init_tables: bool = False,
-        root_path: str = os.path.expanduser("~/.alphatrion"),
     ):
+        init_tables = os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true"
         self._metadb = SQLStore(
-            os.getenv(consts.METADATA_DB_URL), init_tables=init_tables
+            os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
         )
 
         self._user_id = user_id
         self._team_id = team_id
-        self._root_path = root_path
+        self._root_path = os.getenv(envs.ROOT_PATH, os.path.expanduser("~/.alphatrion"))
+
+        artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
 
         if self.artifact_storage_enabled():
             self._artifact = Artifact(team_id=self._team_id, insecure=artifact_insecure)
@@ -73,7 +69,7 @@ class Runtime:
             os.makedirs(self._root_path, exist_ok=True)
 
     def artifact_storage_enabled(self) -> bool:
-        return os.getenv(consts.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
+        return os.getenv(envs.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
 
     # current_proj is the current running Project.
     @property
@@ -95,3 +91,7 @@ class Runtime:
     @property
     def team_id(self) -> uuid.UUID:
         return self._team_id
+
+    @property
+    def root_path(self) -> str:
+        return self._root_path

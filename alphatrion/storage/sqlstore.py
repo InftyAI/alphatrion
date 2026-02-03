@@ -3,8 +3,8 @@ import uuid
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from alphatrion.metadata.base import MetaStore
-from alphatrion.metadata.sql_models import (
+from alphatrion.storage.metastore import MetaStore
+from alphatrion.storage.sql_models import (
     Base,
     Experiment,
     Metric,

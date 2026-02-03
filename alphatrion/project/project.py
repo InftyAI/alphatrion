@@ -1,12 +1,16 @@
 import asyncio
 import contextlib
+import os
+import shutil
 import signal
 import uuid
 
 from pydantic import BaseModel, Field
 
+from alphatrion import envs
 from alphatrion.experiment import base as experiment
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.snapshot.snapshot import team_path
 from alphatrion.utils import context
 
 
@@ -89,6 +93,8 @@ class Project:
     def _start_signal_handlers(self):
         loop = asyncio.get_running_loop()
 
+        # Handle SIGINT and SIGTERM to allow graceful shutdown.
+        # Make sure to call done() on receiving the signal.
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, self._on_signal)
 
@@ -127,6 +133,15 @@ class Project:
     # done() is safe to call multiple times.
     def done(self):
         self._cancel()
+        self._cleanup()
+
+    def _cleanup(self):
+        # remove the whole folder once the project is done.
+        if (
+            os.path.exists(team_path())
+            and os.getenv(envs.AUTO_CLEANUP, "true").lower() == "true"
+        ):
+            shutil.rmtree(team_path(), ignore_errors=True)
 
     def _cancel(self):
         return self._context.cancel()

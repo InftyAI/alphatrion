@@ -2,8 +2,8 @@ import asyncio
 import contextvars
 import uuid
 
-from alphatrion.metadata.sql_models import Status
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.storage.sql_models import Status
 
 current_run_id = contextvars.ContextVar("current_run_id", default=None)
 
@@ -32,6 +32,7 @@ class Run:
         )
 
         # current_run_id context var is used in tracing workflow/task decorators.
+        # exp.run() will be called sequentially, so it's safe to set the context var.
         token = current_run_id.set(self.id)
         try:
             # The created task will also inherit the current context,

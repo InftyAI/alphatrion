@@ -12,8 +12,8 @@ from faker import Faker
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from alphatrion import consts
-from alphatrion.metadata.sql_models import (
+from alphatrion import envs
+from alphatrion.storage.sql_models import (
     Base,
     Experiment,
     Metric,
@@ -26,7 +26,7 @@ from alphatrion.metadata.sql_models import (
 
 load_dotenv()
 
-DATABASE_URL = os.getenv(consts.METADATA_DB_URL)
+DATABASE_URL = os.getenv(envs.METADATA_DB_URL)
 
 engine = create_engine(DATABASE_URL, echo=False)
 SessionLocal = sessionmaker(bind=engine)

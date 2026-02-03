@@ -1,29 +1,39 @@
 import asyncio
+import os
 from collections.abc import Callable
+from typing import Any
 
 from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.utils import time as utime
+from alphatrion.snapshot.snapshot import (
+    ExecutionKind,
+    build_run_execution,
+    checkpoint_path,
+    snapshot_path,
+)
 
 BEST_RESULT_PATH = "best_result_path"
+EXECUTION_PATH = "execution_path"
 
 
 async def log_artifact(
     paths: str | list[str],
-    version: str = "latest",
+    version: str | None = None,
+    repo_name: str | None = None,
     pre_save_hook: Callable | None = None,
 ) -> str:
     """
     Log artifacts (files) to the artifact registry.
 
     :param paths: list of file paths to log.
-        Support one or multiple files or a folder.
+        Support one or multiple files or a folder, multiple folders is not supported.
         If a folder is provided, all files in the folder will be logged.
         Don't support nested folders currently, only files in the first level
         of the folder will be logged.
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
+           If want to save something, make sure it's under the paths.
 
     :return: the path of the logged artifact in the format of
     {team_id}/{project_id}:{version}
@@ -56,7 +66,7 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, str(proj.id), paths, version
+        None, runtime._artifact.push, repo_name or str(proj.id), paths, version
     )
 
 
@@ -81,7 +91,8 @@ async def log_params(params: dict):
 # so far, the experiment will checkpoint the current data.
 #
 # Note: log_metrics can only be called inside a Run, because it needs a run_id.
-async def log_metrics(metrics: dict[str, float]):
+# Return bool indicates whether the metric is the best metric.
+async def log_metrics(metrics: dict[str, float]) -> bool:
     run_id = current_run_id.get()
     if run_id is None:
         raise RuntimeError("log_metrics must be called inside a Run.")
@@ -101,6 +112,7 @@ async def log_metrics(metrics: dict[str, float]):
     should_checkpoint = False
     should_early_stop = False
     should_stop_on_target = False
+    is_best_metric = False
     for key, value in metrics.items():
         runtime._metadb.create_metric(
             key=key,
@@ -111,27 +123,75 @@ async def log_metrics(metrics: dict[str, float]):
             run_id=run_id,
         )
 
-        # TODO: should we save the checkpoint path for the best metric?
         # Always call the should_checkpoint_on_best first because
         # it also updates the best metric.
-        should_checkpoint |= exp.should_checkpoint_on_best(
+        should_checkpoint_tmp, is_best_metric_tmp = exp.should_checkpoint_on_best(
             metric_key=key, metric_value=value
         )
+        should_checkpoint |= should_checkpoint_tmp
+        is_best_metric |= is_best_metric_tmp
+
         should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=value)
         should_stop_on_target |= exp.should_stop_on_target_metric(
             metric_key=key, metric_value=value
         )
 
+    # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
-            paths=exp.config().checkpoint.path,
-            version=utime.now_2_hash(),
+            repo_name=f"{str(proj.id)}/ckpt",
+            # If not provided, will use the default checkpoint path.
+            paths=exp.config().checkpoint.path or checkpoint_path(),
             pre_save_hook=exp.config().checkpoint.pre_save_hook,
         )
-        runtime._metadb.update_run(
+        runtime.metadb.update_run(
             run_id=run_id,
             meta={BEST_RESULT_PATH: path},
         )
 
     if should_early_stop or should_stop_on_target:
         exp.done()
+
+    return is_best_metric
+
+
+# log_execution is used to log the record of a run/experiment/project,
+# including both input and output, e.g. you want to save the code snippet.
+# It will be stored in the object storage as a JSON file if object storage
+# is enabled or locally otherwise.
+async def log_execution(
+    output: dict[str, Any],
+    input: dict[str, Any] | None = None,
+    kind: ExecutionKind = ExecutionKind.RUN,
+):
+    execution = None
+
+    if kind == ExecutionKind.RUN:
+        execution = build_run_execution(output=output, input=input)
+    else:
+        raise NotImplementedError(
+            f"Logging record of kind {execution.kind} is not implemented yet."
+        )
+
+    path = snapshot_path()
+    if os.path.exists(path) is False:
+        os.makedirs(path, exist_ok=True)
+
+    # Will eventually be cleanup on Project done() if AUTO_CLEANUP is enabled.
+    # Considering the record file is small, we just save it locally first.
+    # If this changes in the future, we should delete them after uploading.
+    with open(os.path.join(path, "execution.json"), "w") as f:
+        f.write(execution.model_dump_json())
+
+    runtime = global_runtime()
+
+    # If not enabled, only save to local disk.
+    if runtime.artifact_storage_enabled():
+        path = await log_artifact(
+            paths=os.path.join(path, "execution.json"),
+            repo_name=f"{str(runtime.current_proj.id)}/execution",
+        )
+        runtime.metadb.update_run(
+            run_id=current_run_id.get(),
+            meta={EXECUTION_PATH: path},
+        )

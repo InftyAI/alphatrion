@@ -2,7 +2,8 @@ import os
 
 import oras.client
 
-from alphatrion import consts
+from alphatrion import envs
+from alphatrion.utils import time as utiltime
 
 SUCCESS_CODE = 201
 
@@ -10,7 +11,7 @@ SUCCESS_CODE = 201
 class Artifact:
     def __init__(self, team_id: str, insecure: bool = False):
         self._team_id = team_id
-        self._url = os.environ.get(consts.ARTIFACT_REGISTRY_URL)
+        self._url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
         self._url = self._url.replace("https://", "").replace("http://", "")
         self._client = oras.client.OrasClient(
             hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
@@ -20,7 +21,7 @@ class Artifact:
         self,
         repo_name: str,
         paths: str | list[str],
-        version: str = "latest",
+        version: str | None = None,
     ) -> str:
         """
         Push files or all files in a folder to the artifact registry.
@@ -47,18 +48,20 @@ class Artifact:
         if not files_to_push:
             raise ValueError("No files to push.")
 
+        if version is None:
+            version = utiltime.now_2_hash()
+
         url = self._url if self._url.endswith("/") else f"{self._url}/"
         path = f"{self._team_id}/{repo_name}:{version}"
         target = f"{url}{path}"
 
         try:
-            self._client.push(target, files=files_to_push)
+            self._client.push(target, files=files_to_push, disable_path_validation=True)
         except Exception as e:
             raise RuntimeError("Failed to push artifacts") from e
 
         return path
 
-    # TODO: should we store it in the metadb instead?
     def list_versions(self, repo_name: str) -> list[str]:
         url = self._url if self._url.endswith("/") else f"{self._url}/"
         target = f"{url}{self._team_id}/{repo_name}"
