@@ -56,7 +56,7 @@ class Artifact:
         target = f"{url}{path}"
 
         try:
-            self._client.push(target, files=files_to_push)
+            self._client.push(target, files=files_to_push, disable_path_validation=True)
         except Exception as e:
             raise RuntimeError("Failed to push artifacts") from e
 

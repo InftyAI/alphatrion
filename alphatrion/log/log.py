@@ -7,7 +7,6 @@ from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
-    Metric,
     RecordKind,
     build_run_record,
     checkpoint_path,
@@ -21,6 +20,7 @@ RECORD_PATH = "record_path"
 async def log_artifact(
     paths: str | list[str],
     version: str | None = None,
+    repo_name: str | None = None,
     pre_save_hook: Callable | None = None,
 ) -> str:
     """
@@ -66,7 +66,7 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, str(proj.id), paths, version
+        None, runtime._artifact.push, repo_name or str(proj.id), paths, version
     )
 
 
@@ -139,6 +139,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
+            repo_name=f"{str(proj.id)}/ckpt",
             # If not provided, will use the default checkpoint path.
             paths=exp.config().checkpoint.path or checkpoint_path(),
             pre_save_hook=exp.config().checkpoint.pre_save_hook,
@@ -158,8 +159,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 # For example, you want to save the code snippet. It will be stored
 # in the object storage as a JSON file if object storage is enabled.
 async def log_record(
-    metrics: list[Metric],
-    content: dict[str, Any] | None = None,
+    content: dict[str, Any],
     kind: RecordKind = RecordKind.RUN,
 ):
     save_path = ""
@@ -167,7 +167,7 @@ async def log_record(
 
     if kind == RecordKind.RUN:
         save_path = snapshot_path()
-        record = build_run_record(metrics=metrics, content=content)
+        record = build_run_record(content=content)
     else:
         raise NotImplementedError(
             f"Logging record of kind {record.kind} is not implemented yet."
@@ -186,6 +186,7 @@ async def log_record(
     if runtime.artifact_storage_enabled():
         path = await log_artifact(
             paths=os.path.join(save_path, "record.json"),
+            repo_name=f"{str(runtime.current_proj.id)}/record",
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),

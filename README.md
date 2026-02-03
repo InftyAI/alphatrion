@@ -60,17 +60,19 @@ Below is a simple example with two approaches demonstrating how to create an exp
 
 ```python
 import uuid
-from alphatrion import init, log_metrics, Project, CraftExperiment
+
+import alphatrion as alpha
+from alphatrion import experiment, project
 
 # Better to use a fixed UUID for the team and user in real scenarios.
-init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
+alpha.init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
 
 async def your_task():
   # Run your code here then log metrics.
-  await log_metrics({"accuracy": 0.95})
+  await alpha.log_metrics({"accuracy": 0.95})
 
-async with Project.setup(name="my_project"):
-  async with CraftExperiment.start(name="my_experiment") as exp:
+async with project.Project.setup(name="my_project"):
+  async with experiment.CraftExperiment.start(name="my_experiment") as exp:
     task = exp.run(lambda: your_task())
     await task.wait()
 ```

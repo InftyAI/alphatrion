@@ -6,12 +6,13 @@ import uuid
 
 import pytest
 
-from alphatrion.runtime.runtime import global_runtime, init
+import alphatrion as alpha
+from alphatrion.runtime.runtime import global_runtime
 
 
 @pytest.fixture
 def artifact():
-    init(
+    alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
     )
@@ -21,7 +22,7 @@ def artifact():
 
 
 def test_push_with_files(artifact):
-    init(
+    alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
     )
@@ -47,7 +48,7 @@ def test_push_with_files(artifact):
 
 
 def test_push_with_folder(artifact):
-    init(
+    alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
     )

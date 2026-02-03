@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-import alphatrion as alpha
-from alphatrion.experiment.craft_experiment import CraftExperiment
+from alphatrion import experiment, project
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.storage.sql_models import Status
 
 
 @pytest.mark.asyncio
@@ -15,16 +15,16 @@ async def test_integration_project():
         await asyncio.sleep(duration)
         print("duration done:", duration)
 
-    async with alpha.Project.setup(
+    async with project.Project.setup(
         name="integration_test_project",
         description="Integration test for Project",
         meta={"test_case": "integration_project"},
     ):
-        async with CraftExperiment.start(
+        async with experiment.CraftExperiment.start(
             name="integration_test_experiment",
             description="Experiment for integration test",
             meta={"experiment_case": "integration_project_experiment"},
-            config=alpha.ExperimentConfig(max_runs_per_experiment=2),
+            config=experiment.ExperimentConfig(max_runs_per_experiment=2),
         ) as exp:
             exp_id = exp.id
 
@@ -44,7 +44,7 @@ async def test_integration_project():
 
     runs = runtime.metadb.list_runs_by_exp_id(exp_id=exp_id)
     assert len(runs) == 5
-    completed_runs = [run for run in runs if run.status == alpha.Status.COMPLETED]
+    completed_runs = [run for run in runs if run.status == Status.COMPLETED]
     assert len(completed_runs) == 2
-    cancelled_runs = [run for run in runs if run.status == alpha.Status.CANCELLED]
+    cancelled_runs = [run for run in runs if run.status == Status.CANCELLED]
     assert len(cancelled_runs) == 3

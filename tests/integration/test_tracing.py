@@ -4,7 +4,7 @@
 import pytest
 from openai import OpenAI
 
-import alphatrion as alpha
+from alphatrion import experiment, project, tracing
 from alphatrion.run.run import current_run_id
 
 client = OpenAI(
@@ -13,7 +13,7 @@ client = OpenAI(
 )
 
 
-@alpha.task()
+@tracing.task()
 def create_joke():
     completion = client.chat.completions.create(
         model="smollm:135m",
@@ -22,7 +22,7 @@ def create_joke():
     return completion.choices[0].message.content
 
 
-@alpha.task()
+@tracing.task()
 def translate_joke_to_pirate(joke: str):
     completion = client.chat.completions.create(
         model="smollm:135m",
@@ -36,12 +36,12 @@ def translate_joke_to_pirate(joke: str):
     return completion.choices[0].message.content
 
 
-@alpha.task()
+@tracing.task()
 def print_joke(res: str):
     print("Joke:", res)
 
 
-@alpha.workflow()
+@tracing.workflow()
 async def joke_workflow():
     assert current_run_id.get() is not None
 
@@ -52,8 +52,8 @@ async def joke_workflow():
 
 @pytest.mark.asyncio
 async def test_workflow():
-    async with alpha.Project.setup("demo_joke_workflow") as proj:
-        async with alpha.CraftExperiment.start("demo_joke_experiment") as exp:
+    async with project.Project.setup("demo_joke_workflow") as proj:
+        async with experiment.CraftExperiment.start("demo_joke_experiment") as exp:
             run = exp.run(lambda: joke_workflow())
             await run.wait()
 
