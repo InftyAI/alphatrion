@@ -1,4 +1,4 @@
-from alphatrion.log.log import log_artifact, log_metrics, log_params, log_execution
+from alphatrion.log.log import log_artifact, log_execution, log_metrics, log_params
 from alphatrion.runtime.runtime import init
 
 __all__ = [

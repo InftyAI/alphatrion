@@ -1,7 +1,7 @@
 from alphatrion.snapshot.snapshot import (
-    Metadata,
-    ExecutionKind,
     Execution,
+    ExecutionKind,
+    Metadata,
     Result,
     Spec,
 )
