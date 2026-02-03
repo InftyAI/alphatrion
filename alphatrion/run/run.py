@@ -1,6 +1,5 @@
 import asyncio
 import contextvars
-import inspect
 import uuid
 
 from alphatrion.runtime.runtime import global_runtime

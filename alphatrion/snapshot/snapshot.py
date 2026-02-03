@@ -60,7 +60,9 @@ class Record(BaseModel):
     result: Result
 
 
-def build_run_record(output: dict[str, Any], input: dict[str, Any] | None = None) -> Record:
+def build_run_record(
+    output: dict[str, Any], input: dict[str, Any] | None = None
+) -> Record:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
     if run_obj is None:

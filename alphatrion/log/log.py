@@ -7,7 +7,6 @@ from alphatrion.experiment.base import current_exp_id
 from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
-    Record,
     RecordKind,
     build_run_record,
     checkpoint_path,
@@ -161,7 +160,8 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 # in the object storage as a JSON file if object storage is enabled.
 # If the kind is RecordKind.RUN, it will be called after the run is done.
 async def log_record(
-    output: dict[str, Any], input: dict[str, Any] | None = None,
+    output: dict[str, Any],
+    input: dict[str, Any] | None = None,
     kind: RecordKind = RecordKind.RUN,
 ):
     record = None
