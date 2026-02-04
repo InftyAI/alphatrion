@@ -54,6 +54,9 @@ HostName:    postgres
 ServerPWD:   alphatr1on
 ```
 
+You can also visit the Docker Registry UI at `http://localhost:80` to see the local registry where the built images are stored.
+
+
 ### Run a Simple Experiment
 
 Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
