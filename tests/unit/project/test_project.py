@@ -77,19 +77,53 @@ async def test_project_with_done_with_err():
     )
 
     exp_id = None
+    run_id = None
     async with Project.setup(
-        name="context_proj",
+        name="proj_with_err",
         description="Context manager test",
         meta={"key": "value"},
     ):
         exp = CraftExperiment.start(name="first-experiment")
         exp_id = exp.id
+
+        run = exp.run(lambda: asyncio.sleep(5))
+        run_id = run.id
         exp.done_with_err()
 
     # exit the proj context, trial should be done automatically
     exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
     assert exp_obj.duration is not None
     assert exp_obj.status == Status.FAILED
+
+    assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
+
+@pytest.mark.asyncio
+async def test_project_with_done_with_cancel():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    run_id = None
+    async with Project.setup(
+        name="proj_with_cancel",
+        description="Context manager test",
+        meta={"key": "value"},
+    ):
+        exp = CraftExperiment.start(name="first-experiment")
+        exp_id = exp.id
+
+        run = exp.run(lambda: asyncio.sleep(5))
+        run_id = run.id
+        exp.done_with_cancel()
+
+    # exit the proj context, trial should be done automatically
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.duration is not None
+    assert exp_obj.status == Status.CANCELLED
+
+    assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
 
 
 @pytest.mark.asyncio
@@ -391,6 +425,6 @@ async def test_project_with_signal():
             await exp.wait()
 
         exp_obj = exp._get_obj()
-        assert exp_obj.status == Status.COMPLETED
+        assert exp_obj.status == Status.CANCELLED
         assert (datetime.now() - start_time).total_seconds() >= 2
         assert (datetime.now() - start_time).total_seconds() < 5

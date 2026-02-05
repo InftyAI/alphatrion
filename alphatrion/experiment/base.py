@@ -152,8 +152,8 @@ class Experiment(ABC):
         "_early_stopping_counter",
         # Only work when max_runs_per_experiment > 0
         "_total_runs_counter",
-        # Whether the Experiment is ended with error.
-        "_err",
+        # The end status, None, Err or Cancelled.
+        "_end_status",
     )
 
     def __init__(self, config: ExperimentConfig | None = None):
@@ -163,7 +163,7 @@ class Experiment(ABC):
         self._runs = dict[uuid.UUID, Run]()
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
-        self._err = False
+        self._end_status = None
 
     async def __aenter__(self):
         return self
@@ -335,34 +335,41 @@ class Experiment(ABC):
         self._cancel()
 
     def done_with_err(self):
-        self._err = True
-        self._cancel()
+        self._end_status = "Err"
+        self.done()
+
+    def done_with_cancel(self):
+        self._end_status = "Cancelled"
+        self.done()
 
     def _cancel(self):
         self._context.cancel()
 
     def _stop(self):
-        exp = self._runtime._metadb.get_experiment(experiment_id=self._id)
+        exp = self._runtime._metadb.get_experiment(experiment_id=self.id)
         if exp is not None and exp.status not in FINISHED_STATUS:
             duration = (
                 datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
             ).total_seconds()
 
             status = Status.COMPLETED
-            if self._err:
+            if self._end_status == "Err":
                 status = Status.FAILED
+            elif self._end_status == "Cancelled":
+                status = Status.CANCELLED
 
-            self._runtime._metadb.update_experiment(
+            self._runtime.metadb.update_experiment(
                 experiment_id=self._id, status=status, duration=duration
             )
 
-        self._runtime.current_proj.unregister_experiment(self._id)
+        self._runtime.current_proj.unregister_experiment(self.id)
         for run in self._runs.values():
+            # When experiment is stopped, we consider the unfinished runs as cancelled.
             run.cancel()
         self._runs.clear()
 
     def _get_obj(self):
-        return self._runtime._metadb.get_experiment(experiment_id=self._id)
+        return self._runtime._metadb.get_experiment(experiment_id=self.id)
 
     def run(self, call_func: callable) -> Run:
         """Start a new run for the Experiment.
