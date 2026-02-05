@@ -1,9 +1,9 @@
 import asyncio
-from functools import partial
 import os
 import random
 import uuid
 from datetime import datetime, timedelta
+from functools import partial
 
 import pytest
 
@@ -410,7 +410,7 @@ async def test_project_with_no_parameter_run():
     )
 
     async def fake_work():
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
     run_id = None
     async with Project.setup(
@@ -418,7 +418,6 @@ async def test_project_with_no_parameter_run():
     ):
         async with CraftExperiment.start(
             name="first-experiment",
-            config=experiment.ExperimentConfig(max_execution_seconds=2),
         ) as exp:
             run = exp.run(fake_work)
             await run.wait()
