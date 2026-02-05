@@ -135,13 +135,12 @@ async def test_project_with_no_context():
         user_id=uuid.uuid4(),
     )
 
-    async def fake_work(exp: experiment.Experiment):
-        await asyncio.sleep(3)
-        exp.done()
+    async def fake_work():
+        await asyncio.sleep(1)
 
     proj = Project.setup(name="no_context_proj")
     async with CraftExperiment.start(name="first-trial") as exp:
-        exp.run(lambda: fake_work(exp))
+        exp.run(fake_work)
         await exp.wait()
 
         exp_obj = exp._get_obj()
@@ -177,9 +176,8 @@ async def test_create_project_with_exp_wait():
         user_id=uuid.uuid4(),
     )
 
-    async def fake_work(exp: experiment.Experiment):
+    async def fake_work():
         await asyncio.sleep(3)
-        exp.done()
 
     exp_id = None
     async with Project.setup(name="context_proj"):
@@ -187,7 +185,7 @@ async def test_create_project_with_exp_wait():
             exp_id = experiment.current_exp_id.get()
             start_time = datetime.now()
 
-            asyncio.create_task(fake_work(exp))
+            exp.run(fake_work)
             assert datetime.now() - start_time <= timedelta(seconds=1)
 
             await exp.wait()
@@ -206,10 +204,9 @@ async def test_create_project_with_run():
         user_id=user_id,
     )
 
-    async def fake_work(cancel_func: callable, exp_id: uuid.UUID):
+    async def fake_work(exp_id: uuid.UUID):
         assert experiment.current_exp_id.get() == exp_id
         await asyncio.sleep(3)
-        cancel_func()
 
     async with (
         Project.setup(name="context_proj"),
@@ -217,10 +214,10 @@ async def test_create_project_with_run():
     ):
         start_time = datetime.now()
 
-        exp.run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.id))
         assert len(exp._runs) == 1
 
-        exp.run(lambda: fake_work(exp.done, exp.id))
+        exp.run(lambda: fake_work(exp.id))
         assert len(exp._runs) == 2
 
         await exp.wait()
@@ -252,6 +249,7 @@ async def test_create_project_with_run_cancelled():
         # At this point, 4 runs are started.
         assert len(exp._runs) == 4
         await exp.wait()
+        assert len(exp._runs) == 0
 
         run_0_obj = run_0._get_obj()
         assert run_0_obj.status == Status.COMPLETED

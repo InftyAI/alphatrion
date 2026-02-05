@@ -21,10 +21,10 @@ class Run:
         return self._id
 
     def _get_obj(self):
-        return self._runtime._metadb.get_run(run_id=self._id)
+        return self._runtime.metadb.get_run(run_id=self._id)
 
     def start(self, call_func: CallableEntry) -> None:
-        self._id = self._runtime._metadb.create_run(
+        self._id = self._runtime.metadb.create_run(
             team_id=self._runtime.team_id,
             user_id=self._runtime.user_id,
             project_id=self._runtime.current_proj.id,
@@ -48,7 +48,7 @@ class Run:
         if self.cancelled():
             return
 
-        self._runtime._metadb.update_run(
+        self._runtime.metadb.update_run(
             run_id=self._id,
             status=Status.COMPLETED,
         )
@@ -57,7 +57,7 @@ class Run:
         # TODO: we should wait for the task to be actually cancelled
         # and catch the CancelledError exception in the task function.
         self._task.cancel()
-        self._runtime._metadb.update_run(
+        self._runtime.metadb.update_run(
             run_id=self._id,
             status=Status.CANCELLED,
         )
