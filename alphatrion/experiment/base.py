@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 from alphatrion.run.run import Run
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
+from alphatrion.types import CallableEntry
 from alphatrion.utils import context
 
 # Used in log/log.py to log params/metrics
@@ -371,7 +372,7 @@ class Experiment(ABC):
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self.id)
 
-    def run(self, call_func: callable) -> Run:
+    def run(self, call_func: CallableEntry) -> Run:
         """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.

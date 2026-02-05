@@ -76,7 +76,7 @@ async def your_task():
 
 async with project.Project.setup(name="my_project"):
   async with experiment.CraftExperiment.start(name="my_experiment") as exp:
-    task = exp.run(lambda: your_task())
+    task = exp.run(your_task) # use lambda or partial if you need to pass arguments to your_task
     await task.wait()
 ```
 
