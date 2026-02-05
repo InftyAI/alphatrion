@@ -165,6 +165,9 @@ class Experiment(ABC):
         self._early_stopping_counter = 0
         self._total_runs_counter = 0
         self._end_status = None
+        # if experiment starts to wait, it will auto stop when the runs
+        # are all finished.
+        self._start_waiting = False
 
     async def __aenter__(self):
         return self
@@ -323,6 +326,7 @@ class Experiment(ABC):
     # automatically, however, this is unpredictable because some tasks may wait for
     # external events, so we leave it to the user to decide when to stop the experiment.
     async def wait(self):
+        self._start_waiting = True
         await self._context.wait()
 
     def is_done(self) -> bool:
@@ -398,6 +402,11 @@ class Experiment(ABC):
             self._config.max_runs_per_experiment > 0
             and self._total_runs_counter >= self._config.max_runs_per_experiment
         ):
+            self.done()
+
+        # If the experiment starts to wait and all runs are finished,
+        # we can stop the experiment.
+        if self._start_waiting and len(self._runs) == 0:
             self.done()
 
     @classmethod

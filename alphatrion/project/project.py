@@ -184,7 +184,7 @@ class Project:
         :return: the project ID
         """
 
-        self._id = self._runtime._metadb.create_project(
+        self._id = self._runtime.metadb.create_project(
             name=name,
             description=description,
             team_id=self._runtime._team_id,
@@ -194,10 +194,10 @@ class Project:
         return self._id
 
     def _get(self):
-        return self._runtime._metadb.get_project(project_id=self._id)
+        return self._runtime.metadb.get_project(project_id=self._id)
 
     def _get_by_name(self, name: str):
-        return self._runtime._metadb.get_proj_by_name(
+        return self._runtime.metadb.get_proj_by_name(
             name=name, team_id=self._runtime._team_id
         )
 
@@ -206,7 +206,7 @@ class Project:
         if exp is None:
             return
 
-        self._runtime._metadb.delete_project(project_id=self._id)
+        self._runtime.metadb.delete_project(project_id=self._id)
         # TODO: Should we make this optional as a parameter?
         tags = self._runtime._artifact.list_versions(repo_name=str(self._id))
         self._runtime._artifact.delete(repo_name=str(self._id), versions=tags)
