@@ -404,24 +404,24 @@ async def test_log_metrics_with_early_stopping_never_triggered():
             name="exp-with-early-stopping",
             config=experiment.ExperimentConfig(
                 monitor_metric="accuracy",
-                early_stopping_runs=3,
+                early_stopping_runs=2,
                 max_execution_seconds=3,
             ),
         ) as exp:
             start_time = datetime.now()
+            exp.run(lambda: fake_work(3))
             exp.run(lambda: fake_work(1))
-            exp.run(lambda: fake_work(2))
-            exp.run(lambda: fake_sleep(2))
+            exp.run(lambda: fake_sleep(5))
             # running in parallel.
             await exp.wait()
 
             assert (
                 len(
-                    exp._runtime._metadb.list_metrics_by_experiment_id(
+                    exp._runtime.metadb.list_metrics_by_experiment_id(
                         experiment_id=exp.id
                     )
                 )
-                == 3
+                == 2
             )
             assert datetime.now() - start_time >= timedelta(seconds=3)
 
