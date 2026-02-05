@@ -4,6 +4,7 @@ import uuid
 
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import Status
+from alphatrion.types import CallableEntry
 
 current_run_id = contextvars.ContextVar("current_run_id", default=None)
 
@@ -22,7 +23,7 @@ class Run:
     def _get_obj(self):
         return self._runtime._metadb.get_run(run_id=self._id)
 
-    def start(self, call_func: callable) -> None:
+    def start(self, call_func: CallableEntry) -> None:
         self._id = self._runtime._metadb.create_run(
             team_id=self._runtime.team_id,
             user_id=self._runtime.user_id,

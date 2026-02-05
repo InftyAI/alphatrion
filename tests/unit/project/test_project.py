@@ -3,6 +3,7 @@ import os
 import random
 import uuid
 from datetime import datetime, timedelta
+from functools import partial
 
 import pytest
 
@@ -96,6 +97,7 @@ async def test_project_with_done_with_err():
     assert exp_obj.status == Status.FAILED
 
     assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
+
 
 @pytest.mark.asyncio
 async def test_project_with_done_with_cancel():
@@ -401,6 +403,32 @@ async def test_project_with_hierarchy_timeout_2():
 
 
 @pytest.mark.asyncio
+async def test_project_with_no_parameter_run():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+    )
+
+    async def fake_work():
+        await asyncio.sleep(0.5)
+
+    run_id = None
+    async with Project.setup(
+        name="project_with_no_parameter_run",
+    ):
+        async with CraftExperiment.start(
+            name="first-experiment",
+        ) as exp:
+            run = exp.run(fake_work)
+            await run.wait()
+            run_id = run.id
+
+    run_obj = global_runtime().metadb.get_run(run_id=run_id)
+    assert run_obj is not None
+    assert run_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
 async def test_project_with_signal():
     init(
         team_id=uuid.uuid4(),
@@ -421,7 +449,7 @@ async def test_project_with_signal():
             name="first-experiment",
         ) as exp:
             exp.run(lambda: asyncio.sleep(5))
-            exp.run(lambda: fake_work(proj))
+            exp.run(partial(fake_work, proj))
             await exp.wait()
 
         exp_obj = exp._get_obj()

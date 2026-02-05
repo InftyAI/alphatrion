@@ -8,7 +8,7 @@ from alphatrion.storage.sql_models import Status
 
 
 @pytest.mark.asyncio
-async def test_integration_project():
+async def test_setup_project():
     exp_id = None
 
     async def fake_work(duration: int):
