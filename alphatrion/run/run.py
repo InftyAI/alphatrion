@@ -52,9 +52,6 @@ class Run:
             status=Status.COMPLETED,
         )
 
-    def cancelled(self) -> bool:
-        return self._task.cancelled()
-
     def cancel(self):
         # TODO: we should wait for the task to be actually cancelled
         # and catch the CancelledError exception in the task function.
@@ -63,6 +60,9 @@ class Run:
             run_id=self._id,
             status=Status.CANCELLED,
         )
+
+    def cancelled(self) -> bool:
+        return self._task.cancelled()
 
     async def wait(self):
         await self._task

@@ -39,6 +39,7 @@ class Project:
         "_context",
         "_signal_task",
         "_stopped",
+        "_end_status",
     )
 
     def __init__(self, config: ProjectConfig | None = None):
@@ -57,6 +58,7 @@ class Project:
         )
         self._signal_task: asyncio.Task | None = None
         self._stopped = asyncio.Event()
+        self._end_status = None
 
     @property
     def id(self):
@@ -105,7 +107,7 @@ class Project:
 
     async def _wait_for_stop(self):
         await self._stopped.wait()
-        self.done()
+        self.done_with_cancel()
 
     async def __aenter__(self):
         if self._id is None:
@@ -120,6 +122,7 @@ class Project:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
+        self._end_status = None
 
         if self._signal_task:
             self._signal_task.cancel()
@@ -135,6 +138,10 @@ class Project:
         self._cancel()
         self._cleanup()
 
+    def done_with_cancel(self):
+        self._end_status = "Cancelled"
+        self.done()
+
     def _cleanup(self):
         # remove the whole folder once the project is done.
         if (
@@ -148,7 +155,10 @@ class Project:
 
     def _stop(self):
         for t in list(self._experiments.values()):
-            t.done()
+            if self._end_status == "Cancelled":
+                t.done_with_cancel()
+            else:
+                t.done()
         self._experiments = dict()
         # Set to None at the end of the project because
         # it will be used in experiment.done().
