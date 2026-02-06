@@ -10,15 +10,20 @@ current_run_id = contextvars.ContextVar("current_run_id", default=None)
 
 
 class Run:
-    __slots__ = ("_id", "_task", "_runtime", "_exp_id")
+    __slots__ = ("_id", "_task", "_runtime", "_exp_id", "_result")
 
     def __init__(self, exp_id: uuid.UUID):
         self._runtime = global_runtime()
         self._exp_id = exp_id
+        self._result = None
 
     @property
     def id(self) -> uuid.UUID:
         return self._id
+
+    @property
+    def result(self) -> any:
+        return self._result
 
     def _get_obj(self):
         return self._runtime.metadb.get_run(run_id=self._id)
@@ -52,6 +57,7 @@ class Run:
             run_id=self._id,
             status=Status.COMPLETED,
         )
+        self._result = self._task.result()
 
     def cancel(self):
         # TODO: we should wait for the task to be actually cancelled

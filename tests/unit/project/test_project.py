@@ -454,3 +454,24 @@ async def test_project_with_signal():
         assert exp_obj.status == Status.CANCELLED
         assert (datetime.now() - start_time).total_seconds() >= 2
         assert (datetime.now() - start_time).total_seconds() < 5
+
+
+@pytest.mark.asyncio
+async def test_project_with_result_return():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+    )
+
+    async def fake_work():
+        return {"foo": "bar"}
+
+    async with Project.setup(
+        name="project_with_return_from_run",
+    ):
+        async with CraftExperiment.start(
+            name="first-experiment",
+        ) as exp:
+            run = exp.run(fake_work)
+            await run.wait()
+            assert run.result == {"foo": "bar"}
