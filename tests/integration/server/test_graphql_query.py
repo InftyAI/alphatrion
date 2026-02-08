@@ -2,7 +2,6 @@
 
 # test query from graphql endpoint
 
-from math import exp
 import uuid
 from datetime import datetime, timedelta
 
