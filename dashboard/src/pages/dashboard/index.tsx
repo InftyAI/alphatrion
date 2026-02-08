@@ -52,64 +52,64 @@ export function DashboardPage() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          An overview of your projects, experiments, and runs.
+          Overview of your projects, experiments, and runs
         </p>
       </div>
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           {/* Total Projects */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-blue-50 to-blue-100/50">
-                <div>
-                  <p className="text-sm font-medium text-blue-600 whitespace-nowrap">Total Projects</p>
-                  <p className="text-3xl font-bold text-blue-900 mt-2">{team?.totalProjects || 0}</p>
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Projects</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalProjects || 0}</p>
                 </div>
-                <div className="p-3 bg-blue-500 rounded-xl">
-                  <FolderKanban className="h-6 w-6 text-white" />
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Total Experiments */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-purple-50 to-purple-100/50">
-                <div>
-                  <p className="text-sm font-medium text-purple-600 whitespace-nowrap">Total Experiments</p>
-                  <p className="text-3xl font-bold text-purple-900 mt-2">{team?.totalExperiments || 0}</p>
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Experiments</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
-                <div className="p-3 bg-purple-500 rounded-xl">
-                  <FlaskConical className="h-6 w-6 text-white" />
+                <div className="p-1.5 bg-purple-100 rounded-lg">
+                  <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Total Runs */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-green-50 to-green-100/50">
-                <div>
-                  <p className="text-sm font-medium text-green-600 whitespace-nowrap">Total Runs</p>
-                  <p className="text-3xl font-bold text-green-900 mt-2">{team?.totalRuns || 0}</p>
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Runs</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalRuns || 0}</p>
                 </div>
-                <div className="p-3 bg-green-500 rounded-xl">
-                  <Play className="h-6 w-6 text-white" />
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <Play className="h-3.5 w-3.5 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -118,18 +118,18 @@ export function DashboardPage() {
       )}
 
       {/* Experiments Charts */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Experiments Overview</h3>
-          <div className="flex gap-2">
+          <h2 className="text-lg font-semibold text-foreground">Activity</h2>
+          <div className="flex gap-1">
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
                 key={option.value}
                 variant="outline"
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
-                className={`transition-colors ${
+                className={`h-8 px-2.5 text-xs transition-colors ${
                   timeRange === option.value
                     ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
                     : 'bg-white hover:bg-gray-50'
@@ -141,16 +141,16 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {/* Status Distribution Pie Chart */}
           <Card>
-            <CardContent className="p-6 pt-6">
+            <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-80 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsStatusChart experiments={filteredExperiments} />
               ) : (
-                <div className="flex h-80 items-center justify-center text-muted-foreground">
+                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}
@@ -159,13 +159,13 @@ export function DashboardPage() {
 
           {/* Timeline Chart */}
           <Card>
-            <CardContent className="p-6 pt-6">
+            <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-80 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsTimelineChart experiments={filteredExperiments} timeRange={timeRange} />
               ) : (
-                <div className="flex h-80 items-center justify-center text-muted-foreground">
+                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}

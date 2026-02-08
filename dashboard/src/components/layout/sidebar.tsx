@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   FolderKanban,
   Package,
+  Github,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import logoImage from '../../assets/logo.png';
@@ -41,14 +42,14 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-card">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b px-6">
+      <Link to="/" className="flex h-16 items-center gap-3 border-b px-6 hover:bg-accent/50 transition-colors">
         <img
           src={logoImage}
           alt="AlphaTrion Logo"
           className="h-8 w-8"
         />
         <h1 className="text-xl font-bold text-foreground">AlphaTrion</h1>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -85,12 +86,18 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t p-4">
-        <p className="text-xs text-muted-foreground">
-          AlphaTrion v0.1.0
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          AI Observability Platform
-        </p>
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <a
+            href="https://github.com/InftyAI/alphatrion"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground transition-colors"
+            title="View on GitHub"
+          >
+            <Github className="h-4 w-4" />
+          </a>
+          <span>v0.1.0</span>
+        </div>
       </div>
     </div>
   );

@@ -90,33 +90,33 @@ export function RunsPage() {
   const isLoading = projectsLoading || experimentsLoading || runsLoading;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Runs</h1>
+        <h1 className="text-xl font-bold text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Browse and monitor individual runs across experiments
+          Browse and monitor individual runs
         </p>
       </div>
 
       {/* Runs List */}
       <Card>
-        <CardContent className="p-3 pt-3">
+        <CardContent className="p-4">
           {/* Search Bar and Status Filter */}
-          <div className="flex gap-3 mb-4 items-center">
+          <div className="flex gap-2 mb-3 items-center">
             {/* Search Bar */}
-            <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative w-64">
+              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search runs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
               />
             </div>
 
             {/* Status Filter */}
-            <div className="flex gap-1.5">
+            <div className="flex gap-1">
               {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
                 <Button
                   key={status}
@@ -136,25 +136,25 @@ export function RunsPage() {
           </div>
 
           {isLoading ? (
-            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-24 w-full" />
           ) : !filteredRuns || filteredRuns.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-muted-foreground">
+            <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
               {searchQuery.trim() ? 'No runs match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} runs found` : 'No runs found'}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Run ID</TableHead>
-                  <TableHead>Experiment ID</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="h-10 text-sm font-medium">Run ID</TableHead>
+                  <TableHead className="h-10 text-sm font-medium">Experiment ID</TableHead>
+                  <TableHead className="h-10 text-sm font-medium">Status</TableHead>
+                  <TableHead className="h-10 text-sm font-medium">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRuns.map((run) => (
                   <TableRow key={run.id}>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="py-3.5 font-mono text-sm">
                       <Link
                         to={`/runs/${run.id}`}
                         className="text-primary hover:underline"
@@ -162,7 +162,7 @@ export function RunsPage() {
                         {run.id}
                       </Link>
                     </TableCell>
-                    <TableCell className="font-mono text-sm">
+                    <TableCell className="py-3.5 font-mono text-sm">
                       <Link
                         to={`/experiments/${run.experimentId}`}
                         className="text-primary hover:underline"
@@ -170,12 +170,12 @@ export function RunsPage() {
                         {run.experimentId}
                       </Link>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANTS[run.status]}>
+                    <TableCell className="py-3.5">
+                      <Badge variant={STATUS_VARIANTS[run.status]} className="text-xs px-2 py-0.5">
                         {run.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(run.createdAt), {
                         addSuffix: true,
                       })}

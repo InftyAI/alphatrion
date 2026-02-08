@@ -62,27 +62,28 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
   }, [experiments, timeRange]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <h3 className="text-sm font-semibold">Experiments Timeline</h3>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData} margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="displayDate"
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 10 }}
             angle={-45}
             textAnchor="end"
-            height={80}
+            height={70}
           />
           <YAxis
-            tick={{ fontSize: 12 }}
-            width={60}
+            tick={{ fontSize: 10 }}
+            width={40}
             label={{
               value: 'Count',
               angle: -90,
               position: 'insideLeft',
-              style: { textAnchor: 'middle' }
+              offset: 8,
+              style: { textAnchor: 'middle', fontSize: 11 }
             }}
           />
           <Tooltip
@@ -90,17 +91,18 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
+              fontSize: '12px',
             }}
             labelFormatter={(label) => `Date: ${label}`}
           />
-          <Legend />
+          <Legend wrapperStyle={{ fontSize: '12px' }} />
           <Line
             type="monotone"
             dataKey="experiments"
             stroke="hsl(var(--primary))"
             strokeWidth={2}
-            dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-            activeDot={{ r: 6 }}
+            dot={{ fill: 'hsl(var(--primary))', r: 3 }}
+            activeDot={{ r: 5 }}
             name="Experiments Launched"
           />
         </LineChart>
