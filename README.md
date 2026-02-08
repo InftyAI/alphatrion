@@ -84,21 +84,6 @@ async with project.Project.setup(name="my_project"):
 
 The dashboard provides a web interface to explore projects, experiments, runs, and metrics through an intuitive UI.
 
-#### Prerequisites
-Make sure the following are installed:
-
-- **Node.js ≥ 18**
-- **npm ≥ 9**
-
-#### Build the Dashboard (First Time Only)
-
-```bash
-cd dashboard
-npm install
-npm run build
-cd ..
-```
-
 #### Launch Dashboard
 
 ```bash
