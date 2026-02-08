@@ -259,7 +259,7 @@ export function ExperimentDetailPage() {
 
           {/* Metrics Chart - All Runs */}
           {metricsLoading ? (
-            <Skeleton className="h-96 w-full" />
+            <Skeleton className="h-80 w-full" />
           ) : groupedMetrics && Object.keys(groupedMetrics).length > 0 ? (
             <MetricsChart
               metrics={groupedMetrics}
@@ -268,12 +268,12 @@ export function ExperimentDetailPage() {
             />
           ) : (
             <Card>
-              <CardHeader>
-                <CardTitle>Metrics</CardTitle>
-                <CardDescription>No metrics data available</CardDescription>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Metrics</CardTitle>
+                <CardDescription className="text-xs">No metrics data available</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex h-32 items-center justify-center text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
                   {allRuns && allRuns.length > 0
                     ? 'No metrics logged yet'
                     : 'No runs in this experiment'}

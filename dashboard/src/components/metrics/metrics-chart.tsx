@@ -89,12 +89,12 @@ export function MetricsChart({ metrics, title = 'Metrics', description }: Metric
   if (metricKeys.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">{title}</CardTitle>
+          {description && <CardDescription className="text-xs">{description}</CardDescription>}
         </CardHeader>
         <CardContent>
-          <div className="flex h-64 items-center justify-center text-muted-foreground">
+          <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
             No metrics data available
           </div>
         </CardContent>
@@ -104,17 +104,17 @@ export function MetricsChart({ metrics, title = 'Metrics', description }: Metric
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm">{title}</CardTitle>
+        {description && <CardDescription className="text-xs">{description}</CardDescription>}
 
         {/* Metric key selector - Single selection */}
-        <div className="flex flex-wrap gap-2 pt-4">
+        <div className="flex flex-wrap gap-1.5 pt-3">
           {metricKeys.map((key, index) => (
             <Badge
               key={key}
               variant={selectedKey === key ? 'default' : 'outline'}
-              className="cursor-pointer"
+              className="cursor-pointer text-xs px-2 py-0.5"
               style={{
                 backgroundColor: selectedKey === key
                   ? COLORS[index % COLORS.length]
@@ -128,30 +128,35 @@ export function MetricsChart({ metrics, title = 'Metrics', description }: Metric
         </div>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="pt-0">
         {!selectedKey ? (
-          <div className="flex h-64 items-center justify-center text-muted-foreground">
+          <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
             Select a metric to display
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={280}>
             <LineChart
               data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="index"
-                label={{ value: 'Index', position: 'insideBottom', offset: -5 }}
+                label={{ value: 'Index', position: 'insideBottom', offset: -5, style: { fontSize: 12 } }}
                 type="number"
                 domain={['dataMin', 'dataMax']}
+                tick={{ fontSize: 11 }}
               />
-              <YAxis label={{ value: 'Value', angle: -90, position: 'insideLeft' }} />
+              <YAxis
+                label={{ value: 'Value', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
+                tick={{ fontSize: 11 }}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'hsl(var(--card))',
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '0.5rem',
+                  fontSize: '12px',
                 }}
                 formatter={(value: any, name: string, props: any) => {
                   return [value, 'Value'];
@@ -170,8 +175,8 @@ export function MetricsChart({ metrics, title = 'Metrics', description }: Metric
                 name={selectedKey}
                 stroke={COLORS[metricKeys.indexOf(selectedKey) % COLORS.length]}
                 strokeWidth={2}
-                dot={{ r: 4 }}
-                activeDot={{ r: 6 }}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
                 connectNulls
               />
             </LineChart>
