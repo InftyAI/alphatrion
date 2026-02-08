@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import strawberry
 
@@ -13,7 +14,6 @@ from .types import (
     Metric,
     Project,
     Run,
-    Statistics,
     Team,
     User,
 )
@@ -239,20 +239,48 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def get_statistics(team_id: strawberry.ID) -> Statistics:
+    def total_projects(team_id: strawberry.ID) -> int:
         metadb = runtime.graphql_runtime().metadb
+        return metadb.count_projects(team_id=uuid.UUID(team_id))
 
-        # Count total projects for this team
-        total_projects = metadb.count_projects(team_id=uuid.UUID(team_id))
+    @staticmethod
+    def total_experiments(team_id: strawberry.ID) -> int:
+        metadb = runtime.graphql_runtime().metadb
+        return metadb.count_experiments(team_id=uuid.UUID(team_id))
 
-        # Count total experiments for this team
-        total_experiments = metadb.count_experiments(team_id=uuid.UUID(team_id))
+    @staticmethod
+    def total_runs(team_id: strawberry.ID) -> int:
+        metadb = runtime.graphql_runtime().metadb
+        return metadb.count_runs(team_id=uuid.UUID(team_id))
 
-        # Count total runs for this team
-        total_runs = metadb.count_runs(team_id=uuid.UUID(team_id))
-
-        return Statistics(
-            total_projects=total_projects,
-            total_experiments=total_experiments,
-            total_runs=total_runs,
+    @staticmethod
+    def list_exps_by_timeframe(
+        team_id: strawberry.ID,
+        start_time: datetime,
+        end_time: datetime,
+    ) -> list[Experiment]:
+        metadb = runtime.graphql_runtime().metadb
+        experiments = metadb.list_exps_by_timeframe(
+            team_id=uuid.UUID(team_id),
+            start_time=start_time,
+            end_time=end_time,
         )
+        return [
+            # TODO: use a helper function to convert SQLAlchemy model to GraphQL type
+            Experiment(
+                id=e.uuid,
+                team_id=e.team_id,
+                user_id=e.user_id,
+                project_id=e.project_id,
+                name=e.name,
+                description=e.description,
+                meta=e.meta,
+                params=e.params,
+                duration=e.duration,
+                status=GraphQLStatusEnum[Status(e.status).name],
+                kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(e.kind).name],
+                created_at=e.created_at,
+                updated_at=e.updated_at,
+            )
+            for e in experiments
+        ]

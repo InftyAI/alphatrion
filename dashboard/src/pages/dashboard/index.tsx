@@ -1,15 +1,22 @@
 import { useTeamContext } from '../../context/team-context';
 import { useStatistics } from '../../hooks/use-statistics';
+import { useTeamRuns } from '../../hooks/use-team-runs';
 import {
   Card,
   CardContent,
 } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
+import { RunsTimelineChart } from '../../components/dashboard/runs-timeline-chart';
 
 export function DashboardPage() {
   const { selectedTeamId } = useTeamContext();
 
   const { data: statistics, isLoading: statisticsLoading } = useStatistics(
+    selectedTeamId || '',
+    { enabled: !!selectedTeamId }
+  );
+
+  const { data: teamRuns, isLoading: runsLoading } = useTeamRuns(
     selectedTeamId || '',
     { enabled: !!selectedTeamId }
   );
@@ -55,6 +62,21 @@ export function DashboardPage() {
                 </dd>
               </div>
             </dl>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Runs Timeline Chart */}
+      <Card>
+        <CardContent className="p-6 pt-6">
+          {runsLoading ? (
+            <Skeleton className="h-80 w-full" />
+          ) : teamRuns && teamRuns.length > 0 ? (
+            <RunsTimelineChart runs={teamRuns} />
+          ) : (
+            <div className="flex h-80 items-center justify-center text-muted-foreground">
+              No runs data available
+            </div>
           )}
         </CardContent>
       </Card>

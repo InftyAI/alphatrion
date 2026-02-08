@@ -215,4 +215,19 @@ export const queries = {
       }
     }
   `,
+
+  listTeamRuns: `
+    query ListTeamRuns($teamId: ID!, $page: Int, $pageSize: Int) {
+      teamRuns(teamId: $teamId, page: $page, pageSize: $pageSize) {
+        id
+        teamId
+        userId
+        projectId
+        experimentId
+        meta
+        status
+        createdAt
+      }
+    }
+  `,
 };

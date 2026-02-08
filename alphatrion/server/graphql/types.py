@@ -4,6 +4,7 @@ from enum import Enum
 import strawberry
 from strawberry.scalars import JSON
 
+from .resolvers import GraphQLResolvers
 
 @strawberry.type
 class Team:
@@ -14,6 +15,21 @@ class Team:
     created_at: datetime
     updated_at: datetime
 
+    total_projects: int = strawberry.field(
+        resolver=GraphQLResolvers.total_projects
+    )
+
+    total_experiments: int = strawberry.field(
+        resolver=GraphQLResolvers.total_experiments
+    )
+
+    total_runs: int = strawberry.field(
+        resolver=GraphQLResolvers.total_runs
+    )
+
+    list_exps_by_timeframe: list["Experiment"] = strawberry.field(
+        resolver=GraphQLResolvers.list_exps_by_timeframe
+    )
 
 @strawberry.type
 class User:

@@ -1,3 +1,4 @@
+import datetime
 import uuid
 
 from sqlalchemy import create_engine
@@ -244,26 +245,6 @@ class SQLStore(MetaStore):
         session.close()
         return count
 
-    def count_experiments(self, team_id: uuid.UUID) -> int:
-        session = self._session()
-        count = (
-            session.query(Experiment)
-            .filter(Experiment.team_id == team_id, Experiment.is_del == 0)
-            .count()
-        )
-        session.close()
-        return count
-
-    def count_runs(self, team_id: uuid.UUID) -> int:
-        session = self._session()
-        count = (
-            session.query(Run)
-            .filter(Run.team_id == team_id, Run.is_del == 0)
-            .count()
-        )
-        session.close()
-        return count
-
     # ---------- Model APIs ----------
 
     def create_model(
@@ -445,6 +426,32 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
+    def count_experiments(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Experiment)
+            .filter(Experiment.team_id == team_id, Experiment.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
+    def list_exps_by_timeframe(self, team_id: uuid.UUID, start_time: datetime, end_time: datetime) -> list[Experiment]:
+        session = self._session()
+        exps = (
+            session.query(Experiment)
+            .filter(
+                Experiment.team_id == team_id,
+                Experiment.created_at >= start_time,
+                Experiment.created_at <= end_time,
+                Experiment.is_del == 0,
+            )
+            .order_by(Experiment.created_at.asc())
+            .all()
+        )
+        session.close()
+        return exps
+
     # ---------- Run APIs ----------
 
     def create_run(
@@ -514,6 +521,16 @@ class SQLStore(MetaStore):
         )
         session.close()
         return runs
+
+    def count_runs(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Run)
+            .filter(Run.team_id == team_id, Run.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
 
     # ---------- Metric APIs ----------
 

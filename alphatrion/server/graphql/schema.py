@@ -1,7 +1,7 @@
 import strawberry
 
 from alphatrion.server.graphql.resolvers import GraphQLResolvers
-from alphatrion.server.graphql.types import Experiment, Metric, Project, Run, Statistics, Team, User
+from alphatrion.server.graphql.types import Experiment, Metric, Project, Run, Team, User
 
 
 @strawberry.type
@@ -69,12 +69,5 @@ class Query:
         )
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
-
-    experiment_metrics: list[Metric] = strawberry.field(
-        resolver=GraphQLResolvers.list_exp_metrics
-    )
-
-    statistics: Statistics = strawberry.field(resolver=GraphQLResolvers.get_statistics)
-
 
 schema = strawberry.Schema(Query)
