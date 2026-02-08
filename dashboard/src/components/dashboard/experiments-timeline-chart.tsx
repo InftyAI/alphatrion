@@ -65,8 +65,8 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
     <div className="space-y-2">
       <h3 className="text-sm font-semibold">Experiments Timeline</h3>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 5, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={260}>
+        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="displayDate"
