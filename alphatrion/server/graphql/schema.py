@@ -16,7 +16,7 @@ class Query:
         self,
         team_id: strawberry.ID,
         page: int = 0,
-        page_size: int = 10,
+        page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Project]:
@@ -35,7 +35,7 @@ class Query:
         self,
         project_id: strawberry.ID,
         page: int = 0,
-        page_size: int = 10,
+        page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Experiment]:
@@ -56,7 +56,7 @@ class Query:
         self,
         experiment_id: strawberry.ID,
         page: int = 0,
-        page_size: int = 10,
+        page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Run]:

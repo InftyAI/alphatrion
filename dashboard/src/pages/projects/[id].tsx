@@ -36,7 +36,7 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
   FAILED: 'destructive',
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -131,7 +131,7 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Project Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
@@ -153,28 +153,28 @@ export function ProjectDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Project Details */}
           <Card>
-            <CardContent className="p-6 pt-6">
+            <CardContent className="p-5">
               <h3 className="text-sm font-semibold mb-4">Details</h3>
               <dl className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <dt className="font-medium text-muted-foreground">Project ID</dt>
-                  <dd className="mt-1 text-foreground">{project.id}</dd>
+                  <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">{project.id}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Team ID</dt>
-                  <dd className="mt-1 text-foreground">{project.teamId}</dd>
+                  <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">{project.teamId}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Created</dt>
-                  <dd className="mt-1 text-foreground">
+                  <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.createdAt), {
                       addSuffix: true,
                     })}
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-medium text-muted-foreground">Updated</dt>
-                  <dd className="mt-1 text-foreground">
+                  <dt className="text-xs text-muted-foreground font-medium">Updated</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.updatedAt), {
                       addSuffix: true,
                     })}
@@ -189,8 +189,8 @@ export function ProjectDetailPage() {
                   <dl className="grid grid-cols-3 gap-4 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
                       <div key={key}>
-                        <dt className="font-medium text-muted-foreground">{key}</dt>
-                        <dd className="mt-1 text-foreground font-mono text-sm">
+                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                        <dd className="mt-1.5 text-foreground font-mono text-sm">
                           {JSON.stringify(value)}
                         </dd>
                       </div>
@@ -203,7 +203,7 @@ export function ProjectDetailPage() {
               {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="text-sm font-semibold mb-4">Statistics ({allExperiments.length} experiments)</h3>
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <Pie
                         data={experimentStatsData}
@@ -211,7 +211,7 @@ export function ProjectDetailPage() {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={70}
                         label={({ name, value }) => `${name}: ${value}`}
                       >
                         {experimentStatsData.map((entry, index) => (
@@ -231,22 +231,22 @@ export function ProjectDetailPage() {
         {/* Experiments Tab */}
         <TabsContent value="experiments" className="space-y-4">
           <Card>
-            <CardContent className="p-3 pt-3">
+            <CardContent className="p-4">
               {/* Search Bar and Status Filter */}
-              <div className="flex gap-3 mb-4 items-center">
+              <div className="flex gap-2 mb-3 items-center">
                 {/* Search Bar */}
-                <div className="relative w-80">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="relative w-64">
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
                     placeholder="Search experiments..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-8 h-9 text-sm"
                   />
                 </div>
 
                 {/* Status Filter */}
-                <div className="flex gap-1.5">
+                <div className="flex gap-1">
                   {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
                     <Button
                       key={status}
@@ -266,25 +266,25 @@ export function ProjectDetailPage() {
               </div>
 
               {experimentsLoading ? (
-                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-24 w-full" />
               ) : experimentsError ? (
-                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3">
                   <p className="text-sm font-medium text-destructive">
                     Failed to load experiments
                   </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {experimentsError.message}
                   </p>
                 </div>
               ) : !experiments || experiments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-32 text-center">
-                  <p className="text-muted-foreground mb-2">No experiments found</p>
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex flex-col items-center justify-center h-24 text-center">
+                  <p className="text-sm text-muted-foreground mb-1">No experiments found</p>
+                  <p className="text-xs text-muted-foreground">
                     Create experiments using the AlphaTrion SDK
                   </p>
                 </div>
               ) : filteredExperiments.length === 0 ? (
-                <div className="flex h-32 items-center justify-center text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
                   No experiments match your search
                 </div>
               ) : (
@@ -292,17 +292,17 @@ export function ProjectDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>UUID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Created</TableHead>
+                        <TableHead className="h-10 text-sm font-medium">UUID</TableHead>
+                        <TableHead className="h-10 text-sm font-medium">Name</TableHead>
+                        <TableHead className="h-10 text-sm font-medium">Status</TableHead>
+                        <TableHead className="h-10 text-sm font-medium">Duration</TableHead>
+                        <TableHead className="h-10 text-sm font-medium">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredExperiments.map((experiment) => (
                           <TableRow key={experiment.id}>
-                            <TableCell className="font-mono text-sm">
+                            <TableCell className="py-3.5 font-mono text-sm">
                               <Link
                                 to={`/experiments/${experiment.id}`}
                                 className="text-primary hover:underline"
@@ -310,20 +310,20 @@ export function ProjectDetailPage() {
                                 {experiment.id}
                               </Link>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-muted-foreground">
                               {experiment.name}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={STATUS_VARIANTS[experiment.status]}>
+                            <TableCell className="py-3.5">
+                              <Badge variant={STATUS_VARIANTS[experiment.status]} className="text-xs px-2 py-0.5">
                                 {experiment.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-muted-foreground">
                               {experiment.duration > 0
                                 ? `${experiment.duration.toFixed(2)}s`
                                 : '-'}
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-muted-foreground">
                               {formatDistanceToNow(new Date(experiment.createdAt), {
                                 addSuffix: true,
                               })}
@@ -334,11 +334,11 @@ export function ProjectDetailPage() {
                   </Table>
 
                   {/* Pagination */}
-                  <div className="mt-4 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between">
                     <div className="text-sm text-muted-foreground">
                       Page {currentPage}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5">
                       <Button
                         variant="outline"
                         size="sm"
@@ -347,6 +347,7 @@ export function ProjectDetailPage() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={currentPage === 1}
+                        className="h-9 px-3 text-sm"
                       >
                         Previous
                       </Button>
@@ -358,6 +359,7 @@ export function ProjectDetailPage() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={experiments.length < PAGE_SIZE}
+                        className="h-9 px-3 text-sm"
                       >
                         Next
                       </Button>

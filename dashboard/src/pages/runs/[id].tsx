@@ -65,7 +65,7 @@ export function RunDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -83,28 +83,28 @@ export function RunDetailPage() {
 
       {/* Run Details */}
       <Card>
-        <CardContent className="p-6 pt-6">
+        <CardContent className="p-5">
           <h3 className="text-sm font-semibold mb-4">Details</h3>
           <dl className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <dt className="font-medium text-muted-foreground">Run ID</dt>
-              <dd className="mt-1 text-foreground font-mono">{run.id}</dd>
+              <dt className="text-xs text-muted-foreground font-medium">Run ID</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.id}</dd>
             </div>
             <div>
-              <dt className="font-medium text-muted-foreground">Experiment ID</dt>
-              <dd className="mt-1 text-foreground font-mono">{run.experimentId}</dd>
+              <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.experimentId}</dd>
             </div>
             <div>
-              <dt className="font-medium text-muted-foreground">Project ID</dt>
-              <dd className="mt-1 text-foreground font-mono">{run.projectId}</dd>
+              <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.projectId}</dd>
             </div>
             <div>
-              <dt className="font-medium text-muted-foreground">Team ID</dt>
-              <dd className="mt-1 text-foreground font-mono">{run.teamId}</dd>
+              <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.teamId}</dd>
             </div>
             <div>
-              <dt className="font-medium text-muted-foreground">Created</dt>
-              <dd className="mt-1 text-foreground">
+              <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+              <dd className="mt-1.5 text-foreground text-sm">
                 {formatDistanceToNow(new Date(run.createdAt), {
                   addSuffix: true,
                 })}
@@ -119,8 +119,8 @@ export function RunDetailPage() {
               <dl className="grid grid-cols-3 gap-4 text-sm">
                 {Object.entries(run.meta).map(([key, value]) => (
                   <div key={key}>
-                    <dt className="font-medium text-muted-foreground">{key}</dt>
-                    <dd className="mt-1 text-foreground font-mono text-sm">
+                    <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                    <dd className="mt-1.5 text-foreground font-mono text-sm">
                       {JSON.stringify(value)}
                     </dd>
                   </div>
@@ -133,34 +133,29 @@ export function RunDetailPage() {
 
       {/* Metrics */}
       <Card>
-        <CardHeader>
-          <CardTitle>Metrics</CardTitle>
-          <CardDescription>
-            Metrics logged during this run
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="p-5">
+          <h3 className="text-sm font-semibold mb-4">Metrics</h3>
           {metricsLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : runMetrics.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-muted-foreground">
+            <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
               No metrics logged for this run
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Key</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="h-9 text-xs font-medium">Key</TableHead>
+                  <TableHead className="h-9 text-xs font-medium">Value</TableHead>
+                  <TableHead className="h-9 text-xs font-medium">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {runMetrics.map((metric) => (
                   <TableRow key={metric.id}>
-                    <TableCell className="font-medium">{metric.key}</TableCell>
-                    <TableCell className="font-mono">{metric.value}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="py-2.5 text-sm font-medium">{metric.key}</TableCell>
+                    <TableCell className="py-2.5 text-sm font-mono">{metric.value}</TableCell>
+                    <TableCell className="py-2.5 text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(metric.createdAt), {
                         addSuffix: true,
                       })}
