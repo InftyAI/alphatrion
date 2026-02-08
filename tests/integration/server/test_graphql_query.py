@@ -3,7 +3,7 @@
 # test query from graphql endpoint
 
 import uuid
-from datetime import time
+from datetime import datetime
 
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
@@ -15,9 +15,9 @@ def test_query_single_team():
     metadb = graphql_runtime().metadb
     id = metadb.create_team(name="Test Team", description="A team for testing")
 
-    now = time.time()
-    yesterday = now - 24 * 3600
-    tomorrow = now + 24 * 3600
+    now = datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    tomorrow = now + datetime.timedelta(days=1)
 
     query = f"""
     query {{
