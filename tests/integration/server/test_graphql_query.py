@@ -86,9 +86,9 @@ def test_query_team_with_experiments():
         experiment_id=exp_id,
     )
 
-    now = time.time()
-    yesterday = now - 24 * 3600
-    tomorrow = now + 24 * 3600
+    now = datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    tomorrow = now + datetime.timedelta(days=1)
 
     query = f"""
     query {{
