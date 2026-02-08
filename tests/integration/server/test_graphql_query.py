@@ -374,7 +374,7 @@ def test_query_trial_metrics():
     )
     query = f"""
     query {{
-        trialMetrics(experimentId: "{experiment_id}") {{
+        experimentMetrics(experimentId: "{experiment_id}") {{
             id
             key
             value
@@ -391,8 +391,8 @@ def test_query_trial_metrics():
         variable_values={},
     )
     assert response.errors is None
-    assert len(response.data["trialMetrics"]) == 2
-    for metric in response.data["trialMetrics"]:
+    assert len(response.data["experimentMetrics"]) == 2
+    for metric in response.data["experimentMetrics"]:
         assert metric["teamId"] == str(team_id)
         assert metric["projectId"] == str(project_id)
         assert metric["experimentId"] == str(experiment_id)

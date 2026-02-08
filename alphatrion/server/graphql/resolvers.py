@@ -1,5 +1,7 @@
 import uuid
 
+import strawberry
+
 from alphatrion.server.graphql import runtime
 from alphatrion.storage.sql_models import Status
 
@@ -34,7 +36,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def get_team(id: str) -> Team | None:
+    def get_team(id: strawberry.ID) -> Team | None:
         metadb = runtime.graphql_runtime().metadb
         team = metadb.get_team(team_id=uuid.UUID(id))
         if team:
@@ -49,7 +51,7 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def get_user(id: str) -> User | None:
+    def get_user(id: strawberry.ID) -> User | None:
         metadb = runtime.graphql_runtime().metadb
         user = metadb.get_user(user_id=uuid.UUID(id))
         if user:
@@ -66,11 +68,19 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_projects(
-        team_id: str, page: int = 0, page_size: int = 10
+        team_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Project]:
         metadb = runtime.graphql_runtime().metadb
         projects = metadb.list_projects(
-            team_id=uuid.UUID(team_id), page=page, page_size=page_size
+            team_id=uuid.UUID(team_id),
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
         return [
             Project(
@@ -87,7 +97,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def get_project(id: str) -> Project | None:
+    def get_project(id: strawberry.ID) -> Project | None:
         metadb = runtime.graphql_runtime().metadb
         proj = metadb.get_project(project_id=uuid.UUID(id))
         if proj:
@@ -105,11 +115,19 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_experiments(
-        project_id: str, page: int = 0, page_size: int = 10
+        project_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Experiment]:
         metadb = runtime.graphql_runtime().metadb
         exps = metadb.list_exps_by_project_id(
-            project_id=uuid.UUID(project_id), page=page, page_size=page_size
+            project_id=uuid.UUID(project_id),
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
         return [
             Experiment(
@@ -131,7 +149,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def get_experiment(id: str) -> Experiment | None:
+    def get_experiment(id: strawberry.ID) -> Experiment | None:
         metadb = runtime.graphql_runtime().metadb
         exp = metadb.get_experiment(experiment_id=uuid.UUID(id))
         if exp:
@@ -153,10 +171,20 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def list_runs(experiment_id: str, page: int = 0, page_size: int = 10) -> list[Run]:
+    def list_runs(
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Run]:
         metadb = runtime.graphql_runtime().metadb
         runs = metadb.list_runs_by_exp_id(
-            exp_id=uuid.UUID(experiment_id), page=page, page_size=page_size
+            exp_id=uuid.UUID(experiment_id),
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
         return [
             Run(
@@ -173,7 +201,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def get_run(id: str) -> Run | None:
+    def get_run(id: strawberry.ID) -> Run | None:
         metadb = runtime.graphql_runtime().metadb
         run = metadb.get_run(run_id=uuid.UUID(id))
         if run:
@@ -190,12 +218,10 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def list_exp_metrics(
-        experiment_id: str, page: int = 0, page_size: int = 10
-    ) -> list[Metric]:
+    def list_exp_metrics(experiment_id: strawberry.ID) -> list[Metric]:
         metadb = runtime.graphql_runtime().metadb
         metrics = metadb.list_metrics_by_experiment_id(
-            experiment_id=uuid.UUID(experiment_id), page=page, page_size=page_size
+            experiment_id=uuid.UUID(experiment_id)
         )
         return [
             Metric(

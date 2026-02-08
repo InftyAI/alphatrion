@@ -14,22 +14,37 @@ class Query:
     @strawberry.field
     def projects(
         self,
-        team_id: str,
+        team_id: strawberry.ID,
         page: int = 0,
         page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Project]:
         return GraphQLResolvers.list_projects(
-            team_id=team_id, page=page, page_size=page_size
+            team_id=team_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
 
     project: Project | None = strawberry.field(resolver=GraphQLResolvers.get_project)
 
     @strawberry.field
     def experiments(
-        self, project_id: str, page: int = 0, page_size: int = 10
+        self,
+        project_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Experiment]:
         return GraphQLResolvers.list_experiments(
-            project_id=project_id, page=page, page_size=page_size
+            project_id=project_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
 
     experiment: Experiment | None = strawberry.field(
@@ -37,14 +52,25 @@ class Query:
     )
 
     @strawberry.field
-    def runs(self, experiment_id: str, page: int = 0, page_size: int = 10) -> list[Run]:
+    def runs(
+        self,
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Run]:
         return GraphQLResolvers.list_runs(
-            experiment_id=experiment_id, page=page, page_size=page_size
+            experiment_id=experiment_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
         )
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
 
-    trial_metrics: list[Metric] = strawberry.field(
+    experiment_metrics: list[Metric] = strawberry.field(
         resolver=GraphQLResolvers.list_exp_metrics
     )
 

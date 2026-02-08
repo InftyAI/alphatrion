@@ -39,7 +39,7 @@ def main():
 
     dashboard = subparsers.add_parser("dashboard", help="Run the AlphaTrion dashboard")
     dashboard.add_argument(
-        "--port", type=int, default=3000, help="Port to run the dashboard on"
+        "--port", type=int, default=5173, help="Port to run the dashboard on"
     )
     dashboard.set_defaults(func=start_dashboard)
 
@@ -84,7 +84,7 @@ def run_server(args):
 
 
 def start_dashboard(args):
-    static_path = Path(__file__).resolve().parents[2] / "static"
+    static_path = Path(__file__).resolve().parents[2] / "../dashboard/static"
 
     app = FastAPI()
     app.mount("/static", StaticFiles(directory=static_path, html=True), name="static")

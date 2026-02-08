@@ -20,6 +20,7 @@ dependencies = [
     "strawberry-graphql>=0.285.0",
     "fastapi>=0.121.2",
     "rich>=14.2.0",
+    "httpx>=0.28.1",
 ]
 
 [dependency-groups]

@@ -211,12 +211,22 @@ class SQLStore(MetaStore):
 
     # paginate the projects in case of too many projects.
     def list_projects(
-        self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
+        self,
+        team_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Project]:
         session = self._session()
         projects = (
             session.query(Project)
             .filter(Project.team_id == team_id, Project.is_del == 0)
+            .order_by(
+                getattr(Project, order_by).desc()
+                if order_desc
+                else getattr(Project, order_by)
+            )
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -364,12 +374,22 @@ class SQLStore(MetaStore):
         return trial
 
     def list_exps_by_project_id(
-        self, project_id: uuid.UUID, page: int = 0, page_size: int = 10
+        self,
+        project_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Experiment]:
         session = self._session()
         exps = (
             session.query(Experiment)
             .filter(Experiment.project_id == project_id, Experiment.is_del == 0)
+            .order_by(
+                getattr(Experiment, order_by).desc()
+                if order_desc
+                else getattr(Experiment, order_by)
+            )
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -444,12 +464,20 @@ class SQLStore(MetaStore):
         return run
 
     def list_runs_by_exp_id(
-        self, exp_id: uuid.UUID, page: int = 0, page_size: int = 10
+        self,
+        exp_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
     ) -> list[Run]:
         session = self._session()
         runs = (
             session.query(Run)
             .filter(Run.experiment_id == exp_id, Run.is_del == 0)
+            .order_by(
+                getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
+            )
             .offset(page * page_size)
             .limit(page_size)
             .all()
@@ -483,15 +511,12 @@ class SQLStore(MetaStore):
         session.close()
         return new_metric_id
 
-    def list_metrics_by_experiment_id(
-        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 10
-    ) -> list[Metric]:
+    def list_metrics_by_experiment_id(self, experiment_id: uuid.UUID) -> list[Metric]:
         session = self._session()
         metrics = (
             session.query(Metric)
             .filter(Metric.experiment_id == experiment_id)
-            .offset(page * page_size)
-            .limit(page_size)
+            .order_by(Metric.created_at.asc())
             .all()
         )
         session.close()

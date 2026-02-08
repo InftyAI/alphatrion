@@ -1,91 +1,126 @@
-// GraphQL Status Enum
-export type GraphQLStatus =
-    | "UNKNOWN"
-    | "PENDING"
-    | "RUNNING"
-    | "CANCELLED"
-    | "COMPLETED"
-    | "FAILED";
+// Core types matching GraphQL schema
+// Note: This uses correct terminology (Experiment, not Trial)
 
-// Base Types matching Alphatrion GraphQL Schema
+export enum Status {
+  UNKNOWN = "UNKNOWN",
+  PENDING = "PENDING",
+  RUNNING = "RUNNING",
+  CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+}
+
+export enum ExperimentType {
+  UNKNOWN = 0,
+  CRAFT_EXPERIMENT = 1,
+}
+
+export interface Team {
+  id: string;
+  name: string | null;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  teamId: string;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
-    id: string;
-    name: string | null;
-    description: string | null;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  teamId: string;
+  creatorId: string;
+  name: string | null;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Experiment {
-    id: string;
-    projectId: string | null;
-    name: string | null;
-    description: string | null;
-    meta: Record<string, unknown> | null;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Trial {
-    id: string;
-    experimentId: string;
-    projectId: string;
-    name: string;
-    description: string | null;
-    meta: Record<string, unknown> | null;
-    params: Record<string, unknown> | null;
-    duration: number;
-    status: GraphQLStatus;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  teamId: string;
+  userId: string;
+  projectId: string;
+  name: string;
+  description: string | null;
+  kind: ExperimentType;
+  meta: Record<string, unknown> | null;
+  params: Record<string, unknown> | null;
+  duration: number;
+  status: Status;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Run {
-    id: string;
-    trialId: string;
-    projectId: string;
-    experimentId: string;
-    meta: Record<string, unknown> | null;
-    status: GraphQLStatus;
-    createdAt: string;
+  id: string;
+  teamId: string;
+  userId: string;
+  projectId: string;
+  experimentId: string;
+  meta: Record<string, unknown> | null;
+  status: Status;
+  createdAt: string;
 }
 
 export interface Metric {
-    id: string;
-    key: string | null;
-    value: number | null;
-    projectId: string;
-    experimentId: string;
-    trialId: string;
-    runId: string;
-    createdAt: string;
+  id: string;
+  key: string | null;
+  value: number | null;
+  teamId: string;
+  projectId: string;
+  experimentId: string;
+  runId: string;
+  createdAt: string;
 }
 
-// GraphQL Response Types
-export interface GraphQLResponse<T> {
-    data: T;
-    errors?: Array<{ message: string }>;
+// Grouped metrics for chart rendering
+export interface GroupedMetrics {
+  [key: string]: Metric[];
 }
 
-// Paginated List Params
-export interface PaginationParams {
-    page?: number;
-    pageSize?: number;
+// Artifact types for ORAS registry
+export interface ArtifactRepository {
+  name: string;
+  tags: string[];
 }
 
-// Query Params for each entity
-export interface ExperimentsQueryParams extends PaginationParams {
-    projectId: string;
+export interface ArtifactManifest {
+  schemaVersion: number;
+  mediaType: string;
+  config: {
+    mediaType: string;
+    digest: string;
+    size: number;
+  };
+  layers: Array<{
+    mediaType: string;
+    digest: string;
+    size: number;
+    annotations?: Record<string, string>;
+  }>;
+  annotations?: Record<string, string>;
 }
 
-export interface TrialsQueryParams extends PaginationParams {
-    experimentId: string;
+export interface ArtifactBlob {
+  digest: string;
+  content: Blob | string;
+  mediaType: string;
 }
 
-export interface RunsQueryParams extends PaginationParams {
-    trialId: string;
-}
-
-export interface TrialMetricsQueryParams extends PaginationParams {
-    trialId: string;
+// Comparison context types
+export interface ComparisonState {
+  selectedExperimentIds: string[];
+  addExperiment: (id: string) => void;
+  removeExperiment: (id: string) => void;
+  clearSelection: () => void;
 }

@@ -1,10 +1,12 @@
+# ruff: noqa: E501
+
 #!/usr/bin/env python3
 
 import os
 import random
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from dotenv import load_dotenv
@@ -107,10 +109,10 @@ def generate_experiment(projects: list[Project]) -> Experiment:
     )
 
 
-def generate_run(exps: list[Experiment]) -> Run:
+def generate_run(exps: list[Experiment], created_at: datetime) -> Run:
     exp = random.choice(exps)
     user_id = exp.user_id
-    return Run(
+    run = Run(
         team_id=exp.team_id,
         user_id=user_id,
         project_id=exp.project_id,
@@ -118,19 +120,31 @@ def generate_run(exps: list[Experiment]) -> Run:
         meta=make_json_serializable(
             fake.pydict(nb_elements=2, variable_nb_elements=True)
         ),
-        status=random.choice(list(Status)).value,
+        # sample a status for the run, with a bias towards RUNNING and COMPLETED
+        status=random.choices(
+            population=[
+                Status.PENDING,
+                Status.RUNNING,
+                Status.COMPLETED,
+                Status.FAILED,
+            ],
+            weights=[0.1, 0.2, 0.6, 0.1],
+            k=1,
+        )[0].value,
+        created_at=created_at,
     )
+    return run
 
 
-def generate_metric(runs: list[Run]) -> Metric:
-    run = random.choice(runs)
+def generate_metric(name: str, run: Run, created_at: datetime) -> Metric:
     return Metric(
         team_id=run.team_id,
         project_id=run.project_id,
         experiment_id=run.experiment_id,
         run_id=run.uuid,
-        key=random.choice(["accuracy", "loss", "precision", "fitness"]),
+        key=name,
         value=random.uniform(0, 1),
+        created_at=created_at,
     )
 
 
@@ -140,7 +154,7 @@ def seed_all(
     num_projs_per_team: int,
     num_exps_per_proj: int,
     num_runs_per_exp: int,
-    num_metrics_per_run: int,
+    metrics: list[str],
 ):
     Base.metadata.create_all(bind=engine)
 
@@ -170,19 +184,27 @@ def seed_all(
     session.add_all(exps)
     session.commit()
 
-    runs = [
-        generate_run(exps) for _ in range(num_runs_per_exp) for _ in range(len(exps))
-    ]
-    session.add_all(runs)
-    session.commit()
+    generate_time = datetime.now()
+    for _ in range(len(exps)):
+        for _ in range(num_runs_per_exp):
+            generate_time = generate_time + timedelta(
+                minutes=5
+            )  # Ensure different timestamps for each run
+            run = generate_run(exps, generate_time)
+            session.add(run)
+            session.commit()
 
-    metrics = [
-        generate_metric(runs)
-        for _ in range(num_metrics_per_run)
-        for _ in range(len(runs))
-    ]
-    session.add_all(metrics)
-    session.commit()
+            for metric_key in metrics:
+                generate_time = generate_time + timedelta(
+                    minutes=3
+                )  # Ensure different timestamps for each metric
+                metric = generate_metric(metric_key, run, generate_time)
+                session.add(metric)
+                session.commit()
+
+                print(
+                    f"Generate metric {metric_key} for run {run.uuid} of experiment {run.experiment_id}, project {run.project_id}, team {run.team_id} ..."
+                )
 
     print("🌳 seeding completed.")
 
@@ -209,12 +231,12 @@ if __name__ == "__main__":
         cleanup()
     elif action == "seed":
         seed_all(
-            num_teams=3,
-            num_users=15,
-            num_projs_per_team=10,
+            num_teams=2,
+            num_users=8,
+            num_projs_per_team=3,
             num_exps_per_proj=10,
-            num_runs_per_exp=20,
-            num_metrics_per_run=30,
+            num_runs_per_exp=100,
+            metrics=["accuracy", "loss", "fitness"],
         )
     else:
         print(f"Unknown action: {action}")
