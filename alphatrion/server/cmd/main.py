@@ -253,6 +253,7 @@ def start_dashboard(args):
 
     # Open browser after a short delay (unless --no-browser is set)
     if not args.no_browser:
+
         def open_browser():
             time.sleep(1)  # Wait for server to start
             webbrowser.open(url)
