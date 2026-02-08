@@ -1,5 +1,8 @@
 # ruff: noqa: E501
+
 import argparse
+import threading
+import time
 import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -37,12 +40,20 @@ def main():
     )
     server.set_defaults(func=run_server)
 
-    dashboard = subparsers.add_parser("dashboard", help="Launch the AlphaTrion web dashboard")
-    dashboard.add_argument(
-        "--port", type=int, default=5173, help="Port to run the dashboard on (default: 5173)"
+    dashboard = subparsers.add_parser(
+        "dashboard", help="Launch the AlphaTrion web dashboard"
     )
     dashboard.add_argument(
-        "--backend-url", type=str, default="http://localhost:8000", help="Backend server URL to proxy requests to (default: http://localhost:8000)"
+        "--port",
+        type=int,
+        default=5173,
+        help="Port to run the dashboard on (default: 5173)",
+    )
+    dashboard.add_argument(
+        "--backend-url",
+        type=str,
+        default="http://localhost:8000",
+        help="Backend server URL to proxy requests to (default: http://localhost:8000)",
     )
     dashboard.add_argument(
         "--no-browser", action="store_true", help="Don't automatically open browser"
@@ -113,7 +124,9 @@ def start_dashboard(args):
     # Try multiple possible locations
     current_file = Path(__file__).resolve()
     possible_paths = [
-        current_file.parents[3] / "dashboard" / "static",  # Development: alphatrion/alphatrion/server/cmd/main.py -> alphatrion/dashboard/static
+        current_file.parents[3]
+        / "dashboard"
+        / "static",  # Development: alphatrion/alphatrion/server/cmd/main.py -> alphatrion/dashboard/static
         Path.cwd() / "dashboard" / "static",  # If running from project root
         Path.cwd() / "static",  # If running from dashboard directory
     ]
@@ -142,9 +155,7 @@ def start_dashboard(args):
         style="bold green",
     )
     console.print(msg)
-    console.print(
-        Text(f"📂 Serving static files from: {static_path}", style="dim")
-    )
+    console.print(Text(f"📂 Serving static files from: {static_path}", style="dim"))
 
     console.print(
         Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
@@ -153,12 +164,65 @@ def start_dashboard(args):
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
     )
-    console.print(
-        Text("   alphatrion server --port 8000", style="cyan")
-    )
+    console.print(Text("   alphatrion server --port 8000", style="cyan"))
     console.print()
 
     app = FastAPI()
+
+    # Create HTTP client for proxying requests to backend
+    http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
+
+    # Proxy /graphql requests to backend (MUST be before catch-all route)
+    @app.api_route("/graphql", methods=["GET", "POST"])
+    async def proxy_graphql(request: Request):
+        headers = dict(request.headers)
+        headers.pop("host", None)  # Remove host header
+
+        try:
+            response = await http_client.request(
+                method=request.method,
+                url="/graphql",
+                content=await request.body(),
+                headers=headers,
+            )
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+        except Exception as e:
+            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
+            return Response(
+                content=f'{{"error": "Backend server not available. Make sure it\'s running at {args.backend_url}"}}',
+                status_code=503,
+                media_type="application/json",
+            )
+
+    # Proxy /api requests to backend (MUST be before catch-all route)
+    @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+    async def proxy_api(path: str, request: Request):
+        headers = dict(request.headers)
+        headers.pop("host", None)
+
+        try:
+            response = await http_client.request(
+                method=request.method,
+                url=f"/api/{path}",
+                content=await request.body(),
+                headers=headers,
+            )
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+        except Exception as e:
+            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
+            return Response(
+                content='{"error": "Backend server not available"}',
+                status_code=503,
+                media_type="application/json",
+            )
 
     # Mount the entire static directory at /static
     app.mount("/static", StaticFiles(directory=static_path, html=True), name="static")
@@ -180,21 +244,22 @@ def start_dashboard(args):
             return FileResponse(index_file)
         return {"error": "index.html not found"}
 
+    # Register cleanup handler for HTTP client
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        await http_client.aclose()
+
     url = f"http://127.0.0.1:{args.port}"
 
     # Open browser after a short delay (unless --no-browser is set)
     if not args.no_browser:
-        import threading
         def open_browser():
-            import time
             time.sleep(1)  # Wait for server to start
             webbrowser.open(url)
 
         threading.Thread(target=open_browser, daemon=True).start()
     else:
-        console.print(
-            Text(f"🌐 Open your browser at: {url}", style="bold cyan")
-        )
+        console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
 
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")

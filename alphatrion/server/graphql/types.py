@@ -1,8 +1,10 @@
+# ruff: noqa: PLC0415
 from datetime import datetime
 from enum import Enum
 
 import strawberry
 from strawberry.scalars import JSON
+
 
 @strawberry.type
 class Team:
@@ -16,26 +18,33 @@ class Team:
     @strawberry.field
     def total_projects(self) -> int:
         from .resolvers import GraphQLResolvers
+
         return GraphQLResolvers.total_projects(team_id=self.id)
 
     @strawberry.field
     def total_experiments(self) -> int:
         from .resolvers import GraphQLResolvers
+
         return GraphQLResolvers.total_experiments(team_id=self.id)
 
     @strawberry.field
     def total_runs(self) -> int:
         from .resolvers import GraphQLResolvers
+
         return GraphQLResolvers.total_runs(team_id=self.id)
 
     @strawberry.field
-    def list_exps_by_timeframe(self, start_time: datetime, end_time: datetime) -> list["Experiment"]:
+    def list_exps_by_timeframe(
+        self, start_time: datetime, end_time: datetime
+    ) -> list["Experiment"]:
         from .resolvers import GraphQLResolvers
+
         return GraphQLResolvers.list_exps_by_timeframe(
             team_id=self.id,
             start_time=start_time,
             end_time=end_time,
         )
+
 
 @strawberry.type
 class User:
@@ -99,6 +108,7 @@ class Experiment:
     @strawberry.field
     def metrics(self) -> list["Metric"]:
         from .resolvers import GraphQLResolvers
+
         return GraphQLResolvers.list_exp_metrics(experiment_id=self.id)
 
 

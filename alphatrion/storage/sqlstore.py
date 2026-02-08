@@ -436,7 +436,9 @@ class SQLStore(MetaStore):
         session.close()
         return count
 
-    def list_exps_by_timeframe(self, team_id: uuid.UUID, start_time: datetime, end_time: datetime) -> list[Experiment]:
+    def list_exps_by_timeframe(
+        self, team_id: uuid.UUID, start_time: datetime, end_time: datetime
+    ) -> list[Experiment]:
         session = self._session()
         exps = (
             session.query(Experiment)
@@ -525,9 +527,7 @@ class SQLStore(MetaStore):
     def count_runs(self, team_id: uuid.UUID) -> int:
         session = self._session()
         count = (
-            session.query(Run)
-            .filter(Run.team_id == team_id, Run.is_del == 0)
-            .count()
+            session.query(Run).filter(Run.team_id == team_id, Run.is_del == 0).count()
         )
         session.close()
         return count

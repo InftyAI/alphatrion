@@ -221,9 +221,7 @@ class GraphQLResolvers:
     @staticmethod
     def list_exp_metrics(experiment_id: strawberry.ID) -> list[Metric]:
         metadb = runtime.graphql_runtime().metadb
-        metrics = metadb.list_metrics_by_experiment_id(
-            experiment_id=experiment_id
-        )
+        metrics = metadb.list_metrics_by_experiment_id(experiment_id=experiment_id)
         return [
             Metric(
                 id=m.uuid,
