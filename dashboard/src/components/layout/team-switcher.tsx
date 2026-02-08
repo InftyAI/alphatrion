@@ -71,17 +71,14 @@ export function TeamSwitcher() {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-3 rounded-lg text-sm transition-all",
+                      "flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all",
                       isSelected
                         ? "bg-primary/10 text-primary"
                         : "hover:bg-accent text-foreground"
                     )}
                   >
                     <div className="flex-1 text-left">
-                      <div className={cn(
-                        "font-medium",
-                        isSelected && "font-semibold"
-                      )}>
+                      <div className="text-xs font-medium">
                         {team.name || 'Unnamed Team'}
                       </div>
                       {team.description && (
@@ -91,7 +88,7 @@ export function TeamSwitcher() {
                       )}
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 flex-shrink-0" />
+                      <Check className="h-3.5 w-3.5 flex-shrink-0" />
                     )}
                   </button>
                 );
