@@ -2,6 +2,7 @@
 
 # test query from graphql endpoint
 
+from math import exp
 import uuid
 from datetime import datetime, timedelta
 
@@ -437,13 +438,21 @@ def test_query_experiment_metrics():
     init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    experiment_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
+
+    exp_id = metadb.create_experiment(
+        name="Test Experiment",
+        team_id=team_id,
+        user_id=uuid.uuid4(),
+        project_id=project_id,
+        status=Status.RUNNING,
+        meta={},
+    )
 
     _ = metadb.create_metric(
         team_id=team_id,
         project_id=project_id,
-        experiment_id=experiment_id,
+        experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
@@ -451,14 +460,14 @@ def test_query_experiment_metrics():
     _ = metadb.create_metric(
         team_id=team_id,
         project_id=project_id,
-        experiment_id=experiment_id,
+        experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
     )
     query = f"""
     query {{
-        experiment(id: "{experiment_id}") {{
+        experiment(id: "{exp_id}") {{
             id
             metrics {{
                 id
@@ -478,11 +487,8 @@ def test_query_experiment_metrics():
         variable_values={},
     )
     assert response.errors is None
-    print(response.data)
-    print(response.data["experiment"])
-    print(response.data["experiment"]["metrics"])
     assert len(response.data["experiment"]["metrics"]) == 2
     for metric in response.data["experiment"]["metrics"]:
         assert metric["teamId"] == str(team_id)
         assert metric["projectId"] == str(project_id)
-        assert metric["experimentId"] == str(experiment_id)
+        assert metric["experimentId"] == str(exp_id)
