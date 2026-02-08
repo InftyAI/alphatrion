@@ -107,6 +107,11 @@ Example:
 alphatrion dashboard --port 8080 --no-browser
 ```
 
+**Documentation:**
+- [Dashboard Setup Guide](./docs/dashboard/setup.md) - Complete setup and troubleshooting guide
+- [Dashboard CLI Guide](./docs/dashboard/dashboard-cli.md) - Using the dashboard CLI command
+- [Dashboard Architecture](./docs/dashboard/dashboard-architecture.md) - Technical architecture and deployment patterns
+
 ### Cleanup
 
 ```bash

@@ -113,7 +113,7 @@ export function RunDetailPage() {
                   <div key={key}>
                     <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
                     <dd className="mt-1.5 text-foreground font-mono text-sm">
-                      {JSON.stringify(value)}
+                      {typeof value === 'string' ? value : JSON.stringify(value)}
                     </dd>
                   </div>
                 ))}
