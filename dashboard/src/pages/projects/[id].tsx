@@ -197,9 +197,9 @@ export function ProjectDetailPage() {
         </TabsContent>
 
         {/* Experiments Tab */}
-        <TabsContent value="experiments">
+        <TabsContent value="experiments" className="space-y-4">
           <Card>
-            <CardContent className="p-6 pt-6">
+            <CardContent className="p-3 pt-3">
               {experimentsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : experimentsError ? (
