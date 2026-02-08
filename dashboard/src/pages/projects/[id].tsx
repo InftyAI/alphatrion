@@ -241,7 +241,7 @@ export function ProjectDetailPage() {
                     placeholder="Search experiments..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 h-9 text-sm"
+                    className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
                   />
                 </div>
 
