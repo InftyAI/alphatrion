@@ -75,9 +75,9 @@ export function RunDetailPage() {
 
       {/* Run Details */}
       <Card>
-        <CardContent className="p-5">
-          <h3 className="text-sm font-semibold mb-4">Details</h3>
-          <dl className="grid grid-cols-3 gap-4 text-sm">
+        <CardContent className="p-4">
+          <h3 className="text-sm font-semibold mb-3">Details</h3>
+          <dl className="grid grid-cols-3 gap-3 text-sm">
             <div>
               <dt className="text-xs text-muted-foreground font-medium">Run ID</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">{run.id}</dd>
@@ -106,9 +106,9 @@ export function RunDetailPage() {
 
           {/* Metadata */}
           {run.meta && Object.keys(run.meta).length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-semibold mb-4">Metadata</h3>
-              <dl className="grid grid-cols-3 gap-4 text-sm">
+            <div className="mt-5 pt-5 border-t">
+              <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
                 {Object.entries(run.meta).map(([key, value]) => (
                   <div key={key}>
                     <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
@@ -134,7 +134,7 @@ export function RunDetailPage() {
               No metrics logged for this run
             </div>
           ) : (
-            <dl className="grid grid-cols-3 gap-4 text-sm">
+            <dl className="grid grid-cols-3 gap-3 text-sm">
               {runMetrics.map((metric) => (
                 <div key={metric.id}>
                   <dt className="text-xs text-muted-foreground font-medium">{metric.key}</dt>

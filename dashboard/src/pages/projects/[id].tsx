@@ -153,9 +153,9 @@ export function ProjectDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Project Details */}
           <Card>
-            <CardContent className="p-5">
-              <h3 className="text-sm font-semibold mb-4">Details</h3>
-              <dl className="grid grid-cols-3 gap-4 text-sm">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
                   <dd className="mt-1.5 text-foreground text-sm">{project.id}</dd>
@@ -184,9 +184,9 @@ export function ProjectDetailPage() {
 
               {/* Metadata */}
               {project.meta && Object.keys(project.meta).length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Metadata</h3>
-                  <dl className="grid grid-cols-3 gap-4 text-sm">
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
                       <div key={key}>
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
@@ -201,9 +201,9 @@ export function ProjectDetailPage() {
 
               {/* Experiment Statistics */}
               {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Statistics ({allExperiments.length} experiments)</h3>
-                  <ResponsiveContainer width="100%" height={200}>
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Statistics ({allExperiments.length} experiments)</h3>
+                  <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie
                         data={experimentStatsData}
@@ -211,8 +211,9 @@ export function ProjectDetailPage() {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={70}
+                        outerRadius={55}
                         label={({ name, value }) => `${name}: ${value}`}
+                        style={{ fontSize: '12px' }}
                       >
                         {experimentStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />

@@ -158,9 +158,9 @@ export function ExperimentDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Experiment Details */}
           <Card>
-            <CardContent className="p-5">
-              <h3 className="text-sm font-semibold mb-4">Details</h3>
-              <dl className="grid grid-cols-3 gap-4 text-sm">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
                   <dd className="mt-1.5 text-foreground text-sm">{experiment.id}</dd>
@@ -197,9 +197,9 @@ export function ExperimentDetailPage() {
 
               {/* Metadata Section */}
               {experiment.meta && Object.keys(experiment.meta).length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Metadata</h3>
-                  <dl className="grid grid-cols-3 gap-4 text-sm">
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
                       <div key={key}>
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
@@ -214,9 +214,9 @@ export function ExperimentDetailPage() {
 
               {/* Parameters Section */}
               {experiment.params && Object.keys(experiment.params).length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Parameters</h3>
-                  <dl className="grid grid-cols-3 gap-4 text-sm">
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Parameters</h3>
+                  <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
                       <div key={key}>
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
@@ -231,9 +231,9 @@ export function ExperimentDetailPage() {
 
               {/* Run Statistics */}
               {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Statistics ({allRuns.length} runs)</h3>
-                  <ResponsiveContainer width="100%" height={200}>
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-sm font-semibold mb-3">Statistics ({allRuns.length} runs)</h3>
+                  <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
                       <Pie
                         data={runStatsData}
@@ -241,8 +241,9 @@ export function ExperimentDetailPage() {
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={70}
+                        outerRadius={55}
                         label={({ name, value }) => `${name}: ${value}`}
+                        style={{ fontSize: '12px' }}
                       >
                         {runStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
