@@ -96,7 +96,7 @@ export function Sidebar() {
           >
             <Github className="h-4 w-4" />
           </a>
-          <span>v0.1.0</span>
+          <span>{__APP_VERSION__}</span>
         </div>
       </div>
     </div>
