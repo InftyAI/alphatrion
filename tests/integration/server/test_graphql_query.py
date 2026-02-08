@@ -3,6 +3,7 @@
 # test query from graphql endpoint
 
 import uuid
+from datetime import datetime, timedelta
 
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
@@ -14,6 +15,10 @@ def test_query_single_team():
     metadb = graphql_runtime().metadb
     id = metadb.create_team(name="Test Team", description="A team for testing")
 
+    now = datetime.now()
+    yesterday = now - timedelta(days=1)
+    tomorrow = now + timedelta(days=1)
+
     query = f"""
     query {{
         team(id: "{id}") {{
@@ -23,6 +28,13 @@ def test_query_single_team():
             meta
             createdAt
             updatedAt
+            totalProjects
+            totalExperiments
+            totalRuns
+            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+                id
+               updatedAt
+            }}
         }}
     }}
     """
@@ -33,6 +45,78 @@ def test_query_single_team():
     assert response.errors is None
     assert response.data["team"]["id"] == str(id)
     assert response.data["team"]["name"] == "Test Team"
+    assert response.data["team"]["totalProjects"] == 0
+    assert response.data["team"]["totalExperiments"] == 0
+    assert response.data["team"]["totalRuns"] == 0
+    assert len(response.data["team"]["listExpsByTimeframe"]) == 0
+
+
+def test_query_team_with_experiments():
+    user_id = uuid.uuid4()
+    init(init_tables=True)
+    metadb = graphql_runtime().metadb
+    team_id = metadb.create_team(name="Test Team", description="A team for testing")
+
+    project_id = metadb.create_project(
+        name="Test Project",
+        description="A project for testing",
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    exp_id = metadb.create_experiment(
+        name="Test Experiment",
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        status=Status.RUNNING,
+        meta={},
+    )
+
+    _ = metadb.create_run(
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        experiment_id=exp_id,
+    )
+    _ = metadb.create_run(
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        experiment_id=exp_id,
+    )
+
+    now = datetime.now()
+    yesterday = now - timedelta(days=1)
+    tomorrow = now + timedelta(days=1)
+
+    query = f"""
+    query {{
+        team(id: "{team_id}") {{
+            id
+            name
+            description
+            meta
+            createdAt
+            updatedAt
+            totalProjects
+            totalExperiments
+            totalRuns
+            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+                id
+            }}
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["team"]["totalProjects"] == 1
+    assert response.data["team"]["totalExperiments"] == 1
+    assert response.data["team"]["totalRuns"] == 2
+    assert len(response.data["team"]["listExpsByTimeframe"]) == 1
 
 
 def test_query_teams():
@@ -349,17 +433,25 @@ def test_query_runs():
     assert len(response.data["runs"]) == 2
 
 
-def test_query_trial_metrics():
+def test_query_experiment_metrics():
     init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    experiment_id = uuid.uuid4()
     metadb = graphql_runtime().metadb
+
+    exp_id = metadb.create_experiment(
+        name="Test Experiment",
+        team_id=team_id,
+        user_id=uuid.uuid4(),
+        project_id=project_id,
+        status=Status.RUNNING,
+        meta={},
+    )
 
     _ = metadb.create_metric(
         team_id=team_id,
         project_id=project_id,
-        experiment_id=experiment_id,
+        experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
@@ -367,22 +459,25 @@ def test_query_trial_metrics():
     _ = metadb.create_metric(
         team_id=team_id,
         project_id=project_id,
-        experiment_id=experiment_id,
+        experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
     )
     query = f"""
     query {{
-        trialMetrics(experimentId: "{experiment_id}") {{
+        experiment(id: "{exp_id}") {{
             id
-            key
-            value
-            teamId
-            projectId
-            experimentId
-            runId
-            createdAt
+            metrics {{
+                id
+                key
+                value
+                teamId
+                projectId
+                experimentId
+                runId
+                createdAt
+            }}
         }}
     }}
     """
@@ -391,8 +486,8 @@ def test_query_trial_metrics():
         variable_values={},
     )
     assert response.errors is None
-    assert len(response.data["trialMetrics"]) == 2
-    for metric in response.data["trialMetrics"]:
+    assert len(response.data["experiment"]["metrics"]) == 2
+    for metric in response.data["experiment"]["metrics"]:
         assert metric["teamId"] == str(team_id)
         assert metric["projectId"] == str(project_id)
-        assert metric["experimentId"] == str(experiment_id)
+        assert metric["experimentId"] == str(exp_id)

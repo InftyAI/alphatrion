@@ -82,23 +82,30 @@ async with project.Project.setup(name="my_project"):
 
 ### View Dashboard
 
-The dashboard is under active development.
-You can already run the frontend locally to explore projects, experiments, runs, and metrics through the UI.
+![dashboard](./site/images/dashboard.png)
 
-### Prerequisites
-Make sure the following are installed:
+The dashboard provides a web interface to explore projects, experiments, runs, and metrics through an intuitive UI.
 
-- **Node.js ≥ 18**
-- **npm ≥ 9**
-- **Vite**
-
-### Launch Dashboard
+#### Launch Dashboard
 
 ```bash
-alphatrion server # Start the backend server
-alphatrion dashboard # Start the dashboard
+# Start the backend server (in one terminal)
+alphatrion server
+
+# Launch the dashboard (in another terminal)
+alphatrion dashboard
 ```
-Dashboard is available at `http://localhost:3000` by default.
+
+The dashboard will automatically open in your browser at `http://127.0.0.1:5173`.
+
+**Options:**
+- `--port <PORT>`: Run on a custom port (default: 5173)
+- `--no-browser`: Don't automatically open the browser
+
+Example:
+```bash
+alphatrion dashboard --port 8080 --no-browser
+```
 
 ### Cleanup
 

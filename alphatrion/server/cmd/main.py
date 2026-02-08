@@ -1,14 +1,17 @@
 # ruff: noqa: E501
+
 import argparse
-import os
+import threading
+import time
 import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+import httpx
 import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
@@ -37,9 +40,23 @@ def main():
     )
     server.set_defaults(func=run_server)
 
-    dashboard = subparsers.add_parser("dashboard", help="Run the AlphaTrion dashboard")
+    dashboard = subparsers.add_parser(
+        "dashboard", help="Launch the AlphaTrion web dashboard"
+    )
     dashboard.add_argument(
-        "--port", type=int, default=3000, help="Port to run the dashboard on"
+        "--port",
+        type=int,
+        default=5173,
+        help="Port to run the dashboard on (default: 5173)",
+    )
+    dashboard.add_argument(
+        "--backend-url",
+        type=str,
+        default="http://localhost:8000",
+        help="Backend server URL to proxy requests to (default: http://localhost:8000)",
+    )
+    dashboard.add_argument(
+        "--no-browser", action="store_true", help="Don't automatically open browser"
     )
     dashboard.set_defaults(func=start_dashboard)
 
@@ -84,19 +101,168 @@ def run_server(args):
 
 
 def start_dashboard(args):
-    static_path = Path(__file__).resolve().parents[2] / "static"
+    BLUE = "\033[94m"
+    RESET = "\033[0m"
+
+    ascii_art = r"""
+    █████████   ████            █████                ███████████            ███
+   ███░░░░░███ ░░███           ░░███                ░█░░░███░░░█           ░░░
+  ░███    ░███  ░███  ████████  ░███████    ██████  ░   ░███  ░  ████████  ████   ██████  ████████
+  ░███████████  ░███ ░░███░░███ ░███░░███  ░░░░░███     ░███    ░░███░░███░░███  ███░░███░░███░░███
+  ░███░░░░░███  ░███  ░███ ░███ ░███ ░███   ███████     ░███     ░███ ░░░  ░███ ░███ ░███ ░███ ░███
+  ░███    ░███  ░███  ░███ ░███ ░███ ░███  ███░░███     ░███     ░███      ░███ ░███ ░███ ░███ ░███
+  █████   █████ █████ ░███████  ████ █████░░████████    █████    █████     █████░░██████  ████ █████
+ ░░░░░   ░░░░░ ░░░░░  ░███░░░  ░░░░ ░░░░░  ░░░░░░░░    ░░░░░    ░░░░░     ░░░░░  ░░░░░░  ░░░░ ░░░░░
+                      ░███
+                      █████
+                     ░░░░░
+    """
+
+    print(f"{BLUE}{ascii_art}{RESET}")
+
+    # Find the dashboard static directory
+    # Try multiple possible locations
+    current_file = Path(__file__).resolve()
+    possible_paths = [
+        current_file.parents[3]
+        / "dashboard"
+        / "static",  # Development: alphatrion/alphatrion/server/cmd/main.py -> alphatrion/dashboard/static
+        Path.cwd() / "dashboard" / "static",  # If running from project root
+        Path.cwd() / "static",  # If running from dashboard directory
+    ]
+
+    static_path = None
+    for path in possible_paths:
+        if path.exists() and (path / "index.html").exists():
+            static_path = path
+            break
+
+    if static_path is None:
+        console.print(
+            Text("❌ Error: Dashboard static files not found!", style="bold red")
+        )
+        console.print(
+            Text(
+                "Please ensure the dashboard has been built by running:",
+                style="yellow",
+            )
+        )
+        console.print(Text("  cd dashboard && npm run build", style="cyan"))
+        return
+
+    msg = Text(
+        f"🚀 Starting AlphaTrion Dashboard at http://127.0.0.1:{args.port}",
+        style="bold green",
+    )
+    console.print(msg)
+    console.print(Text(f"📂 Serving static files from: {static_path}", style="dim"))
+
+    console.print(
+        Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
+    )
+    console.print()
+    console.print(
+        Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
+    )
+    console.print(Text("   alphatrion server --port 8000", style="cyan"))
+    console.print()
 
     app = FastAPI()
+
+    # Create HTTP client for proxying requests to backend
+    http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
+
+    # Proxy /graphql requests to backend (MUST be before catch-all route)
+    @app.api_route("/graphql", methods=["GET", "POST"])
+    async def proxy_graphql(request: Request):
+        headers = dict(request.headers)
+        headers.pop("host", None)  # Remove host header
+
+        try:
+            response = await http_client.request(
+                method=request.method,
+                url="/graphql",
+                content=await request.body(),
+                headers=headers,
+            )
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+        except Exception as e:
+            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
+            return Response(
+                content=f'{{"error": "Backend server not available. Make sure it\'s running at {args.backend_url}"}}',
+                status_code=503,
+                media_type="application/json",
+            )
+
+    # Proxy /api requests to backend (MUST be before catch-all route)
+    @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+    async def proxy_api(path: str, request: Request):
+        headers = dict(request.headers)
+        headers.pop("host", None)
+
+        try:
+            response = await http_client.request(
+                method=request.method,
+                url=f"/api/{path}",
+                content=await request.body(),
+                headers=headers,
+            )
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers=dict(response.headers),
+            )
+        except Exception as e:
+            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
+            return Response(
+                content='{"error": "Backend server not available"}',
+                status_code=503,
+                media_type="application/json",
+            )
+
+    # Mount the entire static directory at /static
     app.mount("/static", StaticFiles(directory=static_path, html=True), name="static")
 
-    @app.get("/{full_path:path}")
-    def spa_fallback(full_path: str):
-        index_file = os.path.join(static_path, "index.html")
-        if os.path.exists(index_file):
+    @app.get("/")
+    def serve_root():
+        # Serve index.html at root
+        index_file = static_path / "index.html"
+        if index_file.exists():
             return FileResponse(index_file)
         return {"error": "index.html not found"}
 
-    url = f"http://127.0.0.1:{args.port}"
-    webbrowser.open(url)
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str):
+        # Serve index.html for all routes (SPA fallback)
+        # This enables client-side routing
+        index_file = static_path / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+        return {"error": "index.html not found"}
 
-    uvicorn.run(app, host="127.0.0.1", port=args.port)
+    # Register cleanup handler for HTTP client
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        await http_client.aclose()
+
+    url = f"http://127.0.0.1:{args.port}"
+
+    # Open browser after a short delay (unless --no-browser is set)
+    if not args.no_browser:
+
+        def open_browser():
+            time.sleep(1)  # Wait for server to start
+            webbrowser.open(url)
+
+        threading.Thread(target=open_browser, daemon=True).start()
+    else:
+        console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
+
+    try:
+        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")
+    except KeyboardInterrupt:
+        console.print(Text("\n👋 Dashboard stopped", style="bold yellow"))
