@@ -38,16 +38,14 @@ export function TeamSwitcher() {
       <Button
         variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 min-w-[200px] justify-between"
+        className="h-9 px-3 gap-2 border-border/40 hover:border-border hover:bg-accent/50"
       >
-        <div className="flex items-center gap-2">
-          <Building2 className="h-4 w-4" />
-          <span className="font-medium">
-            {selectedTeam?.name || 'Select team'}
-          </span>
-        </div>
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">
+          {selectedTeam?.name || 'Select team'}
+        </span>
         <ChevronDown className={cn(
-          "h-4 w-4 transition-transform",
+          "h-3.5 w-3.5 text-muted-foreground transition-transform",
           isOpen && "rotate-180"
         )} />
       </Button>
@@ -61,12 +59,9 @@ export function TeamSwitcher() {
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full left-0 mt-2 w-full min-w-[240px] z-50 rounded-md border bg-popover p-1 shadow-lg">
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-              Teams
-            </div>
-            <div className="space-y-1">
-              {teams.map((team) => {
+          <div className="absolute top-full right-0 mt-2 w-64 z-50 rounded-xl border bg-card shadow-xl overflow-hidden">
+            <div className="p-2">
+              {teams.map((team, index) => {
                 const isSelected = team.id === selectedTeamId;
                 return (
                   <button
@@ -76,34 +71,32 @@ export function TeamSwitcher() {
                       setIsOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-sm transition-colors hover:bg-accent",
-                      isSelected && "bg-accent"
+                      "flex w-full items-center justify-between gap-3 px-3 py-3 rounded-lg text-sm transition-all",
+                      isSelected
+                        ? "bg-primary/10 text-primary"
+                        : "hover:bg-accent text-foreground"
                     )}
                   >
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 text-left">
-                      <div className="font-medium">{team.name || 'Unnamed Team'}</div>
+                      <div className={cn(
+                        "font-medium",
+                        isSelected && "font-semibold"
+                      )}>
+                        {team.name || 'Unnamed Team'}
+                      </div>
                       {team.description && (
-                        <div className="text-xs text-muted-foreground line-clamp-1">
+                        <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
                           {team.description}
                         </div>
                       )}
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 flex-shrink-0" />
                     )}
                   </button>
                 );
               })}
             </div>
-
-            {teams.length > 1 && (
-              <div className="mt-2 border-t pt-2 px-2 pb-1">
-                <p className="text-xs text-muted-foreground">
-                  {teams.length} team(s) • Multi-tenant isolation
-                </p>
-              </div>
-            )}
           </div>
         </>
       )}
