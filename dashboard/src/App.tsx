@@ -9,7 +9,6 @@ import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
 import { ArtifactsPage } from './pages/artifacts';
-import { TracingPage } from './pages/tracing';
 
 function App() {
   return (
@@ -30,7 +29,6 @@ function App() {
           <Route path=":id" element={<RunDetailPage />} />
         </Route>
         <Route path="artifacts" element={<ArtifactsPage />} />
-        <Route path="tracing" element={<TracingPage />} />
       </Route>
     </Routes>
   );

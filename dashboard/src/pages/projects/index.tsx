@@ -73,7 +73,7 @@ export function ProjectsPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Projects</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your AI experiment projects
+          The list of projects for the selected team. Click to view more details.
         </p>
       </div>
 
@@ -98,30 +98,30 @@ export function ProjectsPage() {
                   {[...projects]
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((project) => (
-                    <TableRow key={project.id}>
-                      <TableCell>
-                        <Link
-                          to={`/projects/${project.id}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {project.name || 'Unnamed Project'}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {project.description || '-'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(project.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(project.updatedAt), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                      <TableRow key={project.id}>
+                        <TableCell>
+                          <Link
+                            to={`/projects/${project.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {project.name || 'Unnamed Project'}
+                          </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {project.description || '-'}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(project.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(project.updatedAt), {
+                            addSuffix: true,
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </>

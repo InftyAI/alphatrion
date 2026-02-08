@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   Package,
-  Network,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -19,7 +18,7 @@ const navItems: NavItem[] = [
     title: 'Dashboard',
     href: '/',
     icon: LayoutDashboard,
-    description: 'Overview and quick stats',
+    description: 'Overview and statistics',
   },
   {
     title: 'Projects',
@@ -32,12 +31,6 @@ const navItems: NavItem[] = [
     href: '/artifacts',
     icon: Package,
     description: 'ORAS registry artifacts',
-  },
-  {
-    title: 'Tracing',
-    href: '/tracing',
-    icon: Network,
-    description: 'Distributed tracing (coming soon)',
   },
 ];
 
