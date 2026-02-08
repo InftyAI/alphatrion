@@ -63,23 +63,23 @@ export function DashboardPage() {
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
-          <Skeleton className="h-24 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {/* Total Projects */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Projects</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalProjects || 0}</p>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Projects</p>
+                  <p className="text-xl font-bold text-foreground">{team?.totalProjects || 0}</p>
                 </div>
-                <div className="p-2.5 bg-blue-100 rounded-lg">
-                  <FolderKanban className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FolderKanban className="h-4 w-4 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -87,14 +87,14 @@ export function DashboardPage() {
 
           {/* Total Experiments */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Experiments</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalExperiments || 0}</p>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Experiments</p>
+                  <p className="text-xl font-bold text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
-                <div className="p-2.5 bg-purple-100 rounded-lg">
-                  <FlaskConical className="h-5 w-5 text-purple-600" />
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FlaskConical className="h-4 w-4 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -102,14 +102,14 @@ export function DashboardPage() {
 
           {/* Total Runs */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Runs</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalRuns || 0}</p>
+                <div className="space-y-0.5">
+                  <p className="text-xs text-muted-foreground">Runs</p>
+                  <p className="text-xl font-bold text-foreground">{team?.totalRuns || 0}</p>
                 </div>
-                <div className="p-2.5 bg-green-100 rounded-lg">
-                  <Play className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Play className="h-4 w-4 text-green-600" />
                 </div>
               </div>
             </CardContent>

@@ -51,7 +51,7 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold">Status Distribution</h3>
+      <h3 className="text-sm font-semibold">Experiments Distribution</h3>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
