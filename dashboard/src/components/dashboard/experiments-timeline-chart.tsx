@@ -66,7 +66,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
       <h3 className="text-sm font-semibold">Experiments Timeline</h3>
 
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData}>
+        <LineChart data={chartData} margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="displayDate"
@@ -77,7 +77,13 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
           />
           <YAxis
             tick={{ fontSize: 12 }}
-            label={{ value: 'Number of Experiments', angle: -90, position: 'insideLeft' }}
+            width={60}
+            label={{
+              value: 'Count',
+              angle: -90,
+              position: 'insideLeft',
+              style: { textAnchor: 'middle' }
+            }}
           />
           <Tooltip
             contentStyle={{

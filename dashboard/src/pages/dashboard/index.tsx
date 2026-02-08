@@ -64,28 +64,28 @@ export function DashboardPage() {
         <CardContent className="p-6 pt-6">
           <h3 className="text-sm font-semibold mb-4">Overview</h3>
           {teamLoading ? (
-            <div className="grid grid-cols-3 gap-4">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
+            <div className="grid grid-cols-3 gap-6">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
             </div>
           ) : (
-            <dl className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <dt className="font-medium text-muted-foreground">Projects</dt>
-                <dd className="mt-1 text-3xl font-bold text-foreground">
+            <dl className="grid grid-cols-3 gap-6 text-sm">
+              <div className="flex flex-col">
+                <dt className="font-medium text-muted-foreground whitespace-nowrap">Projects</dt>
+                <dd className="mt-2 text-3xl font-bold text-foreground">
                   {team?.totalProjects || 0}
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-muted-foreground">Experiments</dt>
-                <dd className="mt-1 text-3xl font-bold text-foreground">
+              <div className="flex flex-col">
+                <dt className="font-medium text-muted-foreground whitespace-nowrap">Experiments</dt>
+                <dd className="mt-2 text-3xl font-bold text-foreground">
                   {team?.totalExperiments || 0}
                 </dd>
               </div>
-              <div>
-                <dt className="font-medium text-muted-foreground">Runs</dt>
-                <dd className="mt-1 text-3xl font-bold text-foreground">
+              <div className="flex flex-col">
+                <dt className="font-medium text-muted-foreground whitespace-nowrap">Runs</dt>
+                <dd className="mt-2 text-3xl font-bold text-foreground">
                   {team?.totalRuns || 0}
                 </dd>
               </div>
@@ -103,9 +103,14 @@ export function DashboardPage() {
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
                 key={option.value}
-                variant={timeRange === option.value ? 'default' : 'outline'}
+                variant="outline"
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
+                className={`transition-colors ${
+                  timeRange === option.value
+                    ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                    : 'bg-white hover:bg-gray-50'
+                }`}
               >
                 {option.label}
               </Button>

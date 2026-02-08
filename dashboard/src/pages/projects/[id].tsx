@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useProject } from '../../hooks/use-projects';
 import { useExperiments } from '../../hooks/use-experiments';
 import {
@@ -19,6 +20,7 @@ import {
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
@@ -40,6 +42,8 @@ export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(id!);
 
@@ -56,6 +60,34 @@ export function ProjectDetailPage() {
     pageSize: 1000,
     enabled: !!id,
   });
+
+  // Filter and sort experiments
+  const filteredExperiments = useMemo(() => {
+    if (!experiments) return [];
+
+    let filtered = [...experiments];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (exp) =>
+          exp.name?.toLowerCase().includes(query) ||
+          exp.description?.toLowerCase().includes(query) ||
+          exp.id?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(exp => exp.status === statusFilter);
+    }
+
+    // Sort by creation time descending (newest first)
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return filtered;
+  }, [experiments, searchQuery, statusFilter]);
 
   // Calculate experiment statistics for pie chart
   const experimentStatsData = useMemo(() => {
@@ -200,6 +232,39 @@ export function ProjectDetailPage() {
         <TabsContent value="experiments" className="space-y-4">
           <Card>
             <CardContent className="p-3 pt-3">
+              {/* Search Bar and Status Filter */}
+              <div className="flex gap-3 mb-4 items-center">
+                {/* Search Bar */}
+                <div className="relative w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search experiments..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex gap-1.5">
+                  {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+                    <Button
+                      key={status}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStatusFilter(status)}
+                      className={`h-8 px-2.5 text-xs transition-colors ${
+                        statusFilter === status
+                          ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               {experimentsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : experimentsError ? (
@@ -218,11 +283,16 @@ export function ProjectDetailPage() {
                     Create experiments using the AlphaTrion SDK
                   </p>
                 </div>
+              ) : filteredExperiments.length === 0 ? (
+                <div className="flex h-32 items-center justify-center text-muted-foreground">
+                  No experiments match your search
+                </div>
               ) : (
                 <>
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>UUID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Duration</TableHead>
@@ -230,17 +300,18 @@ export function ProjectDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[...experiments]
-                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((experiment) => (
+                      {filteredExperiments.map((experiment) => (
                           <TableRow key={experiment.id}>
-                            <TableCell>
+                            <TableCell className="font-mono text-sm">
                               <Link
                                 to={`/experiments/${experiment.id}`}
-                                className="font-medium text-primary hover:underline"
+                                className="text-primary hover:underline"
                               >
-                                {experiment.name}
+                                {experiment.id}
                               </Link>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {experiment.name}
                             </TableCell>
                             <TableCell>
                               <Badge variant={STATUS_VARIANTS[experiment.status]}>

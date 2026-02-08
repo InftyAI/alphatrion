@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useProjects } from '../../hooks/use-projects';
 import { useExperiments } from '../../hooks/use-experiments';
@@ -17,6 +18,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Button } from '../../components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
@@ -34,6 +36,7 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
 export function RunsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch all projects to get their experiments
   const { data: projects, isLoading: projectsLoading } = useProjects(
@@ -63,6 +66,16 @@ export function RunsPage() {
 
     let filtered = [...runs];
 
+    // Apply search filter (search by run ID or experiment ID)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (run) =>
+          run.id?.toLowerCase().includes(query) ||
+          run.experimentId?.toLowerCase().includes(query)
+      );
+    }
+
     // Apply status filter
     if (statusFilter !== 'ALL') {
       filtered = filtered.filter(run => run.status === statusFilter);
@@ -72,7 +85,7 @@ export function RunsPage() {
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [runs, statusFilter]);
+  }, [runs, statusFilter, searchQuery]);
 
   const isLoading = projectsLoading || experimentsLoading || runsLoading;
 
@@ -89,25 +102,44 @@ export function RunsPage() {
       {/* Runs List */}
       <Card>
         <CardContent className="p-3 pt-3">
-          {/* Status Filter */}
-          <div className="flex gap-2 mb-4">
-            {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
-              <Button
-                key={status}
-                variant={statusFilter === status ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter(status)}
-              >
-                {status}
-              </Button>
-            ))}
+          {/* Search Bar and Status Filter */}
+          <div className="flex gap-3 mb-4 items-center">
+            {/* Search Bar */}
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search runs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex gap-1.5">
+              {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+                <Button
+                  key={status}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusFilter(status)}
+                  className={`h-8 px-2.5 text-xs transition-colors ${
+                    statusFilter === status
+                      ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : !filteredRuns || filteredRuns.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
-              {statusFilter !== 'ALL' ? `No ${statusFilter} runs found` : 'No runs found'}
+              {searchQuery.trim() ? 'No runs match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} runs found` : 'No runs found'}
             </div>
           ) : (
             <Table>

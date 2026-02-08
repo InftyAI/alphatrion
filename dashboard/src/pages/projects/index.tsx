@@ -1,4 +1,6 @@
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useProjects } from '../../hooks/use-projects';
 import {
@@ -16,18 +18,43 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
+import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 
 export function ProjectsPage() {
   // Get selected team from context
   const { selectedTeamId } = useTeamContext();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: projects, isLoading, error } = useProjects(selectedTeamId || '', {
     page: 0,
     pageSize: 100,
     enabled: !!selectedTeamId, // Only fetch projects if we have a team ID
   });
+
+  // Filter projects based on search query
+  const filteredProjects = useMemo(() => {
+    if (!projects) return [];
+
+    let filtered = [...projects];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (project) =>
+          project.name?.toLowerCase().includes(query) ||
+          project.description?.toLowerCase().includes(query) ||
+          project.id?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort by creation time descending
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return filtered;
+  }, [projects, searchQuery]);
 
   if (isLoading) {
     return (
@@ -79,15 +106,31 @@ export function ProjectsPage() {
 
       <Card>
         <CardContent className="p-3 pt-3">
+          {/* Search Bar */}
+          <div className="mb-4 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search projects by name, UUID, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
           {!projects || projects.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
               No projects found
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="flex h-32 items-center justify-center text-muted-foreground">
+              No projects match your search
             </div>
           ) : (
             <>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Created</TableHead>
@@ -95,17 +138,18 @@ export function ProjectsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {[...projects]
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((project) => (
+                  {filteredProjects.map((project) => (
                       <TableRow key={project.id}>
-                        <TableCell>
+                        <TableCell className="font-mono text-sm">
                           <Link
                             to={`/projects/${project.id}`}
-                            className="font-medium text-primary hover:underline"
+                            className="text-primary hover:underline"
                           >
-                            {project.name || 'Unnamed Project'}
+                            {project.id}
                           </Link>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {project.name || 'Unnamed Project'}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {project.description || '-'}

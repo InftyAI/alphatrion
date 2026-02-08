@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useProjects } from '../../hooks/use-projects';
 import { useExperiments } from '../../hooks/use-experiments';
@@ -16,6 +17,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
+import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Button } from '../../components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,6 +35,7 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch all projects to get their experiments
   const { data: projects, isLoading: projectsLoading } = useProjects(
@@ -55,6 +58,18 @@ export function ExperimentsPage() {
 
     let filtered = [...experiments];
 
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (exp) =>
+          exp.name?.toLowerCase().includes(query) ||
+          exp.description?.toLowerCase().includes(query) ||
+          exp.id?.toLowerCase().includes(query) ||
+          exp.projectId?.toLowerCase().includes(query)
+      );
+    }
+
     // Apply status filter
     if (statusFilter !== 'ALL') {
       filtered = filtered.filter(exp => exp.status === statusFilter);
@@ -64,7 +79,7 @@ export function ExperimentsPage() {
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [experiments, statusFilter]);
+  }, [experiments, statusFilter, searchQuery]);
 
   const isLoading = projectsLoading || experimentsLoading;
 
@@ -81,31 +96,52 @@ export function ExperimentsPage() {
       {/* Experiments List */}
       <Card>
         <CardContent className="p-3 pt-3">
-          {/* Status Filter */}
-          <div className="flex gap-2 mb-4">
-            {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
-              <Button
-                key={status}
-                variant={statusFilter === status ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setStatusFilter(status)}
-              >
-                {status}
-              </Button>
-            ))}
+          {/* Search Bar and Status Filter */}
+          <div className="flex gap-3 mb-4 items-center">
+            {/* Search Bar */}
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search experiments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex gap-1.5">
+              {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+                <Button
+                  key={status}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusFilter(status)}
+                  className={`h-8 px-2.5 text-xs transition-colors ${
+                    statusFilter === status
+                      ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                      : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  {status}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : !filteredExperiments || filteredExperiments.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
-              {statusFilter !== 'ALL' ? `No ${statusFilter} experiments found` : 'No experiments found'}
+              {searchQuery.trim() ? 'No experiments match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} experiments found` : 'No experiments found'}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Experiment ID</TableHead>
+                  <TableHead>Project ID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Created</TableHead>
@@ -114,12 +150,23 @@ export function ExperimentsPage() {
               <TableBody>
                 {filteredExperiments.map((experiment) => (
                   <TableRow key={experiment.id}>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {experiment.name}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
                       <Link
                         to={`/experiments/${experiment.id}`}
-                        className="font-medium text-primary hover:underline"
+                        className="text-primary hover:underline"
                       >
-                        {experiment.name}
+                        {experiment.id}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      <Link
+                        to={`/projects/${experiment.projectId}`}
+                        className="text-primary hover:underline"
+                      >
+                        {experiment.projectId}
                       </Link>
                     </TableCell>
                     <TableCell>

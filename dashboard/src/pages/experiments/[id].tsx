@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -21,6 +22,7 @@ import {
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
@@ -42,6 +44,8 @@ export function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
 
   const { data: experiment, isLoading: experimentLoading, error: experimentError } = useExperiment(id!);
 
@@ -58,6 +62,32 @@ export function ExperimentDetailPage() {
   });
 
   const { data: groupedMetrics, isLoading: metricsLoading } = useGroupedMetrics(id!);
+
+  // Filter and sort runs
+  const filteredRuns = useMemo(() => {
+    if (!runs) return [];
+
+    let filtered = [...runs];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (run) =>
+          run.id?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(run => run.status === statusFilter);
+    }
+
+    // Sort by creation time descending (newest first)
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return filtered;
+  }, [runs, searchQuery, statusFilter]);
 
   // Calculate run statistics for pie chart
   const runStatsData = useMemo(() => {
@@ -258,11 +288,48 @@ export function ExperimentDetailPage() {
         <TabsContent value="runs" className="space-y-4">
           <Card>
             <CardContent className="p-3 pt-3">
+              {/* Search Bar and Status Filter */}
+              <div className="flex gap-3 mb-4 items-center">
+                {/* Search Bar */}
+                <div className="relative w-80">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search runs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <div className="flex gap-1.5">
+                  {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+                    <Button
+                      key={status}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStatusFilter(status)}
+                      className={`h-8 px-2.5 text-xs transition-colors ${
+                        statusFilter === status
+                          ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
               {runsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : !runs || runs.length === 0 ? (
                 <div className="flex h-32 items-center justify-center text-muted-foreground">
                   No runs found
+                </div>
+              ) : filteredRuns.length === 0 ? (
+                <div className="flex h-32 items-center justify-center text-muted-foreground">
+                  No runs match your search
                 </div>
               ) : (
                 <>
@@ -275,9 +342,7 @@ export function ExperimentDetailPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {[...runs]
-                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((run) => (
+                      {filteredRuns.map((run) => (
                           <TableRow key={run.id}>
                             <TableCell className="font-mono text-sm">
                               <Link
