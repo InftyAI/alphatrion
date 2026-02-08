@@ -4,17 +4,12 @@ import { TeamSwitcher } from './team-switcher';
 import { useProject } from '../../hooks/use-projects';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRun } from '../../hooks/use-runs';
+import { truncateId } from '../../lib/format';
 
 interface BreadcrumbItem {
   label: string;
   href?: string;
 }
-
-// Truncate UUID for display (show first 4 and last 4 chars)
-const truncateId = (id: string): string => {
-  if (id.length <= 12) return id;
-  return `${id.slice(0, 4)}..${id.slice(-4)}`;
-};
 
 export function Header() {
   const location = useLocation();

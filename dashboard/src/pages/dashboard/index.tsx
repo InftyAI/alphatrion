@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { useTeamContext } from '../../context/team-context';
 import { useTeam } from '../../hooks/use-teams';
 import { useTeamExperiments } from '../../hooks/use-team-experiments';
@@ -5,12 +6,23 @@ import {
   Card,
   CardContent,
 } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
+import { subDays, subMonths } from 'date-fns';
+
+type TimeRange = '7days' | '1month' | '3months';
+
+const TIME_RANGE_OPTIONS: { value: TimeRange; label: string; days: number }[] = [
+  { value: '7days', label: '7 Days', days: 7 },
+  { value: '1month', label: '1 Month', days: 30 },
+  { value: '3months', label: '3 Months', days: 90 },
+];
 
 export function DashboardPage() {
   const { selectedTeamId } = useTeamContext();
+  const [timeRange, setTimeRange] = useState<TimeRange>('7days');
 
   const { data: team, isLoading: teamLoading } = useTeam(selectedTeamId || '');
 
@@ -18,6 +30,24 @@ export function DashboardPage() {
     selectedTeamId || '',
     { enabled: !!selectedTeamId }
   );
+
+  // Filter experiments based on selected time range
+  const filteredExperiments = useMemo(() => {
+    if (!teamExperiments) return [];
+
+    const now = new Date();
+    const startDate =
+      timeRange === '7days'
+        ? subDays(now, 7)
+        : timeRange === '1month'
+        ? subMonths(now, 1)
+        : subMonths(now, 3);
+
+    return teamExperiments.filter((exp) => {
+      const expDate = new Date(exp.createdAt);
+      return expDate >= startDate && expDate <= now;
+    });
+  }, [teamExperiments, timeRange]);
 
   return (
     <div className="space-y-6">
@@ -65,36 +95,55 @@ export function DashboardPage() {
       </Card>
 
       {/* Experiments Charts */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Status Distribution Pie Chart */}
-        <Card>
-          <CardContent className="p-6 pt-6">
-            {experimentsLoading ? (
-              <Skeleton className="h-80 w-full" />
-            ) : teamExperiments && teamExperiments.length > 0 ? (
-              <ExperimentsStatusChart experiments={teamExperiments} />
-            ) : (
-              <div className="flex h-80 items-center justify-center text-muted-foreground">
-                No experiments data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="space-y-4">
+        {/* Time Range Selector */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Experiments Overview</h3>
+          <div className="flex gap-2">
+            {TIME_RANGE_OPTIONS.map((option) => (
+              <Button
+                key={option.value}
+                variant={timeRange === option.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeRange(option.value)}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
 
-        {/* Timeline Chart */}
-        <Card>
-          <CardContent className="p-6 pt-6">
-            {experimentsLoading ? (
-              <Skeleton className="h-80 w-full" />
-            ) : teamExperiments && teamExperiments.length > 0 ? (
-              <ExperimentsTimelineChart experiments={teamExperiments} />
-            ) : (
-              <div className="flex h-80 items-center justify-center text-muted-foreground">
-                No experiments data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Status Distribution Pie Chart */}
+          <Card>
+            <CardContent className="p-6 pt-6">
+              {experimentsLoading ? (
+                <Skeleton className="h-80 w-full" />
+              ) : filteredExperiments && filteredExperiments.length > 0 ? (
+                <ExperimentsStatusChart experiments={filteredExperiments} />
+              ) : (
+                <div className="flex h-80 items-center justify-center text-muted-foreground">
+                  No experiments data available for this time range
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Timeline Chart */}
+          <Card>
+            <CardContent className="p-6 pt-6">
+              {experimentsLoading ? (
+                <Skeleton className="h-80 w-full" />
+              ) : filteredExperiments && filteredExperiments.length > 0 ? (
+                <ExperimentsTimelineChart experiments={filteredExperiments} timeRange={timeRange} />
+              ) : (
+                <div className="flex h-80 items-center justify-center text-muted-foreground">
+                  No experiments data available for this time range
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

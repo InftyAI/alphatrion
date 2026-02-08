@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { TeamExperiment } from '../../hooks/use-team-experiments';
 import {
   LineChart,
@@ -10,11 +10,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Button } from '../ui/button';
 import { format, subDays, subMonths, startOfDay, endOfDay } from 'date-fns';
 
 interface ExperimentsTimelineChartProps {
   experiments: TeamExperiment[];
+  timeRange: '7days' | '1month' | '3months';
 }
 
 type TimeRange = '7days' | '1month' | '3months';
@@ -25,26 +25,13 @@ const TIME_RANGE_OPTIONS: { value: TimeRange; label: string; days: number }[] = 
   { value: '3months', label: '3 Months', days: 90 },
 ];
 
-export function ExperimentsTimelineChart({ experiments }: ExperimentsTimelineChartProps) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('7days');
+export function ExperimentsTimelineChart({ experiments, timeRange }: ExperimentsTimelineChartProps) {
 
   const chartData = useMemo(() => {
     const selectedRange = TIME_RANGE_OPTIONS.find((r) => r.value === timeRange);
     if (!selectedRange) return [];
 
     const now = new Date();
-    const startDate =
-      timeRange === '7days'
-        ? subDays(now, 7)
-        : timeRange === '1month'
-        ? subMonths(now, 1)
-        : subMonths(now, 3);
-
-    // Filter experiments within the time range
-    const filteredExperiments = experiments.filter((exp) => {
-      const expDate = new Date(exp.createdAt);
-      return expDate >= startDate && expDate <= now;
-    });
 
     // Create date map for aggregation
     const dateMap = new Map<string, number>();
@@ -56,8 +43,8 @@ export function ExperimentsTimelineChart({ experiments }: ExperimentsTimelineCha
       dateMap.set(dateKey, 0);
     }
 
-    // Count experiments per day
-    filteredExperiments.forEach((exp) => {
+    // Count experiments per day (experiments are already filtered by parent)
+    experiments.forEach((exp) => {
       const expDate = new Date(exp.createdAt);
       const dateKey = format(startOfDay(expDate), 'yyyy-MM-dd');
       const current = dateMap.get(dateKey) || 0;
@@ -76,21 +63,7 @@ export function ExperimentsTimelineChart({ experiments }: ExperimentsTimelineCha
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Experiments Timeline</h3>
-        <div className="flex gap-2">
-          {TIME_RANGE_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              variant={timeRange === option.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTimeRange(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <h3 className="text-sm font-semibold">Experiments Timeline</h3>
 
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData}>
