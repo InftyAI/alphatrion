@@ -1,61 +1,47 @@
-import { useQuery } from '@tanstack/react-query';
-import { graphqlQuery, queries } from '../lib/graphql-client';
-import { shouldPoll } from '../lib/query-client';
+import { useMemo } from 'react';
 import type { Metric, GroupedMetrics } from '../types';
 import { useExperiment } from './use-experiments';
 
-interface ListMetricsResponse {
-  experimentMetrics: Metric[];
-}
-
 /**
- * Hook to fetch all metrics for an experiment
- * Polls every 5s when parent experiment is RUNNING
+ * Hook to get metrics from an experiment
+ * Metrics are now part of the Experiment object
  */
 export function useMetrics(experimentId: string) {
-  // Get experiment status to determine if we should poll
-  const { data: experiment } = useExperiment(experimentId);
+  const { data: experiment, ...rest } = useExperiment(experimentId);
 
-  return useQuery({
-    queryKey: ['metrics', experimentId],
-    queryFn: async () => {
-      const data = await graphqlQuery<ListMetricsResponse>(
-        queries.listMetrics,
-        { experimentId }
-      );
-      return data.experimentMetrics;
-    },
-    // Poll when experiment is active
-    refetchInterval: experiment
-      ? shouldPoll([experiment.status])
-      : false,
-  });
+  return {
+    ...rest,
+    data: experiment?.metrics || [],
+  };
 }
 
 /**
  * Hook to group metrics by key for easier chart rendering
  */
 export function useGroupedMetrics(experimentId: string) {
-  const { data: metrics, ...rest } = useMetrics(experimentId);
+  const { data: experiment, ...rest } = useExperiment(experimentId);
 
-  const groupedMetrics: GroupedMetrics = {};
+  const groupedMetrics: GroupedMetrics = useMemo(() => {
+    const grouped: GroupedMetrics = {};
+    const metrics = experiment?.metrics || [];
 
-  if (metrics) {
     metrics.forEach((metric) => {
       const key = metric.key || 'unknown';
-      if (!groupedMetrics[key]) {
-        groupedMetrics[key] = [];
+      if (!grouped[key]) {
+        grouped[key] = [];
       }
-      groupedMetrics[key].push(metric);
+      grouped[key].push(metric);
     });
 
     // Sort each group by createdAt
-    Object.keys(groupedMetrics).forEach((key) => {
-      groupedMetrics[key].sort((a, b) =>
+    Object.keys(grouped).forEach((key) => {
+      grouped[key].sort((a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
     });
-  }
+
+    return grouped;
+  }, [experiment?.metrics]);
 
   return {
     ...rest,

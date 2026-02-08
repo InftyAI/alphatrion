@@ -178,6 +178,16 @@ export const queries = {
         status
         createdAt
         updatedAt
+        metrics {
+          id
+          key
+          value
+          teamId
+          projectId
+          experimentId
+          runId
+          createdAt
+        }
       }
     }
   `,
@@ -207,21 +217,6 @@ export const queries = {
         experimentId
         meta
         status
-        createdAt
-      }
-    }
-  `,
-
-  listMetrics: `
-    query ListMetrics($experimentId: ID!) {
-      experimentMetrics(experimentId: $experimentId) {
-        id
-        key
-        value
-        teamId
-        projectId
-        experimentId
-        runId
         createdAt
       }
     }

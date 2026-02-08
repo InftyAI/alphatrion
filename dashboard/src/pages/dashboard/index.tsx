@@ -7,6 +7,7 @@ import {
 } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
+import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 
 export function DashboardPage() {
   const { selectedTeamId } = useTeamContext();
@@ -63,20 +64,38 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Experiments Timeline Chart */}
-      <Card>
-        <CardContent className="p-6 pt-6">
-          {experimentsLoading ? (
-            <Skeleton className="h-80 w-full" />
-          ) : teamExperiments && teamExperiments.length > 0 ? (
-            <ExperimentsTimelineChart experiments={teamExperiments} />
-          ) : (
-            <div className="flex h-80 items-center justify-center text-muted-foreground">
-              No experiments data available
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Experiments Charts */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Status Distribution Pie Chart */}
+        <Card>
+          <CardContent className="p-6 pt-6">
+            {experimentsLoading ? (
+              <Skeleton className="h-80 w-full" />
+            ) : teamExperiments && teamExperiments.length > 0 ? (
+              <ExperimentsStatusChart experiments={teamExperiments} />
+            ) : (
+              <div className="flex h-80 items-center justify-center text-muted-foreground">
+                No experiments data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Timeline Chart */}
+        <Card>
+          <CardContent className="p-6 pt-6">
+            {experimentsLoading ? (
+              <Skeleton className="h-80 w-full" />
+            ) : teamExperiments && teamExperiments.length > 0 ? (
+              <ExperimentsTimelineChart experiments={teamExperiments} />
+            ) : (
+              <div className="flex h-80 items-center justify-center text-muted-foreground">
+                No experiments data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

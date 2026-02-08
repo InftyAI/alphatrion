@@ -62,6 +62,7 @@ export interface Experiment {
   status: Status;
   createdAt: string;
   updatedAt: string;
+  metrics?: Metric[];
 }
 
 export interface Run {
