@@ -2,8 +2,10 @@
 
 # test query from graphql endpoint
 
+from datetime import time
 import uuid
 
+from alphatrion import project
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage.sql_models import Status
@@ -14,6 +16,11 @@ def test_query_single_team():
     metadb = graphql_runtime().metadb
     id = metadb.create_team(name="Test Team", description="A team for testing")
 
+    now = time.time()
+    yesterday = now - 24 * 3600
+    tomorrow = now + 24 * 3600
+
+
     query = f"""
     query {{
         team(id: "{id}") {{
@@ -23,6 +30,13 @@ def test_query_single_team():
             meta
             createdAt
             updatedAt
+            totalProjects
+            totalExperiments
+            totalRuns
+            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+                id
+               updatedAt
+            }}
         }}
     }}
     """
@@ -33,6 +47,78 @@ def test_query_single_team():
     assert response.errors is None
     assert response.data["team"]["id"] == str(id)
     assert response.data["team"]["name"] == "Test Team"
+    assert response.data["team"]["totalProjects"] == 0
+    assert response.data["team"]["totalExperiments"] == 0
+    assert response.data["team"]["totalRuns"] == 0
+    assert len(response.data["team"]["listExpsByTimeframe"]) == 0
+
+def test_query_team_with_experiments():
+    user_id = uuid.uuid4()
+    init(init_tables=True)
+    metadb = graphql_runtime().metadb
+    team_id = metadb.create_team(name="Test Team", description="A team for testing")
+
+    project_id = metadb.create_project(
+        name="Test Project",
+        description="A project for testing",
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    exp_id = metadb.create_experiment(
+        name="Test Experiment",
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        status=Status.RUNNING,
+        meta={},
+    )
+
+    _ = metadb.create_run(
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        experiment_id=exp_id,
+    )
+    _ = metadb.create_run(
+        team_id=team_id,
+        user_id=user_id,
+        project_id=project_id,
+        experiment_id=exp_id,
+    )
+
+    now = time.time()
+    yesterday = now - 24 * 3600
+    tomorrow = now + 24 * 3600
+
+    query = f"""
+    query {{
+        team(id: "{id}") {{
+            id
+            name
+            description
+            meta
+            createdAt
+            updatedAt
+            totalProjects
+            totalExperiments
+            totalRuns
+            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+                id
+               updatedAt
+            }}
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["team"]["totalProjects"] == 1
+    assert response.data["team"]["totalExperiments"] == 1
+    assert response.data["team"]["totalRuns"] == 2
+    assert len(response.data["team"]["listExpsByTimeframe"]) == 1
 
 
 def test_query_teams():
