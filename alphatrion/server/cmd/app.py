@@ -29,13 +29,6 @@ graphql_app = GraphQLRouter(schema)
 # Mount /graphql endpoint
 app.include_router(graphql_app, prefix="/graphql")
 
-# Serve static files for the dashboard
-# app.py is in alphatrion/server/cmd/app.py
-# static is in project_root/dashboard/static (4 levels up + dashboard/static)
-static_dir = Path(__file__).parent.parent.parent.parent / "dashboard" / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
 
 # health check endpoint
 @app.get("/health")
@@ -150,27 +143,33 @@ async def get_blob(team: str, project: str, digest: str):
                 detail=f"Failed to get blob: {e}"
             )
 
+# # Serve static files for the dashboard
+# # app.py is in alphatrion/server/cmd/app.py
+# # static is in project_root/dashboard/static (4 levels up + dashboard/static)
+# static_dir = Path(__file__).parent.parent.parent.parent / "dashboard" / "static"
+# if static_dir.exists():
+#     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# Serve the dashboard index.html for the root path and SPA routes
-@app.get("/")
-async def serve_dashboard():
-    """Serve the dashboard index.html"""
-    index_file = static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
-    return {"message": "Dashboard not built. Run 'cd dashboard && npm run build'"}
+# # Serve the dashboard index.html for the root path and SPA routes
+# @app.get("/")
+# async def serve_dashboard():
+#     """Serve the dashboard index.html"""
+#     index_file = static_dir / "index.html"
+#     if index_file.exists():
+#         return FileResponse(index_file)
+#     return {"message": "Dashboard not built. Run 'cd dashboard && npm run build'"}
 
 
-# Catch-all route for SPA client-side routing
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    """Serve index.html for all non-API routes to support SPA routing"""
-    # Don't intercept API routes
-    if full_path.startswith(("api/", "graphql", "health", "version")):
-        raise HTTPException(status_code=404, detail="Not found")
+# # Catch-all route for SPA client-side routing
+# @app.get("/{full_path:path}")
+# async def serve_spa(full_path: str):
+#     """Serve index.html for all non-API routes to support SPA routing"""
+#     # Don't intercept API routes
+#     if full_path.startswith(("api/", "graphql", "health", "version")):
+#         raise HTTPException(status_code=404, detail="Not found")
 
-    # Serve index.html for all other routes
-    index_file = static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
-    return {"message": "Dashboard not built. Run 'cd dashboard && npm run build'"}
+#     # Serve index.html for all other routes
+#     index_file = static_dir / "index.html"
+#     if index_file.exists():
+#         return FileResponse(index_file)
+#     return {"message": "Dashboard not built. Run 'cd dashboard && npm run build'"}
