@@ -7,9 +7,6 @@ import { useRuns } from '../../hooks/use-runs';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '../../components/ui/card';
 import {
   Table,
@@ -91,24 +88,21 @@ export function RunsPage() {
 
       {/* Runs List */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            {/* Status Filter */}
-            <div className="flex gap-2">
-              {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
-                <Button
-                  key={status}
-                  variant={statusFilter === status ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStatusFilter(status)}
-                >
-                  {status}
-                </Button>
-              ))}
-            </div>
+        <CardContent className="p-3 pt-3">
+          {/* Status Filter */}
+          <div className="flex gap-2 mb-4">
+            {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
+              <Button
+                key={status}
+                variant={statusFilter === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setStatusFilter(status)}
+              >
+                {status}
+              </Button>
+            ))}
           </div>
-        </CardHeader>
-        <CardContent>
+
           {isLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : !filteredRuns || filteredRuns.length === 0 ? (

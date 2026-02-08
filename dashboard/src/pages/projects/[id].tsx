@@ -121,181 +121,181 @@ export function ProjectDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Project Details */}
           <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-sm font-semibold mb-4">Details</h3>
-          <dl className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <dt className="font-medium text-muted-foreground">Project ID</dt>
-              <dd className="mt-1 text-foreground">{project.id}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-muted-foreground">Team ID</dt>
-              <dd className="mt-1 text-foreground">{project.teamId}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-muted-foreground">Created</dt>
-              <dd className="mt-1 text-foreground">
-                {formatDistanceToNow(new Date(project.createdAt), {
-                  addSuffix: true,
-                })}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-muted-foreground">Updated</dt>
-              <dd className="mt-1 text-foreground">
-                {formatDistanceToNow(new Date(project.updatedAt), {
-                  addSuffix: true,
-                })}
-              </dd>
-            </div>
-          </dl>
-
-          {/* Metadata */}
-          {project.meta && Object.keys(project.meta).length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-semibold mb-4">Metadata</h3>
+            <CardContent className="p-6 pt-6">
+              <h3 className="text-sm font-semibold mb-4">Details</h3>
               <dl className="grid grid-cols-3 gap-4 text-sm">
-                {Object.entries(project.meta).map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="font-medium text-muted-foreground">{key}</dt>
-                    <dd className="mt-1 text-foreground font-mono text-sm">
-                      {JSON.stringify(value)}
-                    </dd>
-                  </div>
-                ))}
+                <div>
+                  <dt className="font-medium text-muted-foreground">Project ID</dt>
+                  <dd className="mt-1 text-foreground">{project.id}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-muted-foreground">Team ID</dt>
+                  <dd className="mt-1 text-foreground">{project.teamId}</dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-muted-foreground">Created</dt>
+                  <dd className="mt-1 text-foreground">
+                    {formatDistanceToNow(new Date(project.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-muted-foreground">Updated</dt>
+                  <dd className="mt-1 text-foreground">
+                    {formatDistanceToNow(new Date(project.updatedAt), {
+                      addSuffix: true,
+                    })}
+                  </dd>
+                </div>
               </dl>
-            </div>
-          )}
 
-          {/* Experiment Statistics */}
-          {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-semibold mb-4">Statistics ({allExperiments.length} experiments)</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={experimentStatsData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {experimentStatsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+              {/* Metadata */}
+              {project.meta && Object.keys(project.meta).length > 0 && (
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="text-sm font-semibold mb-4">Metadata</h3>
+                  <dl className="grid grid-cols-3 gap-4 text-sm">
+                    {Object.entries(project.meta).map(([key, value]) => (
+                      <div key={key}>
+                        <dt className="font-medium text-muted-foreground">{key}</dt>
+                        <dd className="mt-1 text-foreground font-mono text-sm">
+                          {JSON.stringify(value)}
+                        </dd>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </dl>
+                </div>
+              )}
+
+              {/* Experiment Statistics */}
+              {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="text-sm font-semibold mb-4">Statistics ({allExperiments.length} experiments)</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={experimentStatsData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {experimentStatsData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Experiments Tab */}
         <TabsContent value="experiments">
           <Card>
-        <CardContent className="pt-6">
-          {experimentsLoading ? (
-            <Skeleton className="h-32 w-full" />
-          ) : experimentsError ? (
-            <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-              <p className="text-sm font-medium text-destructive">
-                Failed to load experiments
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {experimentsError.message}
-              </p>
-            </div>
-          ) : !experiments || experiments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-center">
-              <p className="text-muted-foreground mb-2">No experiments found</p>
-              <p className="text-sm text-muted-foreground">
-                Create experiments using the AlphaTrion SDK
-              </p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Created</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...experiments]
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((experiment) => (
-                    <TableRow key={experiment.id}>
-                      <TableCell>
-                        <Link
-                          to={`/experiments/${experiment.id}`}
-                          className="font-medium text-primary hover:underline"
-                        >
-                          {experiment.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={STATUS_VARIANTS[experiment.status]}>
-                          {experiment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {experiment.duration > 0
-                          ? `${experiment.duration.toFixed(2)}s`
-                          : '-'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(experiment.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <CardContent className="p-6 pt-6">
+              {experimentsLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : experimentsError ? (
+                <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+                  <p className="text-sm font-medium text-destructive">
+                    Failed to load experiments
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {experimentsError.message}
+                  </p>
+                </div>
+              ) : !experiments || experiments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-center">
+                  <p className="text-muted-foreground mb-2">No experiments found</p>
+                  <p className="text-sm text-muted-foreground">
+                    Create experiments using the AlphaTrion SDK
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[...experiments]
+                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                        .map((experiment) => (
+                          <TableRow key={experiment.id}>
+                            <TableCell>
+                              <Link
+                                to={`/experiments/${experiment.id}`}
+                                className="font-medium text-primary hover:underline"
+                              >
+                                {experiment.name}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={STATUS_VARIANTS[experiment.status]}>
+                                {experiment.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {experiment.duration > 0
+                                ? `${experiment.duration.toFixed(2)}s`
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDistanceToNow(new Date(experiment.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
 
-              {/* Pagination */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage(currentPage - 1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setCurrentPage(currentPage + 1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    disabled={experiments.length < PAGE_SIZE}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                  {/* Pagination */}
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      Page {currentPage}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentPage(currentPage - 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentPage(currentPage + 1);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        disabled={experiments.length < PAGE_SIZE}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

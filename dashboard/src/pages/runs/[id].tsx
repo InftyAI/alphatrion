@@ -83,7 +83,7 @@ export function RunDetailPage() {
 
       {/* Run Details */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-6 pt-6">
           <h3 className="text-sm font-semibold mb-4">Details</h3>
           <dl className="grid grid-cols-3 gap-4 text-sm">
             <div>

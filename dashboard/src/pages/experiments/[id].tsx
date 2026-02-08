@@ -128,7 +128,7 @@ export function ExperimentDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Experiment Details */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-6 pt-6">
               <h3 className="text-sm font-semibold mb-4">Details</h3>
               <dl className="grid grid-cols-3 gap-4 text-sm">
                 <div>
@@ -167,7 +167,7 @@ export function ExperimentDetailPage() {
 
               {/* Parameters Section */}
               {experiment.params && Object.keys(experiment.params).length > 0 && (
-                <div className="mt-6 pt-6 border-t">
+                <div className="mt-3 pt-3 border-t">
                   <h3 className="text-sm font-semibold mb-4">Parameters</h3>
                   <dl className="grid grid-cols-3 gap-4 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
@@ -257,7 +257,7 @@ export function ExperimentDetailPage() {
         {/* Runs Tab */}
         <TabsContent value="runs">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-6 pt-6">
               {runsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : !runs || runs.length === 0 ? (
@@ -278,27 +278,27 @@ export function ExperimentDetailPage() {
                       {[...runs]
                         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                         .map((run) => (
-                        <TableRow key={run.id}>
-                          <TableCell className="font-mono text-sm">
-                            <Link
-                              to={`/runs/${run.id}`}
-                              className="text-primary hover:underline"
-                            >
-                              {run.id}
-                            </Link>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={STATUS_VARIANTS[run.status]}>
-                              {run.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {formatDistanceToNow(new Date(run.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          <TableRow key={run.id}>
+                            <TableCell className="font-mono text-sm">
+                              <Link
+                                to={`/runs/${run.id}`}
+                                className="text-primary hover:underline"
+                              >
+                                {run.id}
+                              </Link>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={STATUS_VARIANTS[run.status]}>
+                                {run.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {formatDistanceToNow(new Date(run.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
 

@@ -78,7 +78,7 @@ export function ProjectsPage() {
       </div>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-3 pt-3">
           {!projects || projects.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
               No projects found
