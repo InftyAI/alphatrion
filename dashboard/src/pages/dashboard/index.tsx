@@ -11,6 +11,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 import { subDays, subMonths } from 'date-fns';
+import { FolderKanban, FlaskConical, Play } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -49,6 +50,7 @@ export function DashboardPage() {
     });
   }, [teamExperiments, timeRange]);
 
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -59,40 +61,61 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {/* Overview */}
-      <Card>
-        <CardContent className="p-6 pt-6">
-          <h3 className="text-sm font-semibold mb-4">Overview</h3>
-          {teamLoading ? (
-            <div className="grid grid-cols-3 gap-6">
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-          ) : (
-            <dl className="grid grid-cols-3 gap-6 text-sm">
-              <div className="flex flex-col">
-                <dt className="font-medium text-muted-foreground whitespace-nowrap">Projects</dt>
-                <dd className="mt-2 text-3xl font-bold text-foreground">
-                  {team?.totalProjects || 0}
-                </dd>
+      {/* Overview Metrics */}
+      {teamLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Total Projects */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-blue-50 to-blue-100/50">
+                <div>
+                  <p className="text-sm font-medium text-blue-600 whitespace-nowrap">Total Projects</p>
+                  <p className="text-3xl font-bold text-blue-900 mt-2">{team?.totalProjects || 0}</p>
+                </div>
+                <div className="p-3 bg-blue-500 rounded-xl">
+                  <FolderKanban className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className="flex flex-col">
-                <dt className="font-medium text-muted-foreground whitespace-nowrap">Experiments</dt>
-                <dd className="mt-2 text-3xl font-bold text-foreground">
-                  {team?.totalExperiments || 0}
-                </dd>
+            </CardContent>
+          </Card>
+
+          {/* Total Experiments */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-purple-50 to-purple-100/50">
+                <div>
+                  <p className="text-sm font-medium text-purple-600 whitespace-nowrap">Total Experiments</p>
+                  <p className="text-3xl font-bold text-purple-900 mt-2">{team?.totalExperiments || 0}</p>
+                </div>
+                <div className="p-3 bg-purple-500 rounded-xl">
+                  <FlaskConical className="h-6 w-6 text-white" />
+                </div>
               </div>
-              <div className="flex flex-col">
-                <dt className="font-medium text-muted-foreground whitespace-nowrap">Runs</dt>
-                <dd className="mt-2 text-3xl font-bold text-foreground">
-                  {team?.totalRuns || 0}
-                </dd>
+            </CardContent>
+          </Card>
+
+          {/* Total Runs */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="flex items-center justify-between p-6 bg-gradient-to-br from-green-50 to-green-100/50">
+                <div>
+                  <p className="text-sm font-medium text-green-600 whitespace-nowrap">Total Runs</p>
+                  <p className="text-3xl font-bold text-green-900 mt-2">{team?.totalRuns || 0}</p>
+                </div>
+                <div className="p-3 bg-green-500 rounded-xl">
+                  <Play className="h-6 w-6 text-white" />
+                </div>
               </div>
-            </dl>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Experiments Charts */}
       <div className="space-y-4">
