@@ -53,6 +53,6 @@ seed:
 seed-cleanup:
 	python hack/seed.py cleanup
 
-build-dashboard:
-	rm -rf alphatrion/static/*
-	cd dashboard && npm install && npm run build
+.PHONY: dashboard
+dashboard:
+	cd dashboard && npm run dev
