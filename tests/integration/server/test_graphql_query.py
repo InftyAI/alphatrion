@@ -478,6 +478,9 @@ def test_query_experiment_metrics():
         variable_values={},
     )
     assert response.errors is None
+    print(response.data)
+    print(response.data["experiment"])
+    print(response.data["experiment"]["metrics"])
     assert len(response.data["experiment"]["metrics"]) == 2
     for metric in response.data["experiment"]["metrics"]:
         assert metric["teamId"] == str(team_id)
