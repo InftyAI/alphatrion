@@ -105,14 +105,14 @@ export function ExperimentDetailPage() {
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             {experiment.name}
           </h1>
           {experiment.description && (
-            <p className="mt-2 text-muted-foreground">{experiment.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{experiment.description}</p>
           )}
         </div>
-        <Badge variant={STATUS_VARIANTS[experiment.status]} className="text-sm">
+        <Badge variant={STATUS_VARIANTS[experiment.status]}>
           {experiment.status}
         </Badge>
       </div>
@@ -128,10 +128,8 @@ export function ExperimentDetailPage() {
         <TabsContent value="overview" className="space-y-4">
           {/* Experiment Details */}
           <Card>
-            <CardHeader>
-              <CardTitle>Experiment Details</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
+              <h3 className="text-sm font-semibold mb-4">Details</h3>
               <dl className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <dt className="font-medium text-muted-foreground">Experiment ID</dt>
@@ -259,13 +257,7 @@ export function ExperimentDetailPage() {
         {/* Runs Tab */}
         <TabsContent value="runs">
           <Card>
-            <CardHeader>
-              <CardTitle>Runs</CardTitle>
-              <CardDescription>
-                Runs in this experiment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {runsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : !runs || runs.length === 0 ? (

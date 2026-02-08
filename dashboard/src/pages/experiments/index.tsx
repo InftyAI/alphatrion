@@ -75,9 +75,9 @@ export function ExperimentsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Experiments</h1>
-        <p className="mt-2 text-muted-foreground">
-          All experiments in your projects
+        <h1 className="text-2xl font-bold text-foreground">Experiments</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Browse and manage experiments across projects
         </p>
       </div>
 
@@ -85,12 +85,6 @@ export function ExperimentsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>All Experiments</CardTitle>
-              <CardDescription>
-                Browse and manage experiments across projects
-              </CardDescription>
-            </div>
             {/* Status Filter */}
             <div className="flex gap-2">
               {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (

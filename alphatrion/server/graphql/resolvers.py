@@ -13,6 +13,7 @@ from .types import (
     Metric,
     Project,
     Run,
+    Statistics,
     Team,
     User,
 )
@@ -236,3 +237,22 @@ class GraphQLResolvers:
             )
             for m in metrics
         ]
+
+    @staticmethod
+    def get_statistics(team_id: strawberry.ID) -> Statistics:
+        metadb = runtime.graphql_runtime().metadb
+
+        # Count total projects for this team
+        total_projects = metadb.count_projects(team_id=uuid.UUID(team_id))
+
+        # Count total experiments for this team
+        total_experiments = metadb.count_experiments(team_id=uuid.UUID(team_id))
+
+        # Count total runs for this team
+        total_runs = metadb.count_runs(team_id=uuid.UUID(team_id))
+
+        return Statistics(
+            total_projects=total_projects,
+            total_experiments=total_experiments,
+            total_runs=total_runs,
+        )

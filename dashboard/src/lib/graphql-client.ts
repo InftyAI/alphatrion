@@ -205,4 +205,14 @@ export const queries = {
       }
     }
   `,
+
+  getStatistics: `
+    query GetStatistics($teamId: ID!) {
+      statistics(teamId: $teamId) {
+        totalProjects
+        totalExperiments
+        totalRuns
+      }
+    }
+  `,
 };

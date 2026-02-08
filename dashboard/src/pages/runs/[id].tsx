@@ -69,24 +69,22 @@ export function RunDetailPage() {
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             Run Details
           </h1>
-          <p className="mt-2 text-muted-foreground font-mono text-sm">
+          <p className="mt-1 text-muted-foreground font-mono text-sm">
             {run.id}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[run.status]} className="text-sm">
+        <Badge variant={STATUS_VARIANTS[run.status]}>
           {run.status}
         </Badge>
       </div>
 
       {/* Run Details */}
       <Card>
-        <CardHeader>
-          <CardTitle>Run Information</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
+          <h3 className="text-sm font-semibold mb-4">Details</h3>
           <dl className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <dt className="font-medium text-muted-foreground">Run ID</dt>

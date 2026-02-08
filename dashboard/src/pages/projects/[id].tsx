@@ -20,6 +20,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
@@ -37,6 +38,7 @@ const PAGE_SIZE = 10;
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [activeTab, setActiveTab] = useState('overview');
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(id!);
@@ -98,22 +100,29 @@ export function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      {/* Project Info */}
+      {/* Project Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
+        <h1 className="text-2xl font-bold text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
         {project.description && (
-          <p className="mt-2 text-muted-foreground">{project.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
         )}
       </div>
 
-      {/* Project Metadata */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Details</CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="experiments">Experiments</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          {/* Project Details */}
+          <Card>
+        <CardContent className="pt-6">
+          <h3 className="text-sm font-semibold mb-4">Details</h3>
           <dl className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <dt className="font-medium text-muted-foreground">Project ID</dt>
@@ -185,16 +194,12 @@ export function ProjectDetailPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
 
-      {/* Experiments List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Experiments</CardTitle>
-          <CardDescription>
-            Experiments in this project
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        {/* Experiments Tab */}
+        <TabsContent value="experiments">
+          <Card>
+        <CardContent className="pt-6">
           {experimentsLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : experimentsError ? (
@@ -291,6 +296,8 @@ export function ProjectDetailPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -97,3 +97,10 @@ class Metric:
     experiment_id: strawberry.ID
     run_id: strawberry.ID
     created_at: datetime
+
+
+@strawberry.type
+class Statistics:
+    total_projects: int
+    total_experiments: int
+    total_runs: int

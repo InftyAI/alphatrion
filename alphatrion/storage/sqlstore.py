@@ -234,6 +234,36 @@ class SQLStore(MetaStore):
         session.close()
         return projects
 
+    def count_projects(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Project)
+            .filter(Project.team_id == team_id, Project.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
+    def count_experiments(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Experiment)
+            .filter(Experiment.team_id == team_id, Experiment.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
+    def count_runs(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Run)
+            .filter(Run.team_id == team_id, Run.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
     # ---------- Model APIs ----------
 
     def create_model(

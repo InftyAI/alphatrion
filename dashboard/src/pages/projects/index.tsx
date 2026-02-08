@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTeamContext } from '../../context/team-context';
 import { useProjects } from '../../hooks/use-projects';
@@ -18,19 +17,15 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Pagination } from '../../components/ui/pagination';
 import { formatDistanceToNow } from 'date-fns';
-
-const PAGE_SIZE = 10;
 
 export function ProjectsPage() {
   // Get selected team from context
   const { selectedTeamId } = useTeamContext();
-  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: projects, isLoading, error } = useProjects(selectedTeamId || '', {
-    page: currentPage - 1, // API uses 0-based indexing
-    pageSize: PAGE_SIZE,
+    page: 0,
+    pageSize: 100,
     enabled: !!selectedTeamId, // Only fetch projects if we have a team ID
   });
 
@@ -76,20 +71,14 @@ export function ProjectsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl font-bold text-foreground">Projects</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your AI experiment projects
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>All Projects</CardTitle>
-          <CardDescription>
-            Projects in selected team
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {!projects || projects.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-muted-foreground">
               No projects found
@@ -135,21 +124,6 @@ export function ProjectsPage() {
                   ))}
                 </TableBody>
               </Table>
-
-              {/* Pagination */}
-              {projects.length >= PAGE_SIZE && (
-                <div className="mt-4">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={Math.ceil(100 / PAGE_SIZE)} // Approximate, since we don't have total count
-                    pageSize={PAGE_SIZE}
-                    onPageChange={(page) => {
-                      setCurrentPage(page);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                  />
-                </div>
-              )}
             </>
           )}
         </CardContent>

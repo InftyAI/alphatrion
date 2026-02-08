@@ -83,9 +83,9 @@ export function RunsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Runs</h1>
-        <p className="mt-2 text-muted-foreground">
-          All runs across experiments
+        <h1 className="text-2xl font-bold text-foreground">Runs</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Browse and monitor individual runs across experiments
         </p>
       </div>
 
@@ -93,12 +93,6 @@ export function RunsPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>All Runs</CardTitle>
-              <CardDescription>
-                Browse and manage runs across experiments
-              </CardDescription>
-            </div>
             {/* Status Filter */}
             <div className="flex gap-2">
               {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
