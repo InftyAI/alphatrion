@@ -255,9 +255,9 @@ export function ExperimentDetailPage() {
         </TabsContent>
 
         {/* Runs Tab */}
-        <TabsContent value="runs">
+        <TabsContent value="runs" className="space-y-4">
           <Card>
-            <CardContent className="p-6 pt-6">
+            <CardContent className="p-3 pt-3">
               {runsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : !runs || runs.length === 0 ? (
