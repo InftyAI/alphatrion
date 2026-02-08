@@ -92,7 +92,7 @@ def test_query_team_with_experiments():
 
     query = f"""
     query {{
-        team(id: "{id}") {{
+        team(id: "{team_id}") {{
             id
             name
             description
@@ -104,7 +104,6 @@ def test_query_team_with_experiments():
             totalRuns
             listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
                 id
-               updatedAt
             }}
         }}
     }}
@@ -479,8 +478,8 @@ def test_query_experiment_metrics():
         variable_values={},
     )
     assert response.errors is None
-    assert len(response.data["metrics"]) == 2
-    for metric in response.data["metrics"]:
+    assert len(response.data["experiment"]["metrics"]) == 2
+    for metric in response.data["experiment"]["metrics"]:
         assert metric["teamId"] == str(team_id)
         assert metric["projectId"] == str(project_id)
         assert metric["experimentId"] == str(experiment_id)
