@@ -5,6 +5,7 @@ import {
   Package,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import logoImage from '../../assets/logo.png';
 
 interface NavItem {
   title: string;
@@ -40,7 +41,12 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-card">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-6">
+      <div className="flex h-16 items-center gap-3 border-b px-6">
+        <img
+          src={logoImage}
+          alt="AlphaTrion Logo"
+          className="h-8 w-8"
+        />
         <h1 className="text-xl font-bold text-foreground">AlphaTrion</h1>
       </div>
 
