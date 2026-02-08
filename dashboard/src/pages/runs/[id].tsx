@@ -8,14 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
@@ -133,8 +125,8 @@ export function RunDetailPage() {
 
       {/* Metrics */}
       <Card>
-        <CardContent className="p-5">
-          <h3 className="text-sm font-semibold mb-4">Metrics</h3>
+        <CardContent className="p-4">
+          <h3 className="text-sm font-semibold mb-3">Metrics</h3>
           {metricsLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : runMetrics.length === 0 ? (
@@ -142,28 +134,14 @@ export function RunDetailPage() {
               No metrics logged for this run
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="h-9 text-xs font-medium">Key</TableHead>
-                  <TableHead className="h-9 text-xs font-medium">Value</TableHead>
-                  <TableHead className="h-9 text-xs font-medium">Created</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {runMetrics.map((metric) => (
-                  <TableRow key={metric.id}>
-                    <TableCell className="py-2.5 text-sm font-medium">{metric.key}</TableCell>
-                    <TableCell className="py-2.5 text-sm font-mono">{metric.value}</TableCell>
-                    <TableCell className="py-2.5 text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(metric.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <dl className="grid grid-cols-3 gap-4 text-sm">
+              {runMetrics.map((metric) => (
+                <div key={metric.id}>
+                  <dt className="text-xs text-muted-foreground font-medium">{metric.key}</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">{metric.value}</dd>
+                </div>
+              ))}
+            </dl>
           )}
         </CardContent>
       </Card>

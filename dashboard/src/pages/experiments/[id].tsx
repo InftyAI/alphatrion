@@ -195,12 +195,12 @@ export function ExperimentDetailPage() {
                 </div>
               </dl>
 
-              {/* Parameters Section */}
-              {experiment.params && Object.keys(experiment.params).length > 0 && (
+              {/* Metadata Section */}
+              {experiment.meta && Object.keys(experiment.meta).length > 0 && (
                 <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Parameters</h3>
+                  <h3 className="text-sm font-semibold mb-4">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-4 text-sm">
-                    {Object.entries(experiment.params).map(([key, value]) => (
+                    {Object.entries(experiment.meta).map(([key, value]) => (
                       <div key={key}>
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
                         <dd className="mt-1.5 text-foreground font-mono text-sm">
@@ -212,12 +212,12 @@ export function ExperimentDetailPage() {
                 </div>
               )}
 
-              {/* Metadata Section */}
-              {experiment.meta && Object.keys(experiment.meta).length > 0 && (
+              {/* Parameters Section */}
+              {experiment.params && Object.keys(experiment.params).length > 0 && (
                 <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-semibold mb-4">Metadata</h3>
+                  <h3 className="text-sm font-semibold mb-4">Parameters</h3>
                   <dl className="grid grid-cols-3 gap-4 text-sm">
-                    {Object.entries(experiment.meta).map(([key, value]) => (
+                    {Object.entries(experiment.params).map(([key, value]) => (
                       <div key={key}>
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
                         <dd className="mt-1.5 text-foreground font-mono text-sm">
