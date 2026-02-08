@@ -93,7 +93,7 @@ export function RunsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Runs</h1>
+        <h1 className="text-xl font-bold text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and monitor individual runs
         </p>

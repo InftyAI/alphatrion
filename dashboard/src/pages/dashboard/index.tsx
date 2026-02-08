@@ -52,10 +52,10 @@ export function DashboardPage() {
 
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Overview of your projects, experiments, and runs
         </p>
@@ -63,23 +63,23 @@ export function DashboardPage() {
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
+          <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           {/* Total Projects */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Projects</p>
-                  <p className="text-xl font-bold text-foreground">{team?.totalProjects || 0}</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalProjects || 0}</p>
                 </div>
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FolderKanban className="h-4 w-4 text-blue-600" />
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -87,14 +87,14 @@ export function DashboardPage() {
 
           {/* Total Experiments */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Experiments</p>
-                  <p className="text-xl font-bold text-foreground">{team?.totalExperiments || 0}</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FlaskConical className="h-4 w-4 text-purple-600" />
+                <div className="p-1.5 bg-purple-100 rounded-lg">
+                  <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
                 </div>
               </div>
             </CardContent>
@@ -102,14 +102,14 @@ export function DashboardPage() {
 
           {/* Total Runs */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Runs</p>
-                  <p className="text-xl font-bold text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-lg font-bold text-foreground">{team?.totalRuns || 0}</p>
                 </div>
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Play className="h-4 w-4 text-green-600" />
+                <div className="p-1.5 bg-green-100 rounded-lg">
+                  <Play className="h-3.5 w-3.5 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -118,7 +118,7 @@ export function DashboardPage() {
       )}
 
       {/* Experiments Charts */}
-      <div className="space-y-5">
+      <div className="space-y-3">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Activity</h2>
@@ -141,16 +141,16 @@ export function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           {/* Status Distribution Pie Chart */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsStatusChart experiments={filteredExperiments} />
               ) : (
-                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}
@@ -159,13 +159,13 @@ export function DashboardPage() {
 
           {/* Timeline Chart */}
           <Card>
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-56 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsTimelineChart experiments={filteredExperiments} timeRange={timeRange} />
               ) : (
-                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}
