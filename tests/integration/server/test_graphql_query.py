@@ -349,7 +349,7 @@ def test_query_runs():
     assert len(response.data["runs"]) == 2
 
 
-def test_query_trial_metrics():
+def test_query_experiment_metrics():
     init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
@@ -374,7 +374,7 @@ def test_query_trial_metrics():
     )
     query = f"""
     query {{
-        experimentMetrics(experimentId: "{experiment_id}") {{
+        experiment(id: "{experiment_id}") {{
             id
             key
             value
@@ -383,6 +383,16 @@ def test_query_trial_metrics():
             experimentId
             runId
             createdAt
+            metrics {{
+                id
+                key
+                value
+                teamId
+                projectId
+                experimentId
+                runId
+                createdAt
+            }}
         }}
     }}
     """
