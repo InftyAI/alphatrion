@@ -22,6 +22,9 @@ export interface Team {
   meta: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
+  totalProjects: number;
+  totalExperiments: number;
+  totalRuns: number;
 }
 
 export interface User {

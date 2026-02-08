@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { TeamRun } from '../../hooks/use-team-runs';
+import { TeamExperiment } from '../../hooks/use-team-experiments';
 import {
   LineChart,
   Line,
@@ -13,8 +13,8 @@ import {
 import { Button } from '../ui/button';
 import { format, subDays, subMonths, startOfDay, endOfDay } from 'date-fns';
 
-interface RunsTimelineChartProps {
-  runs: TeamRun[];
+interface ExperimentsTimelineChartProps {
+  experiments: TeamExperiment[];
 }
 
 type TimeRange = '7days' | '1month' | '3months';
@@ -25,7 +25,7 @@ const TIME_RANGE_OPTIONS: { value: TimeRange; label: string; days: number }[] = 
   { value: '3months', label: '3 Months', days: 90 },
 ];
 
-export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
+export function ExperimentsTimelineChart({ experiments }: ExperimentsTimelineChartProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>('7days');
 
   const chartData = useMemo(() => {
@@ -40,10 +40,10 @@ export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
         ? subMonths(now, 1)
         : subMonths(now, 3);
 
-    // Filter runs within the time range
-    const filteredRuns = runs.filter((run) => {
-      const runDate = new Date(run.createdAt);
-      return runDate >= startDate && runDate <= now;
+    // Filter experiments within the time range
+    const filteredExperiments = experiments.filter((exp) => {
+      const expDate = new Date(exp.createdAt);
+      return expDate >= startDate && expDate <= now;
     });
 
     // Create date map for aggregation
@@ -56,10 +56,10 @@ export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
       dateMap.set(dateKey, 0);
     }
 
-    // Count runs per day
-    filteredRuns.forEach((run) => {
-      const runDate = new Date(run.createdAt);
-      const dateKey = format(startOfDay(runDate), 'yyyy-MM-dd');
+    // Count experiments per day
+    filteredExperiments.forEach((exp) => {
+      const expDate = new Date(exp.createdAt);
+      const dateKey = format(startOfDay(expDate), 'yyyy-MM-dd');
       const current = dateMap.get(dateKey) || 0;
       dateMap.set(dateKey, current + 1);
     });
@@ -68,16 +68,16 @@ export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
     return Array.from(dateMap.entries())
       .map(([date, count]) => ({
         date,
-        runs: count,
+        experiments: count,
         displayDate: format(new Date(date), 'MMM dd'),
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
-  }, [runs, timeRange]);
+  }, [experiments, timeRange]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Runs Timeline</h3>
+        <h3 className="text-sm font-semibold">Experiments Timeline</h3>
         <div className="flex gap-2">
           {TIME_RANGE_OPTIONS.map((option) => (
             <Button
@@ -104,7 +104,7 @@ export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
           />
           <YAxis
             tick={{ fontSize: 12 }}
-            label={{ value: 'Number of Runs', angle: -90, position: 'insideLeft' }}
+            label={{ value: 'Number of Experiments', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip
             contentStyle={{
@@ -117,12 +117,12 @@ export function RunsTimelineChart({ runs }: RunsTimelineChartProps) {
           <Legend />
           <Line
             type="monotone"
-            dataKey="runs"
+            dataKey="experiments"
             stroke="hsl(var(--primary))"
             strokeWidth={2}
             dot={{ fill: 'hsl(var(--primary))', r: 4 }}
             activeDot={{ r: 6 }}
-            name="Runs Launched"
+            name="Experiments Launched"
           />
         </LineChart>
       </ResponsiveContainer>

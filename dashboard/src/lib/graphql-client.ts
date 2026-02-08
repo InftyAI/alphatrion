@@ -87,6 +87,27 @@ export const queries = {
         meta
         createdAt
         updatedAt
+        totalProjects
+        totalExperiments
+        totalRuns
+      }
+    }
+  `,
+
+  getTeamWithExperiments: `
+    query GetTeamWithExperiments($id: ID!, $startTime: DateTime!, $endTime: DateTime!) {
+      team(id: $id) {
+        id
+        name
+        listExpsByTimeframe(startTime: $startTime, endTime: $endTime) {
+          id
+          teamId
+          userId
+          projectId
+          name
+          status
+          createdAt
+        }
       }
     }
   `,
@@ -206,28 +227,4 @@ export const queries = {
     }
   `,
 
-  getStatistics: `
-    query GetStatistics($teamId: ID!) {
-      statistics(teamId: $teamId) {
-        totalProjects
-        totalExperiments
-        totalRuns
-      }
-    }
-  `,
-
-  listTeamRuns: `
-    query ListTeamRuns($teamId: ID!, $page: Int, $pageSize: Int) {
-      teamRuns(teamId: $teamId, page: $page, pageSize: $pageSize) {
-        id
-        teamId
-        userId
-        projectId
-        experimentId
-        meta
-        status
-        createdAt
-      }
-    }
-  `,
 };

@@ -241,17 +241,17 @@ class GraphQLResolvers:
     @staticmethod
     def total_projects(team_id: strawberry.ID) -> int:
         metadb = runtime.graphql_runtime().metadb
-        return metadb.count_projects(team_id=uuid.UUID(team_id))
+        return metadb.count_projects(team_id=team_id)
 
     @staticmethod
     def total_experiments(team_id: strawberry.ID) -> int:
         metadb = runtime.graphql_runtime().metadb
-        return metadb.count_experiments(team_id=uuid.UUID(team_id))
+        return metadb.count_experiments(team_id=team_id)
 
     @staticmethod
     def total_runs(team_id: strawberry.ID) -> int:
         metadb = runtime.graphql_runtime().metadb
-        return metadb.count_runs(team_id=uuid.UUID(team_id))
+        return metadb.count_runs(team_id=team_id)
 
     @staticmethod
     def list_exps_by_timeframe(
@@ -261,7 +261,7 @@ class GraphQLResolvers:
     ) -> list[Experiment]:
         metadb = runtime.graphql_runtime().metadb
         experiments = metadb.list_exps_by_timeframe(
-            team_id=uuid.UUID(team_id),
+            team_id=team_id,
             start_time=start_time,
             end_time=end_time,
         )

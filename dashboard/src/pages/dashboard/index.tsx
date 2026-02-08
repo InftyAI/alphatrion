@@ -1,22 +1,19 @@
 import { useTeamContext } from '../../context/team-context';
-import { useStatistics } from '../../hooks/use-statistics';
-import { useTeamRuns } from '../../hooks/use-team-runs';
+import { useTeam } from '../../hooks/use-teams';
+import { useTeamExperiments } from '../../hooks/use-team-experiments';
 import {
   Card,
   CardContent,
 } from '../../components/ui/card';
 import { Skeleton } from '../../components/ui/skeleton';
-import { RunsTimelineChart } from '../../components/dashboard/runs-timeline-chart';
+import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 
 export function DashboardPage() {
   const { selectedTeamId } = useTeamContext();
 
-  const { data: statistics, isLoading: statisticsLoading } = useStatistics(
-    selectedTeamId || '',
-    { enabled: !!selectedTeamId }
-  );
+  const { data: team, isLoading: teamLoading } = useTeam(selectedTeamId || '');
 
-  const { data: teamRuns, isLoading: runsLoading } = useTeamRuns(
+  const { data: teamExperiments, isLoading: experimentsLoading } = useTeamExperiments(
     selectedTeamId || '',
     { enabled: !!selectedTeamId }
   );
@@ -35,7 +32,7 @@ export function DashboardPage() {
       <Card>
         <CardContent className="p-6 pt-6">
           <h3 className="text-sm font-semibold mb-4">Overview</h3>
-          {statisticsLoading ? (
+          {teamLoading ? (
             <div className="grid grid-cols-3 gap-4">
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
@@ -46,19 +43,19 @@ export function DashboardPage() {
               <div>
                 <dt className="font-medium text-muted-foreground">Projects</dt>
                 <dd className="mt-1 text-3xl font-bold text-foreground">
-                  {statistics?.totalProjects || 0}
+                  {team?.totalProjects || 0}
                 </dd>
               </div>
               <div>
                 <dt className="font-medium text-muted-foreground">Experiments</dt>
                 <dd className="mt-1 text-3xl font-bold text-foreground">
-                  {statistics?.totalExperiments || 0}
+                  {team?.totalExperiments || 0}
                 </dd>
               </div>
               <div>
                 <dt className="font-medium text-muted-foreground">Runs</dt>
                 <dd className="mt-1 text-3xl font-bold text-foreground">
-                  {statistics?.totalRuns || 0}
+                  {team?.totalRuns || 0}
                 </dd>
               </div>
             </dl>
@@ -66,16 +63,16 @@ export function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Runs Timeline Chart */}
+      {/* Experiments Timeline Chart */}
       <Card>
         <CardContent className="p-6 pt-6">
-          {runsLoading ? (
+          {experimentsLoading ? (
             <Skeleton className="h-80 w-full" />
-          ) : teamRuns && teamRuns.length > 0 ? (
-            <RunsTimelineChart runs={teamRuns} />
+          ) : teamExperiments && teamExperiments.length > 0 ? (
+            <ExperimentsTimelineChart experiments={teamExperiments} />
           ) : (
             <div className="flex h-80 items-center justify-center text-muted-foreground">
-              No runs data available
+              No experiments data available
             </div>
           )}
         </CardContent>
