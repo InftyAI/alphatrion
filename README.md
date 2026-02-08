@@ -82,6 +82,8 @@ async with project.Project.setup(name="my_project"):
 
 ### View Dashboard
 
+![dashboard](./site/images/dashboard.png)
+
 The dashboard provides a web interface to explore projects, experiments, runs, and metrics through an intuitive UI.
 
 #### Launch Dashboard
