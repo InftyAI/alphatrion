@@ -2,10 +2,9 @@
 
 # test query from graphql endpoint
 
-from datetime import time
 import uuid
+from datetime import time
 
-from alphatrion import project
 from alphatrion.server.graphql.runtime import graphql_runtime, init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage.sql_models import Status
@@ -19,7 +18,6 @@ def test_query_single_team():
     now = time.time()
     yesterday = now - 24 * 3600
     tomorrow = now + 24 * 3600
-
 
     query = f"""
     query {{
@@ -51,6 +49,7 @@ def test_query_single_team():
     assert response.data["team"]["totalExperiments"] == 0
     assert response.data["team"]["totalRuns"] == 0
     assert len(response.data["team"]["listExpsByTimeframe"]) == 0
+
 
 def test_query_team_with_experiments():
     user_id = uuid.uuid4()
