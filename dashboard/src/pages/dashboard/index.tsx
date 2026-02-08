@@ -121,15 +121,15 @@ export function DashboardPage() {
       <div className="space-y-5">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">Activity</h2>
-          <div className="flex gap-1.5">
+          <h2 className="text-lg font-semibold text-foreground">Activity</h2>
+          <div className="flex gap-1">
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
                 key={option.value}
                 variant="outline"
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
-                className={`h-8 px-3 transition-colors ${
+                className={`h-8 px-2.5 text-xs transition-colors ${
                   timeRange === option.value
                     ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
                     : 'bg-white hover:bg-gray-50'
