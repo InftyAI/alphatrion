@@ -55,7 +55,7 @@ export function DashboardPage() {
     <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
       </div>
 
       {/* Team Info */}
@@ -78,7 +78,7 @@ export function DashboardPage() {
             </div>
             {team.meta && Object.keys(team.meta).length > 0 && (
               <div className="mt-2.5 pt-2.5 border-t space-y-2">
-                <h4 className="text-sm font-semibold text-foreground">Metadata</h4>
+                <h4 className="text-base font-semibold text-foreground">Metadata</h4>
                 <dl className="grid grid-cols-3 gap-3 text-sm">
                   {Object.entries(team.meta).map(([key, value]) => (
                     <div key={key} className="break-words">
@@ -115,7 +115,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Projects</p>
-                  <p className="text-lg font-bold text-foreground">{team?.totalProjects || 0}</p>
+                  <p className="text-2xl font-bold text-foreground">{team?.totalProjects || 0}</p>
                 </div>
                 <div className="p-1.5 bg-blue-100 rounded-lg">
                   <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
@@ -130,7 +130,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Experiments</p>
-                  <p className="text-lg font-bold text-foreground">{team?.totalExperiments || 0}</p>
+                  <p className="text-2xl font-bold text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
                 <div className="p-1.5 bg-purple-100 rounded-lg">
                   <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
@@ -145,7 +145,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs text-muted-foreground">Runs</p>
-                  <p className="text-lg font-bold text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-2xl font-bold text-foreground">{team?.totalRuns || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />

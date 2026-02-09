@@ -134,7 +134,7 @@ export function ProjectDetailPage() {
     <div className="space-y-4">
       {/* Project Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">
+        <h1 className="text-2xl font-bold text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
         {project.description && (
@@ -154,7 +154,7 @@ export function ProjectDetailPage() {
           {/* Project Details */}
           <Card>
             <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
@@ -185,7 +185,7 @@ export function ProjectDetailPage() {
               {/* Metadata */}
               {project.meta && Object.keys(project.meta).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <h3 className="text-base font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
                       <div key={key} className="break-words">
@@ -202,7 +202,7 @@ export function ProjectDetailPage() {
               {/* Experiment Statistics */}
               {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-6">Statistics ({allExperiments.length} experiments)</h3>
+                  <h3 className="text-base font-semibold mb-6">Statistics ({allExperiments.length} experiments)</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
@@ -213,14 +213,14 @@ export function ProjectDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '11px' }}
+                        style={{ fontSize: '12px' }}
                       >
                         {experimentStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -303,7 +303,7 @@ export function ProjectDetailPage() {
                     <TableBody>
                       {filteredExperiments.map((experiment) => (
                           <TableRow key={experiment.id}>
-                            <TableCell className="py-3.5 font-mono text-sm">
+                            <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/experiments/${experiment.id}`}
                                 className="text-primary hover:underline"

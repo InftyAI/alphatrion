@@ -135,7 +135,7 @@ export function ExperimentDetailPage() {
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             {experiment.name}
           </h1>
           {experiment.description && (
@@ -159,7 +159,7 @@ export function ExperimentDetailPage() {
           {/* Experiment Details */}
           <Card>
             <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
@@ -198,7 +198,7 @@ export function ExperimentDetailPage() {
               {/* Metadata Section */}
               {experiment.meta && Object.keys(experiment.meta).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <h3 className="text-base font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
                       <div key={key} className="break-words">
@@ -215,7 +215,7 @@ export function ExperimentDetailPage() {
               {/* Parameters Section */}
               {experiment.params && Object.keys(experiment.params).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Parameters</h3>
+                  <h3 className="text-base font-semibold mb-3">Parameters</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
                       <div key={key} className="break-words">
@@ -232,7 +232,7 @@ export function ExperimentDetailPage() {
               {/* Run Statistics */}
               {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
+                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
@@ -243,14 +243,14 @@ export function ExperimentDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '11px' }}
+                        style={{ fontSize: '12px' }}
                       >
                         {runStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -345,7 +345,7 @@ export function ExperimentDetailPage() {
                     <TableBody>
                       {filteredRuns.map((run) => (
                           <TableRow key={run.id}>
-                            <TableCell className="py-3.5 font-mono text-sm">
+                            <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/runs/${run.id}`}
                                 className="text-primary hover:underline"

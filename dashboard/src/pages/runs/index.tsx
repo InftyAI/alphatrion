@@ -93,7 +93,7 @@ export function RunsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Runs</h1>
+        <h1 className="text-2xl font-bold text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and monitor individual runs
         </p>
@@ -154,7 +154,7 @@ export function RunsPage() {
               <TableBody>
                 {filteredRuns.map((run) => (
                   <TableRow key={run.id}>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/runs/${run.id}`}
                         className="text-primary hover:underline"
@@ -162,7 +162,7 @@ export function RunsPage() {
                         {run.id}
                       </Link>
                     </TableCell>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${run.experimentId}`}
                         className="text-primary hover:underline"

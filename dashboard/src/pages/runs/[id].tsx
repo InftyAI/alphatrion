@@ -61,7 +61,7 @@ export function RunDetailPage() {
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             Run Details
           </h1>
           <p className="mt-1 text-muted-foreground font-mono text-sm">
@@ -76,7 +76,7 @@ export function RunDetailPage() {
       {/* Run Details */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Details</h3>
+          <h3 className="text-base font-semibold mb-3">Details</h3>
           <dl className="grid grid-cols-3 gap-3 text-sm">
             <div>
               <dt className="text-xs text-muted-foreground font-medium">Run ID</dt>
@@ -107,7 +107,7 @@ export function RunDetailPage() {
           {/* Metadata */}
           {run.meta && Object.keys(run.meta).length > 0 && (
             <div className="mt-5 pt-5 border-t">
-              <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+              <h3 className="text-base font-semibold mb-3">Metadata</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {Object.entries(run.meta).map(([key, value]) => (
                   <div key={key} className="break-words">
@@ -126,7 +126,7 @@ export function RunDetailPage() {
       {/* Metrics */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-3">Metrics</h3>
+          <h3 className="text-base font-semibold mb-3">Metrics</h3>
           {metricsLoading ? (
             <Skeleton className="h-32 w-full" />
           ) : runMetrics.length === 0 ? (

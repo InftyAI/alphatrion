@@ -102,7 +102,7 @@ export function ProjectsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Projects</h1>
+        <h1 className="text-2xl font-bold text-foreground">Projects</h1>
       </div>
 
       <Card>
@@ -143,7 +143,7 @@ export function ProjectsPage() {
                 <TableBody>
                   {filteredProjects.map((project) => (
                       <TableRow key={project.id}>
-                        <TableCell className="py-3.5 font-mono text-sm">
+                        <TableCell className="py-3.5 text-sm">
                           <Link
                             to={`/projects/${project.id}`}
                             className="text-primary hover:underline"

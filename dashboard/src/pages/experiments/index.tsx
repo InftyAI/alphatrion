@@ -87,7 +87,7 @@ export function ExperimentsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Experiments</h1>
+        <h1 className="text-2xl font-bold text-foreground">Experiments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and manage experiments
         </p>
@@ -153,7 +153,7 @@ export function ExperimentsPage() {
                     <TableCell className="py-3.5 text-sm text-muted-foreground">
                       {experiment.name}
                     </TableCell>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${experiment.id}`}
                         className="text-primary hover:underline"
@@ -161,7 +161,7 @@ export function ExperimentsPage() {
                         {experiment.id}
                       </Link>
                     </TableCell>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/projects/${experiment.projectId}`}
                         className="text-primary hover:underline"
