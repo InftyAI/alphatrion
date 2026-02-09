@@ -56,9 +56,6 @@ export function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Overview of your projects, experiments, and runs
-        </p>
       </div>
 
       {/* Team Info */}
