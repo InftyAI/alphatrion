@@ -99,9 +99,9 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
           <Line
             type="monotone"
             dataKey="experiments"
-            stroke="#3b82f6"
+            stroke="#9333ea"
             strokeWidth={2}
-            dot={{ fill: '#3b82f6', r: 3 }}
+            dot={{ fill: '#9333ea', r: 3 }}
             activeDot={{ r: 5 }}
             name="Experiments Launched"
           />
