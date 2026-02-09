@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { getUserId } from './lib/config';
 import { graphqlQuery, queries } from './lib/graphql-client';
 import { User, UserProvider } from './context/user-context';
+import { useTeamContext } from './context/team-context';
 import { Layout } from './components/layout/layout';
 import { DashboardPage } from './pages/dashboard';
 import { ProjectsPage } from './pages/projects';
@@ -13,11 +14,13 @@ import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
 import { ArtifactsPage } from './pages/artifacts';
+import type { Team } from './types';
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { selectedTeamId, setSelectedTeamId } = useTeamContext();
 
   useEffect(() => {
     async function initialize() {
@@ -36,6 +39,31 @@ function App() {
         }
 
         setCurrentUser(data.user);
+
+        // Step 3: Query user's teams and auto-select default team
+        const teamsData = await graphqlQuery<{ teams: Team[] }>(
+          queries.listTeams,
+          { userId }
+        );
+
+        if (teamsData.teams && teamsData.teams.length > 0 && !selectedTeamId) {
+          // Check if user has a default_team in meta
+          const defaultTeamId = data.user.meta?.default_team as string | undefined;
+
+          if (defaultTeamId) {
+            // Verify the default team exists in user's teams
+            const defaultTeam = teamsData.teams.find(t => t.id === defaultTeamId);
+            if (defaultTeam) {
+              setSelectedTeamId(defaultTeamId);
+            } else {
+              // Default team not found, use first team
+              setSelectedTeamId(teamsData.teams[0].id);
+            }
+          } else {
+            // No default team set, use first team
+            setSelectedTeamId(teamsData.teams[0].id);
+          }
+        }
       } catch (err) {
         console.error('Failed to initialize app:', err);
         setError(err as Error);
@@ -45,7 +73,7 @@ function App() {
     }
 
     initialize();
-  }, []);
+  }, [selectedTeamId, setSelectedTeamId]);
 
   if (loading) {
     return (

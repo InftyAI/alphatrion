@@ -76,13 +76,6 @@ The backend already had the necessary infrastructure:
    - Maintains TeamProvider for multi-team support
    - UserProvider nested inside App component
 
-### Database Seeding
-
-7. **hack/seed_dashboard_data.py** (NEW)
-   - Script to seed database with test data
-   - Creates test user 'alice' with UUID
-   - Creates sample teams and projects
-   - Handles existing users gracefully
 
 ## Key Features
 
@@ -112,22 +105,13 @@ The backend already had the necessary infrastructure:
 
 ## Testing
 
-### Database Setup
-```bash
-# Seed test data
-python hack/seed_dashboard_data.py
-
-# Output:
-# User ID for dashboard: 7c146b20-5ab9-452f-ad9d-3d9910c0d787
-```
-
 ### Running the Dashboard
 ```bash
 # Start backend server (terminal 1)
 alphatrion server
 
 # Start dashboard with user ID (terminal 2)
-alphatrion dashboard --userid 7c146b20-5ab9-452f-ad9d-3d9910c0d787
+alphatrion dashboard --userid <USER_UUID>
 
 # Dashboard opens at http://127.0.0.1:5173
 ```
@@ -178,7 +162,7 @@ npm run dev
 
 ```typescript
 // 1. App starts, fetches userId
-const userId = await getUserId(); // "7c146b20-5ab9-452f-ad9d-3d9910c0d787"
+const userId = await getUserId(); // e.g., "7c146b20-5ab9-452f-ad9d-3d9910c0d787"
 
 // 2. Query user information
 const data = await graphqlQuery<{ user: User }>(
@@ -237,7 +221,6 @@ The user-scoped dashboard architecture is now fully implemented and functional:
 - ✅ Teams query includes userId parameter
 - ✅ Team switcher supports multi-team users
 - ✅ Error handling and loading states
-- ✅ Database seeding script for testing
 - ✅ Dashboard builds successfully
 - ✅ Ready for end-to-end testing
 

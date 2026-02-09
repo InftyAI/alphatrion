@@ -1,6 +1,9 @@
 # ruff: noqa: E501
 
 import argparse
+import threading
+import time
+import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -260,7 +263,15 @@ def start_dashboard(args):
 
     url = f"http://127.0.0.1:{args.port}"
 
-    console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
+    console.print(Text(f"🌐 Dashboard URL: {url}", style="bold cyan"))
+
+    # Open browser after a short delay to ensure server is ready
+    def open_browser():
+        time.sleep(1)  # Wait for server to start
+        webbrowser.open(url)
+
+    browser_thread = threading.Thread(target=open_browser, daemon=True)
+    browser_thread.start()
 
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")
