@@ -505,3 +505,36 @@ def test_query_experiment_metrics():
         assert metric["teamId"] == str(team_id)
         assert metric["projectId"] == str(project_id)
         assert metric["experimentId"] == str(exp_id)
+
+
+def test_update_user():
+    init(init_tables=True)
+    metadb = graphql_runtime().metadb
+
+    user_id = metadb.create_user(
+        username="tester",
+        email="tester@example.com",
+        meta={"foo": "bar"},
+    )
+    query = f"""
+    mutation {{
+    updateUser(input: {{
+    id: "{user_id}",
+    meta: {{"foo": "fuz", "default_team": "team1"}}
+    }}){{
+        id
+        username
+        email
+        meta
+        createdAt
+        updatedAt
+    }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["updateUser"]["id"] == str(user_id)
+    assert response.data["updateUser"]["meta"] == {"foo": "fuz", "default_team": "team1"}

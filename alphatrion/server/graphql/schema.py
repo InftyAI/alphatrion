@@ -10,6 +10,7 @@ from alphatrion.server.graphql.types import (
     RemoveUserFromTeamInput,
     Run,
     Team,
+    UpdateUserInput,
     User,
 )
 
@@ -86,6 +87,10 @@ class Mutation:
     @strawberry.mutation
     def create_user(self, input: CreateUserInput) -> User:
         return GraphQLMutations.create_user(input=input)
+
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        return GraphQLMutations.update_user(id=input.id, meta=input.meta)
 
     @strawberry.mutation
     def create_team(self, input: CreateTeamInput) -> Team:

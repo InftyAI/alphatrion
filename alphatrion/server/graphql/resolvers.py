@@ -10,6 +10,7 @@ from .types import (
     AddUserToTeamInput,
     CreateTeamInput,
     CreateUserInput,
+    UpdateUserInput,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
@@ -307,6 +308,24 @@ class GraphQLMutations:
                 updated_at=user.updated_at,
             )
         msg = f"Failed to create user with username {input.username}"
+        raise RuntimeError(msg)
+
+    @staticmethod
+    def update_user(input: UpdateUserInput) -> User:
+        metadb = runtime.graphql_runtime().metadb
+        user_id = uuid.UUID(input.id)
+
+        user =  metadb.update_user(user_id=user_id, meta=input.meta)
+        if user:
+            return User(
+                id=user.uuid,
+                username=user.username,
+                email=user.email,
+                meta=user.meta,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+            )
+        msg = f"Failed to update user with id {id}"
         raise RuntimeError(msg)
 
     @staticmethod

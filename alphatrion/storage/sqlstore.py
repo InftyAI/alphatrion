@@ -130,6 +130,24 @@ class SQLStore(MetaStore):
         session.close()
         return user
 
+    def update_user(self, user_id: uuid.UUID, **kwargs) -> User | None:
+        session = self._session()
+        user = (
+            session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
+        )
+        if user:
+            for key, value in kwargs.items():
+                if key == "meta" and isinstance(value, dict):
+                    if user.meta is None:
+                        user.meta = {}
+                    user.meta.update(value)
+                else:
+                    setattr(user, key, value)
+            session.commit()
+        session.close()
+
+        return user
+
     def list_users(
         self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[User]:

@@ -155,6 +155,11 @@ class CreateTeamInput:
     description: str | None = None
     meta: JSON | None = None
 
+@strawberry.input
+class UpdateUserInput:
+    id: strawberry.ID
+    meta: JSON | None = None
+
 
 @strawberry.input
 class AddUserToTeamInput:
