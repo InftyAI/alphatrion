@@ -99,9 +99,9 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
           <Line
             type="monotone"
             dataKey="experiments"
-            stroke="hsl(var(--primary))"
+            stroke="#3b82f6"
             strokeWidth={2}
-            dot={{ fill: 'hsl(var(--primary))', r: 3 }}
+            dot={{ fill: '#3b82f6', r: 3 }}
             activeDot={{ r: 5 }}
             name="Experiments Launched"
           />
