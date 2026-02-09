@@ -1,9 +1,6 @@
 # ruff: noqa: E501
 
 import argparse
-import threading
-import time
-import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -54,9 +51,6 @@ def main():
         type=str,
         default="http://localhost:8000",
         help="Backend server URL to proxy requests to (default: http://localhost:8000)",
-    )
-    dashboard.add_argument(
-        "--no-browser", action="store_true", help="Don't automatically open browser"
     )
     dashboard.set_defaults(func=start_dashboard)
 
@@ -164,7 +158,7 @@ def start_dashboard(args):
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
     )
-    console.print(Text("   alphatrion server --port 8000", style="cyan"))
+    console.print(Text("   alphatrion server", style="cyan"))
     console.print()
 
     app = FastAPI()
@@ -251,16 +245,7 @@ def start_dashboard(args):
 
     url = f"http://127.0.0.1:{args.port}"
 
-    # Open browser after a short delay (unless --no-browser is set)
-    if not args.no_browser:
-
-        def open_browser():
-            time.sleep(1)  # Wait for server to start
-            webbrowser.open(url)
-
-        threading.Thread(target=open_browser, daemon=True).start()
-    else:
-        console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
+    console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
 
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")

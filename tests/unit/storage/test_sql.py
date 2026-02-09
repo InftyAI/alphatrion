@@ -156,6 +156,7 @@ def test_crud_run(db):
     assert run.status == Status.COMPLETED
     assert run.meta == {"foo": "bar", "result": "success"}
 
+
 def test_create_user_with_team(db):
     team_id = db.create_team(name="Test Team", description="A test team")
 
@@ -173,6 +174,7 @@ def test_create_user_with_team(db):
     teams = db.list_user_teams(user_id)
     assert len(teams) == 1
     assert teams[0].uuid == team_id
+
 
 def test_create_user_without_team(db):
     user_id = db.create_user(
