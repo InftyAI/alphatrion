@@ -79,11 +79,11 @@ export function DashboardPage() {
             {team.meta && Object.keys(team.meta).length > 0 && (
               <div className="mt-2.5 pt-2.5 border-t space-y-2">
                 <h4 className="text-sm font-semibold text-foreground">Metadata</h4>
-                <dl className="grid grid-cols-3 gap-2.5">
+                <dl className="grid grid-cols-3 gap-3 text-sm">
                   {Object.entries(team.meta).map(([key, value]) => (
-                    <div key={key}>
-                      <dt className="text-sm text-muted-foreground font-medium">{key}</dt>
-                      <dd className="mt-1 text-foreground font-mono text-sm truncate">
+                    <div key={key} className="break-words">
+                      <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                      <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                         {typeof value === 'string' ? value : JSON.stringify(value)}
                       </dd>
                     </div>

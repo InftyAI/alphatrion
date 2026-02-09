@@ -158,11 +158,11 @@ export function ProjectDetailPage() {
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{project.id}</dd>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">{project.id}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{project.teamId}</dd>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">{project.teamId}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Created</dt>
@@ -188,9 +188,9 @@ export function ProjectDetailPage() {
                   <h3 className="text-sm font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
-                      <div key={key}>
+                      <div key={key} className="break-words">
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>

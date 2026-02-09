@@ -80,8 +80,8 @@ export function TeamSwitcher() {
                         : "hover:bg-accent/30 text-foreground"
                     )}
                   >
-                    <div className="flex-1 text-left truncate">
-                      <div className="text-xs font-medium">
+                    <div className="flex-1 text-left">
+                      <div className="text-xs font-medium break-words">
                         {team.name || 'Unnamed Team'}
                       </div>
                     </div>

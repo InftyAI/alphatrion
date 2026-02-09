@@ -163,11 +163,11 @@ export function ExperimentDetailPage() {
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{experiment.id}</dd>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.id}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{experiment.projectId}</dd>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.projectId}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground font-medium">Duration</dt>
@@ -201,9 +201,9 @@ export function ExperimentDetailPage() {
                   <h3 className="text-sm font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
-                      <div key={key}>
+                      <div key={key} className="break-words">
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -218,9 +218,9 @@ export function ExperimentDetailPage() {
                   <h3 className="text-sm font-semibold mb-3">Parameters</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
-                      <div key={key}>
+                      <div key={key} className="break-words">
                         <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
