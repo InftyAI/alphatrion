@@ -14,6 +14,7 @@ from alphatrion.storage.sql_models import (
     Run,
     Status,
     Team,
+    TeamMember,
     User,
 )
 
@@ -54,33 +55,19 @@ class SQLStore(MetaStore):
         session.close()
         return team
 
-    def list_teams(self, page: int, page_size: int) -> list[Team]:
+    def list_user_teams(self, user_id: uuid.UUID) -> list[Team]:
         session = self._session()
         teams = (
             session.query(Team)
-            .filter(Team.is_del == 0)
-            .offset(page * page_size)
-            .limit(page_size)
+            .join(TeamMember, TeamMember.team_id == Team.uuid)
+            .filter(
+                TeamMember.user_id == user_id,
+                Team.is_del == 0,
+            )
             .all()
         )
         session.close()
         return teams
-
-    def get_team_by_user_id(self, user_id: uuid.UUID) -> Team | None:
-        session = self._session()
-        user = (
-            session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
-        )
-        if not user:
-            session.close()
-            return None
-        team = (
-            session.query(Team)
-            .filter(Team.uuid == user.team_id, Team.is_del == 0)
-            .first()
-        )
-        session.close()
-        return team
 
     # ---------- User APIs ----------
 
@@ -88,22 +75,52 @@ class SQLStore(MetaStore):
         self,
         username: str,
         email: str,
-        team_id: uuid.UUID,
+        team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
-        session = self._session()
-        new_user = User(
-            username=username,
-            team_id=team_id,
-            email=email,
-            meta=meta,
-        )
-        session.add(new_user)
-        session.commit()
-        user_id = new_user.uuid
-        session.close()
+        # If team_id is not provided, we will just create the user
+        # without any team association.
+        if team_id is None:
+            session = self._session()
+            new_user = User(
+                username=username,
+                email=email,
+                meta=meta,
+            )
+            session.add(new_user)
+            session.commit()
+            user_id = new_user.uuid
+            session.close()
 
-        return user_id
+            return user_id
+        else:
+            # If team_id is provided, we will create the user and
+            # add to the team in a transaction.
+            session = self._session()
+            try:
+                new_user = User(
+                    username=username,
+                    email=email,
+                    meta=meta,
+                )
+                session.add(new_user)
+                session.flush()  # flush to get the new user's id
+
+                new_member = TeamMember(
+                    user_id=new_user.uuid,
+                    team_id=team_id,
+                )
+                session.add(new_member)
+
+                session.commit()
+                user_id = new_user.uuid
+            except Exception as e:
+                session.rollback()
+                raise e
+            finally:
+                session.close()
+
+            return user_id
 
     def get_user(self, user_id: uuid.UUID) -> User | None:
         session = self._session()
@@ -116,16 +133,87 @@ class SQLStore(MetaStore):
     def list_users(
         self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
     ) -> list[User]:
+        """List users in a team"""
         session = self._session()
+        # Join TeamMember to get users in the team
         users = (
             session.query(User)
-            .filter(User.team_id == team_id, User.is_del == 0)
+            .join(TeamMember, TeamMember.user_id == User.uuid)
+            .filter(
+                TeamMember.team_id == team_id,
+                User.is_del == 0,
+            )
             .offset(page * page_size)
             .limit(page_size)
             .all()
         )
         session.close()
         return users
+
+    # ---------- Team Member APIs ----------
+
+    def add_user_to_team(
+        self,
+        user_id: uuid.UUID,
+        team_id: uuid.UUID,
+    ) -> bool:
+        """Add a user to a team"""
+        session = self._session()
+        # Check if membership already exists
+        existing = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.user_id == user_id,
+                TeamMember.team_id == team_id,
+            )
+            .first()
+        )
+        if existing:
+            session.close()
+            return False
+
+        new_member = TeamMember(
+            user_id=user_id,
+            team_id=team_id,
+        )
+        session.add(new_member)
+        session.commit()
+        session.close()
+        return True
+
+    def remove_user_from_team(self, user_id: uuid.UUID, team_id: uuid.UUID) -> bool:
+        """Remove a user from a team (hard delete)"""
+        session = self._session()
+        member = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.user_id == user_id,
+                TeamMember.team_id == team_id,
+            )
+            .first()
+        )
+        if member:
+            session.delete(member)
+            session.commit()
+            session.close()
+            return True
+        session.close()
+        return False
+
+    def list_team_members(
+        self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[TeamMember]:
+        """List all team members (memberships) for a team"""
+        session = self._session()
+        members = (
+            session.query(TeamMember)
+            .filter(TeamMember.team_id == team_id)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return members
 
     # ---------- Project APIs ----------
 

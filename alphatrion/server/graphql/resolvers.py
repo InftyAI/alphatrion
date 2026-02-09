@@ -7,12 +7,16 @@ from alphatrion.server.graphql import runtime
 from alphatrion.storage.sql_models import Status
 
 from .types import (
+    AddUserToTeamInput,
+    CreateTeamInput,
+    CreateUserInput,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
     Metric,
     Project,
+    RemoveUserFromTeamInput,
     Run,
     Team,
     User,
@@ -21,9 +25,9 @@ from .types import (
 
 class GraphQLResolvers:
     @staticmethod
-    def list_teams(page: int = 0, page_size: int = 10) -> list[Team]:
+    def list_teams(user_id: strawberry.ID) -> list[Team]:
         metadb = runtime.graphql_runtime().metadb
-        teams = metadb.list_teams(page=page, page_size=page_size)
+        teams = metadb.list_user_teams(user_id=user_id)
         return [
             Team(
                 id=t.uuid,
@@ -60,7 +64,6 @@ class GraphQLResolvers:
                 id=user.uuid,
                 username=user.username,
                 email=user.email,
-                team_id=user.team_id,
                 meta=user.meta,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
@@ -282,3 +285,89 @@ class GraphQLResolvers:
             )
             for e in experiments
         ]
+
+
+class GraphQLMutations:
+    @staticmethod
+    def create_user(input: CreateUserInput) -> User:
+        metadb = runtime.graphql_runtime().metadb
+        user_id = metadb.create_user(
+            username=input.username,
+            email=input.email,
+            meta=input.meta,
+        )
+        user = metadb.get_user(user_id=user_id)
+        if user:
+            return User(
+                id=user.uuid,
+                username=user.username,
+                email=user.email,
+                meta=user.meta,
+                created_at=user.created_at,
+                updated_at=user.updated_at,
+            )
+        msg = f"Failed to create user with username {input.username}"
+        raise RuntimeError(msg)
+
+    @staticmethod
+    def create_team(input: CreateTeamInput) -> Team:
+        metadb = runtime.graphql_runtime().metadb
+        team_id = metadb.create_team(
+            name=input.name,
+            description=input.description,
+            meta=input.meta,
+        )
+        team = metadb.get_team(team_id=team_id)
+        if team:
+            return Team(
+                id=team.uuid,
+                name=team.name,
+                description=team.description,
+                meta=team.meta,
+                created_at=team.created_at,
+                updated_at=team.updated_at,
+            )
+        msg = f"Failed to create team with name {input.name}"
+        raise RuntimeError(msg)
+
+    @staticmethod
+    def add_user_to_team(input: AddUserToTeamInput) -> bool:
+        metadb = runtime.graphql_runtime().metadb
+        user_id = uuid.UUID(input.user_id)
+        team_id = uuid.UUID(input.team_id)
+
+        # Verify team exists
+        team = metadb.get_team(team_id=team_id)
+        if not team:
+            msg = f"Team with id {input.team_id} not found"
+            raise ValueError(msg)
+
+        # Verify user exists
+        user = metadb.get_user(user_id=user_id)
+        if not user:
+            msg = f"User with id {input.user_id} not found"
+            raise ValueError(msg)
+
+        # Add user to team (creates TeamMember entry)
+        return metadb.add_user_to_team(user_id=user_id, team_id=team_id)
+
+    @staticmethod
+    def remove_user_from_team(input: RemoveUserFromTeamInput) -> bool:
+        metadb = runtime.graphql_runtime().metadb
+        user_id = uuid.UUID(input.user_id)
+        team_id = uuid.UUID(input.team_id)
+
+        # Verify team exists
+        team = metadb.get_team(team_id=team_id)
+        if not team:
+            msg = f"Team with id {input.team_id} not found"
+            raise ValueError(msg)
+
+        # Verify user exists
+        user = metadb.get_user(user_id=user_id)
+        if not user:
+            msg = f"User with id {input.user_id} not found"
+            raise ValueError(msg)
+
+        # Remove user from team (deletes TeamMember entry)
+        return metadb.remove_user_from_team(user_id=user_id, team_id=team_id)

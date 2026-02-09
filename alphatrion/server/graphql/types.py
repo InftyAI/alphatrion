@@ -51,10 +51,15 @@ class User:
     id: strawberry.ID
     username: str
     email: str
-    team_id: strawberry.ID
     meta: JSON | None
     created_at: datetime
     updated_at: datetime
+
+    @strawberry.field
+    def teams(self) -> list["Team"] | None:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_teams(user_id=self.id)
 
 
 @strawberry.type
@@ -134,3 +139,30 @@ class Metric:
     experiment_id: strawberry.ID
     run_id: strawberry.ID
     created_at: datetime
+
+
+# Input types for mutations
+@strawberry.input
+class CreateUserInput:
+    username: str
+    email: str
+    meta: JSON | None = None
+
+
+@strawberry.input
+class CreateTeamInput:
+    name: str
+    description: str | None = None
+    meta: JSON | None = None
+
+
+@strawberry.input
+class AddUserToTeamInput:
+    user_id: strawberry.ID
+    team_id: strawberry.ID
+
+
+@strawberry.input
+class RemoveUserFromTeamInput:
+    user_id: strawberry.ID
+    team_id: strawberry.ID
