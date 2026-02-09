@@ -52,6 +52,12 @@ def main():
         default="http://localhost:8000",
         help="Backend server URL to proxy requests to (default: http://localhost:8000)",
     )
+    dashboard.add_argument(
+        "--userid",
+        type=str,
+        required=True,
+        help="User ID to scope the dashboard (required)",
+    )
     dashboard.set_defaults(func=start_dashboard)
 
     # version command
@@ -154,6 +160,7 @@ def start_dashboard(args):
     console.print(
         Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
     )
+    console.print(Text(f"👤 Dashboard scoped to user: {args.userid}", style="yellow"))
     console.print()
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
@@ -163,8 +170,16 @@ def start_dashboard(args):
 
     app = FastAPI()
 
+    # Store user ID in app state
+    app.state.user_id = args.userid
+
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
+
+    # Endpoint to get current user ID (for frontend)
+    @app.get("/api/config")
+    async def get_config():
+        return {"userId": app.state.user_id}
 
     # Proxy /graphql requests to backend (MUST be before catch-all route)
     @app.api_route("/graphql", methods=["GET", "POST"])
