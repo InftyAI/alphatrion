@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTeams } from '../../hooks/use-teams';
 import { useTeamContext } from '../../context/team-context';
 import { Building2, Check, ChevronDown } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 
 export function TeamSwitcher() {
+  const navigate = useNavigate();
   const { data: teams, isLoading } = useTeams();
   const { selectedTeamId, setSelectedTeamId } = useTeamContext();
   const [isOpen, setIsOpen] = useState(false);
@@ -19,12 +21,12 @@ export function TeamSwitcher() {
   }, [teams, selectedTeamId, setSelectedTeamId]);
 
   if (isLoading) {
-    return <Skeleton className="h-10 w-48" />;
+    return <Skeleton className="h-9 w-40 rounded-lg" />;
   }
 
   if (!teams || teams.length === 0) {
     return (
-      <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-lg border border-border/40 px-3 py-1.5 text-xs text-muted-foreground">
         <Building2 className="h-4 w-4" />
         No teams available
       </div>
@@ -41,7 +43,7 @@ export function TeamSwitcher() {
         className="h-9 px-3 gap-2 border-border/40 hover:border-border hover:bg-accent/50"
       >
         <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">
+        <span className="text-xs font-medium">
           {selectedTeam?.name || 'Select team'}
         </span>
         <ChevronDown className={cn(
@@ -59,8 +61,8 @@ export function TeamSwitcher() {
           />
 
           {/* Dropdown */}
-          <div className="absolute top-full right-0 mt-2 w-64 z-50 rounded-xl border bg-card shadow-xl overflow-hidden">
-            <div className="p-2">
+          <div className="absolute top-full right-0 mt-1.5 w-52 z-50 rounded-lg border bg-card shadow-lg overflow-hidden">
+            <div className="p-1.5">
               {teams.map((team, index) => {
                 const isSelected = team.id === selectedTeamId;
                 return (
@@ -69,26 +71,22 @@ export function TeamSwitcher() {
                     onClick={() => {
                       setSelectedTeamId(team.id);
                       setIsOpen(false);
+                      navigate('/');
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all",
+                      "flex w-full items-center justify-between gap-2 px-2.5 py-2 rounded-md transition-colors",
                       isSelected
-                        ? "bg-primary/10 text-primary"
-                        : "hover:bg-accent text-foreground"
+                        ? "bg-accent/50 text-foreground"
+                        : "hover:bg-accent/30 text-foreground"
                     )}
                   >
-                    <div className="flex-1 text-left">
+                    <div className="flex-1 text-left truncate">
                       <div className="text-xs font-medium">
                         {team.name || 'Unnamed Team'}
                       </div>
-                      {team.description && (
-                        <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                          {team.description}
-                        </div>
-                      )}
                     </div>
                     {isSelected && (
-                      <Check className="h-3.5 w-3.5 flex-shrink-0" />
+                      <Check className="h-3 w-3 flex-shrink-0 text-primary" />
                     )}
                   </button>
                 );

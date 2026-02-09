@@ -120,7 +120,7 @@ export function Header() {
                 {crumb.label}
               </Link>
             ) : (
-              <span className="font-medium text-foreground">
+              <span>
                 {crumb.label}
               </span>
             )}

@@ -11,7 +11,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FolderKanban, FlaskConical, Play } from 'lucide-react';
+import { FolderKanban, FlaskConical, Play, Building2 } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -59,6 +59,48 @@ export function DashboardPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Overview of your projects, experiments, and runs
         </p>
+      </div>
+
+      {/* Team Info */}
+      {teamLoading ? (
+        <Skeleton className="h-16 w-full" />
+      ) : team ? (
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2.5">
+                <div className="flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-foreground">{team.name || 'Unnamed Team'}</h3>
+                </div>
+                <span className="text-xs text-muted-foreground font-mono">{team.id}</span>
+              </div>
+              {team.description && (
+                <p className="mt-0.5 text-xs text-muted-foreground">{team.description}</p>
+              )}
+            </div>
+            {team.meta && Object.keys(team.meta).length > 0 && (
+              <div className="mt-2.5 pt-2.5 border-t space-y-2">
+                <h4 className="text-xs font-semibold text-foreground">Metadata</h4>
+                <dl className="grid grid-cols-3 gap-2.5">
+                  {Object.entries(team.meta).map(([key, value]) => (
+                    <div key={key}>
+                      <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                      <dd className="mt-1 text-foreground font-mono text-xs truncate">
+                        {typeof value === 'string' ? value : JSON.stringify(value)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Overview Section */}
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-2">Overview</h2>
       </div>
 
       {/* Overview Metrics */}
