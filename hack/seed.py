@@ -23,6 +23,7 @@ from alphatrion.storage.sql_models import (
     Run,
     Status,
     Team,
+    TeamMember,
     User,
 )
 
@@ -61,23 +62,31 @@ def generate_team() -> Team:
     )
 
 
-def generate_user(teams: list[Team]) -> User:
+def generate_user() -> User:
     return User(
         uuid=uuid.uuid4(),
         username=fake.user_name(),
         email=fake.email(),
-        team_id=random.choice(teams).uuid,
         meta=make_json_serializable(
             fake.pydict(nb_elements=3, variable_nb_elements=True)
         ),
     )
 
+def generate_team_user(teams: list[Team], user: User) -> TeamMember:
+    team = random.choice(teams)
+    return TeamMember(
+        team_id=team.uuid,
+        user_id=user.uuid,
+    )
+
 
 def generate_project(users: list[User]) -> Project:
     user = random.choice(users)
-    team = (
-        session.query(Team).filter(Team.uuid == user.team_id, Team.is_del == 0).first()
-    )
+    teams = session.query(Team).join(TeamMember, Team.uuid == TeamMember.team_id).filter(
+        TeamMember.user_id == user.uuid, Team.is_del == 0
+    ).all()
+    team = random.choice(teams)
+
     return Project(
         name=fake.bs().title(),
         description=fake.catch_phrase(),
@@ -163,9 +172,15 @@ def seed_all(
     teams = [generate_team() for _ in range(num_teams)]
     session.add_all(teams)
     session.commit()
+    teams = session.query(Team).all()  # Refresh teams with IDs from DB
 
-    users = [generate_user(teams) for _ in range(num_users)]
+    users = [generate_user() for _ in range(num_users)]
     session.add_all(users)
+    session.commit()
+    users = session.query(User).all()  # Refresh users with IDs from DB
+
+    members = [generate_team_user(teams, user) for user in users]
+    session.add_all(members)
     session.commit()
 
     projs = [
@@ -175,6 +190,7 @@ def seed_all(
     ]
     session.add_all(projs)
     session.commit()
+    projs = session.query(Project).all()  # Refresh projects with IDs from DB
 
     exps = [
         generate_experiment(projs)
@@ -183,6 +199,7 @@ def seed_all(
     ]
     session.add_all(exps)
     session.commit()
+    exps = session.query(Experiment).all()  # Refresh experiments with IDs from DB
 
     generate_time = datetime.now()
     for _ in range(len(exps)):
