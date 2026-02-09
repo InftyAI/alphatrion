@@ -134,7 +134,7 @@ export function ProjectDetailPage() {
     <div className="space-y-4">
       {/* Project Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
         {project.description && (
@@ -157,15 +157,15 @@ export function ProjectDetailPage() {
               <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">{project.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Team ID</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">{project.teamId}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.createdAt), {
                       addSuffix: true,
@@ -173,7 +173,7 @@ export function ProjectDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Updated</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.updatedAt), {
                       addSuffix: true,
@@ -189,7 +189,7 @@ export function ProjectDetailPage() {
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
                       <div key={key} className="break-words">
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
                         <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
@@ -293,11 +293,11 @@ export function ProjectDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="h-10 text-sm font-medium">UUID</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Name</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Duration</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -306,12 +306,12 @@ export function ProjectDetailPage() {
                             <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/experiments/${experiment.id}`}
-                                className="text-primary hover:underline"
+                                className="font-mono text-primary font-medium hover:underline"
                               >
                                 {experiment.id}
                               </Link>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {experiment.name}
                             </TableCell>
                             <TableCell className="py-3.5">
@@ -319,12 +319,12 @@ export function ProjectDetailPage() {
                                 {experiment.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground tabular-nums">
                               {experiment.duration > 0
                                 ? `${experiment.duration.toFixed(2)}s`
                                 : '-'}
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {formatDistanceToNow(new Date(experiment.createdAt), {
                                 addSuffix: true,
                               })}

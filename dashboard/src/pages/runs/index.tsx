@@ -93,7 +93,7 @@ export function RunsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Runs</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and monitor individual runs
         </p>
@@ -145,10 +145,10 @@ export function RunsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="h-10 text-sm font-medium">Run ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Experiment ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -157,7 +157,7 @@ export function RunsPage() {
                     <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/runs/${run.id}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {run.id}
                       </Link>
@@ -165,7 +165,7 @@ export function RunsPage() {
                     <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${run.experimentId}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {run.experimentId}
                       </Link>
@@ -175,7 +175,7 @@ export function RunsPage() {
                         {run.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-3.5 text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-foreground">
                       {formatDistanceToNow(new Date(run.createdAt), {
                         addSuffix: true,
                       })}

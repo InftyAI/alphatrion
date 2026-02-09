@@ -87,7 +87,7 @@ export function ExperimentsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Experiments</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Experiments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and manage experiments
         </p>
@@ -139,24 +139,24 @@ export function ExperimentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="h-10 text-sm font-medium">Name</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Experiment ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Project ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Duration</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExperiments.map((experiment) => (
                   <TableRow key={experiment.id}>
-                    <TableCell className="py-3.5 text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-foreground">
                       {experiment.name}
                     </TableCell>
                     <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${experiment.id}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {experiment.id}
                       </Link>
@@ -164,7 +164,7 @@ export function ExperimentsPage() {
                     <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/projects/${experiment.projectId}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {experiment.projectId}
                       </Link>
@@ -174,12 +174,12 @@ export function ExperimentsPage() {
                         {experiment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-3.5 text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-foreground tabular-nums">
                       {experiment.duration > 0
                         ? `${experiment.duration.toFixed(2)}s`
                         : '-'}
                     </TableCell>
-                    <TableCell className="py-3.5 text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-foreground">
                       {formatDistanceToNow(new Date(experiment.createdAt), {
                         addSuffix: true,
                       })}

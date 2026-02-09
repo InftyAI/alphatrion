@@ -135,7 +135,7 @@ export function ExperimentDetailPage() {
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             {experiment.name}
           </h1>
           {experiment.description && (
@@ -162,15 +162,15 @@ export function ExperimentDetailPage() {
               <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.id}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.projectId}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Duration</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {experiment.duration > 0
                       ? `${experiment.duration.toFixed(2)}s`
@@ -178,7 +178,7 @@ export function ExperimentDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(experiment.createdAt), {
                       addSuffix: true,
@@ -186,7 +186,7 @@ export function ExperimentDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Updated</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(experiment.updatedAt), {
                       addSuffix: true,
@@ -337,9 +337,9 @@ export function ExperimentDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="h-10 text-sm font-medium">Run ID</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -348,7 +348,7 @@ export function ExperimentDetailPage() {
                             <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/runs/${run.id}`}
-                                className="text-primary hover:underline"
+                                className="font-mono text-primary font-medium hover:underline"
                               >
                                 {run.id}
                               </Link>
@@ -358,7 +358,7 @@ export function ExperimentDetailPage() {
                                 {run.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {formatDistanceToNow(new Date(run.createdAt), {
                                 addSuffix: true,
                               })}

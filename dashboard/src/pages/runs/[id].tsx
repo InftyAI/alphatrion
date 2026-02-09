@@ -61,7 +61,7 @@ export function RunDetailPage() {
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
             Run Details
           </h1>
           <p className="mt-1 text-muted-foreground font-mono text-sm">
@@ -79,23 +79,23 @@ export function RunDetailPage() {
           <h3 className="text-base font-semibold mb-3">Details</h3>
           <dl className="grid grid-cols-3 gap-3 text-sm">
             <div>
-              <dt className="text-xs text-muted-foreground font-medium">Run ID</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">{run.id}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">{run.experimentId}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">{run.projectId}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Team ID</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">{run.teamId}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
               <dd className="mt-1.5 text-foreground text-sm">
                 {formatDistanceToNow(new Date(run.createdAt), {
                   addSuffix: true,
@@ -111,7 +111,7 @@ export function RunDetailPage() {
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {Object.entries(run.meta).map(([key, value]) => (
                   <div key={key} className="break-words">
-                    <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
                     <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                       {typeof value === 'string' ? value : JSON.stringify(value)}
                     </dd>
@@ -137,7 +137,7 @@ export function RunDetailPage() {
             <dl className="grid grid-cols-3 gap-3 text-sm">
               {runMetrics.map((metric) => (
                 <div key={metric.id}>
-                  <dt className="text-xs text-muted-foreground font-medium">{metric.key}</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.key}</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">{metric.value}</dd>
                 </div>
               ))}

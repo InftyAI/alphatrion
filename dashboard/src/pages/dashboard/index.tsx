@@ -55,7 +55,7 @@ export function DashboardPage() {
     <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Dashboard</h1>
       </div>
 
       {/* Team Info */}
@@ -82,7 +82,7 @@ export function DashboardPage() {
                 <dl className="grid grid-cols-3 gap-3 text-sm">
                   {Object.entries(team.meta).map(([key, value]) => (
                     <div key={key} className="break-words">
-                      <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
                       <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                         {typeof value === 'string' ? value : JSON.stringify(value)}
                       </dd>
@@ -97,7 +97,7 @@ export function DashboardPage() {
 
       {/* Overview Section */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-2">Overview</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-2">Overview</h2>
       </div>
 
       {/* Overview Metrics */}
@@ -114,8 +114,8 @@ export function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">Projects</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalProjects || 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">PROJECTS</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalProjects || 0}</p>
                 </div>
                 <div className="p-1.5 bg-blue-100 rounded-lg">
                   <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
@@ -129,8 +129,8 @@ export function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">Experiments</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalExperiments || 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">EXPERIMENTS</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
                 <div className="p-1.5 bg-purple-100 rounded-lg">
                   <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
@@ -144,8 +144,8 @@ export function DashboardPage() {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">Runs</p>
-                  <p className="text-2xl font-bold text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-xs font-medium text-muted-foreground">RUNS</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
