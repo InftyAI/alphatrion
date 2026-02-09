@@ -50,19 +50,19 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <h3 className="text-sm font-semibold">Experiments Distribution</h3>
       <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
+        <PieChart margin={{ top: 20, bottom: 5 }}>
           <Pie
             data={chartData}
             dataKey="value"
             nameKey="name"
             cx="50%"
-            cy="50%"
-            outerRadius={65}
+            cy="48%"
+            outerRadius={58}
             label={({ name, value }) => `${name}: ${value}`}
-            style={{ fontSize: '12px' }}
+            style={{ fontSize: '11px' }}
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -73,10 +73,10 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
-              fontSize: '12px',
+              fontSize: '11px',
             }}
           />
-          <Legend wrapperStyle={{ fontSize: '12px' }} />
+          <Legend wrapperStyle={{ fontSize: '11px' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

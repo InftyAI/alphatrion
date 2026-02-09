@@ -232,25 +232,25 @@ export function ExperimentDetailPage() {
               {/* Run Statistics */}
               {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Statistics ({allRuns.length} runs)</h3>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <PieChart>
+                  <h3 className="text-sm font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
                         data={runStatsData}
                         dataKey="value"
                         nameKey="name"
                         cx="50%"
-                        cy="50%"
-                        outerRadius={55}
+                        cy="48%"
+                        outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '12px' }}
+                        style={{ fontSize: '11px' }}
                       >
                         {runStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend />
+                      <Legend wrapperStyle={{ fontSize: '11px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
