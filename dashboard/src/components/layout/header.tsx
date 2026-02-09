@@ -106,26 +106,29 @@ export function Header() {
   return (
     <header className="flex h-16 items-center justify-between border-b bg-card px-6">
       {/* Breadcrumbs */}
-      <nav className="flex items-center space-x-2 text-sm text-muted-foreground">
-        {breadcrumbs.map((crumb, index) => (
-          <div key={index} className="flex items-center">
-            {index > 0 && (
-              <ChevronRight className="mx-2 h-4 w-4" />
-            )}
-            {crumb.href ? (
-              <Link
-                to={crumb.href}
-                className="hover:text-foreground transition-colors"
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <span className="font-medium text-foreground">
-                {crumb.label}
-              </span>
-            )}
-          </div>
-        ))}
+      <nav className="flex items-center space-x-2 text-sm">
+        {breadcrumbs.map((crumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
+          return (
+            <div key={index} className="flex items-center">
+              {index > 0 && (
+                <ChevronRight className="mx-2 h-4 w-4 text-muted-foreground" />
+              )}
+              {crumb.href && !isLast ? (
+                <Link
+                  to={crumb.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="text-foreground font-medium">
+                  {crumb.label}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Team Switcher */}

@@ -103,9 +103,6 @@ export function ProjectsPage() {
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold text-foreground">Projects</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          The list of projects for the selected team
-        </p>
       </div>
 
       <Card>
