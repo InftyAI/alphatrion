@@ -13,8 +13,8 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',

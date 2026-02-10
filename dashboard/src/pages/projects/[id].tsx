@@ -27,8 +27,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',
@@ -99,7 +99,7 @@ export function ProjectDetailPage() {
       { name: 'FAILED', value: allExperiments.filter(e => e.status === 'FAILED').length, color: '#ef4444' },
       { name: 'PENDING', value: allExperiments.filter(e => e.status === 'PENDING').length, color: '#eab308' },
       { name: 'CANCELLED', value: allExperiments.filter(e => e.status === 'CANCELLED').length, color: '#6b7280' },
-      { name: 'UNKNOWN', value: allExperiments.filter(e => e.status === 'UNKNOWN').length, color: '#9ca3af' },
+      { name: 'UNKNOWN', value: allExperiments.filter(e => e.status === 'UNKNOWN').length, color: '#a78bfa' },
     ];
 
     return stats.filter(s => s.value > 0);
