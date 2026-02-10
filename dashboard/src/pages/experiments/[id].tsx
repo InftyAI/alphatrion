@@ -138,9 +138,9 @@ export function ExperimentDetailPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {experiment.name}
           </h1>
-          {experiment.description && (
-            <p className="mt-1 text-sm text-muted-foreground">{experiment.description}</p>
-          )}
+          <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+            {experiment.id}
+          </p>
         </div>
         <Badge variant={STATUS_VARIANTS[experiment.status]}>
           {experiment.status}
@@ -161,14 +161,12 @@ export function ExperimentDetailPage() {
             <CardContent className="p-4">
               <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.id}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm">{experiment.projectId}</dd>
-                </div>
+                {experiment.description && (
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
+                    <dd className="mt-1.5 text-foreground text-sm">{experiment.description}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
                   <dd className="mt-1.5 text-foreground text-sm">

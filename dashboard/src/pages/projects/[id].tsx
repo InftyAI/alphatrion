@@ -137,9 +137,9 @@ export function ProjectDetailPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
-        {project.description && (
-          <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
-        )}
+        <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+          {project.id}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -156,14 +156,12 @@ export function ProjectDetailPage() {
             <CardContent className="p-4">
               <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm">{project.id}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Team ID</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm">{project.teamId}</dd>
-                </div>
+                {project.description && (
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
+                    <dd className="mt-1.5 text-foreground text-sm">{project.description}</dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
                   <dd className="mt-1.5 text-foreground text-sm">

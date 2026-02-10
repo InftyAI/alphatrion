@@ -79,22 +79,6 @@ export function RunDetailPage() {
           <h3 className="text-base font-semibold mb-3">Details</h3>
           <dl className="grid grid-cols-3 gap-3 text-sm">
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.id}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.experimentId}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.projectId}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Team ID</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">{run.teamId}</dd>
-            </div>
-            <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
               <dd className="mt-1.5 text-foreground text-sm">
                 {formatDistanceToNow(new Date(run.createdAt), {
