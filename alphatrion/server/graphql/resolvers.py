@@ -65,6 +65,7 @@ class GraphQLResolvers:
                 id=user.uuid,
                 username=user.username,
                 email=user.email,
+                avatar_url=user.avatar_url,
                 meta=user.meta,
                 created_at=user.created_at,
                 updated_at=user.updated_at,
@@ -295,6 +296,7 @@ class GraphQLMutations:
         user_id = metadb.create_user(
             username=input.username,
             email=input.email,
+            avatar_url=input.avatar_url,
             meta=input.meta,
         )
         user = metadb.get_user(user_id=user_id)

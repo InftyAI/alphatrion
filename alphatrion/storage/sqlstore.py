@@ -75,6 +75,7 @@ class SQLStore(MetaStore):
         self,
         username: str,
         email: str,
+        avatar_url: str | None = None,
         team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
@@ -85,6 +86,7 @@ class SQLStore(MetaStore):
             new_user = User(
                 username=username,
                 email=email,
+                avatar_url=avatar_url,
                 meta=meta,
             )
             session.add(new_user)
@@ -101,6 +103,7 @@ class SQLStore(MetaStore):
                 new_user = User(
                     username=username,
                     email=email,
+                    avatar_url=avatar_url,
                     meta=meta,
                 )
                 session.add(new_user)

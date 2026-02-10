@@ -51,6 +51,7 @@ class User:
     id: strawberry.ID
     username: str
     email: str
+    avatar_url: str | None
     meta: JSON | None
     created_at: datetime
     updated_at: datetime
@@ -146,6 +147,7 @@ class Metric:
 class CreateUserInput:
     username: str
     email: str
+    avatar_url: str | None = None
     meta: JSON | None = None
 
 

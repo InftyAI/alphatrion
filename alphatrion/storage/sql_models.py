@@ -58,6 +58,7 @@ class User(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     username = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    avatar_url = Column(String, nullable=True)
     meta = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
