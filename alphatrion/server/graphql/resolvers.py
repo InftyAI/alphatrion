@@ -319,18 +319,19 @@ class GraphQLMutations:
         user_id = uuid.UUID(input.id)
 
         user = metadb.update_user(user_id=user_id, meta=input.meta)
-        if user:
-            return User(
-                id=user.uuid,
-                username=user.username,
-                email=user.email,
-                avatar_url=user.avatar_url,
-                meta=user.meta,
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-            )
-        msg = f"Failed to update user with id {id}"
-        raise RuntimeError(msg)
+        if not user:
+            msg = f"User with id {input.id} not found"
+            raise ValueError(msg)
+
+        return User(
+            id=user.uuid,
+            username=user.username,
+            email=user.email,
+            avatar_url=user.avatar_url,
+            meta=user.meta,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )
 
     @staticmethod
     def create_team(input: CreateTeamInput) -> Team:
