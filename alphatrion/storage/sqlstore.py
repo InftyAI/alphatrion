@@ -134,6 +134,9 @@ class SQLStore(MetaStore):
         return user
 
     def update_user(self, user_id: uuid.UUID, **kwargs) -> User | None:
+        # New a User object here to avoid the detached object issue,
+        # and we only return the updated fields.
+        user = None
         session = self._session()
         user = (
             session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
