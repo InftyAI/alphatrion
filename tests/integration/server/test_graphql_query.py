@@ -2,7 +2,6 @@
 
 # test query from graphql endpoint
 
-from pdb import run
 import uuid
 from datetime import datetime, timedelta
 
