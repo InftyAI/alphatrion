@@ -67,7 +67,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
 
       <ResponsiveContainer width="100%" height={260}>
         <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
             tick={{ fontSize: 10 }}
@@ -99,9 +99,9 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
           <Line
             type="monotone"
             dataKey="experiments"
-            stroke="#9333ea"
+            stroke="#a78bfa"
             strokeWidth={2}
-            dot={{ fill: '#9333ea', r: 3 }}
+            dot={{ fill: '#a78bfa', r: 3 }}
             activeDot={{ r: 5 }}
             name="Experiments Launched"
           />
