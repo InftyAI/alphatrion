@@ -41,8 +41,8 @@ export function DashboardPage() {
       timeRange === '7days'
         ? subDays(now, 7)
         : timeRange === '1month'
-        ? subMonths(now, 1)
-        : subMonths(now, 3);
+          ? subMonths(now, 1)
+          : subMonths(now, 3);
 
     return teamExperiments.filter((exp) => {
       const expDate = new Date(exp.createdAt);
@@ -54,11 +54,11 @@ export function DashboardPage() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="pb-3 border-b">
+      <div className="pb-2 border-b">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         {selectedTeamId && (
-          <p className="mt-1 text-muted-foreground font-mono text-sm">
-            {selectedTeamId}
+          <p className="mt-0.5 text-muted-foreground font-mono text-xs">
+            TeamID: {selectedTeamId}
           </p>
         )}
       </div>
@@ -136,11 +136,10 @@ export function DashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
-                className={`h-8 px-2.5 text-xs transition-colors ${
-                  timeRange === option.value
+                className={`h-8 px-2.5 text-xs transition-colors ${timeRange === option.value
                     ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
                     : 'bg-white hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {option.label}
               </Button>
