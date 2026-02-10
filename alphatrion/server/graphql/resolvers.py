@@ -294,6 +294,7 @@ class GraphQLMutations:
     def create_user(input: CreateUserInput) -> User:
         metadb = runtime.graphql_runtime().metadb
         user_id = metadb.create_user(
+            uuid=uuid.UUID(input.id) if input.id else None,
             username=input.username,
             email=input.email,
             avatar_url=input.avatar_url,
@@ -337,6 +338,7 @@ class GraphQLMutations:
     def create_team(input: CreateTeamInput) -> Team:
         metadb = runtime.graphql_runtime().metadb
         team_id = metadb.create_team(
+            uuid=uuid.UUID(input.id) if input.id else None,
             name=input.name,
             description=input.description,
             meta=input.meta,

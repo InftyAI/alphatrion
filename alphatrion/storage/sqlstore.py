@@ -31,8 +31,15 @@ class SQLStore(MetaStore):
 
     # ---------- Team APIs ----------
 
+    # If uuid is provided, we will use the provided uuid for the new team.
+    # This is useful for binding with external team management system where
+    # the team id is already determined.
     def create_team(
-        self, name: str, description: str | None = None, meta: dict | None = None
+        self,
+        name: str,
+        uuid: uuid.UUID | None = None,
+        description: str | None = None,
+        meta: dict | None = None,
     ) -> uuid.UUID:
         session = self._session()
         new_team = Team(
@@ -40,6 +47,9 @@ class SQLStore(MetaStore):
             description=description,
             meta=meta,
         )
+        if uuid is not None:
+            new_team.uuid = uuid
+
         session.add(new_team)
         session.commit()
         team_id = new_team.uuid
@@ -71,27 +81,34 @@ class SQLStore(MetaStore):
 
     # ---------- User APIs ----------
 
+    # If uuid is provided, we will use the provided uuid for the new user.
+    # This is useful for binding with external user management system where
+    # the user id is already determined.
     def create_user(
         self,
         username: str,
         email: str,
+        uuid: uuid.UUID | None = None,
         avatar_url: str | None = None,
         team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
+        user = User(
+            username=username,
+            email=email,
+            avatar_url=avatar_url,
+            meta=meta,
+        )
+        if uuid is not None:
+            user.uuid = uuid
+
         # If team_id is not provided, we will just create the user
         # without any team association.
         if team_id is None:
             session = self._session()
-            new_user = User(
-                username=username,
-                email=email,
-                avatar_url=avatar_url,
-                meta=meta,
-            )
-            session.add(new_user)
+            session.add(user)
             session.commit()
-            user_id = new_user.uuid
+            user_id = user.uuid
             session.close()
 
             return user_id
@@ -100,23 +117,17 @@ class SQLStore(MetaStore):
             # add to the team in a transaction.
             session = self._session()
             try:
-                new_user = User(
-                    username=username,
-                    email=email,
-                    avatar_url=avatar_url,
-                    meta=meta,
-                )
-                session.add(new_user)
+                session.add(user)
                 session.flush()  # flush to get the new user's id
 
                 new_member = TeamMember(
-                    user_id=new_user.uuid,
+                    user_id=user.uuid,
                     team_id=team_id,
                 )
                 session.add(new_member)
 
                 session.commit()
-                user_id = new_user.uuid
+                user_id = user.uuid
             except Exception as e:
                 session.rollback()
                 raise e
