@@ -135,7 +135,7 @@ export function ExperimentDetailPage() {
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {experiment.name}
           </h1>
           {experiment.description && (

@@ -61,7 +61,7 @@ export function RunDetailPage() {
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Run Details
           </h1>
           <p className="mt-1 text-muted-foreground font-mono text-sm">

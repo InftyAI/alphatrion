@@ -134,7 +134,7 @@ export function ProjectDetailPage() {
     <div className="space-y-4">
       {/* Project Header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
         {project.description && (
