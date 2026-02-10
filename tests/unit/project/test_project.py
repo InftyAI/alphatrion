@@ -14,6 +14,7 @@ from alphatrion.runtime.runtime import global_runtime, init
 from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import Status
 
+
 @pytest.mark.asyncio
 async def test_project():
     init(

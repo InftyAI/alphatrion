@@ -1,6 +1,5 @@
 # ruff: noqa: PLW0603
 import os
-from tkinter import NO
 import uuid
 
 from alphatrion import envs
@@ -18,9 +17,11 @@ def init(
     Initialize the AlphaTrion runtime environment.
 
     Args:
-        user_id: The user ID for the current user. You can generate a UUID using `uuid.uuid4()`.
-        team_id: The team ID for the current user. If not provided, will look for the first team
-            associated with the user in the database.
+        user_id: The user ID for the current user. You can generate a UUID
+                 using `uuid.uuid4()`.
+        team_id: The team ID for the current user. If not provided, will look
+                 for the first team
+                 associated with the user in the database.
     """
     global __RUNTIME__
     __RUNTIME__ = Runtime(
@@ -60,11 +61,13 @@ class Runtime:
         self._user_id = user_id
         self._team_id = team_id
         if team_id is None:
-            # If team_id is not provided, look for the first team associated with the user in the database.
+            # If team_id is not provided, look for the first team associated with
+            # the user in the database.
             teams = self._metadb.list_user_teams(user_id)
             if len(teams) == 0:
                 raise ValueError(
-                    f"No team found for user_id {user_id}. Make sure the user is associated with at least one team in the database."
+                    f"No team found for user_id {user_id}. Make sure the user is "
+                    f"associated with at least one team in the database."
                 )
             self._team_id = teams[0].uuid
 
