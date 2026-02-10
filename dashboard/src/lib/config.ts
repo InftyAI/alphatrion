@@ -9,23 +9,22 @@ interface Config {
   userId: string;
 }
 
-let cachedConfig: Config | null = null;
-
 /**
  * Fetch configuration from the dashboard backend
+ * Always fetches fresh config to avoid stale user ID when dashboard is restarted with different user
  */
 export async function getConfig(): Promise<Config> {
-  if (cachedConfig) {
-    return cachedConfig;
-  }
-
-  const response = await fetch('/api/config');
+  const response = await fetch('/api/config', {
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache',
+    },
+  });
   if (!response.ok) {
     throw new Error('Failed to load configuration');
   }
 
-  cachedConfig = await response.json();
-  return cachedConfig;
+  return await response.json();
 }
 
 /**

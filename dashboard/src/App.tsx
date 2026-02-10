@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { getUserId } from './lib/config';
 import { graphqlQuery, queries } from './lib/graphql-client';
 import { User, UserProvider } from './context/user-context';
@@ -21,12 +22,23 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const { selectedTeamId, setSelectedTeamId } = useTeamContext();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     async function initialize() {
       try {
         // Step 1: Get userId from config
         const userId = await getUserId();
+
+        // Check if user ID has changed from previous session
+        const previousUserId = localStorage.getItem('alphatrion_user_id');
+        if (previousUserId && previousUserId !== userId) {
+          // User ID changed - clear all cached data
+          console.log('User ID changed, clearing cache');
+          queryClient.clear();
+        }
+        // Store current user ID for next session
+        localStorage.setItem('alphatrion_user_id', userId);
 
         // Step 2: Query user information
         const data = await graphqlQuery<{ user: User }>(
@@ -40,13 +52,27 @@ function App() {
 
         setCurrentUser(data.user);
 
-        // Step 3: Query user's teams and auto-select default team
+        // Step 3: Query user's teams and auto-select team
         const teamsData = await graphqlQuery<{ teams: Team[] }>(
           queries.listTeams,
           { userId }
         );
 
-        if (teamsData.teams && teamsData.teams.length > 0 && !selectedTeamId) {
+        if (teamsData.teams && teamsData.teams.length > 0) {
+          // Check if this user has a saved team preference
+          const teamKey = `alphatrion_selected_team_${userId}`;
+          const savedTeamId = localStorage.getItem(teamKey);
+
+          if (savedTeamId) {
+            // Verify saved team still exists in user's teams
+            const savedTeam = teamsData.teams.find(t => t.id === savedTeamId);
+            if (savedTeam) {
+              setSelectedTeamId(savedTeamId, userId);
+              return;
+            }
+          }
+
+          // No saved team or saved team not found - auto-select
           // Check if user has a default_team in meta
           const defaultTeamId = data.user.meta?.default_team as string | undefined;
 
@@ -54,15 +80,13 @@ function App() {
             // Verify the default team exists in user's teams
             const defaultTeam = teamsData.teams.find(t => t.id === defaultTeamId);
             if (defaultTeam) {
-              setSelectedTeamId(defaultTeamId);
-            } else {
-              // Default team not found, use first team
-              setSelectedTeamId(teamsData.teams[0].id);
+              setSelectedTeamId(defaultTeamId, userId);
+              return;
             }
-          } else {
-            // No default team set, use first team
-            setSelectedTeamId(teamsData.teams[0].id);
           }
+
+          // No default team or default team not found, use first team
+          setSelectedTeamId(teamsData.teams[0].id, userId);
         }
       } catch (err) {
         console.error('Failed to initialize app:', err);
@@ -73,7 +97,7 @@ function App() {
     }
 
     initialize();
-  }, [selectedTeamId, setSelectedTeamId]);
+  }, [setSelectedTeamId, queryClient]);
 
   if (loading) {
     return (

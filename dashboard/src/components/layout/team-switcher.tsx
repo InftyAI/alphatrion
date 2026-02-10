@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTeams } from '../../hooks/use-teams';
 import { useTeamContext } from '../../context/team-context';
+import { useCurrentUser } from '../../context/user-context';
 import { Building2, Check, ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
@@ -11,14 +12,10 @@ export function TeamSwitcher() {
   const navigate = useNavigate();
   const { data: teams, isLoading } = useTeams();
   const { selectedTeamId, setSelectedTeamId } = useTeamContext();
+  const user = useCurrentUser();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Auto-select first team if none selected
-  useEffect(() => {
-    if (teams && teams.length > 0 && !selectedTeamId) {
-      setSelectedTeamId(teams[0].id);
-    }
-  }, [teams, selectedTeamId, setSelectedTeamId]);
+  // This component no longer auto-selects - App.tsx handles that on initialization
 
   if (isLoading) {
     return <Skeleton className="h-9 w-40 rounded-lg" />;
@@ -69,7 +66,7 @@ export function TeamSwitcher() {
                   <button
                     key={team.id}
                     onClick={() => {
-                      setSelectedTeamId(team.id);
+                      setSelectedTeamId(team.id, user.id);
                       setIsOpen(false);
                       navigate('/');
                     }}
