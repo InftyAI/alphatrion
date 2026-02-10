@@ -145,6 +145,7 @@ class Metric:
 # Input types for mutations
 @strawberry.input
 class CreateUserInput:
+    id: strawberry.ID | None = None
     username: str
     email: str
     avatar_url: str | None = None
@@ -153,6 +154,7 @@ class CreateUserInput:
 
 @strawberry.input
 class CreateTeamInput:
+    id: strawberry.ID | None = None
     name: str
     description: str | None = None
     meta: JSON | None = None

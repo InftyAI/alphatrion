@@ -61,6 +61,49 @@ def test_create_team_mutation():
     assert team.name == "Test Team"
 
 
+def test_create_team_mutation_with_uuid():
+    """Test creating a team via GraphQL mutation"""
+    init(init_tables=True)
+    id = uuid.uuid4()  # Generate a UUID to use for the new team
+
+    mutation = """
+    mutation {
+        createTeam(input: {
+            id: "{id}"
+            name: "Test Team"
+            description: "A team created via mutation"
+            meta: {foo: "bar", count: 42}
+        }) {
+            id
+            name
+            description
+            meta
+            createdAt
+            updatedAt
+            totalProjects
+            totalExperiments
+            totalRuns
+        }
+    }
+    """
+    response = schema.execute_sync(
+        mutation,
+        variable_values={"id": str(id)},
+    )
+    assert response.errors is None
+    assert response.data["createTeam"]["name"] == "Test Team"
+    assert response.data["createTeam"]["description"] == "A team created via mutation"
+    assert response.data["createTeam"]["meta"] == {"foo": "bar", "count": 42}
+    assert response.data["createTeam"]["totalProjects"] == 0
+    assert response.data["createTeam"]["totalExperiments"] == 0
+    assert response.data["createTeam"]["totalRuns"] == 0
+
+    # Verify team was actually created in database
+    assert response.data["createTeam"]["id"] == str(
+        uuid
+    )  # Verify the returned ID matches the provided UUID
+
+
 def test_create_user_mutation():
     """Test creating a user via GraphQL mutation"""
     init(init_tables=True)
@@ -107,6 +150,45 @@ def test_create_user_mutation():
     user = metadb.get_user(user_id=user_id)
     assert user is not None
     assert user.username == username
+
+
+def test_create_user_mutation_with_uuid():
+    """Test creating a user via GraphQL mutation"""
+    init(init_tables=True)
+    uuid = uuid.uuid4()  # Generate a UUID to use for the new user
+
+    username = unique_username("testuser")
+    email = unique_email("testuser")
+
+    mutation = f"""
+    mutation {{
+        createUser(input: {{
+            id: "{uuid}"
+            username: "{username}"
+            email: "{email}"
+            meta: {{role: "engineer", level: "senior"}}
+        }}) {{
+            id
+            username
+            email
+            meta
+            createdAt
+            updatedAt
+            teams {{
+                id
+                name
+            }}
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        mutation,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["createUser"]["id"] == str(
+        uuid
+    )  # Verify the returned ID matches the provided UUID
 
 
 def test_add_user_to_team_mutation():
