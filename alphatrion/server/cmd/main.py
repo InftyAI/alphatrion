@@ -108,11 +108,15 @@ def init_command(args):
 
     # Generate username if not provided
     username = args.username if args.username else fake.name()
-    email = args.email if args.email else f"{username.lower().replace(' ', '.')}@inftyai.com"
+    email = (
+        args.email
+        if args.email
+        else f"{username.lower().replace(' ', '.')}@inftyai.com"
+    )
     teamname = args.teamname
 
     try:
-        metadb =runtime.server_runtime().metadb
+        metadb = runtime.server_runtime().metadb
 
         # Create user
         console.print(
@@ -140,9 +144,19 @@ def init_command(args):
             Text(f"   alphatrion dashboard --userid {user_id}", style="magenta")
         )
         console.print()
-        console.print(Text("🚀 Use this user ID and team ID to setup the experiment environment:", style="dim"))
-        console.print(Text(f"   import alphatrion as alpha", style="white"))
-        console.print(Text(f"   alpha.init(user_id='{user_id}', team_id='{team_id}')", style="white"))
+        console.print(
+            Text(
+                "🚀 Use this user ID and team ID to setup the experiment environment:",
+                style="dim",
+            )
+        )
+        console.print(Text("   import alphatrion as alpha", style="white"))
+        console.print(
+            Text(
+                f"   alpha.init(user_id='{user_id}', team_id='{team_id}')",
+                style="white",
+            )
+        )
         console.print()
 
     except Exception as e:

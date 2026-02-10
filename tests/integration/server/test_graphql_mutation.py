@@ -5,6 +5,7 @@
 import uuid
 
 from alphatrion.server.graphql.runtime import graphql_runtime, init
+
 from alphatrion.server.graphql.schema import schema
 
 
@@ -93,7 +94,9 @@ def test_create_team_mutation_with_uuid():
     assert response.errors is None
     assert response.data["createTeam"]["name"] == "Test Team"
     # Verify team was actually created in database
-    assert response.data["createTeam"]["id"] == str(id)  # Verify the returned ID matches the provided UUID
+    assert response.data["createTeam"]["id"] == str(
+        id
+    )  # Verify the returned ID matches the provided UUID
 
 
 def test_create_user_mutation():
