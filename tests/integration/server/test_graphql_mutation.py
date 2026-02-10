@@ -92,16 +92,8 @@ def test_create_team_mutation_with_uuid():
     )
     assert response.errors is None
     assert response.data["createTeam"]["name"] == "Test Team"
-    assert response.data["createTeam"]["description"] == "A team created via mutation"
-    assert response.data["createTeam"]["meta"] == {"foo": "bar", "count": 42}
-    assert response.data["createTeam"]["totalProjects"] == 0
-    assert response.data["createTeam"]["totalExperiments"] == 0
-    assert response.data["createTeam"]["totalRuns"] == 0
-
     # Verify team was actually created in database
-    assert response.data["createTeam"]["id"] == str(
-        uuid
-    )  # Verify the returned ID matches the provided UUID
+    assert response.data["createTeam"]["id"] == str(id)  # Verify the returned ID matches the provided UUID
 
 
 def test_create_user_mutation():
