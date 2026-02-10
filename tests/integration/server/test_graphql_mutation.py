@@ -397,3 +397,34 @@ def test_remove_user_from_team_mutation():
     # Verify user is no longer in team
     teams = metadb.list_user_teams(user_id=user_id)
     assert len(teams) == 0
+
+def test_update_user():
+    init(init_tables=True)
+    metadb = graphql_runtime().metadb
+
+    user_id = metadb.create_user(
+        username="tester",
+        email="tester@example.com",
+        meta={"foo": "bar"},
+    )
+
+    mutation = f"""
+    mutation {{
+        updateUser(input: {{
+            id: "{user_id}"
+            meta: {{foo: "fuz", newKey: "newValue"}}
+        }}) {{
+            id
+            username
+            email
+            meta
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        mutation,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert response.data["updateUser"]["id"] == str(user_id)
+    assert response.data["updateUser"]["meta"] == {"foo": "fuz", "newKey": "newValue"}
