@@ -4,6 +4,7 @@ import uuid
 
 from alphatrion import envs
 from alphatrion.artifact.artifact import Artifact
+from alphatrion.storage import runtime
 from alphatrion.storage.sqlstore import SQLStore
 
 __RUNTIME__ = None
@@ -53,10 +54,8 @@ class Runtime:
         user_id: uuid.UUID,
         team_id: uuid.UUID | None = None,
     ):
-        init_tables = os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true"
-        self._metadb = SQLStore(
-            os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
-        )
+        runtime.init()
+        self._metadb = runtime.storage_runtime().metadb
 
         self._user_id = user_id
         self._team_id = team_id

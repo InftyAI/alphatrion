@@ -5,14 +5,14 @@
 import uuid
 from datetime import datetime, timedelta
 
-from alphatrion.server import runtime
 from alphatrion.server.graphql.schema import schema
+from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
 
 
 def test_query_single_team():
     runtime.init()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     id = metadb.create_team(name="Test Team", description="A team for testing")
 
     now = datetime.now()
@@ -54,7 +54,7 @@ def test_query_single_team():
 def test_query_team_with_experiments():
     user_id = uuid.uuid4()
     runtime.init()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     team_id = metadb.create_team(name="Test Team", description="A team for testing")
 
     project_id = metadb.create_project(
@@ -122,7 +122,7 @@ def test_query_team_with_experiments():
 def test_query_teams():
     runtime.init()
 
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     team1_id = metadb.create_team(
         name="Test Team1", description="A team for testing", meta={"foo": "bar"}
     )
@@ -161,7 +161,7 @@ def test_query_teams():
 def test_query_user():
     runtime.init()
 
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     team_id = metadb.create_team(
         name="Test Team", description="A team for testing", meta={"foo": "bar"}
     )
@@ -208,7 +208,7 @@ def test_query_single_project():
 
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     id = metadb.create_project(
         name="Test Project",
         description="A project for testing",
@@ -242,7 +242,7 @@ def test_query_projects():
     runtime.init()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
 
     _ = metadb.create_project(
         name="Test Project1",
@@ -289,7 +289,7 @@ def test_query_single_exp():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
 
     exp_id = metadb.create_experiment(
         name="Test Experiment",
@@ -331,7 +331,7 @@ def test_query_experiments():
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     _ = metadb.create_experiment(
         name="Test Experiment1",
         team_id=team_id,
@@ -376,7 +376,7 @@ def test_query_single_run():
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     run_id = metadb.create_run(
         team_id=team_id,
         user_id=user_id,
@@ -412,7 +412,7 @@ def test_query_runs():
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
     _ = metadb.create_run(
         team_id=team_id,
         user_id=user_id,
@@ -451,7 +451,7 @@ def test_query_experiment_metrics():
     runtime.init()
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    metadb = runtime.server_runtime().metadb
+    metadb = runtime.storage_runtime().metadb
 
     exp_id = metadb.create_experiment(
         name="Test Experiment",

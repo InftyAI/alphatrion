@@ -4,10 +4,10 @@ import os
 from alphatrion import envs
 from alphatrion.storage.sqlstore import SQLStore
 
-__SERVER_RUNTIME__ = None
+__STORAGE_RUNTIME__ = None
 
 
-class ServerRuntime:
+class StorageRuntime:
     _metadb = None
     _inited = False
 
@@ -28,15 +28,15 @@ class ServerRuntime:
 
 def init():
     """
-    Initialize the Server runtime environment.
+    Initialize the Storage runtime environment.
     """
 
-    global __SERVER_RUNTIME__
-    if __SERVER_RUNTIME__ is None:
-        __SERVER_RUNTIME__ = ServerRuntime()
+    global __STORAGE_RUNTIME__
+    if __STORAGE_RUNTIME__ is None:
+        __STORAGE_RUNTIME__ = StorageRuntime()
 
 
-def server_runtime() -> ServerRuntime:
-    if __SERVER_RUNTIME__ is None:
-        raise RuntimeError("ServerRuntime is not initialized. Call init() first.")
-    return __SERVER_RUNTIME__
+def storage_runtime() -> StorageRuntime:
+    if __STORAGE_RUNTIME__ is None:
+        raise RuntimeError("StorageRuntime is not initialized. Call init() first.")
+    return __STORAGE_RUNTIME__

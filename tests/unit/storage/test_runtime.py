@@ -1,14 +1,14 @@
 import pytest
 
 from alphatrion.runtime.runtime import global_runtime, init
-from alphatrion.server import runtime
+from alphatrion.storage import runtime
 
 
 @pytest.mark.asyncio
 async def test_init_without_team_id():
     runtime.init()
-    team_id = runtime.server_runtime().metadb.create_team(name="team1")
-    user_id = runtime.server_runtime().metadb.create_user(
+    team_id = runtime.storage_runtime().metadb.create_team(name="team1")
+    user_id = runtime.storage_runtime().metadb.create_user(
         username="user1", email="user1@example.com", team_id=team_id
     )
 

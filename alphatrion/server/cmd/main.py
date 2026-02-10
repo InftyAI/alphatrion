@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
 
-from alphatrion.server import runtime
+from alphatrion.storage import runtime
 
 load_dotenv()
 console = Console()
@@ -116,7 +116,7 @@ def init_command(args):
     teamname = args.teamname
 
     try:
-        metadb = runtime.server_runtime().metadb
+        metadb = runtime.storage_runtime().metadb
 
         console.print()
         # Create user
