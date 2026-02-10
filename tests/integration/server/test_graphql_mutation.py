@@ -398,6 +398,7 @@ def test_remove_user_from_team_mutation():
     teams = metadb.list_user_teams(user_id=user_id)
     assert len(teams) == 0
 
+
 def test_update_user():
     init(init_tables=True)
     metadb = graphql_runtime().metadb

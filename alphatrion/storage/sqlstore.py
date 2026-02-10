@@ -1,7 +1,6 @@
 import datetime
 import uuid
 
-from httpx import get
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
