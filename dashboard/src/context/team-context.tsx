@@ -1,27 +1,20 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface TeamContextValue {
   selectedTeamId: string | null;
-  setSelectedTeamId: (teamId: string) => void;
+  setSelectedTeamId: (teamId: string, userId?: string) => void;
 }
 
 const TeamContext = createContext<TeamContextValue | undefined>(undefined);
 
-const TEAM_STORAGE_KEY = 'alphatrion_selected_team';
-
 export function TeamProvider({ children }: { children: ReactNode }) {
-  // Load from localStorage or default to null
-  const [selectedTeamId, setSelectedTeamIdState] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(TEAM_STORAGE_KEY);
-    }
-    return null;
-  });
+  const [selectedTeamId, setSelectedTeamIdState] = useState<string | null>(null);
 
-  const setSelectedTeamId = (teamId: string) => {
+  const setSelectedTeamId = (teamId: string, userId?: string) => {
     setSelectedTeamIdState(teamId);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(TEAM_STORAGE_KEY, teamId);
+    if (typeof window !== 'undefined' && userId) {
+      const teamKey = `alphatrion_selected_team_${userId}`;
+      localStorage.setItem(teamKey, teamId);
     }
   };
 

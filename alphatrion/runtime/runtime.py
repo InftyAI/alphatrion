@@ -4,27 +4,30 @@ import uuid
 
 from alphatrion import envs
 from alphatrion.artifact.artifact import Artifact
+from alphatrion.storage import runtime
 from alphatrion.storage.sqlstore import SQLStore
 
 __RUNTIME__ = None
 
 
 def init(
-    team_id: uuid.UUID,
     user_id: uuid.UUID,
+    team_id: uuid.UUID | None = None,
 ):
     """
     Initialize the AlphaTrion runtime environment.
 
-    :param project_id: the project ID to initialize the environment.
-                       For testing purpose, you can use a random UUID.
-    :param artifact_insecure: whether to use insecure connection to the
-        artifact registry
+    Args:
+        user_id: The user ID for the current user. You can generate a UUID
+                 using `uuid.uuid4()`.
+        team_id: The team ID for the current user. If not provided, will look
+                 for the first team
+                 associated with the user in the database.
     """
     global __RUNTIME__
     __RUNTIME__ = Runtime(
-        team_id=team_id,
         user_id=user_id,
+        team_id=team_id,
     )
 
 
@@ -48,16 +51,26 @@ class Runtime:
 
     def __init__(
         self,
-        team_id: uuid.UUID,
         user_id: uuid.UUID,
+        team_id: uuid.UUID | None = None,
     ):
-        init_tables = os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true"
-        self._metadb = SQLStore(
-            os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
-        )
+        runtime.init()
+        self._metadb = runtime.storage_runtime().metadb
 
         self._user_id = user_id
         self._team_id = team_id
+
+        if team_id is None:
+            # If team_id is not provided, look for the first team associated with
+            # the user in the database.
+            teams = self._metadb.list_user_teams(user_id)
+            if len(teams) == 0:
+                raise ValueError(
+                    f"No team found for user_id {user_id}. Make sure the user is "
+                    f"associated with at least one team in the database."
+                )
+            self._team_id = teams[0].uuid
+
         self._root_path = os.getenv(envs.ROOT_PATH, os.path.expanduser("~/.alphatrion"))
 
         artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"

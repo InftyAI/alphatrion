@@ -125,7 +125,6 @@ class SQLStore(MetaStore):
                     team_id=team_id,
                 )
                 session.add(new_member)
-
                 session.commit()
                 user_id = user.uuid
             except Exception as e:
@@ -183,6 +182,14 @@ class SQLStore(MetaStore):
         return users
 
     # ---------- Team Member APIs ----------
+
+    # Only for testing purpose now.
+    def get_team_members_by_user_id(self, user_id: uuid.UUID) -> list[TeamMember]:
+        """Get all team memberships for a user"""
+        session = self._session()
+        members = session.query(TeamMember).filter(TeamMember.user_id == user_id).all()
+        session.close()
+        return members
 
     def add_user_to_team(
         self,

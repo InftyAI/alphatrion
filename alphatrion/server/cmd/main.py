@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
 
-from alphatrion.server import runtime
+from alphatrion.storage import runtime
 
 load_dotenv()
 console = Console()
@@ -102,7 +102,7 @@ def main():
 def init_command(args):
     """Initialize AlphaTrion with a user and team."""
     # Initialize the Server runtime to get access to metadb
-    runtime.init(init_tables=True)
+    runtime.init()
 
     fake = Faker()
 
@@ -116,8 +116,9 @@ def init_command(args):
     teamname = args.teamname
 
     try:
-        metadb = runtime.server_runtime().metadb
+        metadb = runtime.storage_runtime().metadb
 
+        console.print()
         # Create user
         console.print(
             Text(f"👤 Creating user: {username} ({email})", style="bold cyan")

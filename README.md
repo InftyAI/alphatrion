@@ -62,7 +62,7 @@ Next, init the environment with a user and team:
 alphatrion init  # see -h for options to specify username, email and team name
 ```
 
-You will see the generated user ID and team ID in the console. Use these IDs to initialize the AlphaTrion environment in your code later.
+You will see the generated user ID in the console. Use this ID to initialize the AlphaTrion environment in your code later.
 
 ### Run a Simple Experiment
 
@@ -72,8 +72,8 @@ Below is a simple example with two approaches demonstrating how to create an exp
 import alphatrion as alpha
 from alphatrion import experiment, project
 
-# Use the user ID and team ID generated from the `alphatrion init` command.
-alpha.init(user_id=<user_id>, team_id=<team_id>)
+# Use the user ID generated from the `alphatrion init` command.
+alpha.init(user_id=<user_id>)
 
 async def your_task():
   # Run your code here then log metrics.
