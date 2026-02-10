@@ -102,7 +102,7 @@ export function ProjectsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Projects</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Projects</h1>
       </div>
 
       <Card>

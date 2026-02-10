@@ -55,7 +55,7 @@ export function DashboardPage() {
     <div className="space-y-3">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
       </div>
 
       {/* Team Info */}
@@ -115,7 +115,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs font-medium text-muted-foreground">PROJECTS</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalProjects || 0}</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalProjects || 0}</p>
                 </div>
                 <div className="p-1.5 bg-blue-100 rounded-lg">
                   <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
@@ -130,7 +130,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs font-medium text-muted-foreground">EXPERIMENTS</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalExperiments || 0}</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
                 <div className="p-1.5 bg-purple-100 rounded-lg">
                   <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
@@ -145,7 +145,7 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <p className="text-xs font-medium text-muted-foreground">RUNS</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
@@ -160,7 +160,7 @@ export function DashboardPage() {
       <div className="space-y-3">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Activity</h2>
+          <h2 className="text-xl font-semibold text-foreground">Activity</h2>
           <div className="flex gap-1">
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
