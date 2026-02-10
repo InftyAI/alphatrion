@@ -10,7 +10,6 @@ from .types import (
     AddUserToTeamInput,
     CreateTeamInput,
     CreateUserInput,
-    UpdateUserInput,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
@@ -20,6 +19,7 @@ from .types import (
     RemoveUserFromTeamInput,
     Run,
     Team,
+    UpdateUserInput,
     User,
 )
 
@@ -317,7 +317,7 @@ class GraphQLMutations:
         metadb = runtime.graphql_runtime().metadb
         user_id = uuid.UUID(input.id)
 
-        user =  metadb.update_user(user_id=user_id, meta=input.meta)
+        user = metadb.update_user(user_id=user_id, meta=input.meta)
         if user:
             return User(
                 id=user.uuid,

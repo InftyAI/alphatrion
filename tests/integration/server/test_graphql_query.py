@@ -537,4 +537,7 @@ def test_update_user():
     )
     assert response.errors is None
     assert response.data["updateUser"]["id"] == str(user_id)
-    assert response.data["updateUser"]["meta"] == {"foo": "fuz", "default_team": "team1"}
+    assert response.data["updateUser"]["meta"] == {
+        "foo": "fuz",
+        "default_team": "team1",
+    }

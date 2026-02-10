@@ -72,6 +72,7 @@ def generate_user() -> User:
         ),
     )
 
+
 def generate_team_user(teams: list[Team], user: User) -> TeamMember:
     team = random.choice(teams)
     return TeamMember(
@@ -82,9 +83,12 @@ def generate_team_user(teams: list[Team], user: User) -> TeamMember:
 
 def generate_project(users: list[User]) -> Project:
     user = random.choice(users)
-    teams = session.query(Team).join(TeamMember, Team.uuid == TeamMember.team_id).filter(
-        TeamMember.user_id == user.uuid, Team.is_del == 0
-    ).all()
+    teams = (
+        session.query(Team)
+        .join(TeamMember, Team.uuid == TeamMember.team_id)
+        .filter(TeamMember.user_id == user.uuid, Team.is_del == 0)
+        .all()
+    )
     team = random.choice(teams)
 
     return Project(
