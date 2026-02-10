@@ -3,7 +3,7 @@ from datetime import datetime
 
 import strawberry
 
-from alphatrion.server.graphql import runtime
+from alphatrion.server import runtime
 from alphatrion.storage.sql_models import Status
 
 from .types import (
@@ -27,7 +27,7 @@ from .types import (
 class GraphQLResolvers:
     @staticmethod
     def list_teams(user_id: strawberry.ID) -> list[Team]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         teams = metadb.list_user_teams(user_id=user_id)
         return [
             Team(
@@ -43,7 +43,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_team(id: strawberry.ID) -> Team | None:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         team = metadb.get_team(team_id=uuid.UUID(id))
         if team:
             return Team(
@@ -58,7 +58,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_user(id: strawberry.ID) -> User | None:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         user = metadb.get_user(user_id=uuid.UUID(id))
         if user:
             return User(
@@ -80,7 +80,7 @@ class GraphQLResolvers:
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Project]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         projects = metadb.list_projects(
             team_id=uuid.UUID(team_id),
             page=page,
@@ -104,7 +104,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_project(id: strawberry.ID) -> Project | None:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         proj = metadb.get_project(project_id=uuid.UUID(id))
         if proj:
             return Project(
@@ -127,7 +127,7 @@ class GraphQLResolvers:
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Experiment]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         exps = metadb.list_exps_by_project_id(
             project_id=uuid.UUID(project_id),
             page=page,
@@ -156,7 +156,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_experiment(id: strawberry.ID) -> Experiment | None:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         exp = metadb.get_experiment(experiment_id=uuid.UUID(id))
         if exp:
             return Experiment(
@@ -184,7 +184,7 @@ class GraphQLResolvers:
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Run]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         runs = metadb.list_runs_by_exp_id(
             exp_id=uuid.UUID(experiment_id),
             page=page,
@@ -208,7 +208,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_run(id: strawberry.ID) -> Run | None:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         run = metadb.get_run(run_id=uuid.UUID(id))
         if run:
             return Run(
@@ -225,7 +225,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_exp_metrics(experiment_id: strawberry.ID) -> list[Metric]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         metrics = metadb.list_metrics_by_experiment_id(experiment_id=experiment_id)
         return [
             Metric(
@@ -243,17 +243,17 @@ class GraphQLResolvers:
 
     @staticmethod
     def total_projects(team_id: strawberry.ID) -> int:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         return metadb.count_projects(team_id=team_id)
 
     @staticmethod
     def total_experiments(team_id: strawberry.ID) -> int:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         return metadb.count_experiments(team_id=team_id)
 
     @staticmethod
     def total_runs(team_id: strawberry.ID) -> int:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         return metadb.count_runs(team_id=team_id)
 
     @staticmethod
@@ -262,7 +262,7 @@ class GraphQLResolvers:
         start_time: datetime,
         end_time: datetime,
     ) -> list[Experiment]:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         experiments = metadb.list_exps_by_timeframe(
             team_id=team_id,
             start_time=start_time,
@@ -292,7 +292,7 @@ class GraphQLResolvers:
 class GraphQLMutations:
     @staticmethod
     def create_user(input: CreateUserInput) -> User:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         user_id = metadb.create_user(
             uuid=uuid.UUID(input.id) if input.id else None,
             username=input.username,
@@ -316,7 +316,7 @@ class GraphQLMutations:
 
     @staticmethod
     def update_user(input: UpdateUserInput) -> User:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         user_id = uuid.UUID(input.id)
 
         user = metadb.update_user(user_id=user_id, meta=input.meta)
@@ -336,7 +336,7 @@ class GraphQLMutations:
 
     @staticmethod
     def create_team(input: CreateTeamInput) -> Team:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         team_id = metadb.create_team(
             uuid=uuid.UUID(input.id) if input.id else None,
             name=input.name,
@@ -358,7 +358,7 @@ class GraphQLMutations:
 
     @staticmethod
     def add_user_to_team(input: AddUserToTeamInput) -> bool:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         user_id = uuid.UUID(input.user_id)
         team_id = uuid.UUID(input.team_id)
 
@@ -379,7 +379,7 @@ class GraphQLMutations:
 
     @staticmethod
     def remove_user_from_team(input: RemoveUserFromTeamInput) -> bool:
-        metadb = runtime.graphql_runtime().metadb
+        metadb = runtime.server_runtime().metadb
         user_id = uuid.UUID(input.user_id)
         team_id = uuid.UUID(input.team_id)
 

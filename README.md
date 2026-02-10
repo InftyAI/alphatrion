@@ -56,19 +56,24 @@ ServerPWD:   alphatr1on
 
 You can also visit the Docker Registry UI at `http://localhost:80` to see the local registry where the built images are stored.
 
+Next, init the environment with a user and team:
+
+```bash
+alphatrion init  # see -h for options to specify username, email and team name
+```
+
+You will see the generated user ID and team ID in the console. Use these IDs to initialize the AlphaTrion environment in your code later.
 
 ### Run a Simple Experiment
 
 Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
 
 ```python
-import uuid
-
 import alphatrion as alpha
 from alphatrion import experiment, project
 
-# Better to use a fixed UUID for the team and user in real scenarios.
-alpha.init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
+# Use the user ID and team ID generated from the `alphatrion init` command.
+alpha.init(user_id=<user_id>, team_id=<team_id>)
 
 async def your_task():
   # Run your code here then log metrics.
