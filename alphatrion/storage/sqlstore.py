@@ -1,6 +1,7 @@
 import datetime
 import uuid
 
+from httpx import get
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -134,9 +135,6 @@ class SQLStore(MetaStore):
         return user
 
     def update_user(self, user_id: uuid.UUID, **kwargs) -> User | None:
-        # New a User object here to avoid the detached object issue,
-        # and we only return the updated fields.
-        user = None
         session = self._session()
         user = (
             session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
@@ -152,7 +150,7 @@ class SQLStore(MetaStore):
             session.commit()
         session.close()
 
-        return user
+        return self.get_user(user_id)
 
     def list_users(
         self, team_id: uuid.UUID, page: int = 0, page_size: int = 10
