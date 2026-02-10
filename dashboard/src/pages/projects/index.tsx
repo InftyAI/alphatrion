@@ -154,7 +154,7 @@ export function ProjectsPage() {
                         <TableCell className="py-3.5 text-sm text-foreground">
                           {project.name || 'Unnamed Project'}
                         </TableCell>
-                        <TableCell className="py-3.5 text-sm text-muted-foreground">
+                        <TableCell className="py-3.5 text-sm text-foreground">
                           {project.description || '-'}
                         </TableCell>
                         <TableCell className="py-3.5 text-sm text-foreground">
