@@ -5,7 +5,6 @@
 import uuid
 
 from alphatrion.server import runtime
-
 from alphatrion.server.graphql.schema import schema
 
 
@@ -333,7 +332,7 @@ def test_add_user_to_team_with_invalid_user():
 
 def test_complete_workflow():
     """Test complete workflow: create team, create user, add user to teams"""
-    init(init_tables=True)
+    runtime.init(init_tables=True)
 
     username = unique_username("alice")
     email = unique_email("alice")
