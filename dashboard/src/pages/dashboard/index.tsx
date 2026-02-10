@@ -56,6 +56,11 @@ export function DashboardPage() {
       {/* Header */}
       <div className="pb-3 border-b">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+        {selectedTeamId && (
+          <p className="mt-1 text-muted-foreground font-mono text-sm">
+            {selectedTeamId}
+          </p>
+        )}
       </div>
 
       {/* Overview Section */}
