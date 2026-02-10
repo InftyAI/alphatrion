@@ -155,7 +155,7 @@ def test_create_user_mutation():
 def test_create_user_mutation_with_uuid():
     """Test creating a user via GraphQL mutation"""
     init(init_tables=True)
-    uuid = uuid.uuid4()  # Generate a UUID to use for the new user
+    id = uuid.uuid4()  # Generate a UUID to use for the new user
 
     username = unique_username("testuser")
     email = unique_email("testuser")
@@ -163,7 +163,7 @@ def test_create_user_mutation_with_uuid():
     mutation = f"""
     mutation {{
         createUser(input: {{
-            id: "{uuid}"
+            id: "{id}"
             username: "{username}"
             email: "{email}"
             meta: {{role: "engineer", level: "senior"}}
@@ -187,7 +187,7 @@ def test_create_user_mutation_with_uuid():
     )
     assert response.errors is None
     assert response.data["createUser"]["id"] == str(
-        uuid
+        id
     )  # Verify the returned ID matches the provided UUID
 
 
