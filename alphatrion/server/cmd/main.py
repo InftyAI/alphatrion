@@ -12,7 +12,7 @@ import uvicorn
 from dotenv import load_dotenv
 from faker import Faker
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text

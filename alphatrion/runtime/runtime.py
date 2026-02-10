@@ -60,6 +60,7 @@ class Runtime:
 
         self._user_id = user_id
         self._team_id = team_id
+
         if team_id is None:
             # If team_id is not provided, look for the first team associated with
             # the user in the database.
