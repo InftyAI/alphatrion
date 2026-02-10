@@ -10,13 +10,14 @@ from pathlib import Path
 import httpx
 import uvicorn
 from dotenv import load_dotenv
+from faker import Faker
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
 
-from alphatrion.server.graphql.runtime import init as graphql_init
+from alphatrion.server import runtime
 
 load_dotenv()
 console = Console()
@@ -63,6 +64,30 @@ def main():
     )
     dashboard.set_defaults(func=start_dashboard)
 
+    # init command
+    init = subparsers.add_parser(
+        "init", help="Initialize AlphaTrion with a user and team"
+    )
+    init.add_argument(
+        "--username",
+        type=str,
+        default=None,
+        help="Username for the new user (auto-generated if not provided)",
+    )
+    init.add_argument(
+        "--email",
+        type=str,
+        default=None,
+        help="Email for the new user (auto-generated if not provided)",
+    )
+    init.add_argument(
+        "--teamname",
+        type=str,
+        default="Default Team",
+        help="Team name (default: Default Team)",
+    )
+    init.set_defaults(func=init_command)
+
     # version command
     version = subparsers.add_parser("version", help="Show the version of AlphaTrion")
     version.set_defaults(func=lambda args: print(f"AlphaTrion version {__version__}"))
@@ -72,6 +97,57 @@ def main():
         args.func(args)
     else:
         parser.print_help()
+
+
+def init_command(args):
+    """Initialize AlphaTrion with a user and team."""
+    # Initialize the Server runtime to get access to metadb
+    runtime.init(init_tables=True)
+
+    fake = Faker()
+
+    # Generate username if not provided
+    username = args.username if args.username else fake.name()
+    email = args.email if args.email else f"{username.lower().replace(' ', '.')}@inftyai.com"
+    teamname = args.teamname
+
+    try:
+        metadb =runtime.server_runtime().metadb
+
+        # Create user
+        console.print(
+            Text(f"👤 Creating user: {username} ({email})", style="bold cyan")
+        )
+        user_id = metadb.create_user(username=username, email=email)
+
+        # Create team
+        console.print(Text(f"🏢 Creating team: {teamname}", style="bold cyan"))
+        team_id = metadb.create_team(name=teamname, description=f"Team for {username}")
+
+        # Add user to team
+        metadb.add_user_to_team(user_id=user_id, team_id=team_id)
+
+        console.print()
+        console.print(Text("✅ Initialization successful!", style="bold green"))
+        console.print()
+        console.print(Text("📋 Your user ID:", style="bold yellow"))
+        console.print(Text(f"   {user_id}", style="bold cyan"))
+        console.print(Text("   Your team ID:", style="bold yellow"))
+        console.print(Text(f"   {team_id}", style="bold cyan"))
+        console.print()
+        console.print(Text("💡 Use this user ID to launch the dashboard:", style="dim"))
+        console.print(
+            Text(f"   alphatrion dashboard --userid {user_id}", style="magenta")
+        )
+        console.print()
+        console.print(Text("🚀 Use this user ID and team ID to setup the experiment environment:", style="dim"))
+        console.print(Text(f"   import alphatrion as alpha", style="white"))
+        console.print(Text(f"   alpha.init(user_id='{user_id}', team_id='{team_id}')", style="white"))
+        console.print()
+
+    except Exception as e:
+        console.print(Text(f"❌ Error during initialization: {e}", style="bold red"))
+        raise
 
 
 def run_server(args):
@@ -99,7 +175,7 @@ def run_server(args):
         style="bold green",
     )
     console.print(msg)
-    graphql_init()
+    runtime.init()
     uvicorn.run("alphatrion.server.cmd.app:app", host=args.host, port=args.port)
 
 
