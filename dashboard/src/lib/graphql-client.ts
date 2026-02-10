@@ -84,6 +84,7 @@ export const queries = {
         id
         username
         email
+        avatarUrl
         meta
         createdAt
         updatedAt
