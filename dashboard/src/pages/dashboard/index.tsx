@@ -78,7 +78,7 @@ export function DashboardPage() {
             </div>
             {team.meta && Object.keys(team.meta).length > 0 && (
               <div className="mt-2.5 pt-2.5 border-t space-y-2">
-                <h4 className="text-base font-semibold text-foreground">Metadata</h4>
+                <h4 className="text-sm font-semibold text-foreground">Metadata</h4>
                 <dl className="grid grid-cols-3 gap-3 text-sm">
                   {Object.entries(team.meta).map(([key, value]) => (
                     <div key={key} className="break-words">
