@@ -202,7 +202,7 @@ export function ExperimentDetailPage() {
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
                       <div key={key} className="break-words">
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
                         <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
@@ -219,7 +219,7 @@ export function ExperimentDetailPage() {
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
                       <div key={key} className="break-words">
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
                         <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
