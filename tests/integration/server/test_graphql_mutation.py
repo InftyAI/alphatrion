@@ -163,7 +163,7 @@ def test_create_user_mutation_with_uuid():
     mutation = f"""
     mutation {{
         createUser(input: {{
-            id: "{id}"
+            id: "{str(id)}"
             username: "{username}"
             email: "{email}"
             meta: {{role: "engineer", level: "senior"}}
