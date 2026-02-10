@@ -66,14 +66,14 @@ def test_create_team_mutation_with_uuid():
     init(init_tables=True)
     id = uuid.uuid4()  # Generate a UUID to use for the new team
 
-    mutation = """
-    mutation {
-        createTeam(input: {
-            id: "{id}"
+    mutation = f"""
+    mutation {{
+        createTeam(input: {{
+            id: "{str(id)}"
             name: "Test Team"
             description: "A team created via mutation"
-            meta: {foo: "bar", count: 42}
-        }) {
+            meta: {{foo: "bar", count: 42}}
+        }}) {{
             id
             name
             description
@@ -83,12 +83,12 @@ def test_create_team_mutation_with_uuid():
             totalProjects
             totalExperiments
             totalRuns
-        }
-    }
+        }}
+    }}
     """
     response = schema.execute_sync(
         mutation,
-        variable_values={"id": str(id)},
+        variable_values={},
     )
     assert response.errors is None
     assert response.data["createTeam"]["name"] == "Test Team"
