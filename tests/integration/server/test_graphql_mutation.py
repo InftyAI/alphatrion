@@ -4,7 +4,7 @@
 
 import uuid
 
-from alphatrion.server.graphql.runtime import graphql_runtime, init
+from alphatrion.server import runtime
 
 from alphatrion.server.graphql.schema import schema
 
@@ -21,7 +21,7 @@ def unique_email(base: str) -> str:
 
 def test_create_team_mutation():
     """Test creating a team via GraphQL mutation"""
-    init(init_tables=True)
+    runtime.init(init_tables=True)
 
     mutation = """
     mutation {
@@ -56,7 +56,7 @@ def test_create_team_mutation():
 
     # Verify team was actually created in database
     team_id = uuid.UUID(response.data["createTeam"]["id"])
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     team = metadb.get_team(team_id=team_id)
     assert team is not None
     assert team.name == "Test Team"
@@ -64,7 +64,7 @@ def test_create_team_mutation():
 
 def test_create_team_mutation_with_uuid():
     """Test creating a team via GraphQL mutation"""
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     id = uuid.uuid4()  # Generate a UUID to use for the new team
 
     mutation = f"""
@@ -101,8 +101,8 @@ def test_create_team_mutation_with_uuid():
 
 def test_create_user_mutation():
     """Test creating a user via GraphQL mutation"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     username = unique_username("testuser")
     email = unique_email("testuser")
@@ -149,7 +149,7 @@ def test_create_user_mutation():
 
 def test_create_user_mutation_with_uuid():
     """Test creating a user via GraphQL mutation"""
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     id = uuid.uuid4()  # Generate a UUID to use for the new user
 
     username = unique_username("testuser")
@@ -188,8 +188,8 @@ def test_create_user_mutation_with_uuid():
 
 def test_add_user_to_team_mutation():
     """Test adding a user to a team via mutation"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     # Create a team
     team_id = metadb.create_team(name="Test Team", description="First team")
@@ -229,8 +229,8 @@ def test_add_user_to_team_mutation():
 
 def test_add_user_to_multiple_teams():
     """Test adding a user to multiple teams"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     # Create two teams
     team1_id = metadb.create_team(name="Team 1")
@@ -278,8 +278,8 @@ def test_add_user_to_multiple_teams():
 
 def test_add_user_to_team_with_invalid_team():
     """Test adding a user to a non-existent team"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     # Create a user
     user_id = metadb.create_user(
@@ -307,8 +307,8 @@ def test_add_user_to_team_with_invalid_team():
 
 def test_add_user_to_team_with_invalid_user():
     """Test adding a non-existent user to a team"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     # Create a team
     team_id = metadb.create_team(name="Test Team")
@@ -437,8 +437,8 @@ def test_complete_workflow():
 
 def test_remove_user_from_team_mutation():
     """Test removing a user from a team via mutation"""
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     # Create a team
     team_id = metadb.create_team(name="Test Team")
@@ -477,8 +477,8 @@ def test_remove_user_from_team_mutation():
 
 
 def test_update_user():
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
 
     user_id = metadb.create_user(
         username="tester",
