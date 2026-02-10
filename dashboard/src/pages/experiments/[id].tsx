@@ -29,8 +29,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',
@@ -99,7 +99,7 @@ export function ExperimentDetailPage() {
       { name: 'FAILED', value: allRuns.filter(r => r.status === 'FAILED').length, color: '#ef4444' },
       { name: 'PENDING', value: allRuns.filter(r => r.status === 'PENDING').length, color: '#eab308' },
       { name: 'CANCELLED', value: allRuns.filter(r => r.status === 'CANCELLED').length, color: '#6b7280' },
-      { name: 'UNKNOWN', value: allRuns.filter(r => r.status === 'UNKNOWN').length, color: '#9ca3af' },
+      { name: 'UNKNOWN', value: allRuns.filter(r => r.status === 'UNKNOWN').length, color: '#a78bfa' },
     ];
 
     return stats.filter(s => s.value > 0);
@@ -135,12 +135,12 @@ export function ExperimentDetailPage() {
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {experiment.name}
           </h1>
-          {experiment.description && (
-            <p className="mt-1 text-sm text-muted-foreground">{experiment.description}</p>
-          )}
+          <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+            {experiment.id}
+          </p>
         </div>
         <Badge variant={STATUS_VARIANTS[experiment.status]}>
           {experiment.status}
@@ -159,18 +159,16 @@ export function ExperimentDetailPage() {
           {/* Experiment Details */}
           <Card>
             <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
+                {experiment.description && (
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
+                    <dd className="mt-1.5 text-foreground text-sm">{experiment.description}</dd>
+                  </div>
+                )}
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Experiment ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{experiment.id}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{experiment.projectId}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Duration</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {experiment.duration > 0
                       ? `${experiment.duration.toFixed(2)}s`
@@ -178,7 +176,7 @@ export function ExperimentDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(experiment.createdAt), {
                       addSuffix: true,
@@ -186,7 +184,7 @@ export function ExperimentDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Updated</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(experiment.updatedAt), {
                       addSuffix: true,
@@ -198,12 +196,12 @@ export function ExperimentDetailPage() {
               {/* Metadata Section */}
               {experiment.meta && Object.keys(experiment.meta).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <h3 className="text-base font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
-                      <div key={key}>
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                      <div key={key} className="break-words">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -215,12 +213,12 @@ export function ExperimentDetailPage() {
               {/* Parameters Section */}
               {experiment.params && Object.keys(experiment.params).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Parameters</h3>
+                  <h3 className="text-base font-semibold mb-3">Parameters</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
-                      <div key={key}>
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                      <div key={key} className="break-words">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -232,7 +230,7 @@ export function ExperimentDetailPage() {
               {/* Run Statistics */}
               {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
+                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
@@ -243,14 +241,14 @@ export function ExperimentDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '11px' }}
+                        style={{ fontSize: '12px' }}
                       >
                         {runStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -337,18 +335,18 @@ export function ExperimentDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="h-10 text-sm font-medium">Run ID</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredRuns.map((run) => (
                           <TableRow key={run.id}>
-                            <TableCell className="py-3.5 font-mono text-sm">
+                            <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/runs/${run.id}`}
-                                className="text-primary hover:underline"
+                                className="font-mono text-primary font-medium hover:underline"
                               >
                                 {run.id}
                               </Link>
@@ -358,7 +356,7 @@ export function ExperimentDetailPage() {
                                 {run.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {formatDistanceToNow(new Date(run.createdAt), {
                                 addSuffix: true,
                               })}

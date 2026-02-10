@@ -27,8 +27,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',
@@ -99,7 +99,7 @@ export function ProjectDetailPage() {
       { name: 'FAILED', value: allExperiments.filter(e => e.status === 'FAILED').length, color: '#ef4444' },
       { name: 'PENDING', value: allExperiments.filter(e => e.status === 'PENDING').length, color: '#eab308' },
       { name: 'CANCELLED', value: allExperiments.filter(e => e.status === 'CANCELLED').length, color: '#6b7280' },
-      { name: 'UNKNOWN', value: allExperiments.filter(e => e.status === 'UNKNOWN').length, color: '#9ca3af' },
+      { name: 'UNKNOWN', value: allExperiments.filter(e => e.status === 'UNKNOWN').length, color: '#a78bfa' },
     ];
 
     return stats.filter(s => s.value > 0);
@@ -134,12 +134,12 @@ export function ProjectDetailPage() {
     <div className="space-y-4">
       {/* Project Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {project.name || 'Unnamed Project'}
         </h1>
-        {project.description && (
-          <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
-        )}
+        <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+          {project.id}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -154,18 +154,16 @@ export function ProjectDetailPage() {
           {/* Project Details */}
           <Card>
             <CardContent className="p-4">
-              <h3 className="text-sm font-semibold mb-3">Details</h3>
+              <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
+                {project.description && (
+                  <div>
+                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
+                    <dd className="mt-1.5 text-foreground text-sm">{project.description}</dd>
+                  </div>
+                )}
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Project ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{project.id}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Team ID</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">{project.teamId}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Created</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.createdAt), {
                       addSuffix: true,
@@ -173,7 +171,7 @@ export function ProjectDetailPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-muted-foreground font-medium">Updated</dt>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</dt>
                   <dd className="mt-1.5 text-foreground text-sm">
                     {formatDistanceToNow(new Date(project.updatedAt), {
                       addSuffix: true,
@@ -185,12 +183,12 @@ export function ProjectDetailPage() {
               {/* Metadata */}
               {project.meta && Object.keys(project.meta).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-3">Metadata</h3>
+                  <h3 className="text-base font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
                     {Object.entries(project.meta).map(([key, value]) => (
-                      <div key={key}>
-                        <dt className="text-xs text-muted-foreground font-medium">{key}</dt>
-                        <dd className="mt-1.5 text-foreground font-mono text-sm">
+                      <div key={key} className="break-words">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
                           {typeof value === 'string' ? value : JSON.stringify(value)}
                         </dd>
                       </div>
@@ -202,7 +200,7 @@ export function ProjectDetailPage() {
               {/* Experiment Statistics */}
               {allExperiments && allExperiments.length > 0 && experimentStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-sm font-semibold mb-6">Statistics ({allExperiments.length} experiments)</h3>
+                  <h3 className="text-base font-semibold mb-6">Statistics ({allExperiments.length} experiments)</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
@@ -213,14 +211,14 @@ export function ProjectDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '11px' }}
+                        style={{ fontSize: '12px' }}
                       >
                         {experimentStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '11px' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -293,25 +291,25 @@ export function ProjectDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="h-10 text-sm font-medium">UUID</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Name</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Duration</TableHead>
-                        <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredExperiments.map((experiment) => (
                           <TableRow key={experiment.id}>
-                            <TableCell className="py-3.5 font-mono text-sm">
+                            <TableCell className="py-3.5 text-sm">
                               <Link
                                 to={`/experiments/${experiment.id}`}
-                                className="text-primary hover:underline"
+                                className="font-mono text-primary font-medium hover:underline"
                               >
                                 {experiment.id}
                               </Link>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {experiment.name}
                             </TableCell>
                             <TableCell className="py-3.5">
@@ -319,12 +317,12 @@ export function ProjectDetailPage() {
                                 {experiment.status}
                               </Badge>
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground tabular-nums">
                               {experiment.duration > 0
                                 ? `${experiment.duration.toFixed(2)}s`
                                 : '-'}
                             </TableCell>
-                            <TableCell className="py-3.5 text-sm text-muted-foreground">
+                            <TableCell className="py-3.5 text-sm text-foreground">
                               {formatDistanceToNow(new Date(experiment.createdAt), {
                                 addSuffix: true,
                               })}

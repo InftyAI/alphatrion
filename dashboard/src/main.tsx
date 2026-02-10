@@ -10,11 +10,11 @@ import './styles/index.css';
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <TeamProvider>
-        <BrowserRouter>
+      <BrowserRouter>
+        <TeamProvider>
           <App />
-        </BrowserRouter>
-      </TeamProvider>
+        </TeamProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>
 );

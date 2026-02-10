@@ -102,7 +102,7 @@ export function ProjectsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-bold text-foreground">Projects</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Projects</h1>
       </div>
 
       <Card>
@@ -133,11 +133,11 @@ export function ProjectsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="h-10 text-sm font-medium">UUID</TableHead>
-                    <TableHead className="h-10 text-sm font-medium">Name</TableHead>
-                    <TableHead className="h-10 text-sm font-medium">Description</TableHead>
-                    <TableHead className="h-10 text-sm font-medium">Created</TableHead>
-                    <TableHead className="h-10 text-sm font-medium">Updated</TableHead>
+                    <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
+                    <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                    <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</TableHead>
+                    <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
+                    <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Updated</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -146,23 +146,23 @@ export function ProjectsPage() {
                         <TableCell className="py-3.5 font-mono text-sm">
                           <Link
                             to={`/projects/${project.id}`}
-                            className="text-primary hover:underline"
+                            className="text-primary font-medium hover:underline"
                           >
                             {project.id}
                           </Link>
                         </TableCell>
-                        <TableCell className="py-3.5 text-sm text-muted-foreground">
+                        <TableCell className="py-3.5 text-sm text-foreground">
                           {project.name || 'Unnamed Project'}
                         </TableCell>
-                        <TableCell className="py-3.5 text-sm text-muted-foreground">
+                        <TableCell className="py-3.5 text-sm text-foreground">
                           {project.description || '-'}
                         </TableCell>
-                        <TableCell className="py-3.5 text-sm text-muted-foreground">
+                        <TableCell className="py-3.5 text-sm text-foreground">
                           {formatDistanceToNow(new Date(project.createdAt), {
                             addSuffix: true,
                           })}
                         </TableCell>
-                        <TableCell className="py-3.5 text-sm text-muted-foreground">
+                        <TableCell className="py-3.5 text-sm text-foreground">
                           {formatDistanceToNow(new Date(project.updatedAt), {
                             addSuffix: true,
                           })}

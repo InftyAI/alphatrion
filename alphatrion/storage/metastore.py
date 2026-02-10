@@ -22,7 +22,8 @@ class MetaStore(ABC):
         self,
         username: str,
         email: str,
-        team_id: uuid.UUID,
+        avatar_url: str | None = None,
+        team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
         raise NotImplementedError("Subclasses must implement this method.")

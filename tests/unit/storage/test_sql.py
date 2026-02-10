@@ -155,3 +155,37 @@ def test_crud_run(db):
     run = db.get_run(run_id)
     assert run.status == Status.COMPLETED
     assert run.meta == {"foo": "bar", "result": "success"}
+
+
+def test_create_user_with_team(db):
+    team_id = db.create_team(name="Test Team", description="A test team")
+
+    user_id = db.create_user(
+        username="tester",
+        email="tester@example.com",
+        team_id=team_id,
+        meta={"role": "engineer", "level": "senior"},
+    )
+    user = db.get_user(user_id)
+    assert user is not None
+    assert user.username == "tester"
+    assert user.email == "tester@example.com"
+    assert user.meta == {"role": "engineer", "level": "senior"}
+    teams = db.list_user_teams(user_id)
+    assert len(teams) == 1
+    assert teams[0].uuid == team_id
+
+
+def test_create_user_without_team(db):
+    user_id = db.create_user(
+        username="tester",
+        email="tester@example.com",
+        meta={"role": "engineer", "level": "senior"},
+    )
+    user = db.get_user(user_id)
+    assert user is not None
+    assert user.username == "tester"
+    assert user.email == "tester@example.com"
+    assert user.meta == {"role": "engineer", "level": "senior"}
+    teams = db.list_user_teams(user_id)
+    assert len(teams) == 0

@@ -24,6 +24,12 @@ export default defineConfig(({ command }) => ({
     server: {
         port: 5173,
         open: true,
+        hmr: {
+            overlay: true,
+        },
+        watch: {
+            usePolling: true,
+        },
         proxy: {
             // Proxy GraphQL requests to backend
             "/graphql": {

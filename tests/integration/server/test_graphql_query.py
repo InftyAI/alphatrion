@@ -123,24 +123,32 @@ def test_query_teams():
     init(init_tables=True)
 
     metadb = graphql_runtime().metadb
-    _ = metadb.create_team(
+    team1_id = metadb.create_team(
         name="Test Team1", description="A team for testing", meta={"foo": "bar"}
     )
-    _ = metadb.create_team(
+    team2_id = metadb.create_team(
         name="Test Team2", description="Another team for testing", meta={"baz": 123}
     )
+    user_id = metadb.create_user(
+        username="tester",
+        email="example@inftyai.com",
+        meta={"foo": "bar"},
+        team_id=team1_id,
+    )
+    # Add user to team2 as well with a different way.
+    metadb.add_user_to_team(user_id=user_id, team_id=team2_id)
 
-    query = """
-    query {
-        teams {
+    query = f"""
+    query {{
+        teams(userId: "{user_id}") {{
             id
             name
             description
             meta
             createdAt
             updatedAt
-        }
-    }
+        }}
+    }}
     """
     response = schema.execute_sync(
         query,
@@ -161,9 +169,11 @@ def test_query_user():
     user_id = metadb.create_user(
         username="tester",
         email="tester@inftyai.com",
-        team_id=team_id,
         meta={"foo": "bar"},
     )
+
+    # Add user to team
+    metadb.add_user_to_team(user_id=user_id, team_id=team_id)
 
     query = f"""
     query {{
@@ -172,7 +182,10 @@ def test_query_user():
             username
             email
             meta
-            teamId
+            teams {{
+                id
+                name
+            }}
             createdAt
             updatedAt
         }}
@@ -185,7 +198,8 @@ def test_query_user():
     assert response.errors is None
     assert response.data["user"]["username"] == "tester"
     assert response.data["user"]["email"] == "tester@inftyai.com"
-    assert response.data["user"]["teamId"] == str(team_id)
+    assert len(response.data["user"]["teams"]) == 1
+    assert response.data["user"]["teams"][0]["id"] == str(team_id)
     assert response.data["user"]["meta"] == {"foo": "bar"}
 
 

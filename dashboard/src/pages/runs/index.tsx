@@ -24,8 +24,8 @@ import { Button } from '../../components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',
@@ -93,7 +93,7 @@ export function RunsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground">Runs</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and monitor individual runs
         </p>
@@ -145,27 +145,27 @@ export function RunsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="h-10 text-sm font-medium">Run ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Experiment ID</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Status</TableHead>
-                  <TableHead className="h-10 text-sm font-medium">Created</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRuns.map((run) => (
                   <TableRow key={run.id}>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/runs/${run.id}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {run.id}
                       </Link>
                     </TableCell>
-                    <TableCell className="py-3.5 font-mono text-sm">
+                    <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${run.experimentId}`}
-                        className="text-primary hover:underline"
+                        className="font-mono text-primary font-medium hover:underline"
                       >
                         {run.experimentId}
                       </Link>
@@ -175,7 +175,7 @@ export function RunsPage() {
                         {run.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-3.5 text-sm text-muted-foreground">
+                    <TableCell className="py-3.5 text-sm text-foreground">
                       {formatDistanceToNow(new Date(run.createdAt), {
                         addSuffix: true,
                       })}

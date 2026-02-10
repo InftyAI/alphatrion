@@ -19,7 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
   FAILED: '#ef4444',
   PENDING: '#eab308',
   CANCELLED: '#6b7280',
-  UNKNOWN: '#9ca3af',
+  UNKNOWN: '#a78bfa',
 };
 
 export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartProps) {

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { graphqlQuery, queries } from '../lib/graphql-client';
+import { useCurrentUser } from '../context/user-context';
 import type { Team } from '../types';
 
 interface ListTeamsResponse {
@@ -11,14 +12,19 @@ interface GetTeamResponse {
 }
 
 /**
- * Hook to fetch all teams
+ * Hook to fetch all teams for the current user
  * Teams are static data, so no polling is needed
  */
 export function useTeams(page = 0, pageSize = 100) {
+  const currentUser = useCurrentUser();
+
   return useQuery({
-    queryKey: ['teams', page, pageSize],
+    queryKey: ['teams', currentUser.id, page, pageSize],
     queryFn: async () => {
-      const data = await graphqlQuery<ListTeamsResponse>(queries.listTeams);
+      const data = await graphqlQuery<ListTeamsResponse>(
+        queries.listTeams,
+        { userId: currentUser.id }
+      );
       return data.teams;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes

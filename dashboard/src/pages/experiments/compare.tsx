@@ -14,8 +14,8 @@ import { ParameterDiff } from '../../components/comparison/parameter-diff';
 import { MetricsOverlay } from '../../components/comparison/metrics-overlay';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive'> = {
-  UNKNOWN: 'secondary',
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+  UNKNOWN: 'unknown',
   PENDING: 'warning',
   RUNNING: 'default',
   CANCELLED: 'secondary',

@@ -56,7 +56,10 @@ def main():
         help="Backend server URL to proxy requests to (default: http://localhost:8000)",
     )
     dashboard.add_argument(
-        "--no-browser", action="store_true", help="Don't automatically open browser"
+        "--userid",
+        type=str,
+        required=True,
+        help="User ID to scope the dashboard (required)",
     )
     dashboard.set_defaults(func=start_dashboard)
 
@@ -160,17 +163,26 @@ def start_dashboard(args):
     console.print(
         Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
     )
+    console.print(Text(f"👤 Dashboard scoped to user: {args.userid}", style="yellow"))
     console.print()
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
     )
-    console.print(Text("   alphatrion server --port 8000", style="cyan"))
+    console.print(Text("   alphatrion server", style="cyan"))
     console.print()
 
     app = FastAPI()
 
+    # Store user ID in app state
+    app.state.user_id = args.userid
+
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
+
+    # Endpoint to get current user ID (for frontend)
+    @app.get("/api/config")
+    async def get_config():
+        return {"userId": app.state.user_id}
 
     # Proxy /graphql requests to backend (MUST be before catch-all route)
     @app.api_route("/graphql", methods=["GET", "POST"])
@@ -251,16 +263,15 @@ def start_dashboard(args):
 
     url = f"http://127.0.0.1:{args.port}"
 
-    # Open browser after a short delay (unless --no-browser is set)
-    if not args.no_browser:
+    console.print(Text(f"🌐 Dashboard URL: {url}", style="bold cyan"))
 
-        def open_browser():
-            time.sleep(1)  # Wait for server to start
-            webbrowser.open(url)
+    # Open browser after a short delay to ensure server is ready
+    def open_browser():
+        time.sleep(1)  # Wait for server to start
+        webbrowser.open(url)
 
-        threading.Thread(target=open_browser, daemon=True).start()
-    else:
-        console.print(Text(f"🌐 Open your browser at: {url}", style="bold cyan"))
+    browser_thread = threading.Thread(target=open_browser, daemon=True)
+    browser_thread.start()
 
     try:
         uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="info")

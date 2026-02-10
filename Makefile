@@ -53,6 +53,6 @@ seed:
 seed-cleanup:
 	python hack/seed.py cleanup
 
-.PHONY: dashboard
-dashboard:
-	cd dashboard && npm run dev
+.PHONY: build-dashboard
+build-dashboard:
+	cd dashboard && npm install && npm run build

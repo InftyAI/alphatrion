@@ -56,9 +56,9 @@ class User(Base):
     __tablename__ = "users"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String, nullable=False, unique=True)
+    username = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
+    avatar_url = Column(String, nullable=True)
     meta = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
@@ -72,6 +72,23 @@ class User(Base):
         onupdate=lambda: datetime.now(UTC),
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
+class TeamMember(Base):
+    __tablename__ = "team_members"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (UniqueConstraint("team_id", "user_id", name="unique_team_user"),)
 
 
 # Define the Project model for SQLAlchemy

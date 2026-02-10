@@ -1,7 +1,18 @@
 import strawberry
 
-from alphatrion.server.graphql.resolvers import GraphQLResolvers
-from alphatrion.server.graphql.types import Experiment, Project, Run, Team, User
+from alphatrion.server.graphql.resolvers import GraphQLMutations, GraphQLResolvers
+from alphatrion.server.graphql.types import (
+    AddUserToTeamInput,
+    CreateTeamInput,
+    CreateUserInput,
+    Experiment,
+    Project,
+    RemoveUserFromTeamInput,
+    Run,
+    Team,
+    UpdateUserInput,
+    User,
+)
 
 
 @strawberry.type
@@ -71,4 +82,27 @@ class Query:
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
 
 
-schema = strawberry.Schema(Query)
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_user(self, input: CreateUserInput) -> User:
+        return GraphQLMutations.create_user(input=input)
+
+    @strawberry.mutation
+    def update_user(self, input: UpdateUserInput) -> User:
+        return GraphQLMutations.update_user(input=input)
+
+    @strawberry.mutation
+    def create_team(self, input: CreateTeamInput) -> Team:
+        return GraphQLMutations.create_team(input=input)
+
+    @strawberry.mutation
+    def add_user_to_team(self, input: AddUserToTeamInput) -> bool:
+        return GraphQLMutations.add_user_to_team(input=input)
+
+    @strawberry.mutation
+    def remove_user_from_team(self, input: RemoveUserFromTeamInput) -> bool:
+        return GraphQLMutations.remove_user_from_team(input=input)
+
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)
