@@ -2,17 +2,18 @@
 
 # test query from graphql endpoint
 
+from pdb import run
 import uuid
 from datetime import datetime, timedelta
 
-from alphatrion.server.graphql.runtime import graphql_runtime, init
+from alphatrion.server import runtime
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage.sql_models import Status
 
 
 def test_query_single_team():
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
     id = metadb.create_team(name="Test Team", description="A team for testing")
 
     now = datetime.now()
@@ -53,8 +54,8 @@ def test_query_single_team():
 
 def test_query_team_with_experiments():
     user_id = uuid.uuid4()
-    init(init_tables=True)
-    metadb = graphql_runtime().metadb
+    runtime.init(init_tables=True)
+    metadb = runtime.server_runtime().metadb
     team_id = metadb.create_team(name="Test Team", description="A team for testing")
 
     project_id = metadb.create_project(
@@ -120,9 +121,9 @@ def test_query_team_with_experiments():
 
 
 def test_query_teams():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
 
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     team1_id = metadb.create_team(
         name="Test Team1", description="A team for testing", meta={"foo": "bar"}
     )
@@ -159,9 +160,9 @@ def test_query_teams():
 
 
 def test_query_user():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
 
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     team_id = metadb.create_team(
         name="Test Team", description="A team for testing", meta={"foo": "bar"}
     )
@@ -204,11 +205,11 @@ def test_query_user():
 
 
 def test_query_single_project():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
 
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     id = metadb.create_project(
         name="Test Project",
         description="A project for testing",
@@ -239,10 +240,10 @@ def test_query_single_project():
 
 
 def test_query_projects():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
 
     _ = metadb.create_project(
         name="Test Project1",
@@ -285,11 +286,11 @@ def test_query_projects():
 
 
 def test_query_single_exp():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
 
     exp_id = metadb.create_experiment(
         name="Test Experiment",
@@ -327,11 +328,11 @@ def test_query_single_exp():
 
 
 def test_query_experiments():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     _ = metadb.create_experiment(
         name="Test Experiment1",
         team_id=team_id,
@@ -371,12 +372,12 @@ def test_query_experiments():
 
 
 def test_query_single_run():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     run_id = metadb.create_run(
         team_id=team_id,
         user_id=user_id,
@@ -407,12 +408,12 @@ def test_query_single_run():
 
 
 def test_query_runs():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
     _ = metadb.create_run(
         team_id=team_id,
         user_id=user_id,
@@ -448,10 +449,10 @@ def test_query_runs():
 
 
 def test_query_experiment_metrics():
-    init(init_tables=True)
+    runtime.init(init_tables=True)
     team_id = uuid.uuid4()
     project_id = uuid.uuid4()
-    metadb = graphql_runtime().metadb
+    metadb = runtime.server_runtime().metadb
 
     exp_id = metadb.create_experiment(
         name="Test Experiment",
