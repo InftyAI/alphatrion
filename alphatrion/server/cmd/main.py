@@ -142,8 +142,13 @@ def init_command(args):
         console.print(Text("   Your team ID:", style="bold yellow"))
         console.print(Text(f"   {team_id}", style="bold cyan"))
         console.print()
-        console.print(Text("💡 Use this user ID to launch the dashboard, "
-            "or set the ALPHATRION_DASHBOARD_USER_ID environment variable", style="dim"))
+        console.print(
+            Text(
+                "💡 Use this user ID to launch the dashboard, "
+                "or set the ALPHATRION_DASHBOARD_USER_ID environment variable",
+                style="dim",
+            )
+        )
         console.print(
             Text(f"   alphatrion dashboard --userid {user_id}", style="magenta")
         )
@@ -269,7 +274,10 @@ def start_dashboard(args):
 
     if not args.userid:
         console.print(
-            Text("❌ Error: User ID is required to launch the dashboard!", style="bold red")
+            Text(
+                "❌ Error: User ID is required to launch the dashboard!",
+                style="bold red",
+            )
         )
         console.print(
             Text(
