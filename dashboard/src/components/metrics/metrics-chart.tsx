@@ -179,7 +179,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
         },
         customdata: dominatedPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
         hovertemplate:
-          '<b>Run: %{customdata[0]}</b><br>' +
+          '<b>Run: %{customdata[0]}</b><br><br>' +
           `${paretoMetrics[0].key}: %{customdata[1]:.4f}<br>` +
           `${paretoMetrics[1].key}: %{customdata[2]:.4f}<br>` +
           `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
@@ -216,7 +216,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
         },
         customdata: paretoPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
         hovertemplate:
-          '<b>Run: %{customdata[0]}</b><br>' +
+          '<b>Run: %{customdata[0]}</b><br><br>' +
           `${paretoMetrics[0].key}: %{customdata[1]:.4f}<br>` +
           `${paretoMetrics[1].key}: %{customdata[2]:.4f}<br>` +
           `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
