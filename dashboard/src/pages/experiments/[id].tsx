@@ -262,8 +262,9 @@ export function ExperimentDetailPage() {
           ) : groupedMetrics && Object.keys(groupedMetrics).length > 0 ? (
             <MetricsChart
               metrics={groupedMetrics}
+              experimentId={id!}
               title="Metrics"
-              description="Select a metric to visualize"
+              description="Switch between timeline and Pareto analysis views"
             />
           ) : (
             <Card>
