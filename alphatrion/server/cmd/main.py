@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import argparse
+import os
 import threading
 import time
 import webbrowser
@@ -17,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
 
+from alphatrion import envs
 from alphatrion.storage import runtime
 
 load_dotenv()
@@ -59,7 +61,7 @@ def main():
     dashboard.add_argument(
         "--userid",
         type=str,
-        required=True,
+        default=os.getenv(envs.DASHBOARD_USER_ID),
         help="User ID to scope the dashboard (required)",
     )
     dashboard.set_defaults(func=start_dashboard)
@@ -140,7 +142,8 @@ def init_command(args):
         console.print(Text("   Your team ID:", style="bold yellow"))
         console.print(Text(f"   {team_id}", style="bold cyan"))
         console.print()
-        console.print(Text("💡 Use this user ID to launch the dashboard:", style="dim"))
+        console.print(Text("💡 Use this user ID to launch the dashboard, "
+            "or set the ALPHATRION_DASHBOARD_USER_ID environment variable", style="dim"))
         console.print(
             Text(f"   alphatrion dashboard --userid {user_id}", style="magenta")
         )
@@ -154,7 +157,7 @@ def init_command(args):
         console.print(Text("   import alphatrion as alpha", style="white"))
         console.print(
             Text(
-                f"   alpha.init(user_id='{user_id}', team_id='{team_id}')",
+                f"   alpha.init(user_id='{user_id}')",
                 style="white",
             )
         )
@@ -264,6 +267,23 @@ def start_dashboard(args):
 
     app = FastAPI()
 
+    if not args.userid:
+        console.print(
+            Text("❌ Error: User ID is required to launch the dashboard!", style="bold red")
+        )
+        console.print(
+            Text(
+                "Please provide a user ID using the --userid argument or set the ALPHATRION_DASHBOARD_USER_ID environment variable.",
+                style="yellow",
+            )
+        )
+        console.print(
+            Text(
+                "You can create a user and get their ID by running: alphatrion init",
+                style="cyan",
+            )
+        )
+        return
     # Store user ID in app state
     app.state.user_id = args.userid
 
