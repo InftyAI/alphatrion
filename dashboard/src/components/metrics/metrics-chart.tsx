@@ -177,13 +177,23 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.3,
           },
         },
-        text: dominatedPoints.map((d) => `Run: ${d.runId.slice(0, 8)}...`),
+        customdata: dominatedPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
         hovertemplate:
-          '<b>%{text}</b><br>' +
-          `${paretoMetrics[0].key}: %{x:.4f}<br>` +
-          `${paretoMetrics[1].key}: %{y:.4f}<br>` +
-          `${paretoMetrics[2].key}: %{z:.4f}<br>` +
+          '<b>Run: %{customdata[0]}</b><br>' +
+          `${paretoMetrics[0].key}: %{customdata[1]:.4f}<br>` +
+          `${paretoMetrics[1].key}: %{customdata[2]:.4f}<br>` +
+          `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
           '<extra></extra>',
+        hoverlabel: {
+          bgcolor: '#fafafa',
+          bordercolor: '#d1d5db',
+          font: {
+            family: 'system-ui, -apple-system, sans-serif',
+            size: 12,
+            color: '#374151',
+          },
+          align: 'left',
+        },
       },
       {
         x: paretoPoints.map((d) => d.x),
@@ -204,14 +214,23 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.8,
           },
         },
-        text: paretoPoints.map((d) => `Run: ${d.runId.slice(0, 8)}...`),
+        customdata: paretoPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
         hovertemplate:
-          '<b>%{text}</b><br>' +
-          '✓ Pareto Optimal<br>' +
-          `${paretoMetrics[0].key}: %{x:.4f}<br>` +
-          `${paretoMetrics[1].key}: %{y:.4f}<br>` +
-          `${paretoMetrics[2].key}: %{z:.4f}<br>` +
+          '<b>Run: %{customdata[0]}</b><br>' +
+          `${paretoMetrics[0].key}: %{customdata[1]:.4f}<br>` +
+          `${paretoMetrics[1].key}: %{customdata[2]:.4f}<br>` +
+          `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
           '<extra></extra>',
+        hoverlabel: {
+          bgcolor: '#f0fdf4',
+          bordercolor: '#86efac',
+          font: {
+            family: 'system-ui, -apple-system, sans-serif',
+            size: 12,
+            color: '#374151',
+          },
+          align: 'left',
+        },
       },
     ];
 
@@ -445,7 +464,6 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                   dot={{ r: 3 }}
                   activeDot={{ r: 5 }}
                   connectNulls
-                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -523,15 +541,6 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     },
                     showlegend: false,
                     hovermode: 'closest',
-                    hoverlabel: {
-                      bgcolor: '#f0fdf4',
-                      bordercolor: '#86efac',
-                      font: {
-                        family: 'system-ui, -apple-system, sans-serif',
-                        size: 12,
-                        color: '#1f2937',
-                      },
-                    },
                     margin: {
                       l: 10,
                       r: 10,
@@ -555,11 +564,11 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             </div>
           ) : (
             /* 2D Pareto Visualization */
-            <ResponsiveContainer width="100%" height={450}>
-              <ComposedChart
-                margin={{ top: 30, right: 30, bottom: 50, left: 70 }}
-                style={{ background: 'linear-gradient(to bottom, #fafafa 0%, #ffffff 100%)' }}
-              >
+            <div className="w-full h-[450px] rounded-lg overflow-hidden" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  margin={{ top: 30, right: 30, bottom: 50, left: 70 }}
+                >
                 <defs>
                   <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
                     <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
@@ -622,33 +631,39 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     strokeWidth: 1
                   }}
                   contentStyle={{
-                    backgroundColor: '#f0fdf4',
-                    border: '1px solid #86efac',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                    padding: '10px 14px',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    padding: 0,
                   }}
                   content={({ active, payload }) => {
                     if (!active || !payload || payload.length === 0) return null;
                     const data = payload[0].payload;
                     if (!data.runId) return null; // Skip line tooltips
+
+                    const isPareto = data.isParetoOptimal;
+                    const bgColor = isPareto ? '#f0fdf4' : '#fafafa';
+                    const borderColor = isPareto ? '#86efac' : '#d1d5db';
+
                     return (
-                      <div className="space-y-1.5">
-                        <div className="font-semibold text-sm text-gray-900 border-b border-emerald-200 pb-1.5">
+                      <div
+                        style={{
+                          backgroundColor: bgColor,
+                          border: `1px solid ${borderColor}`,
+                          borderRadius: '6px',
+                          padding: '8px 12px',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: '12px', color: '#1f2937', marginBottom: '4px' }}>
                           Run: {data.runId.slice(0, 8)}...
                         </div>
-                        <div className="text-xs text-gray-700">
-                          <span className="font-medium">{paretoMetrics[0].key}:</span> {data.x?.toFixed(4)}
+                        <div style={{ fontSize: '12px', color: '#374151' }}>
+                          {paretoMetrics[0].key}: {data.x?.toFixed(4)}
                         </div>
-                        <div className="text-xs text-gray-700">
-                          <span className="font-medium">{paretoMetrics[1].key}:</span> {data.y?.toFixed(4)}
+                        <div style={{ fontSize: '12px', color: '#374151' }}>
+                          {paretoMetrics[1].key}: {data.y?.toFixed(4)}
                         </div>
-                        {data.isParetoOptimal && (
-                          <div className="text-xs font-semibold pt-1 text-emerald-700">
-                            ✓ Pareto Optimal
-                          </div>
-                        )}
                       </div>
                     );
                   }}
@@ -685,6 +700,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                 </Scatter>
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
           )
         )}
       </CardContent>
