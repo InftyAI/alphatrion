@@ -59,34 +59,27 @@ function App() {
         );
 
         if (teamsData.teams && teamsData.teams.length > 0) {
-          // Check if this user has a saved team preference
+          // Check if this user has a saved team preference in localStorage
           const teamKey = `alphatrion_selected_team_${userId}`;
           const savedTeamId = localStorage.getItem(teamKey);
+
+          let teamToSelect: string;
 
           if (savedTeamId) {
             // Verify saved team still exists in user's teams
             const savedTeam = teamsData.teams.find(t => t.id === savedTeamId);
             if (savedTeam) {
-              setSelectedTeamId(savedTeamId, userId);
-              return;
+              teamToSelect = savedTeamId;
+            } else {
+              // Saved team not found, use first team
+              teamToSelect = teamsData.teams[0].id;
             }
+          } else {
+            // No saved team, use first team
+            teamToSelect = teamsData.teams[0].id;
           }
 
-          // No saved team or saved team not found - auto-select
-          // Check if user has a default_team in meta
-          const defaultTeamId = data.user.meta?.default_team as string | undefined;
-
-          if (defaultTeamId) {
-            // Verify the default team exists in user's teams
-            const defaultTeam = teamsData.teams.find(t => t.id === defaultTeamId);
-            if (defaultTeam) {
-              setSelectedTeamId(defaultTeamId, userId);
-              return;
-            }
-          }
-
-          // No default team or default team not found, use first team
-          setSelectedTeamId(teamsData.teams[0].id, userId);
+          setSelectedTeamId(teamToSelect, userId);
         }
       } catch (err) {
         console.error('Failed to initialize app:', err);
