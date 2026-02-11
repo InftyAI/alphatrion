@@ -323,7 +323,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
           </div>
         ) : (
           /* Pareto view - Metric selector */
-          <div className="space-y-3 pt-3">
+          <div className="space-y-2 pt-3">
             <div className="flex flex-wrap gap-1.5">
               {availableMetrics.map((key, index) => {
                 const selected = paretoMetrics.find((m) => m.key === key);
@@ -369,25 +369,23 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                 );
               })}
             </div>
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div>
-                {paretoMetrics.length === 0 ? (
-                  <span>Click metrics to select (up to 3)</span>
-                ) : paretoMetrics.length < 2 ? (
-                  <span>Select at least 2 metrics for analysis</span>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <span>Runs: {filteredRunMetrics.length}</span>
-                    {paretoRunIds.size > 0 && (
-                      <span className="text-emerald-600 font-medium">Pareto Optimal: {paretoRunIds.size}</span>
-                    )}
-                  </div>
-                )}
+            {paretoMetrics.length > 0 && (
+              <div className="text-xs text-gray-500 italic">
+                Click: toggle direction ↑↓ • Right-click: remove
               </div>
-              {paretoMetrics.length > 0 && (
-                <span className="text-xs">
-                  Click: toggle direction ↑↓ • Right-click: remove
-                </span>
+            )}
+            <div className="text-xs text-muted-foreground">
+              {paretoMetrics.length === 0 ? (
+                <span>Click metrics to select (up to 3)</span>
+              ) : paretoMetrics.length < 2 ? (
+                <span>Select at least 2 metrics for analysis</span>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span>Runs: {filteredRunMetrics.length}</span>
+                  {paretoRunIds.size > 0 && (
+                    <span className="text-emerald-600 font-medium">Pareto Optimal: {paretoRunIds.size}</span>
+                  )}
+                </div>
               )}
             </div>
           </div>
