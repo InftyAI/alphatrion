@@ -177,7 +177,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.3,
           },
         },
-        customdata: dominatedPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
+        customdata: dominatedPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z, d.runId]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -214,7 +214,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.8,
           },
         },
-        customdata: paretoPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z]),
+        customdata: paretoPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z, d.runId]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -493,6 +493,16 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
               >
                 <Plot
                   data={plotly3DData as any}
+                  onClick={(data: any) => {
+                    if (data && data.points && data.points[0]) {
+                      const point = data.points[0];
+                      // Extract runId from customdata (stored at index 4)
+                      const runId = point.customdata?.[4];
+                      if (runId) {
+                        window.open(`/runs/${runId}`, '_blank');
+                      }
+                    }
+                  }}
                   layout={{
                     autosize: true,
                     transition: {
@@ -686,7 +696,17 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                   />
                 )}
                 {/* All scatter points */}
-                <Scatter name="Runs" data={paretoChartData.all} isAnimationActive={false}>
+                <Scatter
+                  name="Runs"
+                  data={paretoChartData.all}
+                  isAnimationActive={false}
+                  onClick={(data: any) => {
+                    if (data && data.runId) {
+                      window.open(`/runs/${data.runId}`, '_blank');
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   {paretoChartData.all.map((entry: any, index: number) => (
                     <Cell
                       key={`cell-${index}`}
