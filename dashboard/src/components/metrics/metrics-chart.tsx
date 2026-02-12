@@ -445,24 +445,38 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                   tick={{ fontSize: 11 }}
                 />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#f9fafb',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.5rem',
-                    fontSize: '12px',
-                    padding: '8px 12px',
-                  }}
-                  formatter={(value: any, name: string, props: any) => {
-                    return [value, 'Value'];
-                  }}
-                  labelFormatter={(value, payload) => {
-                    if (payload && payload[0] && payload[0].payload) {
-                      const point = payload[0].payload;
-                      return `Run: ${point.runId}`;
-                    }
-                    return value;
-                  }}
                   cursor={{ strokeDasharray: '5 5', stroke: '#94a3b8', strokeWidth: 1 }}
+                  contentStyle={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    padding: 0,
+                  }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    const data = payload[0].payload;
+                    if (!data.runId) return null;
+
+                    return (
+                      <div
+                        style={{
+                          backgroundColor: '#f9fafb',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          padding: '8px 12px',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          lineHeight: '1.4',
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, fontSize: '12px' }}>
+                          Run: {data.runId}
+                        </div>
+                        <div style={{ fontSize: '12px' }}>
+                          {selectedKey}: {typeof data.value === 'number' ? data.value.toFixed(4) : data.value}
+                        </div>
+                      </div>
+                    );
+                  }}
                 />
                 <Line
                   type="monotone"
