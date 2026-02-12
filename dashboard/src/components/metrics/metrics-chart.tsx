@@ -423,6 +423,14 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
               <LineChart
                 data={chartData}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                onClick={(data: any) => {
+                  if (data && data.activePayload && data.activePayload[0]) {
+                    const point = data.activePayload[0].payload;
+                    if (point.runId) {
+                      window.open(`/runs/${point.runId}`, '_blank');
+                    }
+                  }
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
@@ -461,8 +469,8 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                   name={selectedKey}
                   stroke={COLORS[metricKeys.indexOf(selectedKey) % COLORS.length]}
                   strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  dot={{ r: 3, style: { cursor: 'pointer' } }}
+                  activeDot={{ r: 5, style: { cursor: 'pointer' } }}
                   connectNulls
                 />
               </LineChart>
