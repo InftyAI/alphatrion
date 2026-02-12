@@ -48,6 +48,7 @@ const PARETO_COLOR = '#10b981'; // emerald-500
 const PARETO_COLOR_LIGHT = '#34d399'; // emerald-400
 const DOMINATED_COLOR = '#9ca3af'; // gray-400
 const GRID_COLOR = '#f3f4f6'; // gray-100
+const START_POINT_COLOR = '#f59e0b'; // amber-500
 
 export function MetricsChart({ metrics, experimentId, title = 'Metrics', description }: MetricsChartProps) {
   const metricKeys = Object.keys(metrics);
@@ -58,6 +59,19 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
   const [paretoMetrics, setParetoMetrics] = useState<MetricConfig[]>([]);
 
   const { runMetrics, availableMetrics } = useRunMetrics(experimentId);
+
+  // Find the first run by creation time (first metric from backend)
+  const firstRunId = useMemo(() => {
+    const allMetrics: Metric[] = [];
+    Object.values(metrics).forEach(metricArray => {
+      allMetrics.push(...metricArray);
+    });
+
+    if (allMetrics.length === 0) return null;
+
+    // Backend returns metrics ordered by creation time, so first one is the earliest
+    return allMetrics[0].runId;
+  }, [metrics]);
 
   // Filter runs for Pareto analysis
   const filteredRunMetrics = useMemo(() => {
@@ -155,19 +169,24 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
       return (a.z || 0) - (b.z || 0);
     });
 
-    const dominatedPoints = paretoChartData.all.filter((d) => !d.isParetoOptimal);
+    // Separate points: start point, other Pareto points, dominated points
+    const startPoint = paretoChartData.all.find((d) => d.runId === firstRunId);
+    const paretoPointsWithoutStart = paretoPoints.filter((d) => d.runId !== firstRunId);
+    const dominatedPointsWithoutStart = paretoChartData.all.filter(
+      (d) => !d.isParetoOptimal && d.runId !== firstRunId
+    );
 
     const traces: any[] = [
       {
-        x: dominatedPoints.map((d) => d.x),
-        y: dominatedPoints.map((d) => d.y),
-        z: dominatedPoints.map((d) => d.z),
+        x: dominatedPointsWithoutStart.map((d) => d.x),
+        y: dominatedPointsWithoutStart.map((d) => d.y),
+        z: dominatedPointsWithoutStart.map((d) => d.z),
         mode: 'markers',
         type: 'scatter3d',
         name: 'Dominated',
         showlegend: false,
         marker: {
-          size: 6,
+          size: 5,
           color: DOMINATED_COLOR,
           opacity: 0.4,
           symbol: 'circle',
@@ -177,7 +196,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.3,
           },
         },
-        customdata: dominatedPoints.map((d) => [d.runId, d.x, d.y, d.z]),
+        customdata: dominatedPointsWithoutStart.map((d) => [d.runId, d.x, d.y, d.z]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -196,25 +215,25 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
         },
       },
       {
-        x: paretoPoints.map((d) => d.x),
-        y: paretoPoints.map((d) => d.y),
-        z: paretoPoints.map((d) => d.z),
+        x: paretoPointsWithoutStart.map((d) => d.x),
+        y: paretoPointsWithoutStart.map((d) => d.y),
+        z: paretoPointsWithoutStart.map((d) => d.z),
         mode: 'markers',
         type: 'scatter3d',
         name: 'Pareto Optimal',
         showlegend: false,
         marker: {
-          size: 9,
+          size: 5,
           color: PARETO_COLOR,
           symbol: 'circle',
           opacity: 0.95,
           line: {
             color: '#059669',
-            width: 2,
+            width: 1,
             opacity: 0.8,
           },
         },
-        customdata: paretoPoints.map((d) => [d.runId, d.x, d.y, d.z]),
+        customdata: paretoPointsWithoutStart.map((d) => [d.runId, d.x, d.y, d.z]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -234,26 +253,49 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
       },
     ];
 
-    // Add lines connecting Pareto optimal points if more than one
-    if (paretoPoints.length > 1) {
+    // Add start point as a separate trace with special styling
+    if (startPoint) {
       traces.push({
-        x: paretoPoints.map((d) => d.x),
-        y: paretoPoints.map((d) => d.y),
-        z: paretoPoints.map((d) => d.z),
-        mode: 'lines',
+        x: [startPoint.x],
+        y: [startPoint.y],
+        z: [startPoint.z],
+        mode: 'markers',
         type: 'scatter3d',
-        name: 'Pareto Frontier',
+        name: 'Start Point',
         showlegend: false,
-        line: {
-          color: PARETO_COLOR,
-          width: 5,
+        marker: {
+          size: 5,
+          color: START_POINT_COLOR,
+          symbol: 'circle',
+          opacity: 1,
+          line: {
+            color: '#d97706',
+            width: 1,
+            opacity: 1,
+          },
         },
-        hoverinfo: 'skip',
+        customdata: [[startPoint.runId, startPoint.x, startPoint.y, startPoint.z]],
+        hovertemplate:
+          '<b>Run: %{customdata[0]}</b>' +
+          '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
+          '<br>' + `${paretoMetrics[1].key}: %{customdata[2]:.4f}` +
+          '<br>' + `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
+          '<extra></extra>',
+        hoverlabel: {
+          bgcolor: '#fef3c7',
+          bordercolor: '#fcd34d',
+          font: {
+            family: 'system-ui, -apple-system, sans-serif',
+            size: 12,
+            color: '#374151',
+          },
+          align: 'left',
+        },
       });
     }
 
     return traces;
-  }, [paretoChartData, paretoMetrics]);
+  }, [paretoChartData, paretoMetrics, firstRunId]);
 
   const selectKey = (key: string) => {
     setSelectedKey(key);
@@ -619,46 +661,21 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             </div>
           ) : (
             /* 2D Pareto Visualization */
-            <div className="w-full h-[450px] rounded-lg overflow-hidden" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  margin={{ top: 30, right: 30, bottom: 50, left: 70 }}
-                >
-                <defs>
-                  <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-                    <feOffset dx="0" dy="1" result="offsetblur" />
-                    <feComponentTransfer>
-                      <feFuncA type="linear" slope="0.2" />
-                    </feComponentTransfer>
-                    <feMerge>
-                      <feMergeNode />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="#e5e7eb"
-                  strokeOpacity={0.5}
-                />
+            <ResponsiveContainer width="100%" height={400}>
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 60, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   type="number"
                   dataKey="x"
                   name={paretoMetrics[0].key}
                   label={{
                     value: `${paretoMetrics[0].key} (${paretoMetrics[0].direction})`,
-                    position: 'bottom',
-                    offset: 25,
-                    style: {
-                      fontSize: 13,
-                      fontWeight: 600,
-                      fill: '#374151'
-                    },
+                    position: 'insideBottom',
+                    offset: -10,
+                    style: { fontSize: 12, fill: '#374151' }
                   }}
                   tick={{ fontSize: 11, fill: '#6b7280' }}
-                  domain={['dataMin - 0.05 * abs(dataMin)', 'dataMax + 0.05 * abs(dataMax)']}
-                  stroke="#9ca3af"
+                  domain={['dataMin - 0.1 * abs(dataMin)', 'dataMax + 0.1 * abs(dataMax)']}
                 />
                 <YAxis
                   type="number"
@@ -668,36 +685,21 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     value: `${paretoMetrics[1].key} (${paretoMetrics[1].direction})`,
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 10,
-                    style: {
-                      fontSize: 13,
-                      fontWeight: 600,
-                      fill: '#374151'
-                    },
+                    style: { fontSize: 12, fill: '#374151' }
                   }}
                   tick={{ fontSize: 11, fill: '#6b7280' }}
-                  domain={['dataMin - 0.05 * abs(dataMin)', 'dataMax + 0.05 * abs(dataMax)']}
-                  stroke="#9ca3af"
+                  domain={['dataMin - 0.1 * abs(dataMin)', 'dataMax + 0.1 * abs(dataMax)']}
                 />
                 <Tooltip
-                  cursor={{
-                    strokeDasharray: '5 5',
-                    stroke: '#94a3b8',
-                    strokeWidth: 1
-                  }}
-                  contentStyle={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    padding: 0,
-                  }}
+                  cursor={{ strokeDasharray: '3 3' }}
                   content={({ active, payload }) => {
-                    if (!active || !payload || payload.length === 0) return null;
+                    if (!active || !payload || !payload[0]) return null;
                     const data = payload[0].payload;
-                    if (!data.runId) return null; // Skip line tooltips
 
+                    const isStartPoint = data.runId === firstRunId;
                     const isPareto = data.isParetoOptimal;
-                    const bgColor = isPareto ? '#f0fdf4' : '#fafafa';
-                    const borderColor = isPareto ? '#86efac' : '#d1d5db';
+                    const bgColor = isStartPoint ? '#fef3c7' : (isPareto ? '#f0fdf4' : '#fafafa');
+                    const borderColor = isStartPoint ? '#fcd34d' : (isPareto ? '#86efac' : '#d1d5db');
 
                     return (
                       <div
@@ -706,67 +708,46 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                           border: `1px solid ${borderColor}`,
                           borderRadius: '6px',
                           padding: '8px 12px',
-                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                          fontFamily: 'system-ui, -apple-system, sans-serif',
-                          lineHeight: '1.4',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          fontSize: '12px',
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: '12px', color: '#1f2937' }}>
-                          Run: {data.runId}
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+                          Run: {data.runId}{isStartPoint ? ' (Start)' : ''}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#374151' }}>
-                          {paretoMetrics[0].key}: {data.x?.toFixed(4)}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#374151' }}>
-                          {paretoMetrics[1].key}: {data.y?.toFixed(4)}
-                        </div>
+                        <div>{paretoMetrics[0].key}: {data.x?.toFixed(4)}</div>
+                        <div>{paretoMetrics[1].key}: {data.y?.toFixed(4)}</div>
                       </div>
                     );
                   }}
                 />
-                {/* Line connecting Pareto optimal points */}
-                {paretoChartData.paretoLine.length > 1 && (
-                  <Line
-                    type="monotone"
-                    dataKey="y"
-                    data={paretoChartData.paretoLine}
-                    stroke={PARETO_COLOR}
-                    strokeWidth={3}
-                    dot={false}
-                    isAnimationActive={false}
-                    animationDuration={0}
-                    connectNulls
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                <Scatter
+                  name="Dominated"
+                  data={paretoChartData.all.filter((d) => !d.isParetoOptimal && d.runId !== firstRunId)}
+                  fill={DOMINATED_COLOR}
+                  fillOpacity={0.4}
+                  shape="circle"
+                  onClick={(data: any) => data?.runId && window.open(`/runs/${data.runId}`, '_blank')}
+                />
+                <Scatter
+                  name="Pareto"
+                  data={paretoChartData.all.filter((d) => d.isParetoOptimal && d.runId !== firstRunId)}
+                  fill={PARETO_COLOR}
+                  fillOpacity={0.95}
+                  shape="circle"
+                  onClick={(data: any) => data?.runId && window.open(`/runs/${data.runId}`, '_blank')}
+                />
+                {firstRunId && (
+                  <Scatter
+                    name="Start"
+                    data={paretoChartData.all.filter((d) => d.runId === firstRunId)}
+                    fill={START_POINT_COLOR}
+                    shape="circle"
+                    onClick={(data: any) => data?.runId && window.open(`/runs/${data.runId}`, '_blank')}
                   />
                 )}
-                {/* All scatter points */}
-                <Scatter
-                  name="Runs"
-                  data={paretoChartData.all}
-                  isAnimationActive={false}
-                  onClick={(data: any) => {
-                    if (data && data.runId) {
-                      window.open(`/runs/${data.runId}`, '_blank');
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {paretoChartData.all.map((entry: any, index: number) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.isParetoOptimal ? PARETO_COLOR : DOMINATED_COLOR}
-                      fillOpacity={entry.isParetoOptimal ? 0.95 : 0.4}
-                      r={entry.isParetoOptimal ? 7 : 5}
-                      stroke={entry.isParetoOptimal ? '#059669' : '#6b7280'}
-                      strokeWidth={entry.isParetoOptimal ? 2 : 1}
-                      strokeOpacity={entry.isParetoOptimal ? 0.8 : 0.3}
-                    />
-                  ))}
-                </Scatter>
-              </ComposedChart>
+              </ScatterChart>
             </ResponsiveContainer>
-            </div>
           )
         )}
       </CardContent>
