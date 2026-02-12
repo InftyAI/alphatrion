@@ -653,9 +653,10 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                           padding: '8px 12px',
                           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
                           fontFamily: 'system-ui, -apple-system, sans-serif',
+                          lineHeight: '1.4',
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: '12px', color: '#1f2937', marginBottom: '4px' }}>
+                        <div style={{ fontWeight: 600, fontSize: '12px', color: '#1f2937' }}>
                           Run: {data.runId.slice(0, 8)}...
                         </div>
                         <div style={{ fontSize: '12px', color: '#374151' }}>
