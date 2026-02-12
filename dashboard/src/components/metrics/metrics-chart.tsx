@@ -177,7 +177,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.3,
           },
         },
-        customdata: dominatedPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z, d.runId]),
+        customdata: dominatedPoints.map((d) => [d.runId, d.x, d.y, d.z]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -214,7 +214,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
             opacity: 0.8,
           },
         },
-        customdata: paretoPoints.map((d) => [d.runId.slice(0, 8) + '...', d.x, d.y, d.z, d.runId]),
+        customdata: paretoPoints.map((d) => [d.runId, d.x, d.y, d.z]),
         hovertemplate:
           '<b>Run: %{customdata[0]}</b>' +
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
@@ -462,6 +462,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     }
                     return value;
                   }}
+                  cursor={{ strokeDasharray: '5 5', stroke: '#94a3b8', strokeWidth: 1 }}
                 />
                 <Line
                   type="monotone"
@@ -514,7 +515,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     graphDiv.on('plotly_click', (data: any) => {
                       if (data && data.points && data.points[0]) {
                         const point = data.points[0];
-                        const runId = point.customdata?.[4];
+                        const runId = point.customdata?.[0];
                         if (runId) {
                           window.open(`/runs/${runId}`, '_blank');
                         }
@@ -526,7 +527,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     graphDiv.on('plotly_click', (data: any) => {
                       if (data && data.points && data.points[0]) {
                         const point = data.points[0];
-                        const runId = point.customdata?.[4];
+                        const runId = point.customdata?.[0];
                         if (runId) {
                           window.open(`/runs/${runId}`, '_blank');
                         }
@@ -697,7 +698,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                         }}
                       >
                         <div style={{ fontWeight: 600, fontSize: '12px', color: '#1f2937' }}>
-                          Run: {data.runId.slice(0, 8)}...
+                          Run: {data.runId}
                         </div>
                         <div style={{ fontSize: '12px', color: '#374151' }}>
                           {paretoMetrics[0].key}: {data.x?.toFixed(4)}
