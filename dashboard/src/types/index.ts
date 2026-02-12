@@ -128,3 +128,15 @@ export interface ComparisonState {
   removeExperiment: (id: string) => void;
   clearSelection: () => void;
 }
+
+// Pareto frontier types
+export interface MetricConfig {
+  key: string;
+  direction: 'maximize' | 'minimize';
+}
+
+export interface RunMetrics {
+  runId: string;
+  metrics: Record<string, number>;
+  isPareto?: boolean;
+}
