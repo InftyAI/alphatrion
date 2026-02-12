@@ -481,6 +481,14 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
           ) : paretoMetrics.length === 3 ? (
             /* 3D Pareto Visualization */
             <div className="w-full h-[550px] rounded-lg overflow-hidden" style={{ background: 'linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%)' }}>
+              <style>{`
+                #pareto-3d-plot .nsewdrag {
+                  cursor: default !important;
+                }
+                #pareto-3d-plot .nsewdrag.cursor-crosshair {
+                  cursor: default !important;
+                }
+              `}</style>
               <Suspense
                 fallback={
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -573,6 +581,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     },
                     paper_bgcolor: 'rgba(0,0,0,0)',
                     plot_bgcolor: 'rgba(0,0,0,0)',
+                    dragmode: 'orbit',
                   }}
                   config={{
                     responsive: true,
@@ -580,7 +589,6 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     displaylogo: false,
                     modeBarButtonsToRemove: ['toImage'],
                     modeBarButtonsToAdd: [],
-                    staticPlot: false,
                   }}
                   style={{ width: '100%', height: '100%' }}
                 />
