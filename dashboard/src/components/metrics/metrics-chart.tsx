@@ -492,16 +492,30 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                 }
               >
                 <Plot
+                  divId="pareto-3d-plot"
                   data={plotly3DData as any}
-                  onClick={(data: any) => {
-                    if (data && data.points && data.points[0]) {
-                      const point = data.points[0];
-                      // Extract runId from customdata (stored at index 4)
-                      const runId = point.customdata?.[4];
-                      if (runId) {
-                        window.open(`/runs/${runId}`, '_blank');
+                  onInitialized={(figure, graphDiv) => {
+                    graphDiv.on('plotly_click', (data: any) => {
+                      if (data && data.points && data.points[0]) {
+                        const point = data.points[0];
+                        const runId = point.customdata?.[4];
+                        if (runId) {
+                          window.open(`/runs/${runId}`, '_blank');
+                        }
                       }
-                    }
+                    });
+                  }}
+                  onUpdate={(figure, graphDiv) => {
+                    graphDiv.removeAllListeners('plotly_click');
+                    graphDiv.on('plotly_click', (data: any) => {
+                      if (data && data.points && data.points[0]) {
+                        const point = data.points[0];
+                        const runId = point.customdata?.[4];
+                        if (runId) {
+                          window.open(`/runs/${runId}`, '_blank');
+                        }
+                      }
+                    });
                   }}
                   layout={{
                     autosize: true,
