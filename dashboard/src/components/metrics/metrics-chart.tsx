@@ -458,7 +458,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                   labelFormatter={(value, payload) => {
                     if (payload && payload[0] && payload[0].payload) {
                       const point = payload[0].payload;
-                      return `Run: ${point.runId}\nTime: ${point.time}`;
+                      return `Run: ${point.runId}`;
                     }
                     return value;
                   }}
