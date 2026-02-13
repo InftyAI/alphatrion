@@ -173,6 +173,8 @@ async def log_execution(
             f"Logging record of kind {execution.kind} is not implemented yet."
         )
 
+    # Can I get the file size to store in the database?
+
     path = snapshot_path()
     if os.path.exists(path) is False:
         os.makedirs(path, exist_ok=True)
@@ -183,6 +185,7 @@ async def log_execution(
     with open(os.path.join(path, "execution.json"), "w") as f:
         f.write(execution.model_dump_json())
 
+    file_size = os.path.getsize(os.path.join(path, "execution.json"))
     runtime = global_runtime()
 
     # If not enabled, only save to local disk.
@@ -193,5 +196,5 @@ async def log_execution(
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),
-            meta={EXECUTION_RESULT: {"path": path}},
+            meta={EXECUTION_RESULT: {"path": path, "size": file_size}},
         )
