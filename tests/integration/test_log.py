@@ -581,7 +581,8 @@ async def test_log_execution():
             )
             assert len(list_versions) == 1
             assert (
-                run_obj.meta["execution_path"]
+                run_obj.meta["execution_result"]["path"]
                 == f"{runtime.team_id}/{runtime.current_proj.id}/execution:"
                 + list_versions[0]
             )
+            assert run_obj.meta["execution_result"]["size"] > 0
