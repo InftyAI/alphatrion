@@ -276,7 +276,11 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
         },
         customdata: [[startPoint.runId, startPoint.x, startPoint.y, startPoint.z]],
         hovertemplate:
+<<<<<<< Updated upstream
           '<b>Run: %{customdata[0]}</b>' +
+=======
+          '<b>Run: %{customdata[0]} (StartPoint)</b>' +
+>>>>>>> Stashed changes
           '<br>' + `${paretoMetrics[0].key}: %{customdata[1]:.4f}` +
           '<br>' + `${paretoMetrics[1].key}: %{customdata[2]:.4f}` +
           '<br>' + `${paretoMetrics[2].key}: %{customdata[3]:.4f}` +
@@ -713,7 +717,11 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                         }}
                       >
                         <div style={{ fontWeight: 600, marginBottom: '4px' }}>
+<<<<<<< Updated upstream
                           Run: {data.runId}{isStartPoint ? ' (Start)' : ''}
+=======
+                          Run: {data.runId}{isStartPoint ? ' (StartPoint)' : ''}
+>>>>>>> Stashed changes
                         </div>
                         <div>{paretoMetrics[0].key}: {data.x?.toFixed(4)}</div>
                         <div>{paretoMetrics[1].key}: {data.y?.toFixed(4)}</div>

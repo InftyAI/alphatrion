@@ -14,7 +14,7 @@ from alphatrion.snapshot.snapshot import (
 )
 
 BEST_RESULT_PATH = "best_result_path"
-EXECUTION_PATH = "execution_path"
+EXECUTION_RESULT = "execution_result"
 
 
 async def log_artifact(
@@ -193,5 +193,5 @@ async def log_execution(
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),
-            meta={EXECUTION_PATH: path},
+            meta={EXECUTION_RESULT: {"path": path}},
         )
