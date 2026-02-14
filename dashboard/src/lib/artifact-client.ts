@@ -24,12 +24,12 @@ export async function listRepositories(): Promise<string[]> {
 export async function listTags(
   teamId: string,
   projectId: string,
-  type?: 'execution' | 'checkpoint'
+  repoType?: 'execution' | 'checkpoint'
 ): Promise<string[]> {
   try {
     const data = await graphqlQuery<{ artifactTags: Array<{ name: string }> }>(
       queries.listArtifactTags,
-      { team_id: teamId, project_id: projectId, type }
+      { team_id: teamId, project_id: projectId, repo_type: repoType }
     );
     return data.artifactTags.map(tag => tag.name);
   } catch (error) {
@@ -43,8 +43,8 @@ export async function listTags(
 export async function getArtifactContent(
   teamId: string,
   projectId: string,
-  type: 'execution' | 'checkpoint',
-  tag: string
+  tag: string,
+  repoType?: 'execution' | 'checkpoint'
 ): Promise<{ filename: string; content: string; contentType: string }> {
   try {
     const data = await graphqlQuery<{
@@ -55,7 +55,7 @@ export async function getArtifactContent(
       }
     }>(
       queries.getArtifactContent,
-      { team_id: teamId, project_id: projectId, type, tag }
+      { team_id: teamId, project_id: projectId, tag, repo_type: repoType }
     );
     return data.artifactContent;
   } catch (error) {

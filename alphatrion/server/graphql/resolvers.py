@@ -317,18 +317,18 @@ class GraphQLResolvers:
 
     @staticmethod
     async def list_artifact_tags(
-        team_id: str, project_id: str, type: str | None = None
+        team_id: str, project_id: str, repo_type: str | None = None
     ) -> list[ArtifactTag]:
         """List tags for a repository."""
 
         arf = artifact.Artifact(team_id=team_id, insecure=True)
-        # Append type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
-        repo_path = f"{project_id}/{type}" if type else project_id
+        # Append repo_type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
+        repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
         return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
 
     @staticmethod
     async def get_artifact_content(
-        team_id: str, project_id: str, tag: str,  type: str | None = None
+        team_id: str, project_id: str, tag: str,  repo_type: str | None = None
     ) -> ArtifactContent:
         """Get artifact content from registry."""
         import tempfile
@@ -343,7 +343,7 @@ class GraphQLResolvers:
             arf = artifact.Artifact(team_id=team_id, insecure=True)
 
             # Construct repository path
-            repo_path = f"{project_id}/{type}" if type else project_id
+            repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
 
             # Pull the artifact
             files = arf.pull(repo_name=repo_path, version=tag, output_dir=temp_dir)
@@ -357,6 +357,7 @@ class GraphQLResolvers:
                 content = f.read()
 
             # Determine content type based on file extension
+            # TODO: for multiple files, this is not right.
             filename = files[0]
             if filename.endswith('.json'):
                 content_type = "application/json"

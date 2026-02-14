@@ -246,16 +246,16 @@ export const queries = {
   `,
 
   listArtifactTags: `
-    query ListArtifactTags($team_id: ID!, $project_id: ID!, $type: String) {
-      artifactTags(teamId: $team_id, projectId: $project_id, type: $type) {
+    query ListArtifactTags($team_id: ID!, $project_id: ID!, $repo_type: String) {
+      artifactTags(teamId: $team_id, projectId: $project_id, repoType: $repo_type) {
         name
       }
     }
   `,
 
   getArtifactContent: `
-    query GetArtifactContent($team_id: ID!, $project_id: ID!, $type: String!, $tag: String!) {
-      artifactContent(teamId: $team_id, projectId: $project_id, type: $type, tag: $tag) {
+    query GetArtifactContent($team_id: ID!, $project_id: ID!, $tag: String!, $repo_type: String) {
+      artifactContent(teamId: $team_id, projectId: $project_id, tag: $tag, repoType: $repo_type) {
         filename
         content
         contentType

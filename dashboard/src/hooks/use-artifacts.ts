@@ -23,11 +23,11 @@ export function useRepositories() {
 export function useTags(
   teamId: string,
   projectId: string,
-  type?: 'execution' | 'checkpoint'
+  repoType?: 'execution' | 'checkpoint'
 ) {
   return useQuery({
-    queryKey: ['artifacts', 'tags', teamId, projectId, type],
-    queryFn: () => listTags(teamId, projectId, type),
+    queryKey: ['artifacts', 'tags', teamId, projectId, repoType],
+    queryFn: () => listTags(teamId, projectId, repoType),
     enabled: Boolean(teamId && projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
