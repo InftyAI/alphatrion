@@ -603,7 +603,7 @@ async def test_log_execution():
             assert content_paths is not None
             assert len(content_paths) == 1
 
-            content = os.path.join(content_paths[0], "execution.json")
+            content = content_paths[0]
             assert os.path.exists(content)
             with open(content) as f:
                 data = json.load(f)
