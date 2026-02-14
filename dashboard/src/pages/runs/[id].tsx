@@ -257,33 +257,45 @@ export function RunDetailPage() {
               <div className="flex-1 min-w-0">
                 <DialogTitle className="text-base">Artifact Content</DialogTitle>
                 <DialogDescription className="text-xs font-mono mt-1 truncate">
-                  {artifactContent?.filename}
+                  {artifactContent?.filename || 'Loading...'}
                 </DialogDescription>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopy}
-                className="ml-2 h-8 flex-shrink-0"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 mr-1.5" />
-                    Copied
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5 mr-1.5" />
-                    Copy
-                  </>
-                )}
-              </Button>
+              {artifactContent && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopy}
+                  className="ml-2 h-8 flex-shrink-0"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </DialogHeader>
           <div className="flex-1 overflow-auto border rounded-md bg-slate-950 dark:bg-slate-950">
-            <pre className={`text-xs p-4 overflow-auto text-slate-50 ${getLanguageClass()}`}>
-              <code className="text-slate-50">{formatContent()}</code>
-            </pre>
+            {loadingArtifact && !artifactContent ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-slate-400 text-sm">Loading artifact...</div>
+              </div>
+            ) : artifactError ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-red-400 text-sm">Failed to load artifact</div>
+              </div>
+            ) : (
+              <pre className={`text-xs p-4 overflow-auto text-slate-50 ${getLanguageClass()}`}>
+                <code className="text-slate-50">{formatContent()}</code>
+              </pre>
+            )}
           </div>
         </DialogContent>
       </Dialog>
