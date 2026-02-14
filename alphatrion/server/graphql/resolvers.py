@@ -326,6 +326,7 @@ class GraphQLResolvers:
         team_id: str, project_id: str, type: str | None = None
     ) -> list[ArtifactTag]:
         """List tags for a repository."""
+
         arf = artifact.Artifact(team_id=team_id, insecure=True)
         # Append type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
         repo_path = f"{project_id}/{type}" if type else project_id

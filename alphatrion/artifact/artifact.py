@@ -1,3 +1,4 @@
+from http.client import NOT_FOUND
 import os
 from tkinter import E
 from xml.dom import NotFoundErr
@@ -64,11 +65,18 @@ class Artifact:
 
     def list_versions(self, repo_name: str) -> list[str]:
         target = f"{self._url}/{self._team_id}/{repo_name}"
-        print("Listing artifact versions with target:", target)
         try:
             tags = self._client.get_tags(target)
             return tags
         except Exception as e:
+            # Check if it's a "not found" error (404, repository doesn't exist)
+            # TODO: it's not a proper way but let's do it for now.
+            error_msg = str(e).lower()
+            if "404" in error_msg or "not found" in error_msg or "does not exist" in error_msg:
+                # Return empty list if repository doesn't exist yet
+                # This is expected for projects without artifacts
+                return []
+            # Re-raise other errors
             raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
 
     def delete(self, repo_name: str, versions: str | list[str]):
