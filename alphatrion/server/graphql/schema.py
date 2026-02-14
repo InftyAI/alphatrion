@@ -3,6 +3,8 @@ import strawberry
 from alphatrion.server.graphql.resolvers import GraphQLMutations, GraphQLResolvers
 from alphatrion.server.graphql.types import (
     AddUserToTeamInput,
+    ArtifactRepository,
+    ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
     Experiment,
@@ -80,6 +82,17 @@ class Query:
         )
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
+
+    # Artifact queries
+    @strawberry.field
+    async def artifact_repos(self) -> list[ArtifactRepository]:
+        return await GraphQLResolvers.list_artifact_repositories()
+
+    @strawberry.field
+    async def artifact_tags(
+        self, team_id: strawberry.ID, project_id: strawberry.ID, type: str | None = None
+    ) -> list[ArtifactTag]:
+        return await GraphQLResolvers.list_artifact_tags(str(team_id), str(project_id), type)
 
 
 @strawberry.type

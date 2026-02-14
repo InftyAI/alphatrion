@@ -236,4 +236,21 @@ export const queries = {
     }
   `,
 
+  // Artifact queries
+  listArtifactRepositories: `
+    query ListArtifactRepositories {
+      artifactRepos {
+        name
+      }
+    }
+  `,
+
+  listArtifactTags: `
+    query ListArtifactTags($team_id: ID!, $project_id: ID!, $type: String) {
+      artifactTags(teamId: $team_id, projectId: $project_id, type: $type) {
+        name
+      }
+    }
+  `,
+
 };

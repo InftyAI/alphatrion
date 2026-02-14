@@ -176,3 +176,66 @@ class AddUserToTeamInput:
 class RemoveUserFromTeamInput:
     user_id: strawberry.ID
     team_id: strawberry.ID
+
+
+# Artifact types
+@strawberry.type
+class ArtifactLayer:
+    media_type: str
+    digest: str
+    size: int
+    annotations: JSON | None
+
+
+@strawberry.type
+class ArtifactConfig:
+    media_type: str
+    digest: str
+    size: int
+
+
+@strawberry.type
+class ArtifactManifest:
+    schema_version: int
+    media_type: str
+    config: ArtifactConfig
+    layers: list[ArtifactLayer]
+    annotations: JSON | None
+
+
+@strawberry.type
+class ArtifactRepository:
+    name: str
+
+
+@strawberry.type
+class ArtifactTag:
+    name: str
+
+
+@strawberry.type
+class ExecutionMetadata:
+    id: str
+
+
+@strawberry.type
+class ExecutionSpec:
+    parameters: JSON
+    input: JSON | None
+
+
+@strawberry.type
+class ExecutionResult:
+    output: JSON
+
+
+@strawberry.type
+class Execution:
+    schema_version: str
+    kind: str
+    metadata: ExecutionMetadata
+    spec: ExecutionSpec
+    result: ExecutionResult
+    team: str
+    project: str
+    tag: str

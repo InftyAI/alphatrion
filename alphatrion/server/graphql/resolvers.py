@@ -1,15 +1,27 @@
+import os
 import uuid
 from datetime import datetime
 
+import httpx
 import strawberry
 
+from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
 
 from .types import (
     AddUserToTeamInput,
+    ArtifactConfig,
+    ArtifactLayer,
+    ArtifactManifest,
+    ArtifactRepository,
+    ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
+    Execution,
+    ExecutionMetadata,
+    ExecutionResult,
+    ExecutionSpec,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
@@ -288,6 +300,36 @@ class GraphQLResolvers:
             for e in experiments
         ]
 
+
+    @staticmethod
+    async def list_artifact_repositories(
+    ) -> list[ArtifactRepository]:
+        """List all repositories in the ORAS registry, optionally filtered by category."""
+        registry_url = artifact.get_registry_url()
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    f"{registry_url}/v2/_catalog",
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                print(data)
+                repositories = data.get("repositories", [])
+                print(f"Found repositories: {repositories}")
+                return [ArtifactRepository(name=repo) for repo in repositories]
+            except httpx.HTTPError as e:
+                raise RuntimeError(f"Registry request failed: {e}") from e
+
+    @staticmethod
+    async def list_artifact_tags(
+        team_id: str, project_id: str, type: str | None = None
+    ) -> list[ArtifactTag]:
+        """List tags for a repository."""
+        arf = artifact.Artifact(team_id=team_id, insecure=True)
+        # Append type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
+        repo_path = f"{project_id}/{type}" if type else project_id
+        return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
 
 class GraphQLMutations:
     @staticmethod
