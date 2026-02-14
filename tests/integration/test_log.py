@@ -615,3 +615,6 @@ async def test_log_execution():
                 assert data["status"]["input"]["input_example"] == "input_test"
                 assert data["status"]["input"]["input_value"] == 456
                 assert data["status"]["phase"] == "success"
+
+            # cleanup local artifact file
+            os.remove(content)
