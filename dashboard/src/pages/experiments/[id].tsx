@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -381,9 +381,9 @@ export function ExperimentDetailPage() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={currentPage === 1}
-                        className="h-9 px-3 text-sm"
+                        className="h-9 w-9 p-0"
                       >
-                        Previous
+                        <ChevronLeft className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
@@ -393,9 +393,9 @@ export function ExperimentDetailPage() {
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         disabled={runs.length < PAGE_SIZE}
-                        className="h-9 px-3 text-sm"
+                        className="h-9 w-9 p-0"
                       >
-                        Next
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>

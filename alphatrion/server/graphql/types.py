@@ -176,3 +176,21 @@ class AddUserToTeamInput:
 class RemoveUserFromTeamInput:
     user_id: strawberry.ID
     team_id: strawberry.ID
+
+
+# Artifact types
+@strawberry.type
+class ArtifactRepository:
+    name: str
+
+
+@strawberry.type
+class ArtifactTag:
+    name: str
+
+
+@strawberry.type
+class ArtifactContent:
+    filename: str
+    content: str
+    content_type: str

@@ -2,8 +2,8 @@ from alphatrion.snapshot.snapshot import (
     Execution,
     ExecutionKind,
     Metadata,
-    Result,
     Spec,
+    Status,
 )
 
 __all__ = [
@@ -11,5 +11,5 @@ __all__ = [
     "Execution",
     "Metadata",
     "Spec",
-    "Result",
+    "Status",
 ]

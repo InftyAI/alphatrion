@@ -11,8 +11,7 @@ SUCCESS_CODE = 201
 class Artifact:
     def __init__(self, team_id: str, insecure: bool = False):
         self._team_id = team_id
-        self._url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
-        self._url = self._url.replace("https://", "").replace("http://", "")
+        self._url = get_registry_url()
         self._client = oras.client.OrasClient(
             hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
         )
@@ -51,9 +50,8 @@ class Artifact:
         if version is None:
             version = utiltime.now_2_hash()
 
-        url = self._url if self._url.endswith("/") else f"{self._url}/"
         path = f"{self._team_id}/{repo_name}:{version}"
-        target = f"{url}{path}"
+        target = f"{self._url}/{path}"
 
         try:
             self._client.push(target, files=files_to_push, disable_path_validation=True)
@@ -63,19 +61,75 @@ class Artifact:
         return path
 
     def list_versions(self, repo_name: str) -> list[str]:
-        url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._team_id}/{repo_name}"
+        target = f"{self._url}/{self._team_id}/{repo_name}"
         try:
             tags = self._client.get_tags(target)
             return tags
         except Exception as e:
-            raise RuntimeError("Failed to list artifacts versions") from e
+            # Check if it's a "not found" error (404, repository doesn't exist)
+            # TODO: it's not a proper way but let's do it for now.
+            error_msg = str(e).lower()
+            if (
+                "404" in error_msg
+                or "not found" in error_msg
+                or "does not exist" in error_msg
+            ):
+                # Return empty list if repository doesn't exist yet
+                # This is expected for projects without artifacts
+                return []
+            # Re-raise other errors
+            raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
+
+    def pull(
+        self, repo_name: str, version: str, output_dir: str | None = None
+    ) -> list[str]:
+        """
+        Pull artifacts from the registry.
+
+        :param repo_name: the name of the repository to pull from
+        :param version: the version (tag) to pull
+        :param output_dir: optional directory to save files to
+                           (defaults to ORAS temp directory)
+        :return: list of absolute file paths that were downloaded
+        """
+        path = f"{self._team_id}/{repo_name}:{version}"
+        target = f"{self._url}/{path}"
+
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            original_dir = os.getcwd()
+            os.chdir(output_dir)
+
+        try:
+            # ORAS client returns list of filenames
+            filenames = self._client.pull(target)
+
+            # Get current directory (where files were downloaded)
+            download_dir = os.getcwd()
+
+            # Return absolute paths to downloaded files
+            return [os.path.abspath(os.path.join(download_dir, f)) for f in filenames]
+        except Exception as e:
+            raise RuntimeError(f"Failed to pull artifacts: {e}") from e
+        finally:
+            if output_dir:
+                os.chdir(original_dir)
 
     def delete(self, repo_name: str, versions: str | list[str]):
-        url = self._url if self._url.endswith("/") else f"{self._url}/"
-        target = f"{url}{self._team_id}/{repo_name}"
+        target = f"{self._url}/{self._team_id}/{repo_name}"
 
         try:
             self._client.delete_tags(target, tags=versions)
         except Exception as e:
             raise RuntimeError("Failed to delete artifact versions") from e
+
+
+def get_registry_url() -> str:
+    """Get the ORAS registry URL from environment variables."""
+    registry_url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
+    if not registry_url:
+        raise RuntimeError("ARTIFACT_REGISTRY_URL not configured")
+    # Ensure URL has scheme
+    if not registry_url.startswith(("http://", "https://")):
+        registry_url = f"http://{registry_url}"
+    return registry_url.rstrip("/")

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useProjects } from '../../hooks/use-projects';
 import {
@@ -186,9 +186,9 @@ export function ProjectsPage() {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     disabled={currentPage === 1}
-                    className="h-9 px-3 text-sm"
+                    className="h-9 w-9 p-0"
                   >
-                    Previous
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
@@ -198,9 +198,9 @@ export function ProjectsPage() {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     disabled={projects.length < PAGE_SIZE}
-                    className="h-9 px-3 text-sm"
+                    className="h-9 w-9 p-0"
                   >
-                    Next
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

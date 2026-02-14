@@ -1,13 +1,19 @@
+import os
 import uuid
 from datetime import datetime
 
+import httpx
 import strawberry
 
+from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
 
 from .types import (
     AddUserToTeamInput,
+    ArtifactContent,
+    ArtifactRepository,
+    ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
     Experiment,
@@ -287,6 +293,81 @@ class GraphQLResolvers:
             )
             for e in experiments
         ]
+
+    @staticmethod
+    async def list_artifact_repositories() -> list[ArtifactRepository]:
+        """List all repositories in the ORAS registry."""
+
+        registry_url = artifact.get_registry_url()
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(
+                    f"{registry_url}/v2/_catalog",
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+                data = response.json()
+                repositories = data.get("repositories", [])
+                return [ArtifactRepository(name=repo) for repo in repositories]
+            except httpx.HTTPError as e:
+                raise RuntimeError(f"Registry request failed: {e}") from e
+
+    @staticmethod
+    async def list_artifact_tags(
+        team_id: str, project_id: str, repo_type: str | None = None
+    ) -> list[ArtifactTag]:
+        """List tags for a repository."""
+
+        arf = artifact.Artifact(team_id=team_id, insecure=True)
+        # Append repo_type suffix to project_id if provided
+        # (e.g., "project/execution" or "project/checkpoint")
+        repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
+        return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
+
+    @staticmethod
+    async def get_artifact_content(
+        team_id: str, project_id: str, tag: str, repo_type: str | None = None
+    ) -> ArtifactContent:
+        """Get artifact content from registry."""
+        try:
+            # Initialize artifact client
+            arf = artifact.Artifact(team_id=team_id, insecure=True)
+
+            # Construct repository path
+            repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
+
+            # Pull the artifact - ORAS will manage temp directory
+            # Returns absolute paths to files in ORAS temp directory
+            # Note: One potential issue is if we download too many large files,
+            # it may fill up disk space. For now we assume artifacts are
+            # reasonably sized and/or users will manage their registry storage.
+            file_paths = arf.pull(repo_name=repo_path, version=tag)
+
+            if not file_paths:
+                raise RuntimeError("No files found in artifact")
+
+            # Read first file content (file_paths now contains absolute paths)
+            file_path = file_paths[0]
+            with open(file_path, encoding="utf-8") as f:
+                content = f.read()
+
+            # Get filename from path
+            filename = os.path.basename(file_path)
+
+            # Determine content type based on file extension
+            # TODO: for multiple files, this is not right.
+            if filename.endswith(".json"):
+                content_type = "application/json"
+            elif filename.endswith(".txt") or filename.endswith(".log"):
+                content_type = "text/plain"
+            else:
+                content_type = "text/plain"
+
+            return ArtifactContent(
+                filename=filename, content=content, content_type=content_type
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to get artifact content: {e}") from e
 
 
 class GraphQLMutations:
