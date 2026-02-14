@@ -587,11 +587,18 @@ async def test_log_execution():
                 + list_versions[0]
             )
             assert run_obj.meta["execution_result"]["size"] > 0
+            assert run_obj.meta["execution_result"]["file_name"] == "execution.json"
+            artifact_path = run_obj.meta["execution_result"]["path"]
+            assert (
+                artifact_path
+                == f"{runtime.team_id}/{runtime.current_proj.id}/execution:"
+                + list_versions[0]
+            )
 
             # We can also pull the artifact and check the content if needed.
-            artifact_path = run_obj.meta["execution_result"]["path"]
             content_paths = runtime._artifact.pull(
-                repo_name=artifact_path, version=list_versions[0]
+                repo_name=f"{runtime.current_proj.id}/execution",
+                version=list_versions[0],
             )
             assert content_paths is not None
             assert len(content_paths) == 1
