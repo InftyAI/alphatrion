@@ -586,3 +586,24 @@ async def test_log_execution():
                 + list_versions[0]
             )
             assert run_obj.meta["execution_result"]["size"] > 0
+
+            # We can also pull the artifact and check the content if needed.
+            artifact_path = run_obj.meta["execution_result"]["path"]
+            content_paths = runtime._artifact.pull(artifact_path)
+            assert content_paths is not None
+            assert len(content_paths) == 1
+
+            content = os.path.join(content_paths[0], "execution.json")
+            assert os.path.exists(content)
+            with open(content) as f:
+                import json
+
+                data = json.load(f)
+                assert data["status"]["output"]["example"] == "test"
+                assert data["status"]["output"]["value"] == 123
+                assert data["status"]["output"]["flag"] is True
+                assert data["status"]["output"]["list"] == [1, 2, 3]
+                assert data["status"]["output"]["dict"] == {"a": 1, "b": 2}
+                assert data["status"]["input"]["input_example"] == "input_test"
+                assert data["status"]["input"]["input_value"] == 456
+                assert data["status"]["phase"] == "success"
