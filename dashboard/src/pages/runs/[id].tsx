@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRun } from '../../hooks/use-runs';
 import { useMetrics } from '../../hooks/use-metrics';
-import { getArtifactContent } from '../../lib/artifact-client';
+import { useArtifactContent } from '../../hooks/use-artifacts';
 import {
   Card,
   CardContent,
@@ -40,12 +40,6 @@ export function RunDetailPage() {
   const { data: metrics, isLoading: metricsLoading } = useMetrics(run?.experimentId || '');
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [artifactContent, setArtifactContent] = useState<{
-    filename: string;
-    content: string;
-    contentType: string;
-  } | null>(null);
-  const [loadingArtifact, setLoadingArtifact] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Filter metrics for this specific run
@@ -55,64 +49,52 @@ export function RunDetailPage() {
   const executionResult = run?.meta?.execution_result as any;
   const hasExecutionResult = executionResult?.path && executionResult?.file_name;
 
-  // Debug: Log the metadata structure
-  if (run?.meta) {
-    console.log('Run metadata:', run.meta);
-    console.log('Execution result:', executionResult);
-  }
+  // Parse the path to extract the tag
+  let artifactTag = '';
+  if (hasExecutionResult) {
+    let tag = executionResult.path;
 
-  const handleViewArtifact = async () => {
-    if (!hasExecutionResult || !run) return;
+    // If path contains ':', extract the part after the colon (the tag)
+    if (tag.includes(':')) {
+      tag = tag.split(':')[1];
+    }
 
-    setLoadingArtifact(true);
-    setCopied(false);
-    try {
-      // Parse the path to extract the tag
-      // Path format could be either:
-      // 1. Just the tag: "20250214-123456"
-      // 2. Full path: "team/project/execution:20250214-123456"
-      let tag = executionResult.path;
-
-      // If path contains ':', extract the part after the colon (the tag)
+    // If path contains '/', it's a full path, extract just the tag part
+    if (tag.includes('/')) {
+      const parts = tag.split('/');
+      tag = parts[parts.length - 1];
       if (tag.includes(':')) {
         tag = tag.split(':')[1];
       }
-
-      // If path contains '/', it's a full path, extract just the tag part
-      if (tag.includes('/')) {
-        // This would be unexpected, but handle it
-        const parts = tag.split('/');
-        tag = parts[parts.length - 1];
-        if (tag.includes(':')) {
-          tag = tag.split(':')[1];
-        }
-      }
-
-      console.log('Loading artifact with params:', {
-        teamId: run.teamId,
-        projectId: run.projectId,
-        originalPath: executionResult.path,
-        extractedTag: tag,
-        repoType: 'execution',
-        executionResult
-      });
-
-      const content = await getArtifactContent(
-        run.teamId,
-        run.projectId,
-        tag,
-        'execution'
-      );
-      setArtifactContent(content);
-      setDialogOpen(true);
-    } catch (error) {
-      console.error('Failed to load artifact:', error);
-      console.error('Error details:', error);
-      alert(`Failed to load artifact content: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setLoadingArtifact(false);
     }
+
+    artifactTag = tag;
+  }
+
+  // Use the cached artifact content hook
+  // Only fetch when dialog is open to avoid unnecessary requests
+  const {
+    data: artifactContent,
+    isLoading: loadingArtifact,
+    error: artifactError
+  } = useArtifactContent(
+    run?.teamId || '',
+    run?.projectId || '',
+    artifactTag,
+    'execution',
+    dialogOpen && hasExecutionResult // Only fetch when dialog is open
+  );
+
+  const handleViewArtifact = () => {
+    if (!hasExecutionResult || !run) return;
+    setCopied(false);
+    setDialogOpen(true);
   };
+
+  // Show error if artifact fetch fails
+  if (artifactError && dialogOpen) {
+    console.error('Failed to load artifact:', artifactError);
+  }
 
   const handleCopy = () => {
     if (artifactContent?.content) {

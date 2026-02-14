@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   listRepositories,
   listTags,
+  getArtifactContent,
 } from '../lib/artifact-client';
 
 /**
@@ -30,5 +31,27 @@ export function useTags(
     queryFn: () => listTags(teamId, projectId, repoType),
     enabled: Boolean(teamId && projectId),
     staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
+ * Hook to fetch artifact content with caching
+ * Artifacts are immutable, so we cache them indefinitely
+ */
+export function useArtifactContent(
+  teamId: string,
+  projectId: string,
+  tag: string,
+  repoType?: 'execution' | 'checkpoint',
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['artifacts', 'content', teamId, projectId, tag, repoType],
+    queryFn: () => getArtifactContent(teamId, projectId, tag, repoType),
+    enabled: Boolean(enabled && teamId && projectId && tag),
+    // Artifacts are immutable - cache indefinitely
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes after last use (renamed from cacheTime in React Query v5)
+    retry: 1, // Only retry once on failure
   });
 }
