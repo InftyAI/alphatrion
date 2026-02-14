@@ -196,5 +196,5 @@ async def log_execution(
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),
-            meta={EXECUTION_RESULT: {"path": path, "size": file_size}},
+            meta={EXECUTION_RESULT: {"path": path, "size": file_size, "file_name": "execution.json"}},
         )
