@@ -55,23 +55,60 @@ export function RunDetailPage() {
   const executionResult = run?.meta?.execution_result as any;
   const hasExecutionResult = executionResult?.path && executionResult?.file_name;
 
+  // Debug: Log the metadata structure
+  if (run?.meta) {
+    console.log('Run metadata:', run.meta);
+    console.log('Execution result:', executionResult);
+  }
+
   const handleViewArtifact = async () => {
     if (!hasExecutionResult || !run) return;
 
     setLoadingArtifact(true);
     setCopied(false);
     try {
+      // Parse the path to extract the tag
+      // Path format could be either:
+      // 1. Just the tag: "20250214-123456"
+      // 2. Full path: "team/project/execution:20250214-123456"
+      let tag = executionResult.path;
+
+      // If path contains ':', extract the part after the colon (the tag)
+      if (tag.includes(':')) {
+        tag = tag.split(':')[1];
+      }
+
+      // If path contains '/', it's a full path, extract just the tag part
+      if (tag.includes('/')) {
+        // This would be unexpected, but handle it
+        const parts = tag.split('/');
+        tag = parts[parts.length - 1];
+        if (tag.includes(':')) {
+          tag = tag.split(':')[1];
+        }
+      }
+
+      console.log('Loading artifact with params:', {
+        teamId: run.teamId,
+        projectId: run.projectId,
+        originalPath: executionResult.path,
+        extractedTag: tag,
+        repoType: 'execution',
+        executionResult
+      });
+
       const content = await getArtifactContent(
         run.teamId,
         run.projectId,
-        executionResult.path,
+        tag,
         'execution'
       );
       setArtifactContent(content);
       setDialogOpen(true);
     } catch (error) {
       console.error('Failed to load artifact:', error);
-      alert('Failed to load artifact content');
+      console.error('Error details:', error);
+      alert(`Failed to load artifact content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoadingArtifact(false);
     }

@@ -47,9 +47,10 @@ class Spec(BaseModel):
     parameters: dict[str, Any]
 
 
-class Result(BaseModel):
+class Status(BaseModel):
     input: dict[str, Any] | None = None
     output: dict[str, Any]
+    phase: str
 
 
 class Execution(BaseModel):
@@ -57,11 +58,11 @@ class Execution(BaseModel):
     kind: ExecutionKind
     metadata: Metadata
     spec: Spec
-    result: Result
+    status: Status
 
 
 def build_run_execution(
-    output: dict[str, Any], input: dict[str, Any] | None = None
+    output: dict[str, Any], input: dict[str, Any] | None = None, phase: str = "success"
 ) -> Execution:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
@@ -83,9 +84,10 @@ def build_run_execution(
             id=str(run_id),
         ),
         spec=Spec(parameters=exp_obj.params or {}),
-        result=Result(
+        status=Status(
             input=input or {},
             output=output,
+            phase=phase,
         ),
     )
     return execution

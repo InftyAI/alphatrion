@@ -294,11 +294,10 @@ class GraphQLResolvers:
             for e in experiments
         ]
 
-
     @staticmethod
-    async def list_artifact_repositories(
-    ) -> list[ArtifactRepository]:
-        """List all repositories in the ORAS registry, optionally filtered by category."""
+    async def list_artifact_repositories() -> list[ArtifactRepository]:
+        """List all repositories in the ORAS registry."""
+
         registry_url = artifact.get_registry_url()
         async with httpx.AsyncClient() as client:
             try:
@@ -308,9 +307,7 @@ class GraphQLResolvers:
                 )
                 response.raise_for_status()
                 data = response.json()
-                print(data)
                 repositories = data.get("repositories", [])
-                print(f"Found repositories: {repositories}")
                 return [ArtifactRepository(name=repo) for repo in repositories]
             except httpx.HTTPError as e:
                 raise RuntimeError(f"Registry request failed: {e}") from e
@@ -322,13 +319,14 @@ class GraphQLResolvers:
         """List tags for a repository."""
 
         arf = artifact.Artifact(team_id=team_id, insecure=True)
-        # Append repo_type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
+        # Append repo_type suffix to project_id if provided
+        # (e.g., "project/execution" or "project/checkpoint")
         repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
         return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
 
     @staticmethod
     async def get_artifact_content(
-        team_id: str, project_id: str, tag: str,  repo_type: str | None = None
+        team_id: str, project_id: str, tag: str, repo_type: str | None = None
     ) -> ArtifactContent:
         """Get artifact content from registry."""
         try:
@@ -345,14 +343,12 @@ class GraphQLResolvers:
             # reasonably sized and/or users will manage their registry storage.
             file_paths = arf.pull(repo_name=repo_path, version=tag)
 
-            print(f"Pulled artifact files: {file_paths}")
-
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
 
             # Read first file content (file_paths now contains absolute paths)
             file_path = file_paths[0]
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Get filename from path
@@ -360,20 +356,19 @@ class GraphQLResolvers:
 
             # Determine content type based on file extension
             # TODO: for multiple files, this is not right.
-            if filename.endswith('.json'):
+            if filename.endswith(".json"):
                 content_type = "application/json"
-            elif filename.endswith('.txt') or filename.endswith('.log'):
+            elif filename.endswith(".txt") or filename.endswith(".log"):
                 content_type = "text/plain"
             else:
                 content_type = "text/plain"
 
             return ArtifactContent(
-                filename=filename,
-                content=content,
-                content_type=content_type
+                filename=filename, content=content, content_type=content_type
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
+
 
 class GraphQLMutations:
     @staticmethod

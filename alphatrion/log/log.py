@@ -162,12 +162,13 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 async def log_execution(
     output: dict[str, Any],
     input: dict[str, Any] | None = None,
+    phase: str = "success",
     kind: ExecutionKind = ExecutionKind.RUN,
 ):
     execution = None
 
     if kind == ExecutionKind.RUN:
-        execution = build_run_execution(output=output, input=input)
+        execution = build_run_execution(output=output, input=input, phase=phase)
     else:
         raise NotImplementedError(
             f"Logging record of kind {execution.kind} is not implemented yet."
@@ -196,5 +197,11 @@ async def log_execution(
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),
-            meta={EXECUTION_RESULT: {"path": path, "size": file_size, "file_name": "execution.json"}},
+            meta={
+                EXECUTION_RESULT: {
+                    "path": path,
+                    "size": file_size,
+                    "file_name": "execution.json",
+                }
+            },
         )

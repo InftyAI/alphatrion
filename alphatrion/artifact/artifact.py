@@ -1,7 +1,4 @@
-from http.client import NOT_FOUND
 import os
-from tkinter import E
-from xml.dom import NotFoundErr
 
 import oras.client
 
@@ -72,20 +69,27 @@ class Artifact:
             # Check if it's a "not found" error (404, repository doesn't exist)
             # TODO: it's not a proper way but let's do it for now.
             error_msg = str(e).lower()
-            if "404" in error_msg or "not found" in error_msg or "does not exist" in error_msg:
+            if (
+                "404" in error_msg
+                or "not found" in error_msg
+                or "does not exist" in error_msg
+            ):
                 # Return empty list if repository doesn't exist yet
                 # This is expected for projects without artifacts
                 return []
             # Re-raise other errors
             raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
 
-    def pull(self, repo_name: str, version: str, output_dir: str | None = None) -> list[str]:
+    def pull(
+        self, repo_name: str, version: str, output_dir: str | None = None
+    ) -> list[str]:
         """
         Pull artifacts from the registry.
 
         :param repo_name: the name of the repository to pull from
         :param version: the version (tag) to pull
-        :param output_dir: optional directory to save files to (defaults to ORAS temp directory)
+        :param output_dir: optional directory to save files to
+                           (defaults to ORAS temp directory)
         :return: list of absolute file paths that were downloaded
         """
         path = f"{self._team_id}/{repo_name}:{version}"
@@ -118,6 +122,7 @@ class Artifact:
             self._client.delete_tags(target, tags=versions)
         except Exception as e:
             raise RuntimeError("Failed to delete artifact versions") from e
+
 
 def get_registry_url() -> str:
     """Get the ORAS registry URL from environment variables."""

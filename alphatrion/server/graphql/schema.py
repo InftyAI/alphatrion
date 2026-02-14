@@ -91,15 +91,26 @@ class Query:
 
     @strawberry.field
     async def artifact_tags(
-        self, team_id: strawberry.ID, project_id: strawberry.ID, repo_type: str | None = None
+        self,
+        team_id: strawberry.ID,
+        project_id: strawberry.ID,
+        repo_type: str | None = None,
     ) -> list[ArtifactTag]:
-        return await GraphQLResolvers.list_artifact_tags(str(team_id), str(project_id), repo_type)
+        return await GraphQLResolvers.list_artifact_tags(
+            str(team_id), str(project_id), repo_type
+        )
 
     @strawberry.field
     async def artifact_content(
-        self, team_id: strawberry.ID, project_id: strawberry.ID, tag: str, repo_type: str | None = None
+        self,
+        team_id: strawberry.ID,
+        project_id: strawberry.ID,
+        tag: str,
+        repo_type: str | None = None,
     ) -> ArtifactContent:
-        return await GraphQLResolvers.get_artifact_content(str(team_id), str(project_id), tag, repo_type)
+        return await GraphQLResolvers.get_artifact_content(
+            str(team_id), str(project_id), tag, repo_type
+        )
 
 
 @strawberry.type
