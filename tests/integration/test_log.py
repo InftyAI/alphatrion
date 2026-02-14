@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import tempfile
 import time
@@ -596,8 +597,6 @@ async def test_log_execution():
             content = os.path.join(content_paths[0], "execution.json")
             assert os.path.exists(content)
             with open(content) as f:
-                import json
-
                 data = json.load(f)
                 assert data["status"]["output"]["example"] == "test"
                 assert data["status"]["output"]["value"] == 123
