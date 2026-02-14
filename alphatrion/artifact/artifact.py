@@ -79,6 +79,32 @@ class Artifact:
             # Re-raise other errors
             raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
 
+    def pull(self, repo_name: str, version: str, output_dir: str | None = None) -> list[str]:
+        """
+        Pull artifacts from the registry.
+
+        :param repo_name: the name of the repository to pull from
+        :param version: the version (tag) to pull
+        :param output_dir: optional directory to save files to (defaults to current directory)
+        :return: list of file paths that were downloaded
+        """
+        path = f"{self._team_id}/{repo_name}:{version}"
+        target = f"{self._url}/{path}"
+
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            original_dir = os.getcwd()
+            os.chdir(output_dir)
+
+        try:
+            files = self._client.pull(target)
+            return files
+        except Exception as e:
+            raise RuntimeError(f"Failed to pull artifacts: {e}") from e
+        finally:
+            if output_dir:
+                os.chdir(original_dir)
+
     def delete(self, repo_name: str, versions: str | list[str]):
         target = f"{self._url}/{self._team_id}/{repo_name}"
 

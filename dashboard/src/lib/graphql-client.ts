@@ -253,4 +253,14 @@ export const queries = {
     }
   `,
 
+  getArtifactContent: `
+    query GetArtifactContent($team_id: ID!, $project_id: ID!, $type: String!, $tag: String!) {
+      artifactContent(teamId: $team_id, projectId: $project_id, type: $type, tag: $tag) {
+        filename
+        content
+        contentType
+      }
+    }
+  `,
+
 };

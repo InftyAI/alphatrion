@@ -180,30 +180,6 @@ class RemoveUserFromTeamInput:
 
 # Artifact types
 @strawberry.type
-class ArtifactLayer:
-    media_type: str
-    digest: str
-    size: int
-    annotations: JSON | None
-
-
-@strawberry.type
-class ArtifactConfig:
-    media_type: str
-    digest: str
-    size: int
-
-
-@strawberry.type
-class ArtifactManifest:
-    schema_version: int
-    media_type: str
-    config: ArtifactConfig
-    layers: list[ArtifactLayer]
-    annotations: JSON | None
-
-
-@strawberry.type
 class ArtifactRepository:
     name: str
 
@@ -214,28 +190,7 @@ class ArtifactTag:
 
 
 @strawberry.type
-class ExecutionMetadata:
-    id: str
-
-
-@strawberry.type
-class ExecutionSpec:
-    parameters: JSON
-    input: JSON | None
-
-
-@strawberry.type
-class ExecutionResult:
-    output: JSON
-
-
-@strawberry.type
-class Execution:
-    schema_version: str
-    kind: str
-    metadata: ExecutionMetadata
-    spec: ExecutionSpec
-    result: ExecutionResult
-    team: str
-    project: str
-    tag: str
+class ArtifactContent:
+    filename: str
+    content: str
+    content_type: str

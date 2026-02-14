@@ -38,6 +38,32 @@ export async function listTags(
 }
 
 /**
+ * Get artifact content
+ */
+export async function getArtifactContent(
+  teamId: string,
+  projectId: string,
+  type: 'execution' | 'checkpoint',
+  tag: string
+): Promise<{ filename: string; content: string; contentType: string }> {
+  try {
+    const data = await graphqlQuery<{
+      artifactContent: {
+        filename: string;
+        content: string;
+        contentType: string;
+      }
+    }>(
+      queries.getArtifactContent,
+      { team_id: teamId, project_id: projectId, type, tag }
+    );
+    return data.artifactContent;
+  } catch (error) {
+    throw new Error(`Failed to get artifact content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Parse repository name from full path
  * Expected format: team/project
  */

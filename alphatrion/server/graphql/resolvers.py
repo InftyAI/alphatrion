@@ -11,17 +11,11 @@ from alphatrion.storage.sql_models import Status
 
 from .types import (
     AddUserToTeamInput,
-    ArtifactConfig,
-    ArtifactLayer,
-    ArtifactManifest,
+    ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
-    Execution,
-    ExecutionMetadata,
-    ExecutionResult,
-    ExecutionSpec,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
@@ -331,6 +325,57 @@ class GraphQLResolvers:
         # Append type suffix to project_id if provided (e.g., "project/execution" or "project/checkpoint")
         repo_path = f"{project_id}/{type}" if type else project_id
         return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
+
+    @staticmethod
+    async def get_artifact_content(
+        team_id: str, project_id: str, tag: str,  type: str | None = None
+    ) -> ArtifactContent:
+        """Get artifact content from registry."""
+        import tempfile
+        import shutil
+
+        temp_dir = None
+        try:
+            # Create temporary directory for download
+            temp_dir = tempfile.mkdtemp()
+
+            # Initialize artifact client
+            arf = artifact.Artifact(team_id=team_id, insecure=True)
+
+            # Construct repository path
+            repo_path = f"{project_id}/{type}" if type else project_id
+
+            # Pull the artifact
+            files = arf.pull(repo_name=repo_path, version=tag, output_dir=temp_dir)
+
+            if not files:
+                raise RuntimeError("No files found in artifact")
+
+            # Read first file content
+            file_path = os.path.join(temp_dir, files[0])
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Determine content type based on file extension
+            filename = files[0]
+            if filename.endswith('.json'):
+                content_type = "application/json"
+            elif filename.endswith('.txt') or filename.endswith('.log'):
+                content_type = "text/plain"
+            else:
+                content_type = "text/plain"
+
+            return ArtifactContent(
+                filename=filename,
+                content=content,
+                content_type=content_type
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to get artifact content: {e}") from e
+        finally:
+            # Clean up temp directory
+            if temp_dir and os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
 class GraphQLMutations:
     @staticmethod
