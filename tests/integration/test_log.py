@@ -590,7 +590,7 @@ async def test_log_execution():
 
             # We can also pull the artifact and check the content if needed.
             artifact_path = run_obj.meta["execution_result"]["path"]
-            content_paths = runtime._artifact.pull(artifact_path)
+            content_paths = runtime._artifact.pull(repo_name=artifact_path, version=list_versions[0])
             assert content_paths is not None
             assert len(content_paths) == 1
 
