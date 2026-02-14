@@ -85,8 +85,8 @@ class Artifact:
 
         :param repo_name: the name of the repository to pull from
         :param version: the version (tag) to pull
-        :param output_dir: optional directory to save files to (defaults to current directory)
-        :return: list of file paths that were downloaded
+        :param output_dir: optional directory to save files to (defaults to ORAS temp directory)
+        :return: list of absolute file paths that were downloaded
         """
         path = f"{self._team_id}/{repo_name}:{version}"
         target = f"{self._url}/{path}"
@@ -97,8 +97,14 @@ class Artifact:
             os.chdir(output_dir)
 
         try:
-            files = self._client.pull(target)
-            return files
+            # ORAS client returns list of filenames
+            filenames = self._client.pull(target)
+
+            # Get current directory (where files were downloaded)
+            download_dir = os.getcwd()
+
+            # Return absolute paths to downloaded files
+            return [os.path.abspath(os.path.join(download_dir, f)) for f in filenames]
         except Exception as e:
             raise RuntimeError(f"Failed to pull artifacts: {e}") from e
         finally:

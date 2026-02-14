@@ -331,34 +331,35 @@ class GraphQLResolvers:
         team_id: str, project_id: str, tag: str,  repo_type: str | None = None
     ) -> ArtifactContent:
         """Get artifact content from registry."""
-        import tempfile
-        import shutil
-
-        temp_dir = None
         try:
-            # Create temporary directory for download
-            temp_dir = tempfile.mkdtemp()
-
             # Initialize artifact client
             arf = artifact.Artifact(team_id=team_id, insecure=True)
 
             # Construct repository path
             repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
 
-            # Pull the artifact
-            files = arf.pull(repo_name=repo_path, version=tag, output_dir=temp_dir)
+            # Pull the artifact - ORAS will manage temp directory
+            # Returns absolute paths to files in ORAS temp directory
+            # Note: One potential issue is if we download too many large files,
+            # it may fill up disk space. For now we assume artifacts are
+            # reasonably sized and/or users will manage their registry storage.
+            file_paths = arf.pull(repo_name=repo_path, version=tag)
 
-            if not files:
+            print(f"Pulled artifact files: {file_paths}")
+
+            if not file_paths:
                 raise RuntimeError("No files found in artifact")
 
-            # Read first file content
-            file_path = os.path.join(temp_dir, files[0])
+            # Read first file content (file_paths now contains absolute paths)
+            file_path = file_paths[0]
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
+            # Get filename from path
+            filename = os.path.basename(file_path)
+
             # Determine content type based on file extension
             # TODO: for multiple files, this is not right.
-            filename = files[0]
             if filename.endswith('.json'):
                 content_type = "application/json"
             elif filename.endswith('.txt') or filename.endswith('.log'):
@@ -373,10 +374,6 @@ class GraphQLResolvers:
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
-        finally:
-            # Clean up temp directory
-            if temp_dir and os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir, ignore_errors=True)
 
 class GraphQLMutations:
     @staticmethod

@@ -45,10 +45,10 @@ class Metadata(BaseModel):
 
 class Spec(BaseModel):
     parameters: dict[str, Any]
-    input: dict[str, Any] | None = None
 
 
 class Result(BaseModel):
+    input: dict[str, Any] | None = None
     output: dict[str, Any]
 
 
@@ -82,8 +82,9 @@ def build_run_execution(
         metadata=Metadata(
             id=str(run_id),
         ),
-        spec=Spec(parameters=exp_obj.params or {}, input=input or {}),
+        spec=Spec(parameters=exp_obj.params or {}),
         result=Result(
+            input=input or {},
             output=output,
         ),
     )
