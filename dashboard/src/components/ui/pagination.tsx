@@ -89,9 +89,9 @@ export function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          className="h-9 w-9 p-0"
         >
           <ChevronLeft className="h-4 w-4" />
-          Previous
         </Button>
 
         <div className="flex items-center gap-1">
@@ -122,8 +122,8 @@ export function Pagination({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          className="h-9 w-9 p-0"
         >
-          Next
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
