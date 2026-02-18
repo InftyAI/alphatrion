@@ -10,8 +10,8 @@ import pytest
 
 import alphatrion as alpha
 from alphatrion import experiment, project
-from alphatrion.experiment.base import current_exp_id
 from alphatrion.log.log import BEST_RESULT_PATH
+from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.snapshot import snapshot
 from alphatrion.storage.sql_models import Status
 
@@ -615,3 +615,6 @@ async def test_log_execution():
                 assert data["status"]["input"]["input_example"] == "input_test"
                 assert data["status"]["input"]["input_value"] == 456
                 assert data["status"]["phase"] == "success"
+
+            # cleanup local artifact file
+            os.remove(content)

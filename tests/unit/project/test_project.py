@@ -10,6 +10,7 @@ import pytest
 from alphatrion.experiment import base as experiment
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.project.project import Project, ProjectConfig
+from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime, init
 from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import Status
@@ -163,7 +164,7 @@ async def test_project_with_exp():
             exp_obj = exp._get_obj()
             assert exp_obj is not None
             assert exp_obj.name == "first-exp"
-            exp_id = experiment.current_exp_id.get()
+            exp_id = current_exp_id.get()
 
         exp_obj = proj._runtime._metadb.get_experiment(experiment_id=exp_id)
         assert exp_obj.status == Status.COMPLETED
@@ -182,7 +183,7 @@ async def test_create_project_with_exp_wait():
     exp_id = None
     async with Project.setup(name="context_proj"):
         async with CraftExperiment.start(name="first-experiment") as exp:
-            exp_id = experiment.current_exp_id.get()
+            exp_id = current_exp_id.get()
             start_time = datetime.now()
 
             exp.run(fake_work)
@@ -205,7 +206,7 @@ async def test_create_project_with_run():
     )
 
     async def fake_work(exp_id: uuid.UUID):
-        assert experiment.current_exp_id.get() == exp_id
+        assert current_exp_id.get() == exp_id
         await asyncio.sleep(3)
 
     async with (
@@ -298,12 +299,12 @@ async def test_project_with_multi_trials_in_parallel():
             config=experiment.ExperimentConfig(max_execution_seconds=duration),
         )
         # double check current trial id.
-        assert exp.id == experiment.current_exp_id.get()
+        assert exp.id == current_exp_id.get()
 
         await exp.wait()
         assert exp.is_done()
         # we don't reset the current trial id.
-        assert exp.id == experiment.current_exp_id.get()
+        assert exp.id == current_exp_id.get()
 
         exp = exp._get_obj()
         assert exp.status == Status.COMPLETED

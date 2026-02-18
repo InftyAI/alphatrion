@@ -24,7 +24,10 @@ from .types import (
     Project,
     RemoveUserFromTeamInput,
     Run,
+    Span,
     Team,
+    TraceEvent,
+    TraceLink,
     UpdateUserInput,
     User,
 )
@@ -368,6 +371,90 @@ class GraphQLResolvers:
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
+
+    @staticmethod
+    def list_traces(run_id: strawberry.ID) -> list[Span]:
+        """List all traces/spans for a specific run."""
+        from alphatrion import envs
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return []
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+
+            # Get traces from ClickHouse
+            traces = trace_store.get_traces_by_run_id(uuid.UUID(run_id))
+            trace_store.close()
+
+            # Convert to GraphQL Span objects
+            spans = []
+            for t in traces:
+                # Convert events
+                events = []
+                if t.get("Events"):
+                    event_timestamps = t["Events"].get("Timestamp", [])
+                    event_names = t["Events"].get("Name", [])
+                    event_attrs = t["Events"].get("Attributes", [])
+                    for i in range(len(event_names)):
+                        events.append(
+                            TraceEvent(
+                                timestamp=event_timestamps[i]
+                                if i < len(event_timestamps)
+                                else datetime.now(),
+                                name=event_names[i],
+                                attributes=event_attrs[i]
+                                if i < len(event_attrs)
+                                else {},
+                            )
+                        )
+
+                # Convert links
+                links = []
+                if t.get("Links"):
+                    link_trace_ids = t["Links"].get("TraceId", [])
+                    link_span_ids = t["Links"].get("SpanId", [])
+                    link_attrs = t["Links"].get("Attributes", [])
+                    for i in range(len(link_trace_ids)):
+                        links.append(
+                            TraceLink(
+                                trace_id=link_trace_ids[i],
+                                span_id=link_span_ids[i]
+                                if i < len(link_span_ids)
+                                else "",
+                                attributes=link_attrs[i] if i < len(link_attrs) else {},
+                            )
+                        )
+
+                spans.append(
+                    Span(
+                        timestamp=t["Timestamp"],
+                        trace_id=t["TraceId"],
+                        span_id=t["SpanId"],
+                        parent_span_id=t["ParentSpanId"],
+                        span_name=t["SpanName"],
+                        span_kind=t["SpanKind"],
+                        service_name=t["ServiceName"],
+                        duration=t["Duration"],
+                        status_code=t["StatusCode"],
+                        status_message=t["StatusMessage"],
+                        team_id=t["TeamId"],
+                        project_id=t["ProjectId"],
+                        run_id=t["RunId"],
+                        experiment_id=t["ExperimentId"],
+                        span_attributes=t["SpanAttributes"],
+                        resource_attributes=t["ResourceAttributes"],
+                        events=events,
+                        links=links,
+                    )
+                )
+
+            return spans
+        except Exception as e:
+            # Log error and return empty list - don't fail the GraphQL query
+            print(f"Failed to fetch traces: {e}")
+            return []
 
 
 class GraphQLMutations:

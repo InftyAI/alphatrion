@@ -1,12 +1,10 @@
 import asyncio
-import contextvars
 import uuid
 
+from alphatrion.runtime.contextvars import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import Status
 from alphatrion.types import CallableEntry
-
-current_run_id = contextvars.ContextVar("current_run_id", default=None)
 
 
 class Run:

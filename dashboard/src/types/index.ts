@@ -140,3 +140,37 @@ export interface RunMetrics {
   metrics: Record<string, number>;
   isPareto?: boolean;
 }
+
+// Trace types
+export interface TraceEvent {
+  timestamp: string;
+  name: string;
+  attributes: Record<string, string>;
+}
+
+export interface TraceLink {
+  traceId: string;
+  spanId: string;
+  attributes: Record<string, string>;
+}
+
+export interface Span {
+  timestamp: string;
+  traceId: string;
+  spanId: string;
+  parentSpanId: string;
+  spanName: string;
+  spanKind: string;
+  serviceName: string;
+  duration: number; // nanoseconds (received as float from GraphQL)
+  statusCode: string;
+  statusMessage: string;
+  teamId: string;
+  projectId: string;
+  runId: string;
+  experimentId: string;
+  spanAttributes: Record<string, string>;
+  resourceAttributes: Record<string, string>;
+  events: TraceEvent[];
+  links: TraceLink[];
+}

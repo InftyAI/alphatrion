@@ -21,6 +21,7 @@ dependencies = [
     "fastapi>=0.121.2",
     "rich>=14.2.0",
     "httpx>=0.28.1",
+    "clickhouse-connect>=0.7.0",
 ]
 
 [dependency-groups]
@@ -64,6 +65,7 @@ lint.ignore = [
     "PLR0913",  # Too many arguments in function definition
     "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "PLR0915", # Too many statements in function
+    "PLC0415", # `import` should be at the top-level of a file
 ]
 exclude = ["venv", "migrations", "__pycache__"]
 

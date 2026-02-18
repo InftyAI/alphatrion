@@ -1,4 +1,3 @@
-import contextvars
 import enum
 import uuid
 from abc import ABC, abstractmethod
@@ -8,13 +7,11 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.run.run import Run
+from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.types import CallableEntry
 from alphatrion.utils import context
-
-# Used in log/log.py to log params/metrics
-current_exp_id = contextvars.ContextVar("current_exp_id", default=None)
 
 
 class CheckpointConfig(BaseModel):

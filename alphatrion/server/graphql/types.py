@@ -194,3 +194,42 @@ class ArtifactContent:
     filename: str
     content: str
     content_type: str
+
+
+# Trace types
+@strawberry.type
+class TraceEvent:
+    timestamp: datetime
+    name: str
+    attributes: JSON
+
+
+@strawberry.type
+class TraceLink:
+    trace_id: str
+    span_id: str
+    attributes: JSON
+
+
+@strawberry.type
+class Span:
+    timestamp: datetime
+    trace_id: str
+    span_id: str
+    parent_span_id: str
+    span_name: str
+    span_kind: str
+    service_name: str
+    duration: float  # nanoseconds (using float to support large int64 values)
+    status_code: str
+    status_message: str
+
+    team_id: str
+    project_id: str
+    run_id: str
+    experiment_id: str
+
+    span_attributes: JSON
+    resource_attributes: JSON
+    events: list[TraceEvent]
+    links: list[TraceLink]

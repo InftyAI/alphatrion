@@ -4,7 +4,7 @@ import uuid
 
 from alphatrion import envs
 from alphatrion.artifact.artifact import Artifact
-from alphatrion.storage import runtime
+from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sqlstore import SQLStore
 
 __RUNTIME__ = None
@@ -44,6 +44,7 @@ class Runtime:
         "_user_id",
         "_team_id",
         "_metadb",
+        "_tracestore",
         "_artifact",
         "__current_proj",
         "_root_path",
@@ -54,8 +55,9 @@ class Runtime:
         user_id: uuid.UUID,
         team_id: uuid.UUID | None = None,
     ):
-        runtime.init()
-        self._metadb = runtime.storage_runtime().metadb
+        storage_runtime.init()
+        self._metadb = storage_runtime.storage_runtime().metadb
+        self._tracestore = storage_runtime.storage_runtime().tracestore
 
         self._user_id = user_id
         self._team_id = team_id
@@ -96,6 +98,10 @@ class Runtime:
     @property
     def metadb(self) -> SQLStore:
         return self._metadb
+
+    @property
+    def tracestore(self):
+        return self._tracestore
 
     @property
     def user_id(self) -> uuid.UUID:
