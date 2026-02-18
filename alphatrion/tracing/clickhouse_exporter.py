@@ -36,8 +36,20 @@ class ClickHouseSpanExporter(SpanExporter):
             return SpanExportResult.SUCCESS
 
         try:
+            # Filter spans to only include those with traceloop.workflow.name attribute
+            # Both workflow and task spans have this attribute set by traceloop SDK
+            # This filters out non-traceloop spans (database, HTTP, etc.)
+            filtered_spans = [
+                span
+                for span in spans
+                if span.attributes and "traceloop.workflow.name" in span.attributes
+            ]
+
+            if not filtered_spans:
+                return SpanExportResult.SUCCESS
+
             # Convert OpenTelemetry spans to ClickHouse format
-            ch_spans = [self._convert_span(span) for span in spans]
+            ch_spans = [self._convert_span(span) for span in filtered_spans]
 
             # Insert into ClickHouse
             self.trace_store.insert_spans(ch_spans)

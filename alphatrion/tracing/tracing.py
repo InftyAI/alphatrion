@@ -69,6 +69,8 @@ def task(
     return decorator
 
 
+# run_id should only used in testing because other IDs may not exist
+# at the same time.
 def workflow(
     run_id: uuid.UUID | None = None,
     version: int | None = None,
