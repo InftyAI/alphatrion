@@ -71,7 +71,7 @@ async def test_workflow():
                     database=os.getenv(envs.CLICKHOUSE_DATABASE, "alphatrion_traces"),
                     username=os.getenv(envs.CLICKHOUSE_USERNAME, "alphatrion"),
                     password=os.getenv(envs.CLICKHOUSE_PASSWORD, "alphatr1on"),
-                    init_tables=False,
+                    init_tables=os.getenv(envs.CLICKHOUSE_INIT_TABLES, "false").lower() == "true",
                 )
 
                 try:
