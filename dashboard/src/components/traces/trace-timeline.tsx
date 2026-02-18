@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot } from 'lucide-react';
 import type { Span } from '../../types';
 import { Card, CardContent } from '../ui/card';
+import { Badge } from '../ui/badge';
 
 interface TraceTimelineProps {
   spans: Span[];
@@ -11,6 +12,7 @@ interface SpanNode {
   span: Span;
   children: SpanNode[];
   depth: number;
+  totalCost?: number;
 }
 
 // Status color mapping
@@ -20,17 +22,44 @@ const STATUS_COLORS: Record<string, string> = {
   'UNSET': 'bg-gray-400',
 };
 
-// Span kind colors
-const KIND_COLORS: Record<string, string> = {
-  'INTERNAL': 'bg-blue-500',
-  'SERVER': 'bg-purple-500',
-  'CLIENT': 'bg-cyan-500',
-  'PRODUCER': 'bg-orange-500',
-  'CONSUMER': 'bg-pink-500',
+// Span type detection and styling
+const getSpanType = (span: Span): { label: string; icon: JSX.Element; badgeColor: string } => {
+  const name = span.spanName.toLowerCase();
+  const kind = span.spanKind;
+
+  if (name.includes('openai') || name.includes('chat') || name.includes('completion')) {
+    return { label: 'LLM', icon: <Bot className="h-3 w-3" />, badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' };
+  }
+  if (kind === 'CLIENT' || name.includes('http') || name.includes('api')) {
+    return { label: 'API', icon: <Globe className="h-3 w-3" />, badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' };
+  }
+  if (name.includes('db') || name.includes('database') || name.includes('query')) {
+    return { label: 'DB', icon: <Database className="h-3 w-3" />, badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
+  }
+  if (span.spanAttributes?.['traceloop.span.kind'] === 'workflow') {
+    return { label: 'Workflow', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+  }
+  if (span.spanAttributes?.['traceloop.span.kind'] === 'task') {
+    return { label: 'Task', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' };
+  }
+
+  return { label: 'Span', icon: <Clock className="h-3 w-3" />, badgeColor: 'bg-gray-100 text-gray-700 border-gray-200' };
 };
 
 export function TraceTimeline({ spans }: TraceTimelineProps) {
-  const [expandedSpans, setExpandedSpans] = useState<Set<string>>(new Set());
+  // Initialize with root spans expanded
+  const [expandedSpans, setExpandedSpans] = useState<Set<string>>(() => {
+    return new Set(spans.filter(s => !s.parentSpanId || s.parentSpanId === '').map(s => s.spanId));
+  });
+
+  const expandAll = () => {
+    const allSpanIds = new Set(spans.map(s => s.spanId));
+    setExpandedSpans(allSpanIds);
+  };
+
+  const collapseAll = () => {
+    setExpandedSpans(new Set());
+  };
 
   // Build hierarchical tree structure
   const spanTree = useMemo(() => {
@@ -87,9 +116,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       return { minTimestamp: 0, maxTimestamp: 0, totalDuration: 0 };
     }
 
-    const timestamps = spans.map(s => new Date(s.timestamp).getTime());
-    const min = Math.min(...timestamps);
-    const max = Math.max(...timestamps);
+    // Find earliest start time and latest end time
+    const startTimes = spans.map(s => new Date(s.timestamp).getTime());
+    const endTimes = spans.map(s => new Date(s.timestamp).getTime() + (s.duration / 1_000_000));
+
+    const min = Math.min(...startTimes);
+    const max = Math.max(...endTimes);
     const duration = max - min;
 
     return {
@@ -135,16 +167,15 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     const widthPercent = ((spanEnd - spanStart) / totalDuration) * 100;
 
     const statusColor = STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET'];
-    const kindColor = KIND_COLORS[span.spanKind] || KIND_COLORS['INTERNAL'];
 
     return (
       <div
-        className={`${kindColor} absolute h-6 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
+        className={`${statusColor} absolute h-6 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
         style={{
           left: `${leftPercent}%`,
           width: `${Math.max(widthPercent, 0.5)}%`, // Minimum width for visibility
         }}
-        title={`${span.spanName}\nDuration: ${formatDuration(span.duration)}\nStatus: ${span.statusCode}`}
+        title={`${span.spanName}\nDuration: ${formatDuration(span.duration)}\nStatus: ${span.statusCode}\nKind: ${span.spanKind}`}
       >
         <span className="truncate">{formatDuration(span.duration)}</span>
       </div>
@@ -155,20 +186,32 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     const { span, children, depth } = node;
     const hasChildren = children.length > 0;
     const isExpanded = expandedSpans.has(span.spanId);
+    const spanType = getSpanType(span);
+
+    // Extract token information if available
+    const inputTokens = span.spanAttributes?.['gen_ai.usage.input_tokens'];
+    const outputTokens = span.spanAttributes?.['gen_ai.usage.output_tokens'];
+    const totalTokens = span.spanAttributes?.['llm.usage.total_tokens'];
 
     return (
       <div key={span.spanId}>
         {/* Span Row */}
         <div className="flex items-center border-b border-border hover:bg-muted/50 transition-colors">
-          {/* Left: Span name with expand button */}
+          {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-1 py-2 pr-2"
-            style={{ width: '300px', paddingLeft: `${depth * 20 + 8}px` }}
+            className="flex-shrink-0 flex items-center gap-2 py-2 pr-2 min-w-0"
+            style={{ width: '400px', paddingLeft: `${depth * 12 + 8}px` }}
           >
+            {/* Tree connector line */}
+            {depth > 0 && (
+              <div className="absolute h-full border-l border-border" style={{ left: `${(depth - 1) * 12 + 8}px` }} />
+            )}
+
+            {/* Expand/collapse button */}
             {hasChildren ? (
               <button
                 onClick={() => toggleSpan(span.spanId)}
-                className="p-0.5 hover:bg-accent rounded"
+                className="p-0.5 hover:bg-accent rounded flex-shrink-0"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -177,15 +220,45 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                 )}
               </button>
             ) : (
-              <div className="w-5" />
+              <div className="w-5 flex-shrink-0" />
             )}
+
+            {/* Type badge */}
+            <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium flex-shrink-0`}>
+              {spanType.icon}
+              {spanType.label}
+            </Badge>
+
+            {/* Span name */}
             <span className="text-sm font-medium truncate" title={span.spanName}>
               {span.spanName}
             </span>
           </div>
 
+          {/* Middle: Metrics */}
+          <div className="flex items-center gap-3 px-3 text-xs text-muted-foreground flex-shrink-0">
+            {/* Duration */}
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>{formatDuration(span.duration)}</span>
+            </div>
+
+            {/* Tokens (if available) */}
+            {totalTokens && (
+              <div className="flex items-center gap-1">
+                <span className="font-mono">{totalTokens} tokens</span>
+                {inputTokens && outputTokens && (
+                  <span className="text-muted-foreground/60">({inputTokens}↓ {outputTokens}↑)</span>
+                )}
+              </div>
+            )}
+
+            {/* Status indicator */}
+            <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
+          </div>
+
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-10 px-2">
+          <div className="flex-1 relative h-10 px-2 min-w-0">
             {renderSpanBar(node)}
           </div>
         </div>
@@ -211,39 +284,70 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       <CardContent className="p-4">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-base font-semibold">Trace Timeline</h3>
-            <span className="text-xs text-muted-foreground">
-              ({spans.length} span{spans.length !== 1 ? 's' : ''})
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-base font-semibold">Timeline</h3>
+              <span className="text-xs text-muted-foreground">
+                {formatDuration(totalDuration * 1_000_000)} · {spans.length} span{spans.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Expand/Collapse controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={expandAll}
+                className="text-xs px-2 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Expand all
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                onClick={collapseAll}
+                className="text-xs px-2 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Collapse all
+              </button>
+            </div>
           </div>
 
           {/* Legend */}
           <div className="flex items-center gap-3 text-xs">
+            <span className="text-muted-foreground mr-1">Status:</span>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-green-500" />
+              <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-muted-foreground">OK</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-red-500" />
+              <div className="w-2 h-2 rounded-full bg-red-500" />
               <span className="text-muted-foreground">ERROR</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-blue-500" />
-              <span className="text-muted-foreground">INTERNAL</span>
+              <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <span className="text-muted-foreground">UNSET</span>
             </div>
           </div>
         </div>
 
         {/* Timeline */}
         <div className="border rounded-lg overflow-hidden bg-background">
-          {spanTree.map(node => renderSpanNode(node))}
-        </div>
+          {/* Column headers */}
+          <div className="flex items-center bg-muted/50 border-b border-border font-medium text-xs text-muted-foreground">
+            <div className="flex-shrink-0 px-3 py-2" style={{ width: '400px' }}>
+              Span Name
+            </div>
+            <div className="flex items-center gap-3 px-3 py-2 flex-shrink-0">
+              <span style={{ width: '60px' }}>Duration</span>
+              <span style={{ width: '120px' }}>Tokens</span>
+              <span style={{ width: '20px' }}>Status</span>
+            </div>
+            <div className="flex-1 px-2 py-2">
+              Timeline
+            </div>
+          </div>
 
-        {/* Summary */}
-        <div className="mt-4 text-xs text-muted-foreground">
-          Total duration: {formatDuration(totalDuration * 1_000_000)}
+          {/* Span rows */}
+          {spanTree.map(node => renderSpanNode(node))}
         </div>
       </CardContent>
     </Card>
