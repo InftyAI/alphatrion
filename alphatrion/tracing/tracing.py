@@ -98,9 +98,7 @@ def workflow(
 
         inner = async_inner if inspect.iscoroutinefunction(func) else sync_inner
 
-        # Use a placeholder for workflow name - it will be set at runtime via attributes
         traceloop_decorator = _workflow(
-            name=str(run_id) if run_id else "workflow",
             version=version,
             method_name=method_name,
             tlp_span_kind=span_kind,
