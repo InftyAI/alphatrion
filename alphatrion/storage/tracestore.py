@@ -1,3 +1,5 @@
+# ruff: noqa: E501
+
 import logging
 import uuid
 from typing import Any
