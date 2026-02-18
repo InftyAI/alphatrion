@@ -1,13 +1,14 @@
 # ruff: noqa: PLW0603
 import os
 
-# from opentelemetry.sdk.trace.export import ConsoleSpanExporter
-from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
+from opentelemetry import trace
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
 from alphatrion.storage.sqlstore import SQLStore
 from alphatrion.storage.tracestore import TraceStore
+from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
+from alphatrion.tracing.span_processor import ContextAttributesSpanProcessor
 
 __STORAGE_RUNTIME__ = None
 
@@ -38,11 +39,15 @@ class StorageRuntime:
 
             Traceloop.init(
                 app_name="alphatrion",
-                exporter=ClickHouseSpanExporter(self.tracestore),
-                # exporter=ConsoleSpanExporter(),
+                exporter=ClickHouseSpanExporter(self._tracestore),
                 disable_batch=False,  # Enable batching
                 telemetry_enabled=False,
             )
+
+            # Add custom span processor to inject context attributes (run_id, etc.)
+            # into all spans, including child spans created by instrumented libraries
+            tracer_provider = trace.get_tracer_provider()
+            tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
 
         self._inited = True
 
