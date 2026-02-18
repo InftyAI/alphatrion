@@ -222,7 +222,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           {/* Left: Span info with expand button */}
           <div
             className="flex-shrink-0 flex items-center gap-2 py-2 pr-2 min-w-0"
-            style={{ width: '400px', paddingLeft: `${depth * 12 + 8}px` }}
+            style={{ width: '350px', paddingLeft: `${depth * 12 + 8}px` }}
           >
             {/* Tree connector line */}
             {depth > 0 && (
@@ -260,13 +260,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           {/* Middle: Metrics */}
           <div className="flex items-center px-3 text-xs text-muted-foreground flex-shrink-0">
             {/* Duration */}
-            <div className="flex items-center gap-1" style={{ width: '90px' }}>
+            <div className="flex items-center gap-1" style={{ width: '80px' }}>
               <Clock className="h-3 w-3 flex-shrink-0" />
               <span>{formatDuration(span.duration)}</span>
             </div>
 
             {/* Tokens (if available) */}
-            <div className="flex items-center gap-1" style={{ width: '220px' }}>
+            <div className="flex items-center gap-1" style={{ width: '170px' }}>
               {totalTokens && totalTokens > 0 ? (
                 <>
                   <span className="font-mono flex items-center">
@@ -285,7 +285,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
 
             {/* Status indicator */}
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '30px' }}>
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '50px' }}>
               <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
             </div>
           </div>
@@ -366,13 +366,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         <div className="border rounded-lg overflow-hidden bg-background">
           {/* Column headers */}
           <div className="flex items-center bg-muted/50 border-b border-border font-medium text-xs text-muted-foreground">
-            <div className="flex-shrink-0 px-3 py-2" style={{ width: '400px' }}>
+            <div className="flex-shrink-0 px-3 py-2" style={{ width: '350px' }}>
               Span Name
             </div>
             <div className="flex items-center px-3 py-2 flex-shrink-0">
-              <span style={{ width: '90px' }}>Duration</span>
-              <span style={{ width: '220px' }}>Tokens</span>
-              <span style={{ width: '30px', textAlign: 'center' }}>Status</span>
+              <span style={{ width: '80px' }}>Duration</span>
+              <span style={{ width: '170px' }}>Tokens</span>
+              <span style={{ width: '50px', textAlign: 'center' }}>Status</span>
             </div>
             <div className="flex-1 px-2 py-2">
               Timeline
