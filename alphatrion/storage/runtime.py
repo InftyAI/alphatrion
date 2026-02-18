@@ -15,6 +15,7 @@ __STORAGE_RUNTIME__ = None
 
 class StorageRuntime:
     _metadb = None
+    _tracestore = None
     _inited = False
 
     def __init__(self):
