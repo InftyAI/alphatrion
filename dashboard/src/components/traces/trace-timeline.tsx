@@ -258,19 +258,19 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Middle: Metrics */}
-          <div className="flex items-center gap-4 px-3 text-xs text-muted-foreground flex-shrink-0" style={{ minWidth: '280px' }}>
+          <div className="flex items-center px-3 text-xs text-muted-foreground flex-shrink-0">
             {/* Duration */}
-            <div className="flex items-center gap-1" style={{ minWidth: '70px' }}>
-              <Clock className="h-3 w-3" />
+            <div className="flex items-center gap-1" style={{ width: '90px' }}>
+              <Clock className="h-3 w-3 flex-shrink-0" />
               <span>{formatDuration(span.duration)}</span>
             </div>
 
             {/* Tokens (if available) */}
-            <div className="flex items-center gap-1" style={{ minWidth: '150px' }}>
+            <div className="flex items-center gap-1" style={{ width: '220px' }}>
               {totalTokens && totalTokens > 0 ? (
                 <>
-                  <span className="font-mono">
-                    {isAggregated && '∑ '}
+                  <span className="font-mono flex items-center">
+                    {isAggregated && <span className="inline-block align-middle mr-1">∑</span>}
                     {totalTokens.toLocaleString()} tokens
                   </span>
                   {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
@@ -285,7 +285,9 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
 
             {/* Status indicator */}
-            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
+            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '30px' }}>
+              <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
+            </div>
           </div>
 
           {/* Right: Timeline bar */}
@@ -367,10 +369,10 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <div className="flex-shrink-0 px-3 py-2" style={{ width: '400px' }}>
               Span Name
             </div>
-            <div className="flex items-center gap-4 px-3 py-2 flex-shrink-0" style={{ minWidth: '280px' }}>
-              <span style={{ minWidth: '70px' }}>Duration</span>
-              <span style={{ minWidth: '150px' }}>Tokens</span>
-              <span className="flex-shrink-0">Status</span>
+            <div className="flex items-center px-3 py-2 flex-shrink-0">
+              <span style={{ width: '90px' }}>Duration</span>
+              <span style={{ width: '220px' }}>Tokens</span>
+              <span style={{ width: '30px', textAlign: 'center' }}>Status</span>
             </div>
             <div className="flex-1 px-2 py-2">
               Timeline
