@@ -39,7 +39,7 @@ class StorageRuntime:
 
             Traceloop.init(
                 app_name="alphatrion",
-                exporter=ClickHouseSpanExporter(self._tracestore),
+                exporter=ClickHouseSpanExporter(self.tracestore),
                 disable_batch=False,  # Enable batching
                 telemetry_enabled=False,
             )
