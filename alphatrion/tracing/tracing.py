@@ -10,8 +10,7 @@ from traceloop.sdk.decorators import task as _task
 from traceloop.sdk.decorators import workflow as _workflow
 
 from alphatrion import envs
-from alphatrion.run.run import current_run_id
-from alphatrion.experiment.base import current_exp_id
+from alphatrion.runtime.contextvars import current_run_id, current_exp_id
 
 logger = logging.getLogger(__name__)
 

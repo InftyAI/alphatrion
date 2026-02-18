@@ -4,9 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from alphatrion.experiment.base import current_exp_id
-from alphatrion.run.run import current_run_id
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.runtime.contextvars import current_run_id, current_exp_id
 
 """The snapshot is organized in a hierarchical directory structure as follows:
 └── snapshots

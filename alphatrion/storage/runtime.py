@@ -1,7 +1,8 @@
 # ruff: noqa: PLW0603
 import os
 
-from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+# from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
@@ -21,7 +22,7 @@ class StorageRuntime:
 
         self._metadb = SQLStore(
             os.getenv(envs.METADATA_DB_URL),
-            init_tables=os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true",
+            init_tables=os.getenv(envs.METADATA_INIT_TABLES, "false").lower() == "true",
         )
 
         # Disable tracing by default now
@@ -37,8 +38,8 @@ class StorageRuntime:
 
             Traceloop.init(
                 app_name="alphatrion",
-                # exporter=ClickHouseSpanExporter(self.tracestore),
-                exporter=ConsoleSpanExporter(),
+                exporter=ClickHouseSpanExporter(self.tracestore),
+                # exporter=ConsoleSpanExporter(),
                 disable_batch=False,  # Enable batching
                 telemetry_enabled=False,
             )

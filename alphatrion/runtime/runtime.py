@@ -7,6 +7,7 @@ from alphatrion.artifact.artifact import Artifact
 from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sqlstore import SQLStore
 
+
 __RUNTIME__ = None
 
 
