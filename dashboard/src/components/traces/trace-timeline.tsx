@@ -382,11 +382,11 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <div className="mb-4">
               <h5 className="text-sm font-medium mb-2">Model Configuration</h5>
               <div className="grid grid-cols-2 gap-2 text-sm bg-muted/50 rounded p-3">
-                <div>
+                <div className="col-span-2">
                   <span className="text-muted-foreground">Model:</span>
-                  <span className="ml-2 font-mono">{model}</span>
+                  <span className="ml-2 font-mono text-xs">{model}</span>
                 </div>
-                {temperature && (
+                {temperature !== undefined && (
                   <div>
                     <span className="text-muted-foreground">Temperature:</span>
                     <span className="ml-2 font-mono">{temperature}</span>
@@ -398,20 +398,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                     <span className="ml-2 font-mono">{maxTokens}</span>
                   </div>
                 )}
-                {topP && (
+                {topP !== undefined && (
                   <div>
                     <span className="text-muted-foreground">Top P:</span>
                     <span className="ml-2 font-mono">{topP}</span>
                   </div>
                 )}
-                <div>
-                  <span className="text-muted-foreground">Duration:</span>
-                  <span className="ml-2 font-mono">{formatDuration(span.duration)}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className="ml-2">{span.statusCode}</span>
-                </div>
               </div>
             </div>
           )}
@@ -422,7 +414,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
               <h5 className="text-sm font-medium mb-2">Input</h5>
               <div className="space-y-2">
                 {prompts.map((prompt, idx) => (
-                  <div key={idx} className="border rounded p-3">
+                  <div key={idx} className="border rounded p-3 bg-muted/50">
                     <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
                       {prompt.role}
                     </div>
@@ -440,15 +432,8 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
               <div className="space-y-2">
                 {completions.map((completion, idx) => (
                   <div key={idx} className="border rounded p-3 bg-muted/50">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-xs font-medium text-muted-foreground uppercase">
-                        {completion.role}
-                      </div>
-                      {completion.finishReason && (
-                        <Badge variant="secondary" className="text-xs">
-                          {completion.finishReason}
-                        </Badge>
-                      )}
+                    <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
+                      {completion.role}
                     </div>
                     <div className="text-sm whitespace-pre-wrap">{completion.content}</div>
                   </div>
