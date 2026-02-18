@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot, X } from 'lucide-react';
 import type { Span } from '../../types';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 interface TraceTimelineProps {
   spans: Span[];
@@ -53,6 +54,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
   const [expandedSpans, setExpandedSpans] = useState<Set<string>>(() => {
     return new Set(spans.filter(s => !s.parentSpanId || s.parentSpanId === '').map(s => s.spanId));
   });
+  const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
 
   const expandAll = () => {
     const allSpanIds = new Set(spans.map(s => s.spanId));
@@ -218,7 +220,16 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     return (
       <div key={span.spanId}>
         {/* Span Row */}
-        <div className="flex items-center border-b border-border hover:bg-muted/50 transition-colors">
+        <div
+          className={`flex items-center border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${
+            selectedSpan?.spanId === span.spanId ? 'bg-accent' : ''
+          }`}
+          onClick={(e) => {
+            // Don't trigger if clicking expand button
+            if ((e.target as HTMLElement).closest('button')) return;
+            setSelectedSpan(span);
+          }}
+        >
           {/* Left: Span info with expand button */}
           <div
             className="flex-shrink-0 flex items-center gap-2 py-2 pr-2 min-w-0"
@@ -312,6 +323,159 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     );
   }
 
+  const renderSpanDetails = (span: Span) => {
+    const spanType = getSpanType(span);
+    const attrs = span.spanAttributes || {};
+
+    // Extract model parameters
+    const model = attrs['gen_ai.request.model'] || attrs['gen_ai.response.model'];
+    const temperature = attrs['gen_ai.request.temperature'];
+    const maxTokens = attrs['gen_ai.request.max_tokens'];
+    const topP = attrs['gen_ai.request.top_p'];
+
+    // Extract prompts
+    const prompts: Array<{ role: string; content: string }> = [];
+    let i = 0;
+    while (attrs[`gen_ai.prompt.${i}.role`]) {
+      prompts.push({
+        role: attrs[`gen_ai.prompt.${i}.role`] as string,
+        content: attrs[`gen_ai.prompt.${i}.content`] as string,
+      });
+      i++;
+    }
+
+    // Extract completions
+    const completions: Array<{ role: string; content: string; finishReason?: string }> = [];
+    i = 0;
+    while (attrs[`gen_ai.completion.${i}.role`]) {
+      completions.push({
+        role: attrs[`gen_ai.completion.${i}.role`] as string,
+        content: attrs[`gen_ai.completion.${i}.content`] as string,
+        finishReason: attrs[`gen_ai.completion.${i}.finish_reason`] as string,
+      });
+      i++;
+    }
+
+    return (
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-2 py-1`}>
+                {spanType.icon}
+                {spanType.label}
+              </Badge>
+              <h4 className="font-semibold">{span.spanName}</h4>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedSpan(null)}
+              className="h-6 w-6 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Model Parameters */}
+          {model && (
+            <div className="mb-4">
+              <h5 className="text-sm font-medium mb-2">Model Configuration</h5>
+              <div className="grid grid-cols-2 gap-2 text-sm bg-muted/50 rounded p-3">
+                <div>
+                  <span className="text-muted-foreground">Model:</span>
+                  <span className="ml-2 font-mono">{model}</span>
+                </div>
+                {temperature && (
+                  <div>
+                    <span className="text-muted-foreground">Temperature:</span>
+                    <span className="ml-2 font-mono">{temperature}</span>
+                  </div>
+                )}
+                {maxTokens && (
+                  <div>
+                    <span className="text-muted-foreground">Max Tokens:</span>
+                    <span className="ml-2 font-mono">{maxTokens}</span>
+                  </div>
+                )}
+                {topP && (
+                  <div>
+                    <span className="text-muted-foreground">Top P:</span>
+                    <span className="ml-2 font-mono">{topP}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-muted-foreground">Duration:</span>
+                  <span className="ml-2 font-mono">{formatDuration(span.duration)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="ml-2">{span.statusCode}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Prompts */}
+          {prompts.length > 0 && (
+            <div className="mb-4">
+              <h5 className="text-sm font-medium mb-2">Input</h5>
+              <div className="space-y-2">
+                {prompts.map((prompt, idx) => (
+                  <div key={idx} className="border rounded p-3">
+                    <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
+                      {prompt.role}
+                    </div>
+                    <div className="text-sm whitespace-pre-wrap">{prompt.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Completions */}
+          {completions.length > 0 && (
+            <div>
+              <h5 className="text-sm font-medium mb-2">Output</h5>
+              <div className="space-y-2">
+                {completions.map((completion, idx) => (
+                  <div key={idx} className="border rounded p-3 bg-muted/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="text-xs font-medium text-muted-foreground uppercase">
+                        {completion.role}
+                      </div>
+                      {completion.finishReason && (
+                        <Badge variant="secondary" className="text-xs">
+                          {completion.finishReason}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-sm whitespace-pre-wrap">{completion.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show generic attributes if not an LLM call */}
+          {!model && prompts.length === 0 && (
+            <div>
+              <h5 className="text-sm font-medium mb-2">Attributes</h5>
+              <div className="text-xs space-y-1 bg-muted/50 rounded p-3 max-h-60 overflow-auto">
+                {Object.entries(attrs).map(([key, value]) => (
+                  <div key={key} className="grid grid-cols-3 gap-2">
+                    <span className="text-muted-foreground truncate" title={key}>{key}:</span>
+                    <span className="col-span-2 font-mono break-all">{String(value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -382,6 +546,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           {/* Span rows */}
           {spanTree.map(node => renderSpanNode(node))}
         </div>
+
+        {/* Span Detail Panel */}
+        {selectedSpan && (
+          <div className="mt-4">
+            {renderSpanDetails(selectedSpan)}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
