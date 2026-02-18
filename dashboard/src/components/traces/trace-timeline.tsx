@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot, X } from 'lucide-react';
 import type { Span } from '../../types';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 interface TraceTimelineProps {
   spans: Span[];
@@ -53,6 +54,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
   const [expandedSpans, setExpandedSpans] = useState<Set<string>>(() => {
     return new Set(spans.filter(s => !s.parentSpanId || s.parentSpanId === '').map(s => s.spanId));
   });
+  const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
 
   const expandAll = () => {
     const allSpanIds = new Set(spans.map(s => s.spanId));
@@ -194,7 +196,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
     return (
       <div
-        className={`${statusColor} absolute h-6 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
+        className={`${statusColor} absolute h-5 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
         style={{
           left: `${leftPercent}%`,
           width: `${Math.max(widthPercent, 0.5)}%`, // Minimum width for visibility
@@ -218,10 +220,19 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     return (
       <div key={span.spanId}>
         {/* Span Row */}
-        <div className="flex items-center border-b border-border hover:bg-muted/50 transition-colors">
+        <div
+          className={`flex items-center border-b border-border hover:bg-muted/50 transition-colors cursor-pointer ${
+            selectedSpan?.spanId === span.spanId ? 'bg-accent' : ''
+          }`}
+          onClick={(e) => {
+            // Don't trigger if clicking expand button
+            if ((e.target as HTMLElement).closest('button')) return;
+            setSelectedSpan(span);
+          }}
+        >
           {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-2 py-2 pr-2 min-w-0"
+            className="flex-shrink-0 flex items-center gap-2 py-1.5 pr-2 min-w-0"
             style={{ width: '350px', paddingLeft: `${depth * 12 + 8}px` }}
           >
             {/* Tree connector line */}
@@ -283,15 +294,10 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                 <span className="text-muted-foreground/40">—</span>
               )}
             </div>
-
-            {/* Status indicator */}
-            <div className="flex items-center justify-center flex-shrink-0" style={{ width: '50px' }}>
-              <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
-            </div>
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-10 px-2 min-w-0">
+          <div className="flex-1 relative h-8 px-2 min-w-0 flex items-center">
             {renderSpanBar(node)}
           </div>
         </div>
@@ -312,11 +318,149 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     );
   }
 
+  const renderSpanDetails = (span: Span) => {
+    const spanType = getSpanType(span);
+    const attrs = span.spanAttributes || {};
+
+    // Extract model parameters
+    const model = attrs['gen_ai.request.model'] || attrs['gen_ai.response.model'];
+    const temperature = attrs['gen_ai.request.temperature'];
+    const maxTokens = attrs['gen_ai.request.max_tokens'];
+    const topP = attrs['gen_ai.request.top_p'];
+
+    // Extract prompts
+    const prompts: Array<{ role: string; content: string }> = [];
+    let i = 0;
+    while (attrs[`gen_ai.prompt.${i}.role`]) {
+      prompts.push({
+        role: attrs[`gen_ai.prompt.${i}.role`] as string,
+        content: attrs[`gen_ai.prompt.${i}.content`] as string,
+      });
+      i++;
+    }
+
+    // Extract completions
+    const completions: Array<{ role: string; content: string; finishReason?: string }> = [];
+    i = 0;
+    while (attrs[`gen_ai.completion.${i}.role`]) {
+      completions.push({
+        role: attrs[`gen_ai.completion.${i}.role`] as string,
+        content: attrs[`gen_ai.completion.${i}.content`] as string,
+        finishReason: attrs[`gen_ai.completion.${i}.finish_reason`] as string,
+      });
+      i++;
+    }
+
+    return (
+      <Card className="mb-3">
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-1.5 py-0.5 text-xs`}>
+                {spanType.icon}
+                {spanType.label}
+              </Badge>
+              <h4 className="font-semibold text-sm">{span.spanName}</h4>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedSpan(null)}
+              className="h-5 w-5 p-0"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+
+          {/* Model Parameters */}
+          {model && (
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Model Configuration</h5>
+              <div className="grid grid-cols-2 gap-2 text-xs border rounded p-2 bg-muted/50">
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Model:</span>
+                  <span className="ml-2 font-mono">{model}</span>
+                </div>
+                {temperature !== undefined && (
+                  <div>
+                    <span className="text-muted-foreground">Temperature:</span>
+                    <span className="ml-2 font-mono">{temperature}</span>
+                  </div>
+                )}
+                {maxTokens && (
+                  <div>
+                    <span className="text-muted-foreground">Max Tokens:</span>
+                    <span className="ml-2 font-mono">{maxTokens}</span>
+                  </div>
+                )}
+                {topP !== undefined && (
+                  <div>
+                    <span className="text-muted-foreground">Top P:</span>
+                    <span className="ml-2 font-mono">{topP}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Prompts */}
+          {prompts.length > 0 && (
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Input</h5>
+              <div className="space-y-1.5">
+                {prompts.map((prompt, idx) => (
+                  <div key={idx} className="border rounded p-2 bg-muted/50">
+                    <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
+                      {prompt.role}
+                    </div>
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{prompt.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Completions */}
+          {completions.length > 0 && (
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Output</h5>
+              <div className="space-y-1.5">
+                {completions.map((completion, idx) => (
+                  <div key={idx} className="border rounded p-2 bg-muted/50">
+                    <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
+                      {completion.role}
+                    </div>
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{completion.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Show all attributes (collapsible) */}
+          <details className="mt-2">
+            <summary className="text-xs font-medium cursor-pointer hover:text-foreground text-muted-foreground py-1">
+              All Attributes ({Object.keys(attrs).length})
+            </summary>
+            <div className="mt-1.5 text-xs space-y-0.5 bg-muted/50 rounded p-2 max-h-48 overflow-auto">
+              {Object.entries(attrs).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-3 gap-2">
+                  <span className="text-muted-foreground truncate" title={key}>{key}:</span>
+                  <span className="col-span-2 font-mono break-all text-xs">{String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -346,7 +490,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
           {/* Legend */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-muted-foreground mr-1">Status:</span>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-muted-foreground">OK</span>
@@ -366,15 +509,14 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         <div className="border rounded-lg overflow-hidden bg-background">
           {/* Column headers */}
           <div className="flex items-center bg-muted/50 border-b border-border font-medium text-xs text-muted-foreground">
-            <div className="flex-shrink-0 px-3 py-2" style={{ width: '350px' }}>
+            <div className="flex-shrink-0 px-3 py-1.5" style={{ width: '350px' }}>
               Span Name
             </div>
-            <div className="flex items-center px-3 py-2 flex-shrink-0">
+            <div className="flex items-center px-3 py-1.5 flex-shrink-0">
               <span style={{ width: '80px' }}>Duration</span>
               <span style={{ width: '170px' }}>Tokens</span>
-              <span style={{ width: '50px', textAlign: 'center' }}>Status</span>
             </div>
-            <div className="flex-1 px-2 py-2">
+            <div className="flex-1 px-2 py-1.5">
               Timeline
             </div>
           </div>
@@ -382,6 +524,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           {/* Span rows */}
           {spanTree.map(node => renderSpanNode(node))}
         </div>
+
+        {/* Span Detail Panel */}
+        {selectedSpan && (
+          <div className="mt-3">
+            {renderSpanDetails(selectedSpan)}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
