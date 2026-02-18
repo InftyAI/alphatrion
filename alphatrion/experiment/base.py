@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from alphatrion.run.run import Run
-from alphatrion.runtime.runtime import global_runtime
 from alphatrion.runtime.contextvars import current_exp_id
+from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.types import CallableEntry
 from alphatrion.utils import context

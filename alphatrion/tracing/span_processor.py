@@ -1,4 +1,5 @@
 import logging
+
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 

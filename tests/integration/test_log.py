@@ -10,8 +10,8 @@ import pytest
 
 import alphatrion as alpha
 from alphatrion import experiment, project
-from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.log.log import BEST_RESULT_PATH
+from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.snapshot import snapshot
 from alphatrion.storage.sql_models import Status
 

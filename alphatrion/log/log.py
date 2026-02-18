@@ -3,8 +3,8 @@ import os
 from collections.abc import Callable
 from typing import Any
 
-from alphatrion.runtime.runtime import global_runtime
 from alphatrion.runtime.contextvars import current_exp_id, current_run_id
+from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
     ExecutionKind,
     build_run_execution,

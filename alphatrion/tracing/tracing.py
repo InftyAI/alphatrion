@@ -42,7 +42,7 @@ def workflow(
 
     def decorator(func):
         return _workflow(
-            name = str(run_id) if run_id else None,
+            name=str(run_id) if run_id else None,
             version=version,
             method_name=method_name,
             tlp_span_kind=span_kind,
