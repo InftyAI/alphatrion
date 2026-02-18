@@ -196,7 +196,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
     return (
       <div
-        className={`${statusColor} absolute h-6 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
+        className={`${statusColor} absolute h-5 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
         style={{
           left: `${leftPercent}%`,
           width: `${Math.max(widthPercent, 0.5)}%`, // Minimum width for visibility
@@ -232,7 +232,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         >
           {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-2 py-2 pr-2 min-w-0"
+            className="flex-shrink-0 flex items-center gap-2 py-1.5 pr-2 min-w-0"
             style={{ width: '350px', paddingLeft: `${depth * 12 + 8}px` }}
           >
             {/* Tree connector line */}
@@ -302,7 +302,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-10 px-2 min-w-0">
+          <div className="flex-1 relative h-8 px-2 min-w-0">
             {renderSpanBar(node)}
           </div>
         </div>
@@ -357,34 +357,34 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     }
 
     return (
-      <Card className="mb-4">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-4">
+      <Card className="mb-3">
+        <CardContent className="p-3">
+          <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-2 py-1`}>
+              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-1.5 py-0.5 text-xs`}>
                 {spanType.icon}
                 {spanType.label}
               </Badge>
-              <h4 className="font-semibold">{span.spanName}</h4>
+              <h4 className="font-semibold text-sm">{span.spanName}</h4>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedSpan(null)}
-              className="h-6 w-6 p-0"
+              className="h-5 w-5 p-0"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3" />
             </Button>
           </div>
 
           {/* Model Parameters */}
           {model && (
-            <div className="mb-4">
-              <h5 className="text-sm font-medium mb-2">Model Configuration</h5>
-              <div className="grid grid-cols-2 gap-2 text-sm bg-muted/50 rounded p-3">
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Model Configuration</h5>
+              <div className="grid grid-cols-2 gap-2 text-xs border rounded p-2 bg-muted/50">
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Model:</span>
-                  <span className="ml-2 font-mono text-xs">{model}</span>
+                  <span className="ml-2 font-mono">{model}</span>
                 </div>
                 {temperature !== undefined && (
                   <div>
@@ -410,15 +410,15 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
           {/* Prompts */}
           {prompts.length > 0 && (
-            <div className="mb-4">
-              <h5 className="text-sm font-medium mb-2">Input</h5>
-              <div className="space-y-2">
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Input</h5>
+              <div className="space-y-1.5">
                 {prompts.map((prompt, idx) => (
-                  <div key={idx} className="border rounded p-3 bg-muted/50">
+                  <div key={idx} className="border rounded p-2 bg-muted/50">
                     <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
                       {prompt.role}
                     </div>
-                    <div className="text-sm whitespace-pre-wrap">{prompt.content}</div>
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{prompt.content}</div>
                   </div>
                 ))}
               </div>
@@ -427,35 +427,35 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
           {/* Completions */}
           {completions.length > 0 && (
-            <div>
-              <h5 className="text-sm font-medium mb-2">Output</h5>
-              <div className="space-y-2">
+            <div className="mb-3">
+              <h5 className="text-xs font-medium mb-1.5 text-muted-foreground">Output</h5>
+              <div className="space-y-1.5">
                 {completions.map((completion, idx) => (
-                  <div key={idx} className="border rounded p-3 bg-muted/50">
+                  <div key={idx} className="border rounded p-2 bg-muted/50">
                     <div className="text-xs font-medium text-muted-foreground mb-1 uppercase">
                       {completion.role}
                     </div>
-                    <div className="text-sm whitespace-pre-wrap">{completion.content}</div>
+                    <div className="text-xs whitespace-pre-wrap leading-relaxed">{completion.content}</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Show generic attributes if not an LLM call */}
-          {!model && prompts.length === 0 && (
-            <div>
-              <h5 className="text-sm font-medium mb-2">Attributes</h5>
-              <div className="text-xs space-y-1 bg-muted/50 rounded p-3 max-h-60 overflow-auto">
-                {Object.entries(attrs).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-3 gap-2">
-                    <span className="text-muted-foreground truncate" title={key}>{key}:</span>
-                    <span className="col-span-2 font-mono break-all">{String(value)}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Show all attributes (collapsible) */}
+          <details className="mt-2">
+            <summary className="text-xs font-medium cursor-pointer hover:text-foreground text-muted-foreground py-1">
+              All Attributes ({Object.keys(attrs).length})
+            </summary>
+            <div className="mt-1.5 text-xs space-y-0.5 bg-muted/50 rounded p-2 max-h-48 overflow-auto">
+              {Object.entries(attrs).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-3 gap-2">
+                  <span className="text-muted-foreground truncate" title={key}>{key}:</span>
+                  <span className="col-span-2 font-mono break-all text-xs">{String(value)}</span>
+                </div>
+              ))}
             </div>
-          )}
+          </details>
         </CardContent>
       </Card>
     );
@@ -463,9 +463,9 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-3">
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -515,15 +515,15 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         <div className="border rounded-lg overflow-hidden bg-background">
           {/* Column headers */}
           <div className="flex items-center bg-muted/50 border-b border-border font-medium text-xs text-muted-foreground">
-            <div className="flex-shrink-0 px-3 py-2" style={{ width: '350px' }}>
+            <div className="flex-shrink-0 px-3 py-1.5" style={{ width: '350px' }}>
               Span Name
             </div>
-            <div className="flex items-center px-3 py-2 flex-shrink-0">
+            <div className="flex items-center px-3 py-1.5 flex-shrink-0">
               <span style={{ width: '80px' }}>Duration</span>
               <span style={{ width: '170px' }}>Tokens</span>
               <span style={{ width: '50px', textAlign: 'center' }}>Status</span>
             </div>
-            <div className="flex-1 px-2 py-2">
+            <div className="flex-1 px-2 py-1.5">
               Timeline
             </div>
           </div>
@@ -534,7 +534,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
         {/* Span Detail Panel */}
         {selectedSpan && (
-          <div className="mt-4">
+          <div className="mt-3">
             {renderSpanDetails(selectedSpan)}
           </div>
         )}
