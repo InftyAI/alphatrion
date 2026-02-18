@@ -12,7 +12,9 @@ interface SpanNode {
   span: Span;
   children: SpanNode[];
   depth: number;
-  totalCost?: number;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 // Status color mapping
@@ -106,7 +108,29 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       nodes.forEach(node => sortChildren(node.children));
     };
 
+    // Aggregate tokens bottom-up (like Langfuse does for costs)
+    const aggregateTokens = (node: SpanNode): void => {
+      // First aggregate children
+      node.children.forEach(child => aggregateTokens(child));
+
+      // Get own tokens
+      const ownInputTokens = parseInt(node.span.spanAttributes?.['gen_ai.usage.input_tokens'] as string) || 0;
+      const ownOutputTokens = parseInt(node.span.spanAttributes?.['gen_ai.usage.output_tokens'] as string) || 0;
+      const ownTotalTokens = parseInt(node.span.spanAttributes?.['llm.usage.total_tokens'] as string) || 0;
+
+      // Sum children tokens
+      const childInputTokens = node.children.reduce((sum, child) => sum + (child.inputTokens || 0), 0);
+      const childOutputTokens = node.children.reduce((sum, child) => sum + (child.outputTokens || 0), 0);
+      const childTotalTokens = node.children.reduce((sum, child) => sum + (child.totalTokens || 0), 0);
+
+      // Aggregate
+      node.inputTokens = ownInputTokens + childInputTokens;
+      node.outputTokens = ownOutputTokens + childOutputTokens;
+      node.totalTokens = ownTotalTokens + childTotalTokens;
+    };
+
     sortChildren(rootSpans);
+    rootSpans.forEach(node => aggregateTokens(node));
     return rootSpans;
   }, [spans]);
 
@@ -183,15 +207,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
   };
 
   const renderSpanNode = (node: SpanNode): JSX.Element => {
-    const { span, children, depth } = node;
+    const { span, children, depth, totalTokens, inputTokens, outputTokens } = node;
     const hasChildren = children.length > 0;
     const isExpanded = expandedSpans.has(span.spanId);
     const spanType = getSpanType(span);
 
-    // Extract token information if available
-    const inputTokens = span.spanAttributes?.['gen_ai.usage.input_tokens'];
-    const outputTokens = span.spanAttributes?.['gen_ai.usage.output_tokens'];
-    const totalTokens = span.spanAttributes?.['llm.usage.total_tokens'];
+    // Show aggregated tokens if has children, otherwise own tokens
+    const isAggregated = hasChildren && totalTokens && totalTokens > 0;
 
     return (
       <div key={span.spanId}>
@@ -236,25 +258,34 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Middle: Metrics */}
-          <div className="flex items-center gap-3 px-3 text-xs text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-4 px-3 text-xs text-muted-foreground flex-shrink-0" style={{ minWidth: '280px' }}>
             {/* Duration */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1" style={{ minWidth: '70px' }}>
               <Clock className="h-3 w-3" />
               <span>{formatDuration(span.duration)}</span>
             </div>
 
             {/* Tokens (if available) */}
-            {totalTokens && (
-              <div className="flex items-center gap-1">
-                <span className="font-mono">{totalTokens} tokens</span>
-                {inputTokens && outputTokens && (
-                  <span className="text-muted-foreground/60">({inputTokens}↓ {outputTokens}↑)</span>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-1" style={{ minWidth: '150px' }}>
+              {totalTokens && totalTokens > 0 ? (
+                <>
+                  <span className="font-mono">
+                    {isAggregated && '∑ '}
+                    {totalTokens.toLocaleString()} tokens
+                  </span>
+                  {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
+                    <span className="text-muted-foreground/60">
+                      ({inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑)
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-muted-foreground/40">—</span>
+              )}
+            </div>
 
             {/* Status indicator */}
-            <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[span.statusCode] || STATUS_COLORS['UNSET']}`} title={span.statusCode} />
           </div>
 
           {/* Right: Timeline bar */}
@@ -336,10 +367,10 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <div className="flex-shrink-0 px-3 py-2" style={{ width: '400px' }}>
               Span Name
             </div>
-            <div className="flex items-center gap-3 px-3 py-2 flex-shrink-0">
-              <span style={{ width: '60px' }}>Duration</span>
-              <span style={{ width: '120px' }}>Tokens</span>
-              <span style={{ width: '20px' }}>Status</span>
+            <div className="flex items-center gap-4 px-3 py-2 flex-shrink-0" style={{ minWidth: '280px' }}>
+              <span style={{ minWidth: '70px' }}>Duration</span>
+              <span style={{ minWidth: '150px' }}>Tokens</span>
+              <span className="flex-shrink-0">Status</span>
             </div>
             <div className="flex-1 px-2 py-2">
               Timeline
