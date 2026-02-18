@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useRun } from '../../hooks/use-runs';
 import { useMetrics } from '../../hooks/use-metrics';
 import { useArtifactContent } from '../../hooks/use-artifacts';
+import { useTraces } from '../../hooks/use-traces';
 import {
   Card,
   CardContent,
@@ -20,6 +21,8 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { TraceTimeline } from '../../components/traces/trace-timeline';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Copy, Check } from 'lucide-react';
 import type { Status } from '../../types';
@@ -38,9 +41,14 @@ export function RunDetailPage() {
 
   const { data: run, isLoading: runLoading, error: runError } = useRun(id!);
   const { data: metrics, isLoading: metricsLoading } = useMetrics(run?.experimentId || '');
+  const { data: traces, isLoading: tracesLoading, error: tracesError } = useTraces(id!);
+
+  // Debug: Log traces data
+  console.log('Traces data:', { traces, isLoading: tracesLoading, error: tracesError, runId: id });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Filter metrics for this specific run
   const runMetrics = metrics?.filter(m => m.runId === id) || [];
@@ -175,10 +183,19 @@ export function RunDetailPage() {
         </Badge>
       </div>
 
-      {/* Run Details */}
-      <Card>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="traces">Traces</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          {/* Run Overview */}
+          <Card>
         <CardContent className="p-4">
-          <h3 className="text-base font-semibold mb-3">Details</h3>
+          <h3 className="text-base font-semibold mb-3">Overview</h3>
           <dl className="grid grid-cols-3 gap-3 text-sm">
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execution Result</dt>
@@ -226,28 +243,57 @@ export function RunDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Metrics */}
-      <Card>
-        <CardContent className="p-4">
-          <h3 className="text-base font-semibold mb-3">Metrics</h3>
-          {metricsLoading ? (
-            <Skeleton className="h-32 w-full" />
-          ) : runMetrics.length === 0 ? (
-            <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-              No metrics logged for this run
-            </div>
-          ) : (
-            <dl className="grid grid-cols-3 gap-3 text-sm">
-              {runMetrics.map((metric) => (
-                <div key={metric.id}>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.key}</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm">{metric.value}</dd>
+          {/* Metrics */}
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-base font-semibold mb-3">Metrics</h3>
+              {metricsLoading ? (
+                <Skeleton className="h-32 w-full" />
+              ) : runMetrics.length === 0 ? (
+                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                  No metrics logged for this run
                 </div>
-              ))}
-            </dl>
+              ) : (
+                <dl className="grid grid-cols-3 gap-3 text-sm">
+                  {runMetrics.map((metric) => (
+                    <div key={metric.id}>
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.key}</dt>
+                      <dd className="mt-1.5 text-foreground font-mono text-sm">{metric.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Traces Tab */}
+        <TabsContent value="traces">
+          {tracesLoading ? (
+            <Card>
+              <CardContent className="p-4">
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          ) : tracesError ? (
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-red-500">Error loading traces: {tracesError.message}</div>
+              </CardContent>
+            </Card>
+          ) : traces && traces.length > 0 ? (
+            <TraceTimeline spans={traces} />
+          ) : (
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                  No traces available for this run
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Artifact Content Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -68,6 +68,23 @@ services:
       - "5001:5000"
 #     volumes:
 #       - oras-data:/data
-# volumes:
+  clickhouse:
+    container_name: clickhouse
+    image: clickhouse/clickhouse-server:24-alpine
+    ports:
+      - "9000:9000"  # Native protocol
+      - "8123:8123"  # HTTP interface
+    environment:
+      CLICKHOUSE_DB: alphatrion_traces
+      CLICKHOUSE_USER: alphatrion
+      CLICKHOUSE_PASSWORD: alphatr1on
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+volumes:
+  clickhouse_data:
 #   pg_data:
 #   oras-data:

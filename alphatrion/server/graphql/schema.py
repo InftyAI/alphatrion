@@ -12,6 +12,7 @@ from alphatrion.server.graphql.types import (
     Project,
     RemoveUserFromTeamInput,
     Run,
+    Span,
     Team,
     UpdateUserInput,
     User,
@@ -83,6 +84,11 @@ class Query:
         )
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
+
+    # Trace queries
+    @strawberry.field
+    def traces(self, run_id: strawberry.ID) -> list[Span]:
+        return GraphQLResolvers.list_traces(run_id=run_id)
 
     # Artifact queries
     @strawberry.field

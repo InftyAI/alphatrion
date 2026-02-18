@@ -21,6 +21,7 @@ dependencies = [
     "fastapi>=0.121.2",
     "rich>=14.2.0",
     "httpx>=0.28.1",
+    "clickhouse-connect>=0.7.0",
 ]
 
 [dependency-groups]

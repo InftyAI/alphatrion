@@ -1,8 +1,12 @@
 # ruff: noqa: PLW0603
 import os
 
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter
+from traceloop.sdk import Traceloop
+
 from alphatrion import envs
 from alphatrion.storage.sqlstore import SQLStore
+from alphatrion.storage.tracestore import TraceStore
 
 __STORAGE_RUNTIME__ = None
 
@@ -15,15 +19,39 @@ class StorageRuntime:
         if self._inited:
             return
 
-        init_tables = os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true"
         self._metadb = SQLStore(
-            os.getenv(envs.METADATA_DB_URL), init_tables=init_tables
+            os.getenv(envs.METADATA_DB_URL),
+            init_tables=os.getenv(envs.INIT_METADATA_TABLES, "false").lower() == "true",
         )
+
+        # Disable tracing by default now
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() == "true":
+            self._tracestore = TraceStore(
+                host=os.getenv(envs.CLICKHOUSE_URL, "localhost:8123"),
+                database=os.getenv(envs.CLICKHOUSE_DATABASE, "alphatrion_traces"),
+                username=os.getenv(envs.CLICKHOUSE_USERNAME, "alphatrion"),
+                password=os.getenv(envs.CLICKHOUSE_PASSWORD, "alphatr1on"),
+                init_tables=os.getenv(envs.CLICKHOUSE_INIT_TABLES, "false").lower()
+                == "true",
+            )
+
+            Traceloop.init(
+                app_name="alphatrion",
+                # exporter=ClickHouseSpanExporter(self.tracestore),
+                exporter=ConsoleSpanExporter(),
+                disable_batch=False,  # Enable batching
+                telemetry_enabled=False,
+            )
+
         self._inited = True
 
     @property
     def metadb(self):
         return self._metadb
+
+    @property
+    def tracestore(self):
+        return self._tracestore
 
 
 def init():
