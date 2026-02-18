@@ -1,7 +1,8 @@
 import asyncio
 import uuid
 
-from alphatrion.runtime.runtime import global_runtime, current_run_id
+from alphatrion.runtime.runtime import global_runtime
+from alphatrion.runtime.contextvars import current_run_id
 from alphatrion.storage.sql_models import Status
 from alphatrion.types import CallableEntry
 

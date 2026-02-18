@@ -14,16 +14,59 @@ from alphatrion.runtime.contextvars import current_run_id, current_exp_id
 
 logger = logging.getLogger(__name__)
 
+
+def _set_span_attributes(run_id: uuid.UUID) -> None:
+    """Helper to set span attributes for ClickHouse storage."""
+    if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+        return
+
+    try:
+        from alphatrion.runtime.runtime import global_runtime
+
+        runtime = global_runtime()
+        span = trace.get_current_span()
+        if span.is_recording():
+            span.set_attribute("run_id", str(run_id))
+            span.set_attribute("project_id", str(runtime.current_proj.id))
+            span.set_attribute("team_id", str(runtime.team_id))
+            span.set_attribute("experiment_id", str(current_exp_id.get()))
+    except (RuntimeError, AttributeError) as e:
+        logger.debug(f"Could not set span attributes: {e}")
+
+
+def _create_tracing_wrapper(func, traceloop_decorator):
+    """Create a wrapper that sets span attributes and applies traceloop decorator."""
+
+    @wraps(func)
+    async def async_inner(*args, **kwargs):
+        _set_span_attributes(current_run_id.get())
+        return await func(*args, **kwargs)
+
+    @wraps(func)
+    def sync_inner(*args, **kwargs):
+        _set_span_attributes(current_run_id.get())
+        return func(*args, **kwargs)
+
+    inner = async_inner if inspect.iscoroutinefunction(func) else sync_inner
+    return traceloop_decorator(inner)
+
+
 def task(
     version: int | None = None,
     method_name: str | None = None,
-    tlp_span_kind: TraceloopSpanKindValues | None = TraceloopSpanKindValues.TASK,
+    span_kind: TraceloopSpanKindValues | None = TraceloopSpanKindValues.TASK,
 ):
-    return _task(
-        version=version,
-        method_name=method_name,
-        tlp_span_kind=tlp_span_kind,
-    )
+    """Task decorator that sets trace attributes for ClickHouse storage."""
+
+    def decorator(func):
+        traceloop_decorator = _task(
+            version=version,
+            method_name=method_name,
+            tlp_span_kind=span_kind,
+        )
+        return _create_tracing_wrapper(func, traceloop_decorator)
+
+    return decorator
 
 
 def workflow(
@@ -33,90 +76,34 @@ def workflow(
     span_kind: TraceloopSpanKindValues | None = TraceloopSpanKindValues.WORKFLOW,
 ):
     """Workflow decorator with default run_id from context var.
+
     :param run_id: The run ID to use for the workflow as the identify name.
-                   If None, use the current run ID from context var, only for tests.
+                   If None, use the current run ID from context var.
     """
 
     def decorator(func):
         @wraps(func)
-        async def async_wrapper(*args, **kwargs):
+        async def async_inner(*args, **kwargs):
             actual_run_id = run_id or current_run_id.get()
-
-            # Create an inner wrapper that sets span attributes
-            @wraps(func)
-            async def inner_wrapper(*inner_args, **inner_kwargs):
-                # Set span attributes within the workflow span context
-                if os.getenv(envs.ENABLE_TRACING, "false").lower() == "true":
-                    try:
-                        from alphatrion.runtime.runtime import global_runtime
-
-                        runtime = global_runtime()
-                        span = trace.get_current_span()
-                        if span.is_recording():
-                            span.set_attribute("run_id", str(actual_run_id))
-                            span.set_attribute(
-                                "project_id", str(runtime.current_proj.id)
-                            )
-                            span.set_attribute("team_id", str(runtime.team_id))
-                            span.set_attribute("experiment_id", str(current_exp_id.get()))
-                    except (RuntimeError, AttributeError) as e:
-                        logger.debug(f"Could not set span attributes: {e}")
-
-                # Call the original function
-                return await func(*inner_args, **inner_kwargs)
-
-            # Wrap the inner function with traceloop workflow decorator
-            wrapped_func = _workflow(
-                name=str(actual_run_id),
-                version=version,
-                method_name=method_name,
-                tlp_span_kind=span_kind,
-            )(inner_wrapper)
-
-            # Execute the wrapped function
-            return await wrapped_func(*args, **kwargs)
+            _set_span_attributes(actual_run_id)
+            return await func(*args, **kwargs)
 
         @wraps(func)
-        def sync_wrapper(*args, **kwargs):
+        def sync_inner(*args, **kwargs):
             actual_run_id = run_id or current_run_id.get()
+            _set_span_attributes(actual_run_id)
+            return func(*args, **kwargs)
 
-            # Create an inner wrapper that sets span attributes
-            @wraps(func)
-            def inner_wrapper(*inner_args, **inner_kwargs):
-                # Set span attributes within the workflow span context
-                if os.getenv(envs.ENABLE_TRACING, "false").lower() == "true":
-                    try:
-                        from alphatrion.runtime.runtime import global_runtime
+        inner = async_inner if inspect.iscoroutinefunction(func) else sync_inner
 
-                        runtime = global_runtime()
-                        span = trace.get_current_span()
-                        if span.is_recording():
-                            span.set_attribute("run_id", str(actual_run_id))
-                            span.set_attribute(
-                                "project_id", str(runtime.current_proj.id)
-                            )
-                            span.set_attribute("team_id", str(runtime.team_id))
-                            span.set_attribute("experiment_id", str(current_exp_id.get()))
-                    except (RuntimeError, AttributeError) as e:
-                        logger.debug(f"Could not set span attributes: {e}")
+        # Use a placeholder for workflow name - it will be set at runtime via attributes
+        traceloop_decorator = _workflow(
+            name=str(run_id) if run_id else "workflow",
+            version=version,
+            method_name=method_name,
+            tlp_span_kind=span_kind,
+        )
 
-                # Call the original function
-                return func(*inner_args, **inner_kwargs)
-
-            # Wrap the inner function with traceloop workflow decorator
-            wrapped_func = _workflow(
-                name=str(actual_run_id),
-                version=version,
-                method_name=method_name,
-                tlp_span_kind=span_kind,
-            )(inner_wrapper)
-
-            # Execute the wrapped function
-            return wrapped_func(*args, **kwargs)
-
-        if inspect.iscoroutinefunction(func):
-            return async_wrapper
-        else:
-            return sync_wrapper
+        return traceloop_decorator(inner)
 
     return decorator
