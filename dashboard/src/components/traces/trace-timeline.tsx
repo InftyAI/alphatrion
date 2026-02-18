@@ -19,10 +19,11 @@ interface SpanNode {
 }
 
 // Status color mapping
+// Note: UNSET is the default OpenTelemetry status (not an error)
 const STATUS_COLORS: Record<string, string> = {
   'OK': 'bg-green-500',
   'ERROR': 'bg-red-500',
-  'UNSET': 'bg-gray-400',
+  'UNSET': 'bg-green-500', // Treat UNSET as successful (default behavior)
 };
 
 // Span type detection and styling
@@ -492,15 +493,11 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-muted-foreground">OK</span>
+              <span className="text-muted-foreground">Success</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-muted-foreground">ERROR</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-gray-400" />
-              <span className="text-muted-foreground">UNSET</span>
+              <span className="text-muted-foreground">Error</span>
             </div>
           </div>
         </div>
