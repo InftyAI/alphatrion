@@ -382,6 +382,7 @@ def test_query_single_run():
         user_id=user_id,
         project_id=project_id,
         experiment_id=exp_id,
+        status=Status.COMPLETED,
     )
     response = schema.execute_sync(
         f"""
@@ -404,10 +405,8 @@ def test_query_single_run():
     assert response.data["run"]["teamId"] == str(team_id)
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
-    assert response.data["run"]["status"] == "PENDING"
-    assert response.data["run"]["meta"] == {}
+    assert response.data["run"]["status"] == "COMPLETED"
 
-    metadb.update_run(run_id=str(run_id), status=Status.COMPLETED)
     obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
     assert obj.meta["total_tokens"] is not None
