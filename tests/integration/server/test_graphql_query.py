@@ -400,7 +400,6 @@ async def test_query_single_run():
     user_id = uuid.uuid4()
     init(team_id=team_id, user_id=user_id)
 
-
     async with project.Project.setup(
         name="Test Project", description="A project for testing"
     ) as proj:
