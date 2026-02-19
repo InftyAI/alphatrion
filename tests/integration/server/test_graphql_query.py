@@ -398,14 +398,14 @@ async def create_joke():
 async def test_query_single_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
 
     init(team_id=team_id, user_id=user_id)
     async with project.Project.setup(
         name="Test Project", description="A project for testing"
-    ):
+    ) as project:
+        project_id = project.id
         async with CraftExperiment.start(
             name="Test Experiment",
         ) as exp:
@@ -438,7 +438,7 @@ async def test_query_single_run():
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
     assert response.data["run"]["status"] == "COMPLETED"
-    assert len(response.data["run"]["traces"]) > 0
+    assert len(response.data["run"]["spans"]) > 0
 
     obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
