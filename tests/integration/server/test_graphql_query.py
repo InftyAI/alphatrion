@@ -2,6 +2,7 @@
 
 # test query from graphql endpoint
 
+import asyncio
 import uuid
 from datetime import datetime, timedelta
 
@@ -384,12 +385,13 @@ client = OpenAI(
 
 
 @tracing.workflow()
-def create_joke():
-    completion = client.chat.completions.create(
+async def create_joke():
+    completion = await client.chat.completions.create(
         model="smollm:135m",
         messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
     )
-    return completion.choices[0].message.content
+    print(completion.choices[0].message.content)
+    await asyncio.sleep(0.1)  # Simulate some work
 
 
 @pytest.mark.asyncio
