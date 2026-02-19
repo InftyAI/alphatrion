@@ -38,10 +38,13 @@ class StorageRuntime:
                 == "true",
             )
 
+            enable_batch = (
+                os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
+            )
             Traceloop.init(
                 app_name="alphatrion",
                 exporter=ClickHouseSpanExporter(self.tracestore),
-                disable_batch=False,  # Enable batching
+                disable_batch=not enable_batch,
                 telemetry_enabled=False,
             )
 
