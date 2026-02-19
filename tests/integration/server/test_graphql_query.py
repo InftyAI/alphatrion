@@ -4,10 +4,17 @@
 
 import uuid
 from datetime import datetime, timedelta
+from openai import OpenAI
+import pytest
 
+from alphatrion import experiment, project
+from alphatrion.experiment.craft_experiment import CraftExperiment
+from alphatrion.runtime.runtime import init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
+from alphatrion.tracing import tracing
+from alphatrion.run.run import current_run_id
 
 
 def test_query_single_team():
@@ -369,21 +376,36 @@ def test_query_experiments():
     assert response.errors is None
     assert len(response.data["experiments"]) == 2
 
+client = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="",
+)
 
-def test_query_single_run():
-    runtime.init()
+@tracing.workflow()
+def create_joke():
+    completion = client.chat.completions.create(
+        model="smollm:135m",
+        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
+    )
+    return completion.choices[0].message.content
+
+
+@pytest.mark.asyncio
+async def test_query_single_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     project_id = uuid.uuid4()
     exp_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
-    run_id = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
-        project_id=project_id,
-        experiment_id=exp_id,
-        status=Status.COMPLETED,
-    )
+
+    init(team_id=team_id, user_id=user_id)
+    async with project.setup(name="Test Project", description="A project for testing"):
+        async with CraftExperiment.start(
+            name="Test Experiment",
+        ) as exp:
+            run = exp.run(create_joke)
+            run_id = run.id
+
     response = schema.execute_sync(
         f"""
     query {{
