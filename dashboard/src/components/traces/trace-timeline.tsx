@@ -197,7 +197,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
     return (
       <div
-        className={`${statusColor} absolute h-5 rounded flex items-center px-1 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
+        className={`${statusColor} absolute h-6 rounded flex items-center px-2 text-white text-xs font-medium overflow-hidden transition-opacity hover:opacity-90 cursor-pointer shadow-sm`}
         style={{
           left: `${leftPercent}%`,
           width: `${Math.max(widthPercent, 0.5)}%`, // Minimum width for visibility
@@ -233,8 +233,8 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         >
           {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-2 py-1.5 px-3 min-w-0"
-            style={{ width: '350px', paddingLeft: `${depth * 12 + 12}px` }}
+            className="flex-shrink-0 flex items-center gap-2 py-1.5 min-w-0"
+            style={{ width: '360px', paddingLeft: `${depth * 12 + 12}px`, paddingRight: '12px' }}
           >
             {/* Tree connector line */}
             {depth > 0 && (
@@ -248,57 +248,54 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                 className="p-0.5 hover:bg-accent rounded flex-shrink-0"
               >
                 {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
               </button>
             ) : (
-              <div className="w-5 flex-shrink-0" />
+              <div className="w-[18px] flex-shrink-0" />
             )}
 
             {/* Type badge */}
-            <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium flex-shrink-0`}>
+            <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium flex-shrink-0`}>
               {spanType.icon}
-              {spanType.label}
+              <span>{spanType.label}</span>
             </Badge>
 
             {/* Span name */}
-            <span className="text-sm font-medium truncate" title={span.spanName}>
+            <span className="text-sm font-medium truncate text-foreground" title={span.spanName}>
               {span.spanName}
             </span>
           </div>
 
-          {/* Middle: Metrics */}
-          <div className="flex items-center px-3 text-xs text-muted-foreground flex-shrink-0 gap-2">
-            {/* Duration */}
-            <div className="flex items-center gap-0.5 whitespace-nowrap" style={{ width: '75px' }}>
-              <Clock className="h-3 w-3 flex-shrink-0" />
-              <span className="text-[11px]">{formatDuration(span.duration)}</span>
-            </div>
+          {/* Middle: Duration */}
+          <div className="flex-shrink-0 flex items-center gap-1 whitespace-nowrap text-muted-foreground py-1.5" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
+            <Clock className="h-3 w-3 flex-shrink-0" />
+            <span className="text-xs">{formatDuration(span.duration)}</span>
+          </div>
 
-            {/* Tokens (if available) */}
-            <div className="flex flex-col whitespace-nowrap" style={{ width: '160px' }}>
-              {totalTokens && totalTokens > 0 ? (
-                <>
-                  <div className="font-mono flex items-center text-[11px]">
-                    {isAggregated && <span className="inline-block align-middle mr-0.5">∑</span>}
-                    {totalTokens.toLocaleString()}
+          {/* Middle: Tokens */}
+          <div className="flex-shrink-0 flex flex-col justify-center whitespace-nowrap text-muted-foreground py-1.5" style={{ width: '180px', paddingLeft: '12px', paddingRight: '8px' }}>
+            {totalTokens && totalTokens > 0 ? (
+              <>
+                <div className="font-mono flex items-center text-xs">
+                  {isAggregated && <span className="inline-block align-middle mr-1 text-blue-600 dark:text-blue-400 font-semibold">∑</span>}
+                  <span className="text-foreground">{totalTokens.toLocaleString()}</span>
+                </div>
+                {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
+                  <div className="text-muted-foreground/70 text-[10px] mt-0.5">
+                    {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
                   </div>
-                  {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
-                    <div className="text-muted-foreground/60 text-[9px]">
-                      {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
-                    </div>
-                  )}
-                </>
-              ) : (
-                <span className="text-muted-foreground/40">—</span>
-              )}
-            </div>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground/40 text-xs">—</span>
+            )}
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-8 px-3 min-w-0 flex items-center">
+          <div className="flex-1 relative h-8 min-w-0 flex items-center pl-2 pr-3">
             {renderSpanBar(node)}
           </div>
         </div>
@@ -459,30 +456,30 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
   return (
     <Card>
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         {/* Header */}
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-base font-semibold">Timeline</h3>
-              <span className="text-xs text-muted-foreground">
+              <h3 className="text-base font-semibold text-foreground">Timeline</h3>
+              <span className="text-sm text-muted-foreground">
                 {formatDuration(totalDuration * 1_000_000)} · {spans.length} span{spans.length !== 1 ? 's' : ''}
               </span>
             </div>
 
             {/* Expand/Collapse controls */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button
                 onClick={expandAll}
-                className="text-xs px-2 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs px-2.5 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors font-medium"
               >
                 Expand all
               </button>
-              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground/40">|</span>
               <button
                 onClick={collapseAll}
-                className="text-xs px-2 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+                className="text-xs px-2.5 py-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors font-medium"
               >
                 Collapse all
               </button>
@@ -490,13 +487,13 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
               <span className="text-muted-foreground">Success</span>
             </div>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
               <span className="text-muted-foreground">Error</span>
             </div>
           </div>
@@ -505,15 +502,17 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         {/* Timeline */}
         <div className="border rounded-lg overflow-hidden bg-background">
           {/* Column headers */}
-          <div className="flex items-center bg-muted/50 border-b border-border font-medium text-xs text-muted-foreground">
-            <div className="flex-shrink-0 px-3 py-1.5" style={{ width: '350px' }}>
+          <div className="flex items-center bg-muted/50 border-b border-border font-semibold text-xs text-foreground/80">
+            <div className="flex-shrink-0 py-1.5" style={{ width: '360px', paddingLeft: '12px', paddingRight: '12px' }}>
               Span Name
             </div>
-            <div className="flex items-center px-3 py-1.5 flex-shrink-0 gap-2">
-              <span style={{ width: '75px' }}>Duration</span>
-              <span style={{ width: '160px' }}>Tokens</span>
+            <div className="flex-shrink-0 py-1.5" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
+              Duration
             </div>
-            <div className="flex-1 px-3 py-1.5">
+            <div className="flex-shrink-0 py-1.5" style={{ width: '180px', paddingLeft: '12px', paddingRight: '8px' }}>
+              Tokens
+            </div>
+            <div className="flex-1 py-1.5 pl-2 pr-3">
               Timeline
             </div>
           </div>
