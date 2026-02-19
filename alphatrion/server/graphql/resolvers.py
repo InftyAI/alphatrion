@@ -436,6 +436,7 @@ class GraphQLResolvers:
             }
         except Exception as e:
             import logging
+
             logging.error(f"Failed to aggregate tokens for run {run_id}: {e}")
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 

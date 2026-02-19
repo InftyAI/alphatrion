@@ -1,13 +1,10 @@
 # ruff: noqa: E501
 
 
-import asyncio
-import os
 
-import pytest
 from openai import OpenAI
 
-from alphatrion import envs, experiment, project, tracing
+from alphatrion import tracing
 from alphatrion.run.run import current_run_id
 
 client = OpenAI(

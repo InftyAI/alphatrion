@@ -195,6 +195,7 @@ async def test_create_project_with_exp_wait():
         exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
         assert exp_obj.status == Status.COMPLETED
 
+
 @pytest.mark.asyncio
 async def test_create_project_with_run():
     team_id = uuid.uuid4()
@@ -223,6 +224,7 @@ async def test_create_project_with_run():
         await exp.wait()
         assert datetime.now() - start_time >= timedelta(seconds=3)
         assert len(exp._runs) == 0
+
 
 @pytest.mark.asyncio
 async def test_run():
