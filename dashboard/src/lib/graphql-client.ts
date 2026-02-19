@@ -242,7 +242,7 @@ export const queries = {
           runId
           createdAt
         }
-        traces {
+        spans {
           timestamp
           traceId
           spanId

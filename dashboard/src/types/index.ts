@@ -75,7 +75,7 @@ export interface Run {
   status: Status;
   createdAt: string;
   metrics?: Metric[];
-  traces?: Span[];
+  spans?: Span[];
 }
 
 export interface Metric {

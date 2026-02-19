@@ -45,7 +45,7 @@ export function RunDetailPage() {
 
   // Get metrics and traces from the nested run data
   const runMetrics = run?.metrics || [];
-  const traces = run?.traces || [];
+  const traces = run?.spans || [];
   const metricsLoading = runLoading;
   const tracesLoading = runLoading;
   const tracesError = runError;
