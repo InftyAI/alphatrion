@@ -408,7 +408,7 @@ def test_query_single_run():
     assert response.data["run"]["meta"] == {}
 
     metadb.update_run(run_id=str(run_id), status=Status.COMPLETED)
-    obj = metadb.get_run(run_id=str(run_id)).status == Status.COMPLETED
+    obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
     assert obj.meta["total_tokens"] is not None
     assert obj.meta["input_tokens"] is not None
