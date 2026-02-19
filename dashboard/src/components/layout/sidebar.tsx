@@ -42,19 +42,19 @@ export function Sidebar() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-56 flex-col bg-card">
+    <div className="flex h-screen w-48 flex-col bg-card">
       {/* Logo */}
-      <Link to="/" className="flex h-14 items-center gap-2.5 px-4 hover:bg-accent/50 transition-colors">
+      <Link to="/" className="flex h-14 items-center gap-2 px-3 hover:bg-accent/50 transition-colors">
         <img
           src={logoImage}
           alt="AlphaTrion Logo"
-          className="h-7 w-7"
+          className="h-6 w-6"
         />
-        <h1 className="text-lg font-bold text-foreground">AlphaTrion</h1>
+        <h1 className="text-base font-bold text-foreground">AlphaTrion</h1>
       </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -66,13 +66,13 @@ export function Sidebar() {
               key={item.href}
               to={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
               {item.title}
             </Link>
           );
@@ -80,38 +80,40 @@ export function Sidebar() {
       </nav>
 
       {/* Footer with User Avatar and GitHub */}
-      <div className="relative p-4 mt-auto">
-        <div className="flex items-center justify-between gap-2">
-          {/* User Avatar with Username (clickable) */}
+      <div className="relative p-3 mt-auto">
+        <div className="flex items-center justify-between gap-2 hover:bg-accent/50 rounded-lg px-2 py-2 transition-colors">
+          {/* User Avatar (clickable) */}
           <button
             onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            className="flex items-center gap-2 flex-1 min-w-0 hover:bg-accent/50 rounded-lg px-2 py-2 transition-colors"
+            className="flex items-center"
             title="User menu"
           >
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
                 alt={user.username}
-                className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                className="h-7 w-7 rounded-full object-cover flex-shrink-0"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground flex-shrink-0">
-                <UserIcon className="h-4 w-4" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground flex-shrink-0">
+                <UserIcon className="h-3.5 w-3.5" />
               </div>
             )}
-            <span className="text-sm font-medium text-foreground truncate">{user.username}</span>
           </button>
 
-          {/* GitHub */}
-          <a
-            href="https://github.com/InftyAI/alphatrion"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center h-8 w-8 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
-            title="View on GitHub"
-          >
-            <Github className="h-4 w-4" />
-          </a>
+          {/* GitHub and Version */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <a
+              href="https://github.com/InftyAI/alphatrion"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center h-6 w-6 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              title="View on GitHub"
+            >
+              <Github className="h-3.5 w-3.5" />
+            </a>
+            <span className="text-xs text-muted-foreground font-mono">{__APP_VERSION__}</span>
+          </div>
         </div>
 
         {/* User Info Popup */}
