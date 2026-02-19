@@ -233,12 +233,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         >
           {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-2 py-1.5 pr-2 min-w-0"
-            style={{ width: '350px', paddingLeft: `${depth * 12 + 8}px` }}
+            className="flex-shrink-0 flex items-center gap-2 py-1.5 px-3 min-w-0"
+            style={{ width: '350px', paddingLeft: `${depth * 12 + 12}px` }}
           >
             {/* Tree connector line */}
             {depth > 0 && (
-              <div className="absolute h-full border-l border-border" style={{ left: `${(depth - 1) * 12 + 8}px` }} />
+              <div className="absolute h-full border-l border-border" style={{ left: `${(depth - 1) * 12 + 12}px` }} />
             )}
 
             {/* Expand/collapse button */}
@@ -270,25 +270,25 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Middle: Metrics */}
-          <div className="flex items-center px-3 text-xs text-muted-foreground flex-shrink-0">
+          <div className="flex items-center px-3 text-xs text-muted-foreground flex-shrink-0 gap-2">
             {/* Duration */}
-            <div className="flex items-center gap-1" style={{ width: '80px' }}>
+            <div className="flex items-center gap-0.5 whitespace-nowrap" style={{ width: '75px' }}>
               <Clock className="h-3 w-3 flex-shrink-0" />
-              <span>{formatDuration(span.duration)}</span>
+              <span className="text-[11px]">{formatDuration(span.duration)}</span>
             </div>
 
             {/* Tokens (if available) */}
-            <div className="flex items-center gap-1" style={{ width: '170px' }}>
+            <div className="flex flex-col whitespace-nowrap" style={{ width: '160px' }}>
               {totalTokens && totalTokens > 0 ? (
                 <>
-                  <span className="font-mono flex items-center">
-                    {isAggregated && <span className="inline-block align-middle mr-1">∑</span>}
-                    {totalTokens.toLocaleString()} tokens
-                  </span>
+                  <div className="font-mono flex items-center text-[11px]">
+                    {isAggregated && <span className="inline-block align-middle mr-0.5">∑</span>}
+                    {totalTokens.toLocaleString()}
+                  </div>
                   {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
-                    <span className="text-muted-foreground/60">
-                      ({inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑)
-                    </span>
+                    <div className="text-muted-foreground/60 text-[9px]">
+                      {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
+                    </div>
                   )}
                 </>
               ) : (
@@ -298,7 +298,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-8 px-2 min-w-0 flex items-center">
+          <div className="flex-1 relative h-8 px-3 min-w-0 flex items-center">
             {renderSpanBar(node)}
           </div>
         </div>
@@ -509,11 +509,11 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <div className="flex-shrink-0 px-3 py-1.5" style={{ width: '350px' }}>
               Span Name
             </div>
-            <div className="flex items-center px-3 py-1.5 flex-shrink-0">
-              <span style={{ width: '80px' }}>Duration</span>
-              <span style={{ width: '170px' }}>Tokens</span>
+            <div className="flex items-center px-3 py-1.5 flex-shrink-0 gap-2">
+              <span style={{ width: '75px' }}>Duration</span>
+              <span style={{ width: '160px' }}>Tokens</span>
             </div>
-            <div className="flex-1 px-2 py-1.5">
+            <div className="flex-1 px-3 py-1.5">
               Timeline
             </div>
           </div>
