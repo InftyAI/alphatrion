@@ -238,12 +238,12 @@ export function RunDetailPage() {
 
 
           {/* Metadata */}
-          {run.meta && Object.keys(run.meta).filter(k => !['total_tokens', 'input_tokens', 'output_tokens'].includes(k)).length > 0 && (
+          {run.meta && Object.keys(run.meta).filter(k => !['total_tokens', 'input_tokens', 'output_tokens', 'execution_result'].includes(k)).length > 0 && (
             <div className="mt-5 pt-5 border-t">
               <h3 className="text-base font-semibold mb-3">Metadata</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {Object.entries(run.meta)
-                  .filter(([key]) => !['total_tokens', 'input_tokens', 'output_tokens'].includes(key))
+                  .filter(([key]) => !['total_tokens', 'input_tokens', 'output_tokens', 'execution_result'].includes(key))
                   .map(([key, value]) => (
                     <div key={key} className="break-words">
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
