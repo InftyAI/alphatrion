@@ -404,7 +404,7 @@ def test_query_single_run():
     assert response.data["run"]["teamId"] == str(team_id)
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
-    assert response.data["run"]["status"] == "pending"
+    assert response.data["run"]["status"] == "PENDING"
     assert response.data["run"]["meta"] == {}
 
     metadb.update_run(run_id=str(run_id), status=Status.COMPLETED)
