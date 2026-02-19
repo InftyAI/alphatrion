@@ -251,6 +251,24 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
+    def list_run_metrics(run_id: strawberry.ID) -> list[Metric]:
+        metadb = runtime.storage_runtime().metadb
+        metrics = metadb.list_metrics_by_run_id(run_id=run_id)
+        return [
+            Metric(
+                id=m.uuid,
+                key=m.key,
+                value=m.value,
+                team_id=m.team_id,
+                project_id=m.project_id,
+                experiment_id=m.experiment_id,
+                run_id=m.run_id,
+                created_at=m.created_at,
+            )
+            for m in metrics
+        ]
+
+    @staticmethod
     def total_projects(team_id: strawberry.ID) -> int:
         metadb = runtime.storage_runtime().metadb
         return metadb.count_projects(team_id=team_id)

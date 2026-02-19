@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useRun } from '../../hooks/use-runs';
-import { useMetrics } from '../../hooks/use-metrics';
 import { useArtifactContent } from '../../hooks/use-artifacts';
-import { useTraces } from '../../hooks/use-traces';
 import {
   Card,
   CardContent,
@@ -40,18 +38,17 @@ export function RunDetailPage() {
   const { id } = useParams<{ id: string }>();
 
   const { data: run, isLoading: runLoading, error: runError } = useRun(id!);
-  const { data: metrics, isLoading: metricsLoading } = useMetrics(run?.experimentId || '');
-  const { data: traces, isLoading: tracesLoading, error: tracesError } = useTraces(id!);
-
-  // Debug: Log traces data
-  console.log('Traces data:', { traces, isLoading: tracesLoading, error: tracesError, runId: id });
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Filter metrics for this specific run
-  const runMetrics = metrics?.filter(m => m.runId === id) || [];
+  // Get metrics and traces from the nested run data
+  const runMetrics = run?.metrics || [];
+  const traces = run?.traces || [];
+  const metricsLoading = runLoading;
+  const tracesLoading = runLoading;
+  const tracesError = runError;
 
   // Check if execution result exists in metadata
   const executionResult = run?.meta?.execution_result as any;

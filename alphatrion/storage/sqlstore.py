@@ -695,3 +695,14 @@ class SQLStore(MetaStore):
         )
         session.close()
         return metrics
+
+    def list_metrics_by_run_id(self, run_id: uuid.UUID) -> list[Metric]:
+        session = self._session()
+        metrics = (
+            session.query(Metric)
+            .filter(Metric.run_id == run_id)
+            .order_by(Metric.created_at.asc())
+            .all()
+        )
+        session.close()
+        return metrics
