@@ -398,7 +398,6 @@ async def create_joke():
 async def test_query_single_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    exp_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
 
     init(team_id=team_id, user_id=user_id)
@@ -411,6 +410,7 @@ async def test_query_single_run():
         ) as exp:
             run = exp.run(create_joke)
             run_id = run.id
+            exp_id = exp.id
 
     response = schema.execute_sync(
         f"""
