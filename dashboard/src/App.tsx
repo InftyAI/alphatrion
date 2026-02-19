@@ -129,9 +129,10 @@ function App() {
   }
 
   return (
-    <UserProvider user={currentUser}>
-      <Routes>
-        <Route path="/" element={<Layout />}>
+    <div className="h-full">
+      <UserProvider user={currentUser}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />
           <Route path="projects">
             <Route index element={<ProjectsPage />} />
@@ -150,6 +151,7 @@ function App() {
         </Route>
       </Routes>
     </UserProvider>
+    </div>
   );
 }
 
