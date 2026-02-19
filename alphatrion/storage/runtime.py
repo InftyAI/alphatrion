@@ -19,6 +19,7 @@ class StorageRuntime:
     _inited = False
 
     def __init__(self):
+        print("iiiiiiiii", os.getenv(envs.ENABLE_TRACING))
         if self._inited:
             return
 
