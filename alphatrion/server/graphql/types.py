@@ -143,6 +143,7 @@ class Run:
 
         return GraphQLResolvers.list_spans(run_id=str(self.id))
 
+
 @strawberry.type
 class Metric:
     id: strawberry.ID
