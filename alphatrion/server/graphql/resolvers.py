@@ -411,7 +411,7 @@ class GraphQLResolvers:
 
         try:
             trace_store = runtime.storage_runtime().tracestore
-            spans = trace_store.get_traces_by_run_id(uuid.UUID(run_id))
+            spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
             trace_store.close()
 
             total_tokens = 0
@@ -441,8 +441,8 @@ class GraphQLResolvers:
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
-    def list_traces(run_id: strawberry.ID) -> list[Span]:
-        """List all traces/spans for a specific run."""
+    def list_spans(run_id: strawberry.ID) -> list[Span]:
+        """List all spans for a specific run."""
         from alphatrion import envs
 
         # Check if tracing is enabled
@@ -453,12 +453,12 @@ class GraphQLResolvers:
             trace_store = runtime.storage_runtime().tracestore
 
             # Get traces from ClickHouse
-            traces = trace_store.get_traces_by_run_id(uuid.UUID(run_id))
+            spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
             trace_store.close()
 
             # Convert to GraphQL Span objects
             spans = []
-            for t in traces:
+            for t in spans:
                 # Convert events
                 events = []
                 if t.get("Events"):

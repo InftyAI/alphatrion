@@ -137,12 +137,11 @@ class Run:
         return GraphQLResolvers.list_run_metrics(run_id=self.id)
 
     @strawberry.field
-    def traces(self) -> list["Span"]:
-        """Get traces for this run."""
+    def spans(self) -> list["Span"]:
+        """Get spans for this run."""
         from alphatrion.server.graphql.resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_traces(run_id=str(self.id))
-
+        return GraphQLResolvers.list_spans(run_id=str(self.id))
 
 @strawberry.type
 class Metric:

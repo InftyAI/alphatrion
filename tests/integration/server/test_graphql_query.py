@@ -419,8 +419,9 @@ async def test_query_single_run():
             meta
             status
             createdAt
-            traces {{
+            spans {{
                 traceId
+                spanId
             }}
         }}
     }}

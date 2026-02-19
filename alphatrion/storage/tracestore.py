@@ -68,9 +68,9 @@ class TraceStore:
             raise
 
     def _create_tables(self) -> None:
-        """Create the otel_traces table if it doesn't exist."""
+        """Create the otel_spans table if it doesn't exist."""
         create_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {self.database}.otel_traces (
+        CREATE TABLE IF NOT EXISTS {self.database}.otel_spans (
             Timestamp DateTime64(9) CODEC(Delta, ZSTD(1)),
             TraceId String CODEC(ZSTD(1)),
             SpanId String CODEC(ZSTD(1)),
@@ -111,7 +111,7 @@ class TraceStore:
 
         try:
             self.client.command(create_table_sql)
-            logger.info(f"Table {self.database}.otel_traces ready")
+            logger.info(f"Table {self.database}.otel_spans ready")
         except Exception as e:
             logger.error(f"Failed to create table: {e}")
             raise
@@ -158,7 +158,7 @@ class TraceStore:
 
             # Insert into ClickHouse
             self.client.insert(
-                f"{self.database}.otel_traces",
+                f"{self.database}.otel_spans",
                 data,
                 column_names=[
                     "Timestamp",
@@ -190,8 +190,8 @@ class TraceStore:
             logger.error(f"Failed to insert spans: {e}")
             # Don't raise - we don't want to crash the application if tracing fails
 
-    def get_traces_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
-        """Get all traces/spans for a specific run_id.
+    def get_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+        """Get all spans for a specific run_id.
 
         Args:
             run_id: The run ID to filter by
@@ -224,7 +224,7 @@ class TraceStore:
                 Links.TraceId as LinkTraceIds,
                 Links.SpanId as LinkSpanIds,
                 Links.Attributes as LinkAttributes
-            FROM {self.database}.otel_traces
+            FROM {self.database}.otel_spans
             WHERE RunId = '{run_id}'
             ORDER BY Timestamp ASC
             """
@@ -301,7 +301,7 @@ class TraceStore:
                 Links.TraceId as LinkTraceIds,
                 Links.SpanId as LinkSpanIds,
                 Links.Attributes as LinkAttributes
-            FROM {self.database}.otel_traces
+            FROM {self.database}.otel_spans
             WHERE TraceId = '{trace_id}'
             ORDER BY Timestamp ASC
             """
