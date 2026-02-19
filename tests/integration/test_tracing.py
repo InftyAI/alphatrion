@@ -1,7 +1,6 @@
 # ruff: noqa: E501
 
 
-
 from openai import OpenAI
 
 from alphatrion import tracing

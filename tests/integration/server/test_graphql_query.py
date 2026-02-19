@@ -4,17 +4,17 @@
 
 import uuid
 from datetime import datetime, timedelta
-from openai import OpenAI
-import pytest
 
-from alphatrion import experiment, project
+import pytest
+from openai import OpenAI
+
+from alphatrion import project
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.runtime.runtime import init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
 from alphatrion.tracing import tracing
-from alphatrion.run.run import current_run_id
 
 
 def test_query_single_team():
@@ -376,10 +376,12 @@ def test_query_experiments():
     assert response.errors is None
     assert len(response.data["experiments"]) == 2
 
+
 client = OpenAI(
     base_url="http://localhost:11434/v1",
     api_key="",
 )
+
 
 @tracing.workflow()
 def create_joke():
