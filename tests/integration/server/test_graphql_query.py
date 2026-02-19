@@ -400,6 +400,12 @@ async def test_query_single_run():
     user_id = uuid.uuid4()
     init(team_id=team_id, user_id=user_id)
 
+    # Verify tracing is actually enabled
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, (
+        "TraceStore must be initialized when ALPHATRION_ENABLE_TRACING=true"
+    )
+
     async with project.Project.setup(
         name="Test Project", description="A project for testing"
     ) as proj:
@@ -411,6 +417,11 @@ async def test_query_single_run():
             run_id = run.id
             exp_id = exp.id
             await exp.wait()
+
+    # Force flush all spans to ClickHouse
+    runtime.storage_runtime().flush()
+    # Give ClickHouse time to process the write
+    await asyncio.sleep(1)
 
     response = schema.execute_sync(
         f"""

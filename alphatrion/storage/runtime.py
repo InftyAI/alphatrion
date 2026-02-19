@@ -2,6 +2,7 @@
 import os
 
 from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
@@ -62,6 +63,12 @@ class StorageRuntime:
     @property
     def tracestore(self):
         return self._tracestore
+
+    def flush(self):
+        if self._tracestore:
+            tracer_provider = trace.get_tracer_provider()
+            if isinstance(tracer_provider, TracerProvider):
+                tracer_provider.force_flush(timeout_millis=5000)
 
 
 def init():
