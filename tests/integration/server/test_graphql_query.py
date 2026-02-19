@@ -411,6 +411,7 @@ async def test_query_single_run():
             run = exp.run(create_joke)
             run_id = run.id
             exp_id = exp.id
+            await exp.wait()
 
     response = schema.execute_sync(
         f"""
