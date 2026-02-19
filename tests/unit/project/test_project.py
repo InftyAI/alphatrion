@@ -195,9 +195,37 @@ async def test_create_project_with_exp_wait():
         exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
         assert exp_obj.status == Status.COMPLETED
 
-
 @pytest.mark.asyncio
 async def test_create_project_with_run():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    async def fake_work(exp_id: uuid.UUID):
+        assert current_exp_id.get() == exp_id
+        await asyncio.sleep(3)
+
+    async with (
+        Project.setup(name="context_proj"),
+        CraftExperiment.start(name="first-experiment") as exp,
+    ):
+        start_time = datetime.now()
+
+        exp.run(lambda: fake_work(exp.id))
+        assert len(exp._runs) == 1
+
+        exp.run(lambda: fake_work(exp.id))
+        assert len(exp._runs) == 2
+
+        await exp.wait()
+        assert datetime.now() - start_time >= timedelta(seconds=3)
+        assert len(exp._runs) == 0
+
+@pytest.mark.asyncio
+async def test_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     init(

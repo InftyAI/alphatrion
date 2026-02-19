@@ -212,6 +212,21 @@ export function RunDetailPage() {
               </dd>
             </div>
             <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">
+                {run.meta?.total_tokens !== undefined ? (
+                  <>
+                    {Number(run.meta.total_tokens).toLocaleString()}
+                    <span className="text-muted-foreground text-xs ml-1">
+                      ({Number(run.meta.input_tokens || 0).toLocaleString()}↓ {Number(run.meta.output_tokens || 0).toLocaleString()}↑)
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </dd>
+            </div>
+            <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
               <dd className="mt-1.5 text-foreground text-sm">
                 {formatDistanceToNow(new Date(run.createdAt), {
@@ -221,19 +236,22 @@ export function RunDetailPage() {
             </div>
           </dl>
 
+
           {/* Metadata */}
-          {run.meta && Object.keys(run.meta).length > 0 && (
+          {run.meta && Object.keys(run.meta).filter(k => !['total_tokens', 'input_tokens', 'output_tokens'].includes(k)).length > 0 && (
             <div className="mt-5 pt-5 border-t">
               <h3 className="text-base font-semibold mb-3">Metadata</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
-                {Object.entries(run.meta).map(([key, value]) => (
-                  <div key={key} className="break-words">
-                    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
-                    <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
-                      {typeof value === 'string' ? value : JSON.stringify(value)}
-                    </dd>
-                  </div>
-                ))}
+                {Object.entries(run.meta)
+                  .filter(([key]) => !['total_tokens', 'input_tokens', 'output_tokens'].includes(key))
+                  .map(([key, value]) => (
+                    <div key={key} className="break-words">
+                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                      <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
+                        {typeof value === 'string' ? value : JSON.stringify(value)}
+                      </dd>
+                    </div>
+                  ))}
               </dl>
             </div>
           )}

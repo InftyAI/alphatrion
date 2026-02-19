@@ -220,13 +220,23 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         run = metadb.get_run(run_id=uuid.UUID(id))
         if run:
+            meta = run.meta or {}
+
+            # Aggregate and cache tokens for completed runs.
+            # It could be slow for the first time.
+            if Status(run.status) == Status.COMPLETED and "total_tokens" not in meta:
+                token_data = GraphQLResolvers.aggregate_run_tokens(run_id=id)
+                if token_data["total_tokens"] > 0:
+                    meta.update(token_data)
+                    metadb.update_run(run_id=uuid.UUID(id), meta=meta)
+
             return Run(
                 id=run.uuid,
                 team_id=run.team_id,
                 user_id=run.user_id,
                 project_id=run.project_id,
                 experiment_id=run.experiment_id,
-                meta=run.meta,
+                meta=meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 created_at=run.created_at,
             )
@@ -389,6 +399,45 @@ class GraphQLResolvers:
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
+
+    @staticmethod
+    def aggregate_run_tokens(run_id: strawberry.ID) -> dict[str, int]:
+        """Aggregate token usage from all traces for a run."""
+        from alphatrion import envs
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+            spans = trace_store.get_traces_by_run_id(uuid.UUID(run_id))
+            trace_store.close()
+
+            total_tokens = 0
+            input_tokens = 0
+            output_tokens = 0
+
+            for span in spans:
+                span_attrs = span.get("SpanAttributes", {})
+
+                # Aggregate tokens from LLM spans
+                if "llm.usage.total_tokens" in span_attrs:
+                    total_tokens += int(span_attrs["llm.usage.total_tokens"])
+                if "gen_ai.usage.input_tokens" in span_attrs:
+                    input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
+                if "gen_ai.usage.output_tokens" in span_attrs:
+                    output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+            }
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to aggregate tokens for run {run_id}: {e}")
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
     def list_traces(run_id: strawberry.ID) -> list[Span]:
