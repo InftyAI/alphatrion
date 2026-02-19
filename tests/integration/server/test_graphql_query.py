@@ -395,6 +395,9 @@ def test_query_single_run():
             meta
             status
             createdAt
+            traces {{
+                traceId
+            }}
         }}
     }}
     """,
@@ -406,6 +409,7 @@ def test_query_single_run():
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
     assert response.data["run"]["status"] == "COMPLETED"
+    assert len(response.data["run"]["traces"]) > 0
 
     obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
