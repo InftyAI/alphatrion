@@ -447,8 +447,7 @@ class GraphQLResolvers:
 
         # Check if tracing is enabled
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            raise RuntimeError("Tracing is not enabled. Cannot fetch spans.")
-            # return []
+            return []
 
         try:
             trace_store = runtime.storage_runtime().tracestore

@@ -432,12 +432,14 @@ async def test_query_single_run():
     """,
         variable_values={},
     )
+
     assert response.errors is None
     assert response.data["run"]["id"] == str(run_id)
     assert response.data["run"]["teamId"] == str(team_id)
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
     assert response.data["run"]["status"] == "COMPLETED"
+    assert response.data["run"]["meta"] is None
     assert len(response.data["run"]["spans"]) > 0
 
     metadb = runtime.storage_runtime().metadb
