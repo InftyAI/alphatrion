@@ -398,9 +398,9 @@ async def create_joke():
 async def test_query_single_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    metadb = runtime.storage_runtime().metadb
-
     init(team_id=team_id, user_id=user_id)
+
+
     async with project.Project.setup(
         name="Test Project", description="A project for testing"
     ) as proj:
@@ -441,6 +441,7 @@ async def test_query_single_run():
     assert response.data["run"]["status"] == "COMPLETED"
     assert len(response.data["run"]["spans"]) > 0
 
+    metadb = runtime.storage_runtime().metadb
     obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
     assert obj.meta["total_tokens"] is not None
