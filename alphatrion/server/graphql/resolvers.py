@@ -453,12 +453,12 @@ class GraphQLResolvers:
             trace_store = runtime.storage_runtime().tracestore
 
             # Get traces from ClickHouse
-            spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
+            raw_spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
             trace_store.close()
 
             # Convert to GraphQL Span objects
             spans = []
-            for t in spans:
+            for t in raw_spans:
                 # Convert events
                 events = []
                 if t.get("Events"):
