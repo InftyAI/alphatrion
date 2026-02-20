@@ -87,7 +87,7 @@ export function ExperimentsPage() {
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Experiments</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Experiments</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and manage experiments
         </p>

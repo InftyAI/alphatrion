@@ -6,15 +6,19 @@ export function Layout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <Sidebar />
+      <div className="shadow-sm">
+        <Sidebar />
+      </div>
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <Header />
+        <div className="shadow-sm">
+          <Header />
+        </div>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 bg-muted/20">
           <Outlet />
         </main>
       </div>

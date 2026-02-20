@@ -2,12 +2,20 @@
 
 # test query from graphql endpoint
 
+import asyncio
 import uuid
 from datetime import datetime, timedelta
 
+import pytest
+from openai import OpenAI
+
+from alphatrion import project
+from alphatrion.experiment.craft_experiment import CraftExperiment
+from alphatrion.runtime.runtime import init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
+from alphatrion.tracing import tracing
 
 
 def test_query_single_team():
@@ -370,19 +378,51 @@ def test_query_experiments():
     assert len(response.data["experiments"]) == 2
 
 
-def test_query_single_run():
-    runtime.init()
+client = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="",
+)
+
+
+@tracing.workflow()
+async def create_joke():
+    completion = client.chat.completions.create(
+        model="smollm:135m",
+        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
+    )
+    print(completion.choices[0].message.content)
+    await asyncio.sleep(0.1)  # Simulate some work
+
+
+@pytest.mark.asyncio
+async def test_query_single_run():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    project_id = uuid.uuid4()
-    exp_id = uuid.uuid4()
-    metadb = runtime.storage_runtime().metadb
-    run_id = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
-        project_id=project_id,
-        experiment_id=exp_id,
+    init(team_id=team_id, user_id=user_id)
+
+    # Verify tracing is actually enabled
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, (
+        "TraceStore must be initialized when ALPHATRION_ENABLE_TRACING=true"
     )
+
+    async with project.Project.setup(
+        name="Test Project", description="A project for testing"
+    ) as proj:
+        project_id = proj.id
+        async with CraftExperiment.start(
+            name="Test Experiment",
+        ) as exp:
+            run = exp.run(create_joke)
+            run_id = run.id
+            exp_id = exp.id
+            await exp.wait()
+
+    # Force flush all spans to ClickHouse
+    runtime.storage_runtime().flush()
+    # Give ClickHouse time to process the write
+    await asyncio.sleep(1)
+
     response = schema.execute_sync(
         f"""
     query {{
@@ -394,16 +434,30 @@ def test_query_single_run():
             meta
             status
             createdAt
+            spans {{
+                traceId
+                spanId
+            }}
         }}
     }}
     """,
         variable_values={},
     )
+
     assert response.errors is None
     assert response.data["run"]["id"] == str(run_id)
     assert response.data["run"]["teamId"] == str(team_id)
     assert response.data["run"]["projectId"] == str(project_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
+    assert response.data["run"]["status"] == "COMPLETED"
+    assert len(response.data["run"]["spans"]) > 0
+
+    metadb = runtime.storage_runtime().metadb
+    obj = metadb.get_run(run_id=str(run_id))
+    assert obj.status == Status.COMPLETED
+    assert obj.meta["total_tokens"] is not None
+    assert obj.meta["input_tokens"] is not None
+    assert obj.meta["output_tokens"] is not None
 
 
 def test_query_runs():

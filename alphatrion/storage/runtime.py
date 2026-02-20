@@ -2,6 +2,7 @@
 import os
 
 from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
@@ -38,10 +39,13 @@ class StorageRuntime:
                 == "true",
             )
 
+            enable_batch = (
+                os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
+            )
             Traceloop.init(
                 app_name="alphatrion",
                 exporter=ClickHouseSpanExporter(self.tracestore),
-                disable_batch=False,  # Enable batching
+                disable_batch=not enable_batch,
                 telemetry_enabled=False,
             )
 
@@ -59,6 +63,12 @@ class StorageRuntime:
     @property
     def tracestore(self):
         return self._tracestore
+
+    def flush(self):
+        if self._tracestore:
+            tracer_provider = trace.get_tracer_provider()
+            if isinstance(tracer_provider, TracerProvider):
+                tracer_provider.force_flush(timeout_millis=5000)
 
 
 def init():

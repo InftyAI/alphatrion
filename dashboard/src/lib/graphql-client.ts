@@ -232,6 +232,44 @@ export const queries = {
         meta
         status
         createdAt
+        metrics {
+          id
+          key
+          value
+          teamId
+          projectId
+          experimentId
+          runId
+          createdAt
+        }
+        spans {
+          timestamp
+          traceId
+          spanId
+          parentSpanId
+          spanName
+          spanKind
+          serviceName
+          duration
+          statusCode
+          statusMessage
+          teamId
+          projectId
+          runId
+          experimentId
+          spanAttributes
+          resourceAttributes
+          events {
+            timestamp
+            name
+            attributes
+          }
+          links {
+            traceId
+            spanId
+            attributes
+          }
+        }
       }
     }
   `,

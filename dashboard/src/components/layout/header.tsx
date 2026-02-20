@@ -104,7 +104,7 @@ export function Header() {
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-card px-6">
+    <header className="flex h-14 items-center justify-between bg-card px-6">
       {/* Breadcrumbs */}
       <nav className="flex items-center space-x-2 text-sm">
         {breadcrumbs.map((crumb, index) => {

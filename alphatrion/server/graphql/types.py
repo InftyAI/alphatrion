@@ -129,6 +129,20 @@ class Run:
     status: GraphQLStatusEnum
     created_at: datetime
 
+    @strawberry.field
+    def metrics(self) -> list["Metric"]:
+        """Get metrics for this run."""
+        from alphatrion.server.graphql.resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_run_metrics(run_id=self.id)
+
+    @strawberry.field
+    def spans(self) -> list["Span"]:
+        """Get spans for this run."""
+        from alphatrion.server.graphql.resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_spans(run_id=str(self.id))
+
 
 @strawberry.type
 class Metric:

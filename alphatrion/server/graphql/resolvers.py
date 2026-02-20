@@ -220,13 +220,23 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         run = metadb.get_run(run_id=uuid.UUID(id))
         if run:
+            meta = run.meta or {}
+
+            # Aggregate and cache tokens for completed runs.
+            # It could be slow for the first time.
+            if Status(run.status) == Status.COMPLETED and "total_tokens" not in meta:
+                token_data = GraphQLResolvers.aggregate_run_tokens(run_id=id)
+                if token_data["total_tokens"] > 0:
+                    meta.update(token_data)
+                    metadb.update_run(run_id=uuid.UUID(id), meta=meta)
+
             return Run(
                 id=run.uuid,
                 team_id=run.team_id,
                 user_id=run.user_id,
                 project_id=run.project_id,
                 experiment_id=run.experiment_id,
-                meta=run.meta,
+                meta=meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 created_at=run.created_at,
             )
@@ -236,6 +246,24 @@ class GraphQLResolvers:
     def list_exp_metrics(experiment_id: strawberry.ID) -> list[Metric]:
         metadb = runtime.storage_runtime().metadb
         metrics = metadb.list_metrics_by_experiment_id(experiment_id=experiment_id)
+        return [
+            Metric(
+                id=m.uuid,
+                key=m.key,
+                value=m.value,
+                team_id=m.team_id,
+                project_id=m.project_id,
+                experiment_id=m.experiment_id,
+                run_id=m.run_id,
+                created_at=m.created_at,
+            )
+            for m in metrics
+        ]
+
+    @staticmethod
+    def list_run_metrics(run_id: strawberry.ID) -> list[Metric]:
+        metadb = runtime.storage_runtime().metadb
+        metrics = metadb.list_metrics_by_run_id(run_id=run_id)
         return [
             Metric(
                 id=m.uuid,
@@ -373,8 +401,48 @@ class GraphQLResolvers:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
 
     @staticmethod
-    def list_traces(run_id: strawberry.ID) -> list[Span]:
-        """List all traces/spans for a specific run."""
+    def aggregate_run_tokens(run_id: strawberry.ID) -> dict[str, int]:
+        """Aggregate token usage from all traces for a run."""
+        from alphatrion import envs
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+            spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
+            trace_store.close()
+
+            total_tokens = 0
+            input_tokens = 0
+            output_tokens = 0
+
+            for span in spans:
+                span_attrs = span.get("SpanAttributes", {})
+
+                # Aggregate tokens from LLM spans
+                if "llm.usage.total_tokens" in span_attrs:
+                    total_tokens += int(span_attrs["llm.usage.total_tokens"])
+                if "gen_ai.usage.input_tokens" in span_attrs:
+                    input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
+                if "gen_ai.usage.output_tokens" in span_attrs:
+                    output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+            }
+        except Exception as e:
+            import logging
+
+            logging.error(f"Failed to aggregate tokens for run {run_id}: {e}")
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def list_spans(run_id: strawberry.ID) -> list[Span]:
+        """List all spans for a specific run."""
         from alphatrion import envs
 
         # Check if tracing is enabled
@@ -385,12 +453,12 @@ class GraphQLResolvers:
             trace_store = runtime.storage_runtime().tracestore
 
             # Get traces from ClickHouse
-            traces = trace_store.get_traces_by_run_id(uuid.UUID(run_id))
+            raw_spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
             trace_store.close()
 
             # Convert to GraphQL Span objects
             spans = []
-            for t in traces:
+            for t in raw_spans:
                 # Convert events
                 events = []
                 if t.get("Events"):

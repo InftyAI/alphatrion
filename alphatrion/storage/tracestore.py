@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import logging
+import threading
 import uuid
 from typing import Any
 
@@ -30,6 +31,7 @@ class TraceStore:
             init_tables: If True, create tables on initialization
         """
         self.database = database
+        self._lock = threading.Lock()  # Protect concurrent access to ClickHouse client
 
         # Parse host and port, stripping protocol if present
         # Handle URLs like "http://localhost:8123" or "localhost:8123"
@@ -68,9 +70,9 @@ class TraceStore:
             raise
 
     def _create_tables(self) -> None:
-        """Create the otel_traces table if it doesn't exist."""
+        """Create the otel_spans table if it doesn't exist."""
         create_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {self.database}.otel_traces (
+        CREATE TABLE IF NOT EXISTS {self.database}.otel_spans (
             Timestamp DateTime64(9) CODEC(Delta, ZSTD(1)),
             TraceId String CODEC(ZSTD(1)),
             SpanId String CODEC(ZSTD(1)),
@@ -111,7 +113,7 @@ class TraceStore:
 
         try:
             self.client.command(create_table_sql)
-            logger.info(f"Table {self.database}.otel_traces ready")
+            logger.info(f"Table {self.database}.otel_spans ready")
         except Exception as e:
             logger.error(f"Failed to create table: {e}")
             raise
@@ -125,73 +127,74 @@ class TraceStore:
         if not spans:
             return
 
-        try:
-            # Prepare data for insertion
-            data = []
-            for span in spans:
-                data.append(
-                    (
-                        span.get("Timestamp"),
-                        span.get("TraceId", ""),
-                        span.get("SpanId", ""),
-                        span.get("ParentSpanId", ""),
-                        span.get("SpanName", ""),
-                        span.get("SpanKind", ""),
-                        span.get("ServiceName", ""),
-                        span.get("Duration", 0),
-                        span.get("StatusCode", ""),
-                        span.get("StatusMessage", ""),
-                        span.get("TeamId", ""),
-                        span.get("ProjectId", ""),
-                        span.get("RunId", ""),
-                        span.get("ExperimentId", ""),
-                        span.get("SpanAttributes", {}),
-                        span.get("ResourceAttributes", {}),
-                        span.get("Events.Timestamp", []),
-                        span.get("Events.Name", []),
-                        span.get("Events.Attributes", []),
-                        span.get("Links.TraceId", []),
-                        span.get("Links.SpanId", []),
-                        span.get("Links.Attributes", []),
+        with self._lock:  # Protect concurrent access to ClickHouse client
+            try:
+                # Prepare data for insertion
+                data = []
+                for span in spans:
+                    data.append(
+                        (
+                            span.get("Timestamp"),
+                            span.get("TraceId", ""),
+                            span.get("SpanId", ""),
+                            span.get("ParentSpanId", ""),
+                            span.get("SpanName", ""),
+                            span.get("SpanKind", ""),
+                            span.get("ServiceName", ""),
+                            span.get("Duration", 0),
+                            span.get("StatusCode", ""),
+                            span.get("StatusMessage", ""),
+                            span.get("TeamId", ""),
+                            span.get("ProjectId", ""),
+                            span.get("RunId", ""),
+                            span.get("ExperimentId", ""),
+                            span.get("SpanAttributes", {}),
+                            span.get("ResourceAttributes", {}),
+                            span.get("Events.Timestamp", []),
+                            span.get("Events.Name", []),
+                            span.get("Events.Attributes", []),
+                            span.get("Links.TraceId", []),
+                            span.get("Links.SpanId", []),
+                            span.get("Links.Attributes", []),
+                        )
                     )
+
+                # Insert into ClickHouse
+                self.client.insert(
+                    f"{self.database}.otel_spans",
+                    data,
+                    column_names=[
+                        "Timestamp",
+                        "TraceId",
+                        "SpanId",
+                        "ParentSpanId",
+                        "SpanName",
+                        "SpanKind",
+                        "ServiceName",
+                        "Duration",
+                        "StatusCode",
+                        "StatusMessage",
+                        "TeamId",
+                        "ProjectId",
+                        "RunId",
+                        "ExperimentId",
+                        "SpanAttributes",
+                        "ResourceAttributes",
+                        "Events.Timestamp",
+                        "Events.Name",
+                        "Events.Attributes",
+                        "Links.TraceId",
+                        "Links.SpanId",
+                        "Links.Attributes",
+                    ],
                 )
+                logger.debug(f"Inserted {len(spans)} spans into ClickHouse")
+            except Exception as e:
+                logger.error(f"Failed to insert spans: {e}")
+                # Don't raise - we don't want to crash the application if tracing fails
 
-            # Insert into ClickHouse
-            self.client.insert(
-                f"{self.database}.otel_traces",
-                data,
-                column_names=[
-                    "Timestamp",
-                    "TraceId",
-                    "SpanId",
-                    "ParentSpanId",
-                    "SpanName",
-                    "SpanKind",
-                    "ServiceName",
-                    "Duration",
-                    "StatusCode",
-                    "StatusMessage",
-                    "TeamId",
-                    "ProjectId",
-                    "RunId",
-                    "ExperimentId",
-                    "SpanAttributes",
-                    "ResourceAttributes",
-                    "Events.Timestamp",
-                    "Events.Name",
-                    "Events.Attributes",
-                    "Links.TraceId",
-                    "Links.SpanId",
-                    "Links.Attributes",
-                ],
-            )
-            logger.debug(f"Inserted {len(spans)} spans into ClickHouse")
-        except Exception as e:
-            logger.error(f"Failed to insert spans: {e}")
-            # Don't raise - we don't want to crash the application if tracing fails
-
-    def get_traces_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
-        """Get all traces/spans for a specific run_id.
+    def get_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+        """Get all spans for a specific run_id.
 
         Args:
             run_id: The run ID to filter by
@@ -199,150 +202,74 @@ class TraceStore:
         Returns:
             List of span dictionaries
         """
-        try:
-            query = f"""
-            SELECT
-                Timestamp,
-                TraceId,
-                SpanId,
-                ParentSpanId,
-                SpanName,
-                SpanKind,
-                ServiceName,
-                Duration,
-                StatusCode,
-                StatusMessage,
-                TeamId,
-                ProjectId,
-                RunId,
-                ExperimentId,
-                SpanAttributes,
-                ResourceAttributes,
-                Events.Timestamp as EventTimestamps,
-                Events.Name as EventNames,
-                Events.Attributes as EventAttributes,
-                Links.TraceId as LinkTraceIds,
-                Links.SpanId as LinkSpanIds,
-                Links.Attributes as LinkAttributes
-            FROM {self.database}.otel_traces
-            WHERE RunId = '{run_id}'
-            ORDER BY Timestamp ASC
-            """
+        with self._lock:  # Protect concurrent access to ClickHouse client
+            try:
+                query = f"""
+                SELECT
+                    Timestamp,
+                    TraceId,
+                    SpanId,
+                    ParentSpanId,
+                    SpanName,
+                    SpanKind,
+                    ServiceName,
+                    Duration,
+                    StatusCode,
+                    StatusMessage,
+                    TeamId,
+                    ProjectId,
+                    RunId,
+                    ExperimentId,
+                    SpanAttributes,
+                    ResourceAttributes,
+                    Events.Timestamp as EventTimestamps,
+                    Events.Name as EventNames,
+                    Events.Attributes as EventAttributes,
+                    Links.TraceId as LinkTraceIds,
+                    Links.SpanId as LinkSpanIds,
+                    Links.Attributes as LinkAttributes
+                FROM {self.database}.otel_spans
+                WHERE RunId = '{run_id}'
+                ORDER BY Timestamp ASC
+                """
 
-            result = self.client.query(query)
-            spans = []
-            for row in result.result_rows:
-                spans.append(
-                    {
-                        "Timestamp": row[0],
-                        "TraceId": row[1],
-                        "SpanId": row[2],
-                        "ParentSpanId": row[3],
-                        "SpanName": row[4],
-                        "SpanKind": row[5],
-                        "ServiceName": row[6],
-                        "Duration": row[7],
-                        "StatusCode": row[8],
-                        "StatusMessage": row[9],
-                        "TeamId": row[10],
-                        "ProjectId": row[11],
-                        "RunId": row[12],
-                        "ExperimentId": row[13],
-                        "SpanAttributes": row[14],
-                        "ResourceAttributes": row[15],
-                        "Events": {
-                            "Timestamp": row[16],
-                            "Name": row[17],
-                            "Attributes": row[18],
-                        },
-                        "Links": {
-                            "TraceId": row[19],
-                            "SpanId": row[20],
-                            "Attributes": row[21],
-                        },
-                    }
-                )
-            return spans
-        except Exception as e:
-            logger.error(f"Failed to get traces by run_id: {e}")
-            return []
-
-    def get_spans_by_trace_id(self, trace_id: str) -> list[dict[str, Any]]:
-        """Get all spans for a specific trace_id.
-
-        Args:
-            trace_id: The trace ID to filter by
-
-        Returns:
-            List of span dictionaries
-        """
-        try:
-            query = f"""
-            SELECT
-                Timestamp,
-                TraceId,
-                SpanId,
-                ParentSpanId,
-                SpanName,
-                SpanKind,
-                ServiceName,
-                Duration,
-                StatusCode,
-                StatusMessage,
-                TeamId,
-                ProjectId,
-                RunId,
-                ExperimentId,
-                SpanAttributes,
-                ResourceAttributes,
-                Events.Timestamp as EventTimestamps,
-                Events.Name as EventNames,
-                Events.Attributes as EventAttributes,
-                Links.TraceId as LinkTraceIds,
-                Links.SpanId as LinkSpanIds,
-                Links.Attributes as LinkAttributes
-            FROM {self.database}.otel_traces
-            WHERE TraceId = '{trace_id}'
-            ORDER BY Timestamp ASC
-            """
-
-            result = self.client.query(query)
-            spans = []
-            for row in result.result_rows:
-                spans.append(
-                    {
-                        "Timestamp": row[0],
-                        "TraceId": row[1],
-                        "SpanId": row[2],
-                        "ParentSpanId": row[3],
-                        "SpanName": row[4],
-                        "SpanKind": row[5],
-                        "ServiceName": row[6],
-                        "Duration": row[7],
-                        "StatusCode": row[8],
-                        "StatusMessage": row[9],
-                        "TeamId": row[10],
-                        "ProjectId": row[11],
-                        "RunId": row[12],
-                        "ExperimentId": row[13],
-                        "SpanAttributes": row[14],
-                        "ResourceAttributes": row[15],
-                        "Events": {
-                            "Timestamp": row[16],
-                            "Name": row[17],
-                            "Attributes": row[18],
-                        },
-                        "Links": {
-                            "TraceId": row[19],
-                            "SpanId": row[20],
-                            "Attributes": row[21],
-                        },
-                    }
-                )
-            return spans
-        except Exception as e:
-            logger.error(f"Failed to get spans by trace_id: {e}")
-            return []
+                result = self.client.query(query)
+                spans = []
+                for row in result.result_rows:
+                    spans.append(
+                        {
+                            "Timestamp": row[0],
+                            "TraceId": row[1],
+                            "SpanId": row[2],
+                            "ParentSpanId": row[3],
+                            "SpanName": row[4],
+                            "SpanKind": row[5],
+                            "ServiceName": row[6],
+                            "Duration": row[7],
+                            "StatusCode": row[8],
+                            "StatusMessage": row[9],
+                            "TeamId": row[10],
+                            "ProjectId": row[11],
+                            "RunId": row[12],
+                            "ExperimentId": row[13],
+                            "SpanAttributes": row[14],
+                            "ResourceAttributes": row[15],
+                            "Events": {
+                                "Timestamp": row[16],
+                                "Name": row[17],
+                                "Attributes": row[18],
+                            },
+                            "Links": {
+                                "TraceId": row[19],
+                                "SpanId": row[20],
+                                "Attributes": row[21],
+                            },
+                        }
+                    )
+                return spans
+            except Exception as e:
+                logger.error(f"Failed to get traces by run_id: {e}")
+                return []
 
     def close(self) -> None:
         """Close the ClickHouse connection."""

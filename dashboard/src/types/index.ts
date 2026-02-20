@@ -74,6 +74,8 @@ export interface Run {
   meta: Record<string, unknown> | null;
   status: Status;
   createdAt: string;
+  metrics?: Metric[];
+  spans?: Span[];
 }
 
 export interface Metric {
