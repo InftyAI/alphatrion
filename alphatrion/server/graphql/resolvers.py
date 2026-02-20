@@ -480,19 +480,21 @@ class GraphQLResolvers:
             output_tokens = 0
 
             for run in runs:
-                if run.meta:
+                current_run = run
+
+                if current_run.meta:
                     # Trigger the aggregation of tokens for the run if not already done
                     # When experiment is finished, its runs should also be finished, so
                     # token aggregation should be safe without worrying.
-                    if "total_tokens" not in run.meta:
-                        GraphQLResolvers.aggregate_run_tokens(run_id=run.uuid)
+                    if "total_tokens" not in current_run.meta:
+                        GraphQLResolvers.aggregate_run_tokens(run_id=current_run.uuid)
                         # Refresh run data to get updated tokens
-                        run = metadb.get_run(run_id=run.uuid)
+                        current_run = metadb.get_run(run_id=current_run.uuid)
 
                     # Sum up tokens from each run's meta
-                    total_tokens += int(run.meta.get("total_tokens", 0))
-                    input_tokens += int(run.meta.get("input_tokens", 0))
-                    output_tokens += int(run.meta.get("output_tokens", 0))
+                    total_tokens += int(current_run.meta.get("total_tokens", 0))
+                    input_tokens += int(current_run.meta.get("input_tokens", 0))
+                    output_tokens += int(current_run.meta.get("output_tokens", 0))
 
             return {
                 "total_tokens": total_tokens,
