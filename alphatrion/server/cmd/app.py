@@ -25,6 +25,24 @@ app.add_middleware(
 )
 
 
+# Helper function to extract operation name from query
+def extract_operation_name(query: str) -> str:
+    """Extract operation name from GraphQL query."""
+    import re
+
+    # Try to find operation name in format: query OperationName or mutation OperationName
+    match = re.search(r'(query|mutation)\s+(\w+)', query)
+    if match:
+        return match.group(2)
+
+    # Try to find first field selection (e.g., { getExperiment { ... })
+    match = re.search(r'\{\s*(\w+)', query)
+    if match:
+        return match.group(1)
+
+    return "Anonymous"
+
+
 # Add middleware to log GraphQL requests
 @app.middleware("http")
 async def log_graphql_requests(request: Request, call_next):
@@ -39,9 +57,13 @@ async def log_graphql_requests(request: Request, call_next):
             import json
 
             data = json.loads(body)
-            operation_name = data.get("operationName", "Unknown")
             query = data.get("query", "")
             variables = data.get("variables", {})
+
+            # Get operation name from request or extract from query
+            operation_name = data.get("operationName")
+            if not operation_name:
+                operation_name = extract_operation_name(query)
 
             # Extract operation type (query or mutation)
             if query.strip().startswith("mutation"):
