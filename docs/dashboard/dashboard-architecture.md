@@ -51,12 +51,12 @@ This provides:
 │  └───────────────────────────────────────────────────┘  │
 │                                                          │
 │  ┌───────────────────────────────────────────────────┐  │
-│  │         Reverse Proxy (optional)                  │  │
+│  │         Reverse Proxy                             │  │
 │  │  • /graphql → http://localhost:8000/graphql      │  │
 │  │  • /api/*   → http://localhost:8000/api/*        │  │
 │  └───────────────────────────────────────────────────┘  │
 └────────────────────────┬────────────────────────────────┘
-                         │ (if proxy enabled)
+                         │
                          ▼
 ┌─────────────────────────────────────────────────────────┐
 │           alphatrion server (port 8000)                 │
@@ -91,42 +91,8 @@ Access at: `http://localhost:5173`
 
 The dashboard proxies all `/graphql` and `/api/*` requests to the backend.
 
-### Pattern 2: Proxy-less (Static Only)
 
-**Without proxy** - For custom deployment setups:
-
-```bash
-# Start dashboard without proxy
-alphatrion dashboard --no-proxy --port 5173
-```
-
-**Requirements:**
-- Frontend must be built with `VITE_GRAPHQL_URL` environment variable
-- Or use external reverse proxy (nginx, Apache)
-
-**Example with nginx:**
-
-```nginx
-server {
-    listen 80;
-
-    # Serve static files
-    location /static/ {
-        proxy_pass http://localhost:5173;
-    }
-
-    # Proxy API to backend
-    location /graphql {
-        proxy_pass http://localhost:8000;
-    }
-
-    location /api/ {
-        proxy_pass http://localhost:8000;
-    }
-}
-```
-
-### Pattern 3: Custom Backend URL
+### Pattern 2: Custom Backend URL
 
 **Connect to remote backend:**
 
@@ -144,8 +110,6 @@ alphatrion dashboard [OPTIONS]
 Options:
   --port PORT              Port to run dashboard on (default: 5173)
   --backend-url URL        Backend server URL to proxy to (default: http://localhost:8000)
-  --no-proxy              Disable proxy, serve static files only
-  --no-browser            Don't auto-open browser
 ```
 
 ## Development vs Production
@@ -222,14 +186,6 @@ curl http://localhost:8000/graphql
 alphatrion server --port 8000
 ```
 
-### Issue: CORS errors
-
-**Cause:** Proxy disabled but frontend expecting relative URLs
-
-**Solution:**
-- Use proxy: `alphatrion dashboard` (remove --no-proxy)
-- Or rebuild with absolute URL: `VITE_GRAPHQL_URL=http://localhost:8000/graphql npm run build`
-
 ## Summary
 
 The **built-in proxy is a feature, not a bug**. It provides:
@@ -237,6 +193,5 @@ The **built-in proxy is a feature, not a bug**. It provides:
 - ✅ No CORS configuration needed
 - ✅ Works with pre-built dashboard
 - ✅ Similar to Vite's dev proxy
-- ✅ Can be disabled with `--no-proxy` for custom setups
 
 For production deployments, consider using nginx or another dedicated web server with proper caching, SSL, and load balancing.

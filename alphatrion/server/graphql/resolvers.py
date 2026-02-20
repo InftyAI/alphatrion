@@ -7,7 +7,7 @@ import strawberry
 
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import Status
+from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 
 from .types import (
     AddUserToTeamInput,
@@ -168,6 +168,22 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         exp = metadb.get_experiment(experiment_id=uuid.UUID(id))
         if exp:
+            meta = exp.meta or {}
+
+            # Aggregate and cache tokens for finished experiments
+            # Only calculate if experiment is in a finished state and tokens
+            # not already cached.
+            exp_status = Status(exp.status)
+            is_finished = exp_status in FINISHED_STATUS
+
+            if is_finished and "total_tokens" not in meta:
+                token_data = GraphQLResolvers.aggregate_experiment_tokens(
+                    experiment_id=id
+                )
+                if token_data["total_tokens"] > 0:
+                    meta.update(token_data)
+                    metadb.update_experiment(experiment_id=uuid.UUID(id), meta=meta)
+
             return Experiment(
                 id=exp.uuid,
                 team_id=exp.team_id,
@@ -175,7 +191,7 @@ class GraphQLResolvers:
                 project_id=exp.project_id,
                 name=exp.name,
                 description=exp.description,
-                meta=exp.meta,
+                meta=meta,
                 params=exp.params,
                 duration=exp.duration,
                 status=GraphQLStatusEnum[Status(exp.status).name],
@@ -405,7 +421,13 @@ class GraphQLResolvers:
         """Aggregate token usage from all traces for a run."""
         from alphatrion import envs
 
-        # Check if tracing is enabled
+        # One potential issue here is if tracing is disabled after the run
+        # has completed, we won't be able to aggregate tokens anymore since
+        # we rely on fetching spans from the trace store.
+        # For now we assume tracing is enabled if users want to see token usage.
+        # In the future, we could consider caching token data in the metadb when
+        # runs/experiments are completed to avoid relying on trace store for
+        # historical data.
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
@@ -438,6 +460,53 @@ class GraphQLResolvers:
             import logging
 
             logging.error(f"Failed to aggregate tokens for run {run_id}: {e}")
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def aggregate_experiment_tokens(experiment_id: strawberry.ID) -> dict[str, int]:
+        """Aggregate token usage from all runs in an experiment."""
+        try:
+            metadb = runtime.storage_runtime().metadb
+
+            # Get all runs for this experiment (unpaginated)
+            runs = metadb.list_runs_by_exp_id(
+                exp_id=uuid.UUID(experiment_id),
+                page=0,
+                page_size=10000,  # Large page size to get all runs
+            )
+
+            total_tokens = 0
+            input_tokens = 0
+            output_tokens = 0
+
+            for run in runs:
+                current_run = run
+
+                if current_run.meta:
+                    # Trigger the aggregation of tokens for the run if not already done
+                    # When experiment is finished, its runs should also be finished, so
+                    # token aggregation should be safe without worrying.
+                    if "total_tokens" not in current_run.meta:
+                        GraphQLResolvers.aggregate_run_tokens(run_id=current_run.uuid)
+                        # Refresh run data to get updated tokens
+                        current_run = metadb.get_run(run_id=current_run.uuid)
+
+                    # Sum up tokens from each run's meta
+                    total_tokens += int(current_run.meta.get("total_tokens", 0))
+                    input_tokens += int(current_run.meta.get("input_tokens", 0))
+                    output_tokens += int(current_run.meta.get("output_tokens", 0))
+
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": input_tokens,
+                "output_tokens": output_tokens,
+            }
+        except Exception as e:
+            import logging
+
+            logging.error(
+                f"Failed to aggregate tokens for experiment {experiment_id}: {e}"
+            )
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
