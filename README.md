@@ -105,12 +105,6 @@ The dashboard will automatically open in your browser at `http://127.0.0.1:5173`
 
 **Options:**
 - `--port <PORT>`: Run on a custom port (default: 5173)
-- `--no-browser`: Don't automatically open the browser
-
-Example:
-```bash
-alphatrion dashboard --port 8080 --no-browser
-```
 
 **Documentation:**
 - [Dashboard Setup Guide](./docs/dashboard/setup.md) - Complete setup and troubleshooting guide

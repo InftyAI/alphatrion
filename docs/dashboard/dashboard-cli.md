@@ -36,25 +36,11 @@ Run the dashboard on a different port:
 alphatrion dashboard --port 8080
 ```
 
-### Without Auto-Browser
-
-Start the server without automatically opening a browser:
-
-```bash
-alphatrion dashboard --no-browser
-```
-
-This is useful when:
-- Running on a remote server
-- You want to manually open the browser
-- Running in a CI/CD environment
-
 ## Command Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--port` | Port to run the dashboard on | 5173 |
-| `--no-browser` | Don't automatically open browser | false |
 
 ## Examples
 
@@ -79,8 +65,8 @@ alphatrion dashboard --port 5173
 cd dashboard
 npm run build
 
-# Launch dashboard on custom port without browser
-alphatrion dashboard --port 3000 --no-browser
+# Launch dashboard on custom port
+alphatrion dashboard --port 3000
 ```
 
 ## Troubleshooting
@@ -111,14 +97,6 @@ If port 5173 is already in use, specify a different port:
 alphatrion dashboard --port 5174
 ```
 
-### Dashboard Not Opening in Browser
-
-If the browser doesn't open automatically:
-
-1. Check if `--no-browser` flag was set
-2. Manually open your browser and navigate to `http://127.0.0.1:5173`
-3. Check if the server started successfully in the terminal output
-
 ## Architecture
 
 The dashboard command:
@@ -126,8 +104,7 @@ The dashboard command:
 1. **Locates static files**: Searches multiple possible locations for the built dashboard
 2. **Creates FastAPI app**: Sets up a simple web server
 3. **Serves SPA**: All routes fallback to `index.html` for client-side routing
-4. **Opens browser**: Automatically launches default browser (unless `--no-browser`)
-5. **Serves assets**: Static assets (JS, CSS, images) from `/assets` directory
+4. **Serves assets**: Static assets (JS, CSS, images) from `/assets` directory
 
 ## Related Commands
 
