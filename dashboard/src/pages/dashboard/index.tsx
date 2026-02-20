@@ -55,7 +55,7 @@ export function DashboardPage() {
     <div className="space-y-3">
       {/* Header */}
       <div className="pb-2 border-b">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         {selectedTeamId && (
           <p className="mt-0.5 text-muted-foreground font-mono text-xs">
             TeamID: {selectedTeamId}
@@ -65,7 +65,7 @@ export function DashboardPage() {
 
       {/* Overview Section */}
       <div>
-        <h2 className="text-xl font-semibold text-foreground mb-2">Overview</h2>
+        <h2 className="text-base font-semibold text-foreground mb-2">Overview</h2>
       </div>
 
       {/* Overview Metrics */}
@@ -128,7 +128,7 @@ export function DashboardPage() {
       <div className="space-y-3">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">Activity</h2>
+          <h2 className="text-base font-semibold text-foreground">Activity</h2>
           <div className="flex gap-1">
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
