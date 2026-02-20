@@ -173,6 +173,7 @@ def init_command(args):
         console.print(Text(f"❌ Error during initialization: {e}", style="bold red"))
         raise
 
+
 def run_server(args):
     BLUE = "\033[94m"
     RESET = "\033[0m"

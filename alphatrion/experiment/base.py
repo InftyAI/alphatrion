@@ -348,6 +348,12 @@ class Experiment(ABC):
         self._context.cancel()
 
     def _stop(self):
+        # cancel the runs first, then stop the experiment.
+        for run in self._runs.values():
+            # When experiment is stopped, we consider the unfinished runs as cancelled.
+            run.cancel()
+        self._runs.clear()
+
         exp = self._runtime._metadb.get_experiment(experiment_id=self.id)
         if exp is not None and exp.status not in FINISHED_STATUS:
             duration = (
@@ -365,10 +371,6 @@ class Experiment(ABC):
             )
 
         self._runtime.current_proj.unregister_experiment(self.id)
-        for run in self._runs.values():
-            # When experiment is stopped, we consider the unfinished runs as cancelled.
-            run.cancel()
-        self._runs.clear()
 
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self.id)

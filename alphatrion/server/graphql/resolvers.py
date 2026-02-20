@@ -7,7 +7,7 @@ import strawberry
 
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import Status, FINISHED_STATUS
+from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 
 from .types import (
     AddUserToTeamInput,
@@ -171,12 +171,15 @@ class GraphQLResolvers:
             meta = exp.meta or {}
 
             # Aggregate and cache tokens for finished experiments
-            # Only calculate if experiment is in a finished state and tokens not already cached
+            # Only calculate if experiment is in a finished state and tokens
+            # not already cached.
             exp_status = Status(exp.status)
             is_finished = exp_status in FINISHED_STATUS
 
             if is_finished and "total_tokens" not in meta:
-                token_data = GraphQLResolvers.aggregate_experiment_tokens(experiment_id=id)
+                token_data = GraphQLResolvers.aggregate_experiment_tokens(
+                    experiment_id=id
+                )
                 if token_data["total_tokens"] > 0:
                     meta.update(token_data)
                     metadb.update_experiment(experiment_id=uuid.UUID(id), meta=meta)
@@ -483,6 +486,8 @@ class GraphQLResolvers:
                     # token aggregation should be safe without worrying.
                     if "total_tokens" not in run.meta:
                         GraphQLResolvers.aggregate_run_tokens(run_id=run.uuid)
+                        # Refresh run data to get updated tokens
+                        run = metadb.get_run(run_id=run.uuid)
 
                     # Sum up tokens from each run's meta
                     total_tokens += int(run.meta.get("total_tokens", 0))
@@ -497,7 +502,9 @@ class GraphQLResolvers:
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to aggregate tokens for experiment {experiment_id}: {e}")
+            logging.error(
+                f"Failed to aggregate tokens for experiment {experiment_id}: {e}"
+            )
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod

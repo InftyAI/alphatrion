@@ -31,12 +31,12 @@ def extract_operation_name(query: str) -> str:
     import re
 
     # Try to find operation name in format: query OperationName or mutation OperationName
-    match = re.search(r'(query|mutation)\s+(\w+)', query)
+    match = re.search(r"(query|mutation)\s+(\w+)", query)
     if match:
         return match.group(2)
 
     # Try to find first field selection (e.g., { getExperiment { ... })
-    match = re.search(r'\{\s*(\w+)', query)
+    match = re.search(r"\{\s*(\w+)", query)
     if match:
         return match.group(1)
 

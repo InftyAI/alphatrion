@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 
+
 def configure_logging():
     """Configure logging for the server with GraphQL debugging support."""
     log_level = os.getenv("ALPHATRION_LOG_LEVEL", "INFO").upper()
