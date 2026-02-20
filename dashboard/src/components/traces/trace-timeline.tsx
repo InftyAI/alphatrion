@@ -276,12 +276,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Middle: Tokens */}
-          <div className="flex-shrink-0 flex flex-col justify-center whitespace-nowrap text-muted-foreground py-1.5" style={{ width: '180px', paddingLeft: '12px', paddingRight: '8px' }}>
+          <div className="flex-shrink-0 flex flex-col justify-center whitespace-nowrap text-muted-foreground py-1.5" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
             {totalTokens && totalTokens > 0 ? (
               <>
                 <div className="font-mono flex items-center text-xs">
-                  {isAggregated && <span className="inline-block align-middle mr-1 text-blue-600 dark:text-blue-400 font-semibold">∑</span>}
-                  <span className="text-foreground">{totalTokens.toLocaleString()}</span>
+                  {isAggregated && <span className="inline-block align-middle mr-1">∑</span>}
+                  <span>{totalTokens.toLocaleString()}</span>
                 </div>
                 {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
                   <div className="text-muted-foreground/70 text-[10px] mt-0.5">
@@ -295,7 +295,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-8 min-w-0 flex items-center pl-2 pr-3">
+          <div className="flex-1 relative h-8 min-w-0 flex items-center" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
             {renderSpanBar(node)}
           </div>
         </div>
@@ -509,10 +509,10 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <div className="flex-shrink-0 py-1.5" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
               Duration
             </div>
-            <div className="flex-shrink-0 py-1.5" style={{ width: '180px', paddingLeft: '12px', paddingRight: '8px' }}>
+            <div className="flex-shrink-0 py-1.5" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
               Tokens
             </div>
-            <div className="flex-1 py-1.5 pl-2 pr-3">
+            <div className="flex-1 py-1.5" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
               Timeline
             </div>
           </div>
