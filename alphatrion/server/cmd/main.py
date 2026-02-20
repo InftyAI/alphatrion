@@ -20,6 +20,7 @@ from rich.text import Text
 
 from alphatrion import envs
 from alphatrion.storage import runtime
+from alphatrion.utils import log
 
 load_dotenv()
 console = Console()
@@ -172,7 +173,6 @@ def init_command(args):
         console.print(Text(f"❌ Error during initialization: {e}", style="bold red"))
         raise
 
-
 def run_server(args):
     BLUE = "\033[94m"
     RESET = "\033[0m"
@@ -198,6 +198,10 @@ def run_server(args):
         style="bold green",
     )
     console.print(msg)
+
+    # Configure logging before starting the server
+    log.configure_logging()
+
     runtime.init()
     uvicorn.run("alphatrion.server.cmd.app:app", host=args.host, port=args.port)
 
