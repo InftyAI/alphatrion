@@ -264,7 +264,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </Badge>
 
             {/* Span name */}
-            <span className="text-xs font-medium truncate text-foreground" title={span.spanName}>
+            <span className="text-sm font-medium truncate text-foreground" title={span.spanName}>
               {span.spanName}
             </span>
           </div>
