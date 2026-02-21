@@ -93,7 +93,7 @@ class Query:
 
     @strawberry.field
     def daily_token_usage(
-        self, team_id: strawberry.ID, days: int = 30
+        self, team_id: strawberry.ID, days: int = 7
     ) -> list[DailyTokenUsage]:
         return GraphQLResolvers.get_daily_token_usage(team_id=team_id, days=days)
 
