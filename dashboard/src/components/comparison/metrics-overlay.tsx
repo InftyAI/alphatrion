@@ -130,17 +130,22 @@ export function MetricsOverlay({ experimentIds }: MetricsOverlayProps) {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="time"
-              label={{ value: 'Time', position: 'insideBottom', offset: -5 }}
+              tick={{ fontSize: 10 }}
+              label={{ value: 'Time', position: 'insideBottom', offset: -5, style: { fontSize: 10 } }}
             />
-            <YAxis label={{ value: 'Value', angle: -90, position: 'insideLeft' }} />
+            <YAxis
+              tick={{ fontSize: 10 }}
+              label={{ value: 'Value', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '0.5rem',
+                fontSize: '10px',
               }}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
             {metricKeys.map((key, index) => (
               <Line
                 key={key}

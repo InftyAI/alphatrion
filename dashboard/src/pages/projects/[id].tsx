@@ -27,10 +27,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
   PENDING: 'warning',
-  RUNNING: 'default',
+  RUNNING: 'info',
   CANCELLED: 'secondary',
   COMPLETED: 'success',
   FAILED: 'destructive',
@@ -211,14 +211,21 @@ export function ProjectDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '12px' }}
+                        style={{ fontSize: '10px' }}
                       >
                         {experimentStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Tooltip
+                        contentStyle={{
+                          fontSize: '10px',
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

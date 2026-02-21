@@ -101,15 +101,15 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
-              fontSize: '12px',
+              fontSize: '10px',
             }}
             content={({ active, payload, label }) => {
               if (!active || !payload || !payload.length) return null;
               const data = payload[0].payload;
               return (
                 <div className="bg-card border border-border rounded-md p-2 shadow-sm">
-                  <div className="text-xs font-medium mb-1.5">{label}</div>
-                  <div className="space-y-0.5 text-xs">
+                  <div className="text-[10px] font-medium mb-1.5">{label}</div>
+                  <div className="space-y-0.5 text-[10px]">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-purple-400"></div>
                       <span className="text-muted-foreground">Launched:</span>
@@ -121,7 +121,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '11px' }}
+            wrapperStyle={{ fontSize: '10px' }}
             iconType="circle"
             iconSize={8}
           />

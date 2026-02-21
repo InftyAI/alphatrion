@@ -89,7 +89,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
       </div>
 
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
+        <LineChart data={chartData} margin={{ left: 10, right: 15, top: 15, bottom: 15 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
@@ -100,7 +100,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
           />
           <YAxis
             tick={{ fontSize: 10 }}
-            width={40}
+            width={50}
             tickFormatter={(value) =>
               value >= 1000000
                 ? `${(value / 1000000).toFixed(1)}M`
@@ -112,7 +112,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
               value: 'Tokens',
               angle: -90,
               position: 'insideLeft',
-              offset: 8,
+              offset: -5,
               style: { textAnchor: 'middle', fontSize: 11 }
             }}
           />
@@ -121,15 +121,15 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
-              fontSize: '12px',
+              fontSize: '10px',
             }}
             content={({ active, payload, label }) => {
               if (!active || !payload || !payload.length) return null;
               const data = payload[0].payload;
               return (
                 <div className="bg-card border border-border rounded-md p-2 shadow-sm">
-                  <div className="text-xs font-medium mb-1.5">{label}</div>
-                  <div className="space-y-0.5 text-xs">
+                  <div className="text-[10px] font-medium mb-1.5">{label}</div>
+                  <div className="space-y-0.5 text-[10px]">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                       <span className="text-muted-foreground">Total:</span>
@@ -151,7 +151,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '11px' }}
+            wrapperStyle={{ fontSize: '10px' }}
             iconType="circle"
             iconSize={8}
           />

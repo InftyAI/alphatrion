@@ -345,18 +345,26 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
           {/* View mode toggle */}
           <div className="flex gap-1">
             <Button
-              variant={viewMode === 'timeline' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setViewMode('timeline')}
-              className="h-7 px-3 text-xs"
+              className={`h-7 px-3 text-xs transition-colors ${
+                viewMode === 'timeline'
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                  : 'bg-white hover:bg-gray-50'
+              }`}
             >
               Timeline
             </Button>
             <Button
-              variant={viewMode === 'pareto' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setViewMode('pareto')}
-              className="h-7 px-3 text-xs"
+              className={`h-7 px-3 text-xs transition-colors ${
+                viewMode === 'pareto'
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                  : 'bg-white hover:bg-gray-50'
+              }`}
             >
               Pareto
             </Button>
@@ -477,14 +485,14 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   dataKey="index"
-                  label={{ value: 'Index', position: 'insideBottom', offset: -5, style: { fontSize: 12 } }}
+                  label={{ value: 'Index', position: 'insideBottom', offset: -5, style: { fontSize: 10 } }}
                   type="number"
                   domain={['dataMin', 'dataMax']}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis
-                  label={{ value: 'Value', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
-                  tick={{ fontSize: 11 }}
+                  label={{ value: 'Value', angle: -90, position: 'insideLeft', style: { fontSize: 10 } }}
+                  tick={{ fontSize: 10 }}
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: '5 5', stroke: '#94a3b8', strokeWidth: 1 }}
@@ -510,10 +518,10 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                           lineHeight: '1.4',
                         }}
                       >
-                        <div style={{ fontWeight: 600, fontSize: '12px' }}>
+                        <div style={{ fontWeight: 600, fontSize: '10px' }}>
                           Run: {data.runId}
                         </div>
-                        <div style={{ fontSize: '12px' }}>
+                        <div style={{ fontSize: '10px' }}>
                           {selectedKey}: {typeof data.value === 'number' ? data.value.toFixed(4) : data.value}
                         </div>
                       </div>
@@ -599,7 +607,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                       xaxis: {
                         title: {
                           text: `${paretoMetrics[0].key} (${paretoMetrics[0].direction})`,
-                          font: { size: 12, color: '#374151', family: 'system-ui' },
+                          font: { size: 10, color: '#374151', family: 'system-ui' },
                         },
                         gridcolor: '#e5e7eb',
                         gridwidth: 1,
@@ -610,7 +618,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                       yaxis: {
                         title: {
                           text: `${paretoMetrics[1].key} (${paretoMetrics[1].direction})`,
-                          font: { size: 12, color: '#374151', family: 'system-ui' },
+                          font: { size: 10, color: '#374151', family: 'system-ui' },
                         },
                         gridcolor: '#e5e7eb',
                         gridwidth: 1,
@@ -621,7 +629,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                       zaxis: {
                         title: {
                           text: `${paretoMetrics[2].key} (${paretoMetrics[2].direction})`,
-                          font: { size: 12, color: '#374151', family: 'system-ui' },
+                          font: { size: 10, color: '#374151', family: 'system-ui' },
                         },
                         gridcolor: '#e5e7eb',
                         gridwidth: 1,
@@ -672,9 +680,9 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     value: `${paretoMetrics[0].key} (${paretoMetrics[0].direction})`,
                     position: 'insideBottom',
                     offset: -10,
-                    style: { fontSize: 12, fill: '#374151' }
+                    style: { fontSize: 10, fill: '#374151' }
                   }}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                   domain={['dataMin - 0.1 * abs(dataMin)', 'dataMax + 0.1 * abs(dataMax)']}
                 />
                 <YAxis
@@ -685,9 +693,9 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                     value: `${paretoMetrics[1].key} (${paretoMetrics[1].direction})`,
                     angle: -90,
                     position: 'insideLeft',
-                    style: { fontSize: 12, fill: '#374151' }
+                    style: { fontSize: 10, fill: '#374151' }
                   }}
-                  tick={{ fontSize: 11, fill: '#6b7280' }}
+                  tick={{ fontSize: 10, fill: '#6b7280' }}
                   domain={['dataMin - 0.1 * abs(dataMin)', 'dataMax + 0.1 * abs(dataMax)']}
                 />
                 <Tooltip
@@ -709,7 +717,7 @@ export function MetricsChart({ metrics, experimentId, title = 'Metrics', descrip
                           borderRadius: '6px',
                           padding: '8px 12px',
                           boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
+                          fontSize: '10px',
                         }}
                       >
                         <div style={{ fontWeight: 600, marginBottom: '4px' }}>
