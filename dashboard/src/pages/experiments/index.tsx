@@ -23,10 +23,10 @@ import { Button } from '../../components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
   PENDING: 'warning',
-  RUNNING: 'default',
+  RUNNING: 'info',
   CANCELLED: 'secondary',
   COMPLETED: 'success',
   FAILED: 'destructive',

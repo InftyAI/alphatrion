@@ -29,10 +29,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
-const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown'> = {
+const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
   PENDING: 'warning',
-  RUNNING: 'default',
+  RUNNING: 'info',
   CANCELLED: 'secondary',
   COMPLETED: 'success',
   FAILED: 'destructive',

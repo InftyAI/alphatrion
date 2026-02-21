@@ -89,7 +89,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
       </div>
 
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
+        <LineChart data={chartData} margin={{ left: 10, right: 15, top: 15, bottom: 15 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
@@ -100,7 +100,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
           />
           <YAxis
             tick={{ fontSize: 10 }}
-            width={40}
+            width={50}
             tickFormatter={(value) =>
               value >= 1000000
                 ? `${(value / 1000000).toFixed(1)}M`
@@ -112,7 +112,7 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
               value: 'Tokens',
               angle: -90,
               position: 'insideLeft',
-              offset: 8,
+              offset: -5,
               style: { textAnchor: 'middle', fontSize: 11 }
             }}
           />
