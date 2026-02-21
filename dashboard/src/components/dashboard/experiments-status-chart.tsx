@@ -62,7 +62,7 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
             cy="48%"
             outerRadius={58}
             label={({ name, value }) => `${name}: ${value}`}
-            style={{ fontSize: '11px' }}
+            style={{ fontSize: '10px' }}
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -73,10 +73,10 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
-              fontSize: '11px',
+              fontSize: '10px',
             }}
           />
-          <Legend wrapperStyle={{ fontSize: '11px' }} />
+          <Legend wrapperStyle={{ fontSize: '10px' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>

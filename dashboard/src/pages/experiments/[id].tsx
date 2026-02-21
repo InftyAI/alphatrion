@@ -260,14 +260,21 @@ export function ExperimentDetailPage() {
                         cy="48%"
                         outerRadius={48}
                         label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '12px' }}
+                        style={{ fontSize: '10px' }}
                       >
                         {runStatsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Tooltip
+                        contentStyle={{
+                          fontSize: '10px',
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
