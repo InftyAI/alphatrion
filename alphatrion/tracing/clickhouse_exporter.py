@@ -118,6 +118,16 @@ class ClickHouseSpanExporter(SpanExporter):
         run_id = span_attributes.get("run_id", "")
         experiment_id = span_attributes.get("experiment_id", "")
 
+        # Determine semantic kind (application-level span type)
+        # Priority: LLM calls > Traceloop span kind > unknown
+        if "llm.usage.total_tokens" in span_attributes:
+            semantic_kind = "llm"
+        elif "traceloop.span.kind" in span_attributes:
+            # Values: "workflow", "task", "agent", "tool", "unknown"
+            semantic_kind = span_attributes["traceloop.span.kind"]
+        else:
+            raise ValueError("Span is missing required semantic kind attributes")
+
         # Convert events to nested structure
         event_timestamps = []
         event_names = []
@@ -151,6 +161,7 @@ class ClickHouseSpanExporter(SpanExporter):
             "ParentSpanId": parent_span_id,
             "SpanName": span.name,
             "SpanKind": span_kind,
+            "SemanticKind": semantic_kind,
             "ServiceName": service_name,
             "Duration": duration,
             "StatusCode": status_code,

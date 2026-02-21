@@ -8,6 +8,7 @@ from alphatrion.server.graphql.types import (
     ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
+    DailyTokenUsage,
     Experiment,
     Project,
     RemoveUserFromTeamInput,
@@ -89,6 +90,12 @@ class Query:
     @strawberry.field
     def traces(self, run_id: strawberry.ID) -> list[Span]:
         return GraphQLResolvers.list_traces(run_id=run_id)
+
+    @strawberry.field
+    def daily_token_usage(
+        self, team_id: strawberry.ID, days: int = 7
+    ) -> list[DailyTokenUsage]:
+        return GraphQLResolvers.get_daily_token_usage(team_id=team_id, days=days)
 
     # Artifact queries
     @strawberry.field

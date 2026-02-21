@@ -16,6 +16,7 @@ from .types import (
     ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
+    DailyTokenUsage,
     Experiment,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
@@ -572,6 +573,7 @@ class GraphQLResolvers:
                         parent_span_id=t["ParentSpanId"],
                         span_name=t["SpanName"],
                         span_kind=t["SpanKind"],
+                        semantic_kind=t["SemanticKind"],
                         service_name=t["ServiceName"],
                         duration=t["Duration"],
                         status_code=t["StatusCode"],
@@ -591,6 +593,42 @@ class GraphQLResolvers:
         except Exception as e:
             # Log error and return empty list - don't fail the GraphQL query
             print(f"Failed to fetch traces: {e}")
+            return []
+
+    # Alias for list_spans
+    list_traces = list_spans
+
+    @staticmethod
+    def get_daily_token_usage(
+        team_id: strawberry.ID, days: int = 7
+    ) -> list[DailyTokenUsage]:
+        """Get daily token usage from LLM calls for a team."""
+        from alphatrion import envs
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return []
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+            daily_usage = trace_store.get_daily_token_usage(
+                team_id=uuid.UUID(team_id), days=days
+            )
+            trace_store.close()
+
+            # Convert to GraphQL DailyTokenUsage objects
+            return [
+                DailyTokenUsage(
+                    date=item["date"],
+                    total_tokens=item["total_tokens"],
+                    input_tokens=item["input_tokens"],
+                    output_tokens=item["output_tokens"],
+                )
+                for item in daily_usage
+            ]
+        except Exception as e:
+            # Log error and return empty list - don't fail the GraphQL query
+            print(f"Failed to fetch daily token usage: {e}")
             return []
 
 

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTeamContext } from '../../context/team-context';
 import { useTeam } from '../../hooks/use-teams';
 import { useTeamExperiments } from '../../hooks/use-team-experiments';
+import { useDailyTokenUsage } from '../../hooks/use-token-usage';
 import {
   Card,
   CardContent,
@@ -10,6 +11,7 @@ import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
+import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
 import { subDays, subMonths } from 'date-fns';
 import { FolderKanban, FlaskConical, Play } from 'lucide-react';
 
@@ -30,6 +32,14 @@ export function DashboardPage() {
   const { data: teamExperiments, isLoading: experimentsLoading } = useTeamExperiments(
     selectedTeamId || '',
     { enabled: !!selectedTeamId }
+  );
+
+  // Get days for selected time range
+  const days = TIME_RANGE_OPTIONS.find((opt) => opt.value === timeRange)?.days || 30;
+
+  const { data: dailyTokenUsage, isLoading: tokenUsageLoading } = useDailyTokenUsage(
+    selectedTeamId || '',
+    days
   );
 
   // Filter experiments based on selected time range
@@ -178,6 +188,21 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Token Usage Chart */}
+        <Card>
+          <CardContent className="p-4">
+            {tokenUsageLoading ? (
+              <Skeleton className="h-80 w-full" />
+            ) : dailyTokenUsage ? (
+              <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
+            ) : (
+              <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
+                No token usage data available for this time range
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

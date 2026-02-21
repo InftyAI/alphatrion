@@ -61,9 +61,19 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [experiments, timeRange]);
 
+  // Calculate total experiments in the time range
+  const totalExperiments = useMemo(() => {
+    return experiments.length;
+  }, [experiments]);
+
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold">Experiments Timeline</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Experiments Timeline</h3>
+        <div className="text-xs text-muted-foreground">
+          Total: {totalExperiments}
+        </div>
+      </div>
 
       <ResponsiveContainer width="100%" height={260}>
         <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
@@ -93,9 +103,28 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
               borderRadius: '6px',
               fontSize: '12px',
             }}
-            labelFormatter={(label) => `Date: ${label}`}
+            content={({ active, payload, label }) => {
+              if (!active || !payload || !payload.length) return null;
+              const data = payload[0].payload;
+              return (
+                <div className="bg-card border border-border rounded-md p-2 shadow-sm">
+                  <div className="text-xs font-medium mb-1.5">{label}</div>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                      <span className="text-muted-foreground">Launched:</span>
+                      <span className="font-medium ml-auto">{data.experiments}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            }}
           />
-          <Legend wrapperStyle={{ fontSize: '12px' }} />
+          <Legend
+            wrapperStyle={{ fontSize: '11px' }}
+            iconType="circle"
+            iconSize={8}
+          />
           <Line
             type="monotone"
             dataKey="experiments"
@@ -103,7 +132,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
             strokeWidth={2}
             dot={{ fill: '#a78bfa', r: 3 }}
             activeDot={{ r: 5 }}
-            name="Experiments Launched"
+            name="Launched"
           />
         </LineChart>
       </ResponsiveContainer>
