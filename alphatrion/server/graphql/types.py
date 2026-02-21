@@ -233,6 +233,7 @@ class Span:
     parent_span_id: str
     span_name: str
     span_kind: str
+    semantic_kind: str
     service_name: str
     duration: float  # nanoseconds (using float to support large int64 values)
     status_code: str
@@ -247,3 +248,11 @@ class Span:
     resource_attributes: JSON
     events: list[TraceEvent]
     links: list[TraceLink]
+
+
+@strawberry.type
+class DailyTokenUsage:
+    date: str
+    total_tokens: int
+    input_tokens: int
+    output_tokens: int

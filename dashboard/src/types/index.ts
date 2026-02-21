@@ -163,6 +163,7 @@ export interface Span {
   parentSpanId: string;
   spanName: string;
   spanKind: string;
+  semanticKind: string;
   serviceName: string;
   duration: number; // nanoseconds (received as float from GraphQL)
   statusCode: string;

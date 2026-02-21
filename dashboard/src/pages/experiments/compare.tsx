@@ -89,7 +89,7 @@ export function ExperimentComparePage() {
                   <dd className="font-medium">
                     {experiment.duration > 0
                       ? `${experiment.duration.toFixed(2)}s`
-                      : 'N/A'}
+                      : '-'}
                   </dd>
                 </div>
                 <div className="flex justify-between">

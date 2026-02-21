@@ -79,6 +79,7 @@ class TraceStore:
             ParentSpanId String CODEC(ZSTD(1)),
             SpanName LowCardinality(String) CODEC(ZSTD(1)),
             SpanKind LowCardinality(String) CODEC(ZSTD(1)),
+            SemanticKind LowCardinality(String) CODEC(ZSTD(1)),
             ServiceName LowCardinality(String) CODEC(ZSTD(1)),
             Duration UInt64 CODEC(ZSTD(1)),
             StatusCode LowCardinality(String) CODEC(ZSTD(1)),
@@ -104,6 +105,7 @@ class TraceStore:
             INDEX idx_run_id RunId TYPE bloom_filter(0.001) GRANULARITY 1,
             INDEX idx_project_id ProjectId TYPE bloom_filter(0.001) GRANULARITY 1,
             INDEX idx_team_id TeamId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_semantic_kind SemanticKind TYPE set(0) GRANULARITY 1,
             INDEX idx_attr_keys mapKeys(SpanAttributes) TYPE bloom_filter(0.01) GRANULARITY 1
         ) ENGINE = MergeTree()
         PARTITION BY toDate(Timestamp)
@@ -140,6 +142,7 @@ class TraceStore:
                             span.get("ParentSpanId", ""),
                             span.get("SpanName", ""),
                             span.get("SpanKind", ""),
+                            span.get("SemanticKind", ""),
                             span.get("ServiceName", ""),
                             span.get("Duration", 0),
                             span.get("StatusCode", ""),
@@ -170,6 +173,7 @@ class TraceStore:
                         "ParentSpanId",
                         "SpanName",
                         "SpanKind",
+                        "SemanticKind",
                         "ServiceName",
                         "Duration",
                         "StatusCode",
@@ -212,6 +216,7 @@ class TraceStore:
                     ParentSpanId,
                     SpanName,
                     SpanKind,
+                    SemanticKind,
                     ServiceName,
                     Duration,
                     StatusCode,
@@ -244,31 +249,76 @@ class TraceStore:
                             "ParentSpanId": row[3],
                             "SpanName": row[4],
                             "SpanKind": row[5],
-                            "ServiceName": row[6],
-                            "Duration": row[7],
-                            "StatusCode": row[8],
-                            "StatusMessage": row[9],
-                            "TeamId": row[10],
-                            "ProjectId": row[11],
-                            "RunId": row[12],
-                            "ExperimentId": row[13],
-                            "SpanAttributes": row[14],
-                            "ResourceAttributes": row[15],
+                            "SemanticKind": row[6],
+                            "ServiceName": row[7],
+                            "Duration": row[8],
+                            "StatusCode": row[9],
+                            "StatusMessage": row[10],
+                            "TeamId": row[11],
+                            "ProjectId": row[12],
+                            "RunId": row[13],
+                            "ExperimentId": row[14],
+                            "SpanAttributes": row[15],
+                            "ResourceAttributes": row[16],
                             "Events": {
-                                "Timestamp": row[16],
-                                "Name": row[17],
-                                "Attributes": row[18],
+                                "Timestamp": row[17],
+                                "Name": row[18],
+                                "Attributes": row[19],
                             },
                             "Links": {
-                                "TraceId": row[19],
-                                "SpanId": row[20],
-                                "Attributes": row[21],
+                                "TraceId": row[20],
+                                "SpanId": row[21],
+                                "Attributes": row[22],
                             },
                         }
                     )
                 return spans
             except Exception as e:
                 logger.error(f"Failed to get traces by run_id: {e}")
+                return []
+
+    def get_daily_token_usage(
+        self, team_id: uuid.UUID, days: int = 30
+    ) -> list[dict[str, Any]]:
+        """Get daily token usage from LLM calls for a team.
+
+        Args:
+            team_id: The team ID to filter by
+            days: Number of days to look back (default: 30)
+
+        Returns:
+            List of dicts with keys: date, total_tokens, input_tokens, output_tokens
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    toDate(Timestamp) as date,
+                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                FROM {self.database}.otel_spans
+                WHERE TeamId = '{team_id}'
+                  AND Timestamp >= now() - INTERVAL {days} DAY
+                  AND SemanticKind = 'llm'
+                GROUP BY date
+                ORDER BY date ASC
+                """
+
+                result = self.client.query(query)
+                daily_usage = []
+                for row in result.result_rows:
+                    daily_usage.append(
+                        {
+                            "date": row[0].strftime("%Y-%m-%d"),
+                            "total_tokens": int(row[1]),
+                            "input_tokens": int(row[2]),
+                            "output_tokens": int(row[3]),
+                        }
+                    )
+                return daily_usage
+            except Exception as e:
+                logger.error(f"Failed to get daily token usage: {e}")
                 return []
 
     def close(self) -> None:

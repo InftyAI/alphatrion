@@ -311,6 +311,7 @@ export const queries = {
         parentSpanId
         spanName
         spanKind
+        semanticKind
         serviceName
         duration
         statusCode
@@ -331,6 +332,17 @@ export const queries = {
           spanId
           attributes
         }
+      }
+    }
+  `,
+
+  getDailyTokenUsage: `
+    query GetDailyTokenUsage($teamId: ID!, $days: Int = 30) {
+      dailyTokenUsage(teamId: $teamId, days: $days) {
+        date
+        totalTokens
+        inputTokens
+        outputTokens
       }
     }
   `,

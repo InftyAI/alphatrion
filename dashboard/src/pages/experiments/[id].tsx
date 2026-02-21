@@ -172,7 +172,7 @@ export function ExperimentDetailPage() {
                   <dd className="mt-1.5 text-foreground text-sm">
                     {experiment.duration > 0
                       ? `${experiment.duration.toFixed(2)}s`
-                      : 'N/A'}
+                      : '-'}
                   </dd>
                 </div>
                 <div>
