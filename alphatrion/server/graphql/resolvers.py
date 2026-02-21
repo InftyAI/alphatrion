@@ -600,7 +600,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_daily_token_usage(
-        team_id: strawberry.ID, days: int = 30
+        team_id: strawberry.ID, days: int = 7
     ) -> list[DailyTokenUsage]:
         """Get daily token usage from LLM calls for a team."""
         from alphatrion import envs
