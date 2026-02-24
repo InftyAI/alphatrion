@@ -255,6 +255,7 @@ export const queries = {
           parentSpanId
           spanName
           spanKind
+          semanticKind
           serviceName
           duration
           statusCode
