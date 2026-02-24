@@ -126,7 +126,7 @@ class ClickHouseSpanExporter(SpanExporter):
             # Values: "workflow", "task", "agent", "tool", "unknown"
             semantic_kind = span_attributes["traceloop.span.kind"]
         else:
-            raise ValueError("Span is missing required semantic kind attributes")
+            semantic_kind = "unknown"
 
         # Convert events to nested structure
         event_timestamps = []
