@@ -197,6 +197,86 @@ class TraceStore:
                 logger.error(f"Failed to insert spans: {e}")
                 # Don't raise - we don't want to crash the application if tracing fails
 
+    def get_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+        """Get all spans for a specific run_id.
+
+        Args:
+            run_id: The run ID to filter by
+
+        Returns:
+            List of span dictionaries
+        """
+        with self._lock:  # Protect concurrent access to ClickHouse client
+            try:
+                query = f"""
+                SELECT
+                    Timestamp,
+                    TraceId,
+                    SpanId,
+                    ParentSpanId,
+                    SpanName,
+                    SpanKind,
+                    SemanticKind,
+                    ServiceName,
+                    Duration,
+                    StatusCode,
+                    StatusMessage,
+                    TeamId,
+                    ProjectId,
+                    RunId,
+                    ExperimentId,
+                    SpanAttributes,
+                    ResourceAttributes,
+                    Events.Timestamp as EventTimestamps,
+                    Events.Name as EventNames,
+                    Events.Attributes as EventAttributes,
+                    Links.TraceId as LinkTraceIds,
+                    Links.SpanId as LinkSpanIds,
+                    Links.Attributes as LinkAttributes
+                FROM {self.database}.otel_spans
+                WHERE RunId = '{run_id}'
+                ORDER BY Timestamp ASC
+                """
+
+                result = self.client.query(query)
+                spans = []
+                for row in result.result_rows:
+                    spans.append(
+                        {
+                            "Timestamp": row[0],
+                            "TraceId": row[1],
+                            "SpanId": row[2],
+                            "ParentSpanId": row[3],
+                            "SpanName": row[4],
+                            "SpanKind": row[5],
+                            "SemanticKind": row[6],
+                            "ServiceName": row[7],
+                            "Duration": row[8],
+                            "StatusCode": row[9],
+                            "StatusMessage": row[10],
+                            "TeamId": row[11],
+                            "ProjectId": row[12],
+                            "RunId": row[13],
+                            "ExperimentId": row[14],
+                            "SpanAttributes": row[15],
+                            "ResourceAttributes": row[16],
+                            "Events": {
+                                "Timestamp": row[17],
+                                "Name": row[18],
+                                "Attributes": row[19],
+                            },
+                            "Links": {
+                                "TraceId": row[20],
+                                "SpanId": row[21],
+                                "Attributes": row[22],
+                            },
+                        }
+                    )
+                return spans
+            except Exception as e:
+                logger.error(f"Failed to get spans by run_id: {e}")
+                return []
+
     def get_llm_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
         """Get all LLM spans for a specific run_id.
 

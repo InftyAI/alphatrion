@@ -111,7 +111,7 @@ class Experiment:
     created_at: datetime
     updated_at: datetime
 
-    _token_cache: dict[str, int] | None = strawberry.Private(default=None)
+    _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:
@@ -156,7 +156,7 @@ class Run:
     status: GraphQLStatusEnum
     created_at: datetime
 
-    _token_cache: dict[str, int] | None = strawberry.Private(default=None)
+    _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:
