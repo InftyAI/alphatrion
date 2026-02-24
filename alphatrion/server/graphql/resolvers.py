@@ -397,13 +397,6 @@ class GraphQLResolvers:
         """Aggregate token usage from all traces for a run."""
         from alphatrion import envs
 
-        # One potential issue here is if tracing is disabled after the run
-        # has completed, we won't be able to aggregate tokens anymore since
-        # we rely on fetching spans from the trace store.
-        # For now we assume tracing is enabled if users want to see token usage.
-        # In the future, we could consider caching token data in the metadb when
-        # runs/experiments are completed to avoid relying on trace store for
-        # historical data.
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
