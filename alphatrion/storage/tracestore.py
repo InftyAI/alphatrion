@@ -240,35 +240,35 @@ class TraceStore:
 
                 result = self.client.query(query)
                 spans = []
-                for row in result.result_rows:
+                for row in result.named_results():
                     spans.append(
                         {
-                            "Timestamp": row[0],
-                            "TraceId": row[1],
-                            "SpanId": row[2],
-                            "ParentSpanId": row[3],
-                            "SpanName": row[4],
-                            "SpanKind": row[5],
-                            "SemanticKind": row[6],
-                            "ServiceName": row[7],
-                            "Duration": row[8],
-                            "StatusCode": row[9],
-                            "StatusMessage": row[10],
-                            "TeamId": row[11],
-                            "ProjectId": row[12],
-                            "RunId": row[13],
-                            "ExperimentId": row[14],
-                            "SpanAttributes": row[15],
-                            "ResourceAttributes": row[16],
+                            "Timestamp": row["Timestamp"],
+                            "TraceId": row["TraceId"],
+                            "SpanId": row["SpanId"],
+                            "ParentSpanId": row["ParentSpanId"],
+                            "SpanName": row["SpanName"],
+                            "SpanKind": row["SpanKind"],
+                            "SemanticKind": row["SemanticKind"],
+                            "ServiceName": row["ServiceName"],
+                            "Duration": row["Duration"],
+                            "StatusCode": row["StatusCode"],
+                            "StatusMessage": row["StatusMessage"],
+                            "TeamId": row["TeamId"],
+                            "ProjectId": row["ProjectId"],
+                            "RunId": row["RunId"],
+                            "ExperimentId": row["ExperimentId"],
+                            "SpanAttributes": row["SpanAttributes"],
+                            "ResourceAttributes": row["ResourceAttributes"],
                             "Events": {
-                                "Timestamp": row[17],
-                                "Name": row[18],
-                                "Attributes": row[19],
+                                "Timestamp": row["EventTimestamps"],
+                                "Name": row["EventNames"],
+                                "Attributes": row["EventAttributes"],
                             },
                             "Links": {
-                                "TraceId": row[20],
-                                "SpanId": row[21],
-                                "Attributes": row[22],
+                                "TraceId": row["LinkTraceIds"],
+                                "SpanId": row["LinkSpanIds"],
+                                "Attributes": row["LinkAttributes"],
                             },
                         }
                     )
@@ -320,35 +320,35 @@ class TraceStore:
 
                 result = self.client.query(query)
                 spans = []
-                for row in result.result_rows:
+                for row in result.named_results():
                     spans.append(
                         {
-                            "Timestamp": row[0],
-                            "TraceId": row[1],
-                            "SpanId": row[2],
-                            "ParentSpanId": row[3],
-                            "SpanName": row[4],
-                            "SpanKind": row[5],
-                            "SemanticKind": row[6],
-                            "ServiceName": row[7],
-                            "Duration": row[8],
-                            "StatusCode": row[9],
-                            "StatusMessage": row[10],
-                            "TeamId": row[11],
-                            "ProjectId": row[12],
-                            "RunId": row[13],
-                            "ExperimentId": row[14],
-                            "SpanAttributes": row[15],
-                            "ResourceAttributes": row[16],
+                            "Timestamp": row["Timestamp"],
+                            "TraceId": row["TraceId"],
+                            "SpanId": row["SpanId"],
+                            "ParentSpanId": row["ParentSpanId"],
+                            "SpanName": row["SpanName"],
+                            "SpanKind": row["SpanKind"],
+                            "SemanticKind": row["SemanticKind"],
+                            "ServiceName": row["ServiceName"],
+                            "Duration": row["Duration"],
+                            "StatusCode": row["StatusCode"],
+                            "StatusMessage": row["StatusMessage"],
+                            "TeamId": row["TeamId"],
+                            "ProjectId": row["ProjectId"],
+                            "RunId": row["RunId"],
+                            "ExperimentId": row["ExperimentId"],
+                            "SpanAttributes": row["SpanAttributes"],
+                            "ResourceAttributes": row["ResourceAttributes"],
                             "Events": {
-                                "Timestamp": row[17],
-                                "Name": row[18],
-                                "Attributes": row[19],
+                                "Timestamp": row["EventTimestamps"],
+                                "Name": row["EventNames"],
+                                "Attributes": row["EventAttributes"],
                             },
                             "Links": {
-                                "TraceId": row[20],
-                                "SpanId": row[21],
-                                "Attributes": row[22],
+                                "TraceId": row["LinkTraceIds"],
+                                "SpanId": row["LinkSpanIds"],
+                                "Attributes": row["LinkAttributes"],
                             },
                         }
                     )
@@ -400,35 +400,35 @@ class TraceStore:
 
                 result = self.client.query(query)
                 spans = []
-                for row in result.result_rows:
+                for row in result.named_results():
                     spans.append(
                         {
-                            "Timestamp": row[0],
-                            "TraceId": row[1],
-                            "SpanId": row[2],
-                            "ParentSpanId": row[3],
-                            "SpanName": row[4],
-                            "SpanKind": row[5],
-                            "SemanticKind": row[6],
-                            "ServiceName": row[7],
-                            "Duration": row[8],
-                            "StatusCode": row[9],
-                            "StatusMessage": row[10],
-                            "TeamId": row[11],
-                            "ProjectId": row[12],
-                            "RunId": row[13],
-                            "ExperimentId": row[14],
-                            "SpanAttributes": row[15],
-                            "ResourceAttributes": row[16],
+                            "Timestamp": row["Timestamp"],
+                            "TraceId": row["TraceId"],
+                            "SpanId": row["SpanId"],
+                            "ParentSpanId": row["ParentSpanId"],
+                            "SpanName": row["SpanName"],
+                            "SpanKind": row["SpanKind"],
+                            "SemanticKind": row["SemanticKind"],
+                            "ServiceName": row["ServiceName"],
+                            "Duration": row["Duration"],
+                            "StatusCode": row["StatusCode"],
+                            "StatusMessage": row["StatusMessage"],
+                            "TeamId": row["TeamId"],
+                            "ProjectId": row["ProjectId"],
+                            "RunId": row["RunId"],
+                            "ExperimentId": row["ExperimentId"],
+                            "SpanAttributes": row["SpanAttributes"],
+                            "ResourceAttributes": row["ResourceAttributes"],
                             "Events": {
-                                "Timestamp": row[17],
-                                "Name": row[18],
-                                "Attributes": row[19],
+                                "Timestamp": row["EventTimestamps"],
+                                "Name": row["EventNames"],
+                                "Attributes": row["EventAttributes"],
                             },
                             "Links": {
-                                "TraceId": row[20],
-                                "SpanId": row[21],
-                                "Attributes": row[22],
+                                "TraceId": row["LinkTraceIds"],
+                                "SpanId": row["LinkSpanIds"],
+                                "Attributes": row["LinkAttributes"],
                             },
                         }
                     )
@@ -467,13 +467,13 @@ class TraceStore:
 
                 result = self.client.query(query)
                 daily_usage = []
-                for row in result.result_rows:
+                for row in result.named_results():
                     daily_usage.append(
                         {
-                            "date": row[0].strftime("%Y-%m-%d"),
-                            "total_tokens": int(row[1]),
-                            "input_tokens": int(row[2]),
-                            "output_tokens": int(row[3]),
+                            "date": row["date"].strftime("%Y-%m-%d"),
+                            "total_tokens": int(row["total_tokens"]),
+                            "input_tokens": int(row["input_tokens"]),
+                            "output_tokens": int(row["output_tokens"]),
                         }
                     )
                 return daily_usage
