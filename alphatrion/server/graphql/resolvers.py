@@ -5,9 +5,10 @@ from datetime import datetime
 import httpx
 import strawberry
 
+from alphatrion import envs
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import FINISHED_STATUS, Status
+from alphatrion.storage.sql_models import Status
 
 from .types import (
     AddUserToTeamInput,
@@ -169,22 +170,6 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         exp = metadb.get_experiment(experiment_id=uuid.UUID(id))
         if exp:
-            meta = exp.meta or {}
-
-            # Aggregate and cache tokens for finished experiments
-            # Only calculate if experiment is in a finished state and tokens
-            # not already cached.
-            exp_status = Status(exp.status)
-            is_finished = exp_status in FINISHED_STATUS
-
-            if is_finished and "total_tokens" not in meta:
-                token_data = GraphQLResolvers.aggregate_experiment_tokens(
-                    experiment_id=id
-                )
-                if token_data["total_tokens"] > 0:
-                    meta.update(token_data)
-                    metadb.update_experiment(experiment_id=uuid.UUID(id), meta=meta)
-
             return Experiment(
                 id=exp.uuid,
                 team_id=exp.team_id,
@@ -192,7 +177,7 @@ class GraphQLResolvers:
                 project_id=exp.project_id,
                 name=exp.name,
                 description=exp.description,
-                meta=meta,
+                meta=exp.meta,
                 params=exp.params,
                 duration=exp.duration,
                 status=GraphQLStatusEnum[Status(exp.status).name],
@@ -237,23 +222,13 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         run = metadb.get_run(run_id=uuid.UUID(id))
         if run:
-            meta = run.meta or {}
-
-            # Aggregate and cache tokens for completed runs.
-            # It could be slow for the first time.
-            if Status(run.status) == Status.COMPLETED and "total_tokens" not in meta:
-                token_data = GraphQLResolvers.aggregate_run_tokens(run_id=id)
-                if token_data["total_tokens"] > 0:
-                    meta.update(token_data)
-                    metadb.update_run(run_id=uuid.UUID(id), meta=meta)
-
             return Run(
                 id=run.uuid,
                 team_id=run.team_id,
                 user_id=run.user_id,
                 project_id=run.project_id,
                 experiment_id=run.experiment_id,
-                meta=meta,
+                meta=run.meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 created_at=run.created_at,
             )
@@ -434,7 +409,7 @@ class GraphQLResolvers:
 
         try:
             trace_store = runtime.storage_runtime().tracestore
-            spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
+            spans = trace_store.get_llm_spans_by_run_id(uuid.UUID(run_id))
             trace_store.close()
 
             total_tokens = 0
@@ -465,37 +440,31 @@ class GraphQLResolvers:
 
     @staticmethod
     def aggregate_experiment_tokens(experiment_id: strawberry.ID) -> dict[str, int]:
-        """Aggregate token usage from all runs in an experiment."""
-        try:
-            metadb = runtime.storage_runtime().metadb
+        """Aggregate token usage from all spans in an experiment."""
 
-            # Get all runs for this experiment (unpaginated)
-            runs = metadb.list_runs_by_exp_id(
-                exp_id=uuid.UUID(experiment_id),
-                page=0,
-                page_size=10000,  # Large page size to get all runs
-            )
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+            # Get all LLM spans for this experiment in a single query
+            spans = trace_store.get_llm_spans_by_exp_id(uuid.UUID(experiment_id))
+            trace_store.close()
 
             total_tokens = 0
             input_tokens = 0
             output_tokens = 0
 
-            for run in runs:
-                current_run = run
+            for span in spans:
+                span_attrs = span.get("SpanAttributes", {})
 
-                if current_run.meta:
-                    # Trigger the aggregation of tokens for the run if not already done
-                    # When experiment is finished, its runs should also be finished, so
-                    # token aggregation should be safe without worrying.
-                    if "total_tokens" not in current_run.meta:
-                        GraphQLResolvers.aggregate_run_tokens(run_id=current_run.uuid)
-                        # Refresh run data to get updated tokens
-                        current_run = metadb.get_run(run_id=current_run.uuid)
-
-                    # Sum up tokens from each run's meta
-                    total_tokens += int(current_run.meta.get("total_tokens", 0))
-                    input_tokens += int(current_run.meta.get("input_tokens", 0))
-                    output_tokens += int(current_run.meta.get("output_tokens", 0))
+                # Aggregate tokens from LLM spans
+                if "llm.usage.total_tokens" in span_attrs:
+                    total_tokens += int(span_attrs["llm.usage.total_tokens"])
+                if "gen_ai.usage.input_tokens" in span_attrs:
+                    input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
+                if "gen_ai.usage.output_tokens" in span_attrs:
+                    output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
 
             return {
                 "total_tokens": total_tokens,

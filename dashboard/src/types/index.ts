@@ -62,6 +62,9 @@ export interface Experiment {
   status: Status;
   createdAt: string;
   updatedAt: string;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
   metrics?: Metric[];
 }
 
@@ -74,6 +77,9 @@ export interface Run {
   meta: Record<string, unknown> | null;
   status: Status;
   createdAt: string;
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
   metrics?: Metric[];
   spans?: Span[];
 }
