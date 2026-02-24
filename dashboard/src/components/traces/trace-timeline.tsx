@@ -197,7 +197,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
 
     return (
       <div
-        className={`${statusColor} absolute h-7 rounded flex items-center px-2 text-white text-[11px] font-medium overflow-hidden transition-all hover:opacity-90 hover:shadow-md cursor-pointer shadow`}
+        className={`${statusColor} absolute h-8 rounded flex items-center px-2 text-white text-[11px] font-medium overflow-hidden transition-all hover:opacity-90 hover:shadow-md cursor-pointer shadow`}
         style={{
           left: `${leftPercent}%`,
           width: `${Math.max(widthPercent, 0.8)}%`, // Minimum width for visibility
@@ -222,7 +222,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       <div key={span.spanId}>
         {/* Span Row */}
         <div
-          className={`flex items-center border-b border-border hover:bg-muted/30 transition-colors cursor-pointer ${
+          className={`flex items-center border-b border-border hover:bg-muted/30 transition-colors cursor-pointer h-12 ${
             selectedSpan?.spanId === span.spanId ? 'bg-accent' : ''
           }`}
           onClick={(e) => {
@@ -233,7 +233,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         >
           {/* Left: Span info with expand button */}
           <div
-            className="flex-shrink-0 flex items-center gap-2 py-2 min-w-0"
+            className="flex-shrink-0 flex items-center gap-2 h-full min-w-0"
             style={{ width: '360px', paddingLeft: `${depth * 12 + 12}px`, paddingRight: '12px' }}
           >
             {/* Tree connector line */}
@@ -270,32 +270,32 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           </div>
 
           {/* Middle: Duration */}
-          <div className="flex-shrink-0 flex items-center gap-1.5 whitespace-nowrap text-foreground py-2" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
+          <div className="flex-shrink-0 flex items-center gap-1.5 whitespace-nowrap text-foreground h-full" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
             <Clock className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
             <span className="text-xs font-mono">{formatDuration(span.duration)}</span>
           </div>
 
           {/* Middle: Tokens */}
-          <div className="flex-shrink-0 flex flex-col justify-center whitespace-nowrap text-foreground py-2" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
+          <div className="flex-shrink-0 flex items-center whitespace-nowrap text-foreground h-full" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
             {totalTokens && totalTokens > 0 ? (
-              <>
-                <div className="font-mono flex items-center text-xs">
+              <div className="flex flex-col justify-center">
+                <div className="font-mono flex items-center text-xs leading-tight">
                   {isAggregated && <span className="inline-block align-middle mr-1 text-muted-foreground">∑</span>}
                   <span>{totalTokens.toLocaleString()}</span>
                 </div>
                 {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
-                  <div className="text-muted-foreground text-[10px] mt-0.5 font-mono">
+                  <div className="text-muted-foreground text-[10px] font-mono leading-tight mt-0.5">
                     {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
                   </div>
                 )}
-              </>
+              </div>
             ) : (
               <span className="text-muted-foreground/40 text-xs">—</span>
             )}
           </div>
 
           {/* Right: Timeline bar */}
-          <div className="flex-1 relative h-9 min-w-0 flex items-center" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
+          <div className="flex-1 relative h-full min-w-0 flex items-center" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
             {renderSpanBar(node)}
           </div>
         </div>
@@ -506,17 +506,17 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
         {/* Timeline */}
         <div className="border rounded-md overflow-hidden bg-background shadow-sm">
           {/* Column headers */}
-          <div className="flex items-center bg-muted/50 border-b border-border font-semibold text-[11px] text-foreground uppercase tracking-wide">
-            <div className="flex-shrink-0 py-2" style={{ width: '360px', paddingLeft: '12px', paddingRight: '12px' }}>
+          <div className="flex items-center bg-muted/50 border-b border-border font-semibold text-[11px] text-foreground uppercase tracking-wide h-10">
+            <div className="flex-shrink-0 flex items-center h-full" style={{ width: '360px', paddingLeft: '12px', paddingRight: '12px' }}>
               Span Name
             </div>
-            <div className="flex-shrink-0 py-2" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
+            <div className="flex-shrink-0 flex items-center h-full" style={{ width: '105px', paddingLeft: '12px', paddingRight: '12px' }}>
               Duration
             </div>
-            <div className="flex-shrink-0 py-2" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
+            <div className="flex-shrink-0 flex items-center h-full" style={{ width: '105px', paddingLeft: '12px', paddingRight: '6px' }}>
               Tokens
             </div>
-            <div className="flex-1 py-2" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
+            <div className="flex-1 flex items-center h-full" style={{ paddingLeft: '2px', paddingRight: '12px' }}>
               Timeline
             </div>
           </div>
