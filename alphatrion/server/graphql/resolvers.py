@@ -498,41 +498,39 @@ class GraphQLResolvers:
             # Convert to GraphQL Span objects
             spans = []
             for t in raw_spans:
-                # Convert events
+                # Convert events from ClickHouse flat arrays
                 events = []
-                if t.get("Events"):
-                    event_timestamps = t["Events"].get("Timestamp", [])
-                    event_names = t["Events"].get("Name", [])
-                    event_attrs = t["Events"].get("Attributes", [])
-                    for i in range(len(event_names)):
-                        events.append(
-                            TraceEvent(
-                                timestamp=event_timestamps[i]
-                                if i < len(event_timestamps)
-                                else datetime.now(),
-                                name=event_names[i],
-                                attributes=event_attrs[i]
-                                if i < len(event_attrs)
-                                else {},
-                            )
+                event_timestamps = t.get("EventTimestamps", [])
+                event_names = t.get("EventNames", [])
+                event_attrs = t.get("EventAttributes", [])
+                for i in range(len(event_names)):
+                    events.append(
+                        TraceEvent(
+                            timestamp=event_timestamps[i]
+                            if i < len(event_timestamps)
+                            else datetime.now(),
+                            name=event_names[i],
+                            attributes=event_attrs[i]
+                            if i < len(event_attrs)
+                            else {},
                         )
+                    )
 
-                # Convert links
+                # Convert links from ClickHouse flat arrays
                 links = []
-                if t.get("Links"):
-                    link_trace_ids = t["Links"].get("TraceId", [])
-                    link_span_ids = t["Links"].get("SpanId", [])
-                    link_attrs = t["Links"].get("Attributes", [])
-                    for i in range(len(link_trace_ids)):
-                        links.append(
-                            TraceLink(
-                                trace_id=link_trace_ids[i],
-                                span_id=link_span_ids[i]
-                                if i < len(link_span_ids)
-                                else "",
-                                attributes=link_attrs[i] if i < len(link_attrs) else {},
-                            )
+                link_trace_ids = t.get("LinkTraceIds", [])
+                link_span_ids = t.get("LinkSpanIds", [])
+                link_attrs = t.get("LinkAttributes", [])
+                for i in range(len(link_trace_ids)):
+                    links.append(
+                        TraceLink(
+                            trace_id=link_trace_ids[i],
+                            span_id=link_span_ids[i]
+                            if i < len(link_span_ids)
+                            else "",
+                            attributes=link_attrs[i] if i < len(link_attrs) else {},
                         )
+                    )
 
                 spans.append(
                     Span(

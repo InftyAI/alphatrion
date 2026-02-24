@@ -204,7 +204,7 @@ class TraceStore:
             run_id: The run ID to filter by
 
         Returns:
-            List of span dictionaries
+            List of span dictionaries from ClickHouse
         """
         with self._lock:  # Protect concurrent access to ClickHouse client
             try:
@@ -239,40 +239,7 @@ class TraceStore:
                 """
 
                 result = self.client.query(query)
-                spans = []
-                for row in result.named_results():
-                    spans.append(
-                        {
-                            "Timestamp": row["Timestamp"],
-                            "TraceId": row["TraceId"],
-                            "SpanId": row["SpanId"],
-                            "ParentSpanId": row["ParentSpanId"],
-                            "SpanName": row["SpanName"],
-                            "SpanKind": row["SpanKind"],
-                            "SemanticKind": row["SemanticKind"],
-                            "ServiceName": row["ServiceName"],
-                            "Duration": row["Duration"],
-                            "StatusCode": row["StatusCode"],
-                            "StatusMessage": row["StatusMessage"],
-                            "TeamId": row["TeamId"],
-                            "ProjectId": row["ProjectId"],
-                            "RunId": row["RunId"],
-                            "ExperimentId": row["ExperimentId"],
-                            "SpanAttributes": row["SpanAttributes"],
-                            "ResourceAttributes": row["ResourceAttributes"],
-                            "Events": {
-                                "Timestamp": row["EventTimestamps"],
-                                "Name": row["EventNames"],
-                                "Attributes": row["EventAttributes"],
-                            },
-                            "Links": {
-                                "TraceId": row["LinkTraceIds"],
-                                "SpanId": row["LinkSpanIds"],
-                                "Attributes": row["LinkAttributes"],
-                            },
-                        }
-                    )
-                return spans
+                return list(result.named_results())
             except Exception as e:
                 logger.error(f"Failed to get spans by run_id: {e}")
                 return []
@@ -319,40 +286,7 @@ class TraceStore:
                 """
 
                 result = self.client.query(query)
-                spans = []
-                for row in result.named_results():
-                    spans.append(
-                        {
-                            "Timestamp": row["Timestamp"],
-                            "TraceId": row["TraceId"],
-                            "SpanId": row["SpanId"],
-                            "ParentSpanId": row["ParentSpanId"],
-                            "SpanName": row["SpanName"],
-                            "SpanKind": row["SpanKind"],
-                            "SemanticKind": row["SemanticKind"],
-                            "ServiceName": row["ServiceName"],
-                            "Duration": row["Duration"],
-                            "StatusCode": row["StatusCode"],
-                            "StatusMessage": row["StatusMessage"],
-                            "TeamId": row["TeamId"],
-                            "ProjectId": row["ProjectId"],
-                            "RunId": row["RunId"],
-                            "ExperimentId": row["ExperimentId"],
-                            "SpanAttributes": row["SpanAttributes"],
-                            "ResourceAttributes": row["ResourceAttributes"],
-                            "Events": {
-                                "Timestamp": row["EventTimestamps"],
-                                "Name": row["EventNames"],
-                                "Attributes": row["EventAttributes"],
-                            },
-                            "Links": {
-                                "TraceId": row["LinkTraceIds"],
-                                "SpanId": row["LinkSpanIds"],
-                                "Attributes": row["LinkAttributes"],
-                            },
-                        }
-                    )
-                return spans
+                return list(result.named_results())
             except Exception as e:
                 logger.error(f"Failed to get traces by run_id: {e}")
                 return []
@@ -399,40 +333,7 @@ class TraceStore:
                 """
 
                 result = self.client.query(query)
-                spans = []
-                for row in result.named_results():
-                    spans.append(
-                        {
-                            "Timestamp": row["Timestamp"],
-                            "TraceId": row["TraceId"],
-                            "SpanId": row["SpanId"],
-                            "ParentSpanId": row["ParentSpanId"],
-                            "SpanName": row["SpanName"],
-                            "SpanKind": row["SpanKind"],
-                            "SemanticKind": row["SemanticKind"],
-                            "ServiceName": row["ServiceName"],
-                            "Duration": row["Duration"],
-                            "StatusCode": row["StatusCode"],
-                            "StatusMessage": row["StatusMessage"],
-                            "TeamId": row["TeamId"],
-                            "ProjectId": row["ProjectId"],
-                            "RunId": row["RunId"],
-                            "ExperimentId": row["ExperimentId"],
-                            "SpanAttributes": row["SpanAttributes"],
-                            "ResourceAttributes": row["ResourceAttributes"],
-                            "Events": {
-                                "Timestamp": row["EventTimestamps"],
-                                "Name": row["EventNames"],
-                                "Attributes": row["EventAttributes"],
-                            },
-                            "Links": {
-                                "TraceId": row["LinkTraceIds"],
-                                "SpanId": row["LinkSpanIds"],
-                                "Attributes": row["LinkAttributes"],
-                            },
-                        }
-                    )
-                return spans
+                return list(result.named_results())
             except Exception as e:
                 logger.error(f"Failed to get spans by exp_id: {e}")
                 return []
@@ -466,17 +367,16 @@ class TraceStore:
                 """
 
                 result = self.client.query(query)
-                daily_usage = []
-                for row in result.named_results():
-                    daily_usage.append(
-                        {
-                            "date": row["date"].strftime("%Y-%m-%d"),
-                            "total_tokens": int(row["total_tokens"]),
-                            "input_tokens": int(row["input_tokens"]),
-                            "output_tokens": int(row["output_tokens"]),
-                        }
-                    )
-                return daily_usage
+                # Convert date to string format and ensure integers
+                return [
+                    {
+                        "date": row["date"].strftime("%Y-%m-%d"),
+                        "total_tokens": int(row["total_tokens"]),
+                        "input_tokens": int(row["input_tokens"]),
+                        "output_tokens": int(row["output_tokens"]),
+                    }
+                    for row in result.named_results()
+                ]
             except Exception as e:
                 logger.error(f"Failed to get daily token usage: {e}")
                 return []
