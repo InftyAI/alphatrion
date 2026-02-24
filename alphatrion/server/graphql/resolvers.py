@@ -428,7 +428,9 @@ class GraphQLResolvers:
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to aggregate tokens for run {run_id}: {e}", exc_info=True)
+            logging.error(
+                f"Failed to aggregate tokens for run {run_id}: {e}", exc_info=True
+            )
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
@@ -503,9 +505,7 @@ class GraphQLResolvers:
                             if i < len(event_timestamps)
                             else datetime.now(),
                             name=event_names[i],
-                            attributes=event_attrs[i]
-                            if i < len(event_attrs)
-                            else {},
+                            attributes=event_attrs[i] if i < len(event_attrs) else {},
                         )
                     )
 
@@ -518,9 +518,7 @@ class GraphQLResolvers:
                     links.append(
                         TraceLink(
                             trace_id=link_trace_ids[i],
-                            span_id=link_span_ids[i]
-                            if i < len(link_span_ids)
-                            else "",
+                            span_id=link_span_ids[i] if i < len(link_span_ids) else "",
                             attributes=link_attrs[i] if i < len(link_attrs) else {},
                         )
                     )
