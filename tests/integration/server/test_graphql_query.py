@@ -434,6 +434,9 @@ async def test_query_single_run():
             meta
             status
             createdAt
+            totalTokens
+            inputTokens
+            outputTokens
             spans {{
                 traceId
                 spanId
@@ -451,13 +454,17 @@ async def test_query_single_run():
     assert response.data["run"]["experimentId"] == str(exp_id)
     assert response.data["run"]["status"] == "COMPLETED"
     assert len(response.data["run"]["spans"]) > 0
+    # Verify tokens are fetched from ClickHouse via GraphQL fields
+    assert response.data["run"]["totalTokens"] is not None
+    assert response.data["run"]["inputTokens"] is not None
+    assert response.data["run"]["outputTokens"] is not None
 
+    # Verify tokens are NOT cached in meta anymore
     metadb = runtime.storage_runtime().metadb
     obj = metadb.get_run(run_id=str(run_id))
     assert obj.status == Status.COMPLETED
-    assert obj.meta["total_tokens"] is not None
-    assert obj.meta["input_tokens"] is not None
-    assert obj.meta["output_tokens"] is not None
+    # Meta should not contain token data
+    assert obj.meta is None or "total_tokens" not in (obj.meta or {})
 
 
 def test_query_runs():

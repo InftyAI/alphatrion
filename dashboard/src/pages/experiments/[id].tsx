@@ -178,12 +178,12 @@ export function ExperimentDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">
-                    {experiment.meta?.total_tokens !== undefined ? (
+                    {experiment.totalTokens !== undefined && experiment.totalTokens > 0 ? (
                       <>
-                        {Number(experiment.meta.total_tokens).toLocaleString()}
-                        {experiment.meta.input_tokens !== undefined && experiment.meta.output_tokens !== undefined && (
+                        {Number(experiment.totalTokens).toLocaleString()}
+                        {experiment.inputTokens !== undefined && experiment.outputTokens !== undefined && (
                           <span className="text-muted-foreground text-xs ml-1">
-                            ({Number(experiment.meta.input_tokens).toLocaleString()}↓ {Number(experiment.meta.output_tokens).toLocaleString()}↑)
+                            ({Number(experiment.inputTokens).toLocaleString()}↓ {Number(experiment.outputTokens).toLocaleString()}↑)
                           </span>
                         )}
                       </>
@@ -211,20 +211,18 @@ export function ExperimentDetailPage() {
               </dl>
 
               {/* Metadata Section */}
-              {experiment.meta && Object.keys(experiment.meta).filter(k => !['total_tokens', 'input_tokens', 'output_tokens'].includes(k)).length > 0 && (
+              {experiment.meta && Object.keys(experiment.meta).length > 0 && (
                 <div className="mt-5 pt-5 border-t">
                   <h3 className="text-base font-semibold mb-3">Metadata</h3>
                   <dl className="grid grid-cols-3 gap-3 text-sm">
-                    {Object.entries(experiment.meta)
-                      .filter(([key]) => !['total_tokens', 'input_tokens', 'output_tokens'].includes(key))
-                      .map(([key, value]) => (
-                        <div key={key} className="break-words">
-                          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
-                          <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
-                            {typeof value === 'string' ? value : JSON.stringify(value)}
-                          </dd>
-                        </div>
-                      ))}
+                    {Object.entries(experiment.meta).map(([key, value]) => (
+                      <div key={key} className="break-words">
+                        <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                        <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
+                          {typeof value === 'string' ? value : JSON.stringify(value)}
+                        </dd>
+                      </div>
+                    ))}
                   </dl>
                 </div>
               )}

@@ -111,11 +111,38 @@ class Experiment:
     created_at: datetime
     updated_at: datetime
 
+    _token_cache: strawberry.Private[dict[str, int] | None] = None
+
     @strawberry.field
     def metrics(self) -> list["Metric"]:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_exp_metrics(experiment_id=self.id)
+
+    def _get_token_data(self) -> dict[str, int]:
+        """Get token data with caching to avoid multiple ClickHouse queries."""
+        if self._token_cache is None:
+            from .resolvers import GraphQLResolvers
+
+            self._token_cache = GraphQLResolvers.aggregate_experiment_tokens(
+                experiment_id=self.id
+            )
+        return self._token_cache
+
+    @strawberry.field
+    def total_tokens(self) -> int:
+        """Get total token usage from ClickHouse."""
+        return self._get_token_data()["total_tokens"]
+
+    @strawberry.field
+    def input_tokens(self) -> int:
+        """Get input token usage from ClickHouse."""
+        return self._get_token_data()["input_tokens"]
+
+    @strawberry.field
+    def output_tokens(self) -> int:
+        """Get output token usage from ClickHouse."""
+        return self._get_token_data()["output_tokens"]
 
 
 @strawberry.type
@@ -128,6 +155,8 @@ class Run:
     meta: JSON | None
     status: GraphQLStatusEnum
     created_at: datetime
+
+    _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:
@@ -142,6 +171,29 @@ class Run:
         from alphatrion.server.graphql.resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_spans(run_id=str(self.id))
+
+    def _get_token_data(self) -> dict[str, int]:
+        """Get token data with caching to avoid multiple ClickHouse queries."""
+        if self._token_cache is None:
+            from alphatrion.server.graphql.resolvers import GraphQLResolvers
+
+            self._token_cache = GraphQLResolvers.aggregate_run_tokens(run_id=self.id)
+        return self._token_cache
+
+    @strawberry.field
+    def total_tokens(self) -> int:
+        """Get total token usage from ClickHouse."""
+        return self._get_token_data()["total_tokens"]
+
+    @strawberry.field
+    def input_tokens(self) -> int:
+        """Get input token usage from ClickHouse."""
+        return self._get_token_data()["input_tokens"]
+
+    @strawberry.field
+    def output_tokens(self) -> int:
+        """Get output token usage from ClickHouse."""
+        return self._get_token_data()["output_tokens"]
 
 
 @strawberry.type

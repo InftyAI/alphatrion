@@ -192,6 +192,9 @@ export const queries = {
         status
         createdAt
         updatedAt
+        totalTokens
+        inputTokens
+        outputTokens
         metrics {
           id
           key
@@ -232,6 +235,9 @@ export const queries = {
         meta
         status
         createdAt
+        totalTokens
+        inputTokens
+        outputTokens
         metrics {
           id
           key
@@ -249,6 +255,7 @@ export const queries = {
           parentSpanId
           spanName
           spanKind
+          semanticKind
           serviceName
           duration
           statusCode

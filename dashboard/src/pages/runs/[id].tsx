@@ -214,11 +214,11 @@ export function RunDetailPage() {
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">
-                {run.meta?.total_tokens !== undefined ? (
+                {run.totalTokens !== undefined && run.totalTokens > 0 ? (
                   <>
-                    {Number(run.meta.total_tokens).toLocaleString()}
+                    {Number(run.totalTokens).toLocaleString()}
                     <span className="text-muted-foreground text-xs ml-1">
-                      ({Number(run.meta.input_tokens || 0).toLocaleString()}↓ {Number(run.meta.output_tokens || 0).toLocaleString()}↑)
+                      ({Number(run.inputTokens || 0).toLocaleString()}↓ {Number(run.outputTokens || 0).toLocaleString()}↑)
                     </span>
                   </>
                 ) : (
@@ -238,12 +238,12 @@ export function RunDetailPage() {
 
 
           {/* Metadata */}
-          {run.meta && Object.keys(run.meta).filter(k => !['total_tokens', 'input_tokens', 'output_tokens', 'execution_result'].includes(k)).length > 0 && (
+          {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
             <div className="mt-5 pt-5 border-t">
               <h3 className="text-base font-semibold mb-3">Metadata</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
                 {Object.entries(run.meta)
-                  .filter(([key]) => !['total_tokens', 'input_tokens', 'output_tokens', 'execution_result'].includes(key))
+                  .filter(([key]) => key !== 'execution_result')
                   .map(([key, value]) => (
                     <div key={key} className="break-words">
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
@@ -323,21 +323,16 @@ export function RunDetailPage() {
               </div>
               {artifactContent && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleCopy}
-                  className="ml-2 h-8 flex-shrink-0"
+                  className="ml-2 h-7 w-7 p-0 flex-shrink-0"
+                  title={copied ? 'Copied!' : 'Copy to clipboard'}
                 >
                   {copied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 mr-1.5" />
-                      Copied
-                    </>
+                    <Check className="h-3.5 w-3.5 text-green-600" />
                   ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 mr-1.5" />
-                      Copy
-                    </>
+                    <Copy className="h-3.5 w-3.5" />
                   )}
                 </Button>
               )}
