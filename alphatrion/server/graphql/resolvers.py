@@ -402,8 +402,8 @@ class GraphQLResolvers:
 
         try:
             trace_store = runtime.storage_runtime().tracestore
-            spans = trace_store.get_llm_spans_by_run_id(uuid.UUID(run_id))
-            trace_store.close()
+            spans = trace_store.get_llm_spans_by_run_id(run_id)
+            # Don't close - it's a shared singleton connection
 
             total_tokens = 0
             input_tokens = 0
@@ -428,7 +428,7 @@ class GraphQLResolvers:
         except Exception as e:
             import logging
 
-            logging.error(f"Failed to aggregate tokens for run {run_id}: {e}")
+            logging.error(f"Failed to aggregate tokens for run {run_id}: {e}", exc_info=True)
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
@@ -441,8 +441,8 @@ class GraphQLResolvers:
         try:
             trace_store = runtime.storage_runtime().tracestore
             # Get all LLM spans for this experiment in a single query
-            spans = trace_store.get_llm_spans_by_exp_id(uuid.UUID(experiment_id))
-            trace_store.close()
+            spans = trace_store.get_llm_spans_by_exp_id(experiment_id)
+            # Don't close - it's a shared singleton connection
 
             total_tokens = 0
             input_tokens = 0
@@ -486,7 +486,7 @@ class GraphQLResolvers:
 
             # Get traces from ClickHouse
             raw_spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
-            trace_store.close()
+            # Don't close - it's a shared singleton connection
 
             # Convert to GraphQL Span objects
             spans = []
@@ -574,7 +574,7 @@ class GraphQLResolvers:
             daily_usage = trace_store.get_daily_token_usage(
                 team_id=uuid.UUID(team_id), days=days
             )
-            trace_store.close()
+            # Don't close - it's a shared singleton connection
 
             # Convert to GraphQL DailyTokenUsage objects
             return [
