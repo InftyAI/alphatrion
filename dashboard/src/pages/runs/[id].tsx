@@ -323,21 +323,16 @@ export function RunDetailPage() {
               </div>
               {artifactContent && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleCopy}
-                  className="ml-2 h-8 flex-shrink-0"
+                  className="ml-2 h-7 w-7 p-0 flex-shrink-0"
+                  title={copied ? 'Copied!' : 'Copy to clipboard'}
                 >
                   {copied ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 mr-1.5" />
-                      Copied
-                    </>
+                    <Check className="h-3.5 w-3.5 text-green-600" />
                   ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5 mr-1.5" />
-                      Copy
-                    </>
+                    <Copy className="h-3.5 w-3.5" />
                   )}
                 </Button>
               )}
