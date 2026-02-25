@@ -28,7 +28,6 @@ export default defineConfig(({ command }) => ({
         rollupOptions: {
             input: {
                 main: path.resolve(__dirname, "index.html"),
-                ide: path.resolve(__dirname, "ide.html"),
             },
         },
     },

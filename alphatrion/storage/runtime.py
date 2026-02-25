@@ -86,13 +86,8 @@ def init():
 
 def _init_plugins():
     """Initialize and register all plugins."""
-    from alphatrion.plugins import register_plugin
-    from alphatrion.plugins.workspace import WorkspacePlugin
-
-    # Cloud IDE plugin (workspace implementation)
-    cloud_ide = WorkspacePlugin()
-    cloud_ide.initialize()
-    register_plugin(cloud_ide)
+    # Plugins will be registered here as they are added
+    pass
 
 
 def storage_runtime() -> StorageRuntime:

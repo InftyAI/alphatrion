@@ -116,17 +116,12 @@ export function Sidebar() {
           const isActive = location.pathname === plugin.route ||
             location.pathname.startsWith(plugin.route + '/');
 
-          // For plugins that open in new tab (like Cloud IDE)
+          // For plugins that open in new tab
           if (plugin.openInNewTab) {
-            // Use /plugins/cloud-ide route in dev, API endpoint in production
-            const ideUrl = import.meta.env.DEV
-              ? '/plugins/cloud-ide'
-              : '/api/plugins/cloud-ide/ide';
-
             return (
               <a
                 key={plugin.id}
-                href={ideUrl}
+                href={plugin.route}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
