@@ -48,6 +48,20 @@ export interface Project {
   updatedAt: string;
 }
 
+// Plugin types (v2 - sidebar navigation)
+export interface PluginInfo {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;  // Lucide-react icon name
+  version: string;
+  author: string | null;
+  route: string;  // Frontend route (e.g., "/cloud-ide")
+  sidebarPosition: number;
+  enabled: boolean;
+  openInNewTab: boolean;  // Whether to open in new browser tab
+}
+
 export interface Experiment {
   id: string;
   teamId: string;
@@ -182,4 +196,56 @@ export interface Span {
   resourceAttributes: Record<string, string>;
   events: TraceEvent[];
   links: TraceLink[];
+}
+
+// Content Evolution Types (for Cloud IDE)
+export interface ContentSnapshot {
+  id: string;
+  projectId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  contentText?: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  evaluation: Record<string, unknown> | null;
+  metainfo: Record<string, unknown> | null;
+  language: string | null;
+  createdAt: string;
+}
+
+// Lightweight version without contentText for charts/listings
+export interface ContentSnapshotSummary {
+  id: string;
+  projectId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  language: string | null;
+  metainfo: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+// Repository File Browser Types
+export interface RepoFileEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+  children?: RepoFileEntry[];
+}
+
+export interface RepoFileTree {
+  exists: boolean;
+  root?: RepoFileEntry;
+  error?: string;
+}
+
+export interface RepoFileContent {
+  path: string;
+  content?: string;
+  error?: string;
 }

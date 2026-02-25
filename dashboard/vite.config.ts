@@ -13,6 +13,11 @@ export default defineConfig(({ command }) => ({
     // Only use /static/ base path in production build
     base: command === "build" ? "/static/" : "/",
     plugins: [react()],
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
+    },
     define: {
         __APP_VERSION__: JSON.stringify(version),
     },
@@ -20,6 +25,12 @@ export default defineConfig(({ command }) => ({
     publicDir: false,
     build: {
         outDir: "./static",
+        rollupOptions: {
+            input: {
+                main: path.resolve(__dirname, "index.html"),
+                ide: path.resolve(__dirname, "ide.html"),
+            },
+        },
     },
     server: {
         port: 5173,

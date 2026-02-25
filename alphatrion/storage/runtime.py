@@ -80,6 +80,20 @@ def init():
     if __STORAGE_RUNTIME__ is None:
         __STORAGE_RUNTIME__ = StorageRuntime()
 
+        # Initialize plugins after storage runtime is ready
+        _init_plugins()
+
+
+def _init_plugins():
+    """Initialize and register all plugins."""
+    from alphatrion.plugins import register_plugin
+    from alphatrion.plugins.workspace import WorkspacePlugin
+
+    # Cloud IDE plugin (workspace implementation)
+    cloud_ide = WorkspacePlugin()
+    cloud_ide.initialize()
+    register_plugin(cloud_ide)
+
 
 def storage_runtime() -> StorageRuntime:
     if __STORAGE_RUNTIME__ is None:

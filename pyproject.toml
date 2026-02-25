@@ -23,6 +23,8 @@ dependencies = [
     "httpx>=0.28.1",
     "clickhouse-connect>=0.7.0",
     "faker>=37.12",
+    "psutil>=7.0.0",
+    "kubernetes>=31.0.0",
 ]
 
 [dependency-groups]

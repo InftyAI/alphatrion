@@ -1,0 +1,350 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  File,
+  Folder,
+  FolderOpen,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Terminal as TerminalIcon,
+  Play,
+  Save,
+  FileText,
+  Cpu,
+  HardDrive,
+  Activity,
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Badge } from '../../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+
+// File tree types
+interface FileNode {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number;
+  modified?: number;
+  children?: FileNode[];
+}
+
+interface ResourceStatus {
+  cpu_percent: number;
+  memory_total: number;
+  memory_used: number;
+  memory_percent: number;
+  disk_total: number;
+  disk_used: number;
+  disk_percent: number;
+  gpus?: Array<{ info: string }>;
+}
+
+export function WorkspacePage() {
+  const [fileTree, setFileTree] = useState<FileNode | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [fileContent, setFileContent] = useState<string>('');
+  const [originalContent, setOriginalContent] = useState<string>('');
+  const [terminalOutput, setTerminalOutput] = useState<string>('');
+  const [terminalCommand, setTerminalCommand] = useState<string>('');
+  const [resources, setResources] = useState<ResourceStatus | null>(null);
+  const [isModified, setIsModified] = useState(false);
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['/']));
+
+  // Load file tree
+  const loadFileTree = useCallback(async () => {
+    try {
+      const response = await fetch('/api/plugins/cloud-ide/files/tree');
+      const data = await response.json();
+      setFileTree(data);
+    } catch (error) {
+      console.error('Failed to load file tree:', error);
+    }
+  }, []);
+
+  // Load file content
+  const loadFile = useCallback(async (path: string) => {
+    try {
+      const response = await fetch(`/api/plugins/cloud-ide/files/content?path=${encodeURIComponent(path)}`);
+      const data = await response.json();
+      setFileContent(data.content);
+      setOriginalContent(data.content);
+      setSelectedFile(path);
+      setIsModified(false);
+    } catch (error) {
+      console.error('Failed to load file:', error);
+    }
+  }, []);
+
+  // Save file
+  const saveFile = useCallback(async () => {
+    if (!selectedFile) return;
+
+    try {
+      await fetch('/api/plugins/cloud-ide/files/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: selectedFile, content: fileContent }),
+      });
+      setOriginalContent(fileContent);
+      setIsModified(false);
+    } catch (error) {
+      console.error('Failed to save file:', error);
+    }
+  }, [selectedFile, fileContent]);
+
+  // Execute terminal command
+  const executeCommand = useCallback(async () => {
+    if (!terminalCommand.trim()) return;
+
+    setTerminalOutput((prev) => `${prev}$ ${terminalCommand}\n`);
+
+    try {
+      const response = await fetch('/api/plugins/cloud-ide/terminal/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: terminalCommand }),
+      });
+      const data = await response.json();
+
+      setTerminalOutput(
+        (prev) => `${prev}${data.stdout}${data.stderr ? `\n${data.stderr}` : ''}\n`
+      );
+      setTerminalCommand('');
+    } catch (error) {
+      setTerminalOutput((prev) => `${prev}Error: ${error}\n`);
+    }
+  }, [terminalCommand]);
+
+  // Load resources
+  const loadResources = useCallback(async () => {
+    try {
+      const response = await fetch('/api/plugins/cloud-ide/resources/status');
+      const data = await response.json();
+      setResources(data);
+    } catch (error) {
+      console.error('Failed to load resources:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFileTree();
+    loadResources();
+    const interval = setInterval(loadResources, 5000); // Refresh every 5s
+    return () => clearInterval(interval);
+  }, [loadFileTree, loadResources]);
+
+  useEffect(() => {
+    setIsModified(fileContent !== originalContent);
+  }, [fileContent, originalContent]);
+
+  // Toggle folder expansion
+  const toggleFolder = (path: string) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  };
+
+  // Render file tree node
+  const renderFileNode = (node: FileNode, depth: number = 0): JSX.Element => {
+    const isExpanded = expandedFolders.has(node.path);
+    const isSelected = selectedFile === node.path;
+
+    return (
+      <div key={node.path}>
+        <div
+          className={`flex items-center gap-1 px-2 py-1 text-xs hover:bg-accent cursor-pointer ${
+            isSelected ? 'bg-accent' : ''
+          }`}
+          style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          onClick={() => {
+            if (node.type === 'directory') {
+              toggleFolder(node.path);
+            } else {
+              loadFile(node.path);
+            }
+          }}
+        >
+          {node.type === 'directory' ? (
+            <>
+              {isExpanded ? (
+                <FolderOpen className="h-3.5 w-3.5 text-blue-500" />
+              ) : (
+                <Folder className="h-3.5 w-3.5 text-blue-500" />
+              )}
+            </>
+          ) : (
+            <File className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <span className="truncate">{node.name}</span>
+        </div>
+
+        {node.type === 'directory' && isExpanded && node.children && (
+          <div>
+            {node.children.map((child) => renderFileNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
+  };
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Sidebar - File Explorer */}
+      <div className="w-64 border-r flex flex-col">
+        <div className="p-3 border-b flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Explorer</h2>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={loadFileTree}>
+              <RefreshCw className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-auto">
+          {fileTree && renderFileNode(fileTree)}
+        </div>
+
+        {/* Resource Monitoring */}
+        <div className="p-3 border-t space-y-2">
+          <div className="text-[10px] font-semibold uppercase text-muted-foreground">Resources</div>
+          {resources && (
+            <>
+              <div className="flex items-center gap-2 text-xs">
+                <Cpu className="h-3 w-3" />
+                <span className="flex-1">CPU</span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {resources.cpu_percent.toFixed(1)}%
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <Activity className="h-3 w-3" />
+                <span className="flex-1">Memory</span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {resources.memory_percent.toFixed(1)}%
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <HardDrive className="h-3 w-3" />
+                <span className="flex-1">Disk</span>
+                <Badge variant="secondary" className="text-[10px]">
+                  {resources.disk_percent.toFixed(1)}%
+                </Badge>
+              </div>
+              {resources.gpus && resources.gpus.length > 0 && (
+                <div className="text-[10px] text-green-600">
+                  {resources.gpus.length} GPU(s)
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Editor Toolbar */}
+        <div className="h-12 border-b flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            {selectedFile ? (
+              <>
+                <FileText className="h-4 w-4" />
+                <span className="text-sm font-medium">{selectedFile}</span>
+                {isModified && <Badge variant="warning" className="text-[10px]">Modified</Badge>}
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">No file selected</span>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              disabled={!isModified}
+              onClick={saveFile}
+              className="h-7"
+            >
+              <Save className="h-3 w-3 mr-1.5" />
+              Save
+            </Button>
+          </div>
+        </div>
+
+        {/* Tabs for Editor and Terminal */}
+        <Tabs defaultValue="editor" className="flex-1 flex flex-col">
+          <TabsList className="w-full justify-start rounded-none border-b h-10 px-4">
+            <TabsTrigger value="editor" className="text-xs">Editor</TabsTrigger>
+            <TabsTrigger value="terminal" className="text-xs">
+              <TerminalIcon className="h-3 w-3 mr-1.5" />
+              Terminal
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="editor" className="flex-1 m-0 p-0">
+            {selectedFile ? (
+              <textarea
+                className="w-full h-full p-4 font-mono text-sm bg-slate-950 text-slate-50 focus:outline-none resize-none"
+                value={fileContent}
+                onChange={(e) => setFileContent(e.target.value)}
+                spellCheck={false}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                Select a file to edit
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="terminal" className="flex-1 m-0 p-0 flex flex-col">
+            <div className="flex-1 p-4 font-mono text-xs bg-slate-950 text-slate-50 overflow-auto">
+              <pre className="whitespace-pre-wrap">{terminalOutput}</pre>
+            </div>
+            <div className="border-t p-3 bg-slate-950">
+              <div className="flex gap-2">
+                <span className="text-slate-400 text-sm">$</span>
+                <Input
+                  className="flex-1 bg-slate-900 border-slate-700 text-slate-50 font-mono text-sm h-8"
+                  value={terminalCommand}
+                  onChange={(e) => setTerminalCommand(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      executeCommand();
+                    }
+                  }}
+                  placeholder="Enter command..."
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={executeCommand}
+                  className="h-8 px-2 text-slate-400 hover:text-slate-50"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}

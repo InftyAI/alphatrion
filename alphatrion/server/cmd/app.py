@@ -116,3 +116,22 @@ def health_check():
 @app.get("/version")
 def get_version():
     return {"version": version("alphatrion"), "status": "ok"}
+
+
+# Mount plugin routes
+def mount_plugin_routes():
+    """Mount API routes for all registered plugins."""
+    from alphatrion.plugins import get_registry
+
+    registry = get_registry()
+    for plugin in registry.list_enabled():
+        router = plugin.get_api_router()
+        if router:
+            metadata = plugin.get_metadata()
+            app.include_router(router)
+            logger.info(f"Mounted routes for plugin: {metadata.name}")
+
+
+# Initialize plugins and mount routes
+# This is called after importing the app module
+mount_plugin_routes()

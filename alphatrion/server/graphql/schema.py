@@ -10,6 +10,7 @@ from alphatrion.server.graphql.types import (
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    PluginInfo,
     Project,
     RemoveUserFromTeamInput,
     Run,
@@ -124,6 +125,12 @@ class Query:
         return await GraphQLResolvers.get_artifact_content(
             str(team_id), str(project_id), tag, repo_type
         )
+
+    # Plugin queries
+    @strawberry.field
+    def plugins(self) -> list[PluginInfo]:
+        """List all enabled plugins for sidebar navigation."""
+        return GraphQLResolvers.list_plugins()
 
 
 @strawberry.type

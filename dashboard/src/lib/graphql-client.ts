@@ -65,6 +65,23 @@ export async function graphqlQuery<T>(
 
 // GraphQL query templates
 export const queries = {
+  listPlugins: `
+    query ListPlugins {
+      plugins {
+        id
+        name
+        description
+        icon
+        version
+        author
+        route
+        sidebarPosition
+        enabled
+        openInNewTab
+      }
+    }
+  `,
+
   listTeams: `
     query ListTeams($userId: ID!) {
       teams(userId: $userId) {

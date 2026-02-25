@@ -590,6 +590,42 @@ class GraphQLResolvers:
             return []
 
 
+    @staticmethod
+    def list_plugins() -> list:
+        """List all registered plugins for sidebar navigation."""
+        from alphatrion.plugins import get_registry
+        from alphatrion.server.graphql.types import PluginInfo
+
+        try:
+            registry = get_registry()
+            plugins = registry.list_enabled()
+
+            result = []
+            for plugin in plugins:
+                metadata = plugin.get_metadata()
+                result.append(
+                    PluginInfo(
+                        id=metadata.id,
+                        name=metadata.name,
+                        description=metadata.description,
+                        icon=metadata.icon,
+                        version=metadata.version,
+                        author=metadata.author,
+                        route=metadata.route,
+                        sidebar_position=metadata.sidebar_position,
+                        enabled=metadata.enabled,
+                        open_in_new_tab=metadata.open_in_new_tab,
+                    )
+                )
+
+            return result
+        except Exception as e:
+            import logging
+
+            logging.error(f"Failed to list plugins: {e}", exc_info=True)
+            return []
+
+
 class GraphQLMutations:
     @staticmethod
     def create_user(input: CreateUserInput) -> User:

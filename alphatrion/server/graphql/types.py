@@ -308,3 +308,20 @@ class DailyTokenUsage:
     total_tokens: int
     input_tokens: int
     output_tokens: int
+
+
+# Plugin types
+@strawberry.type
+class PluginInfo:
+    """Plugin information for sidebar navigation."""
+
+    id: str
+    name: str
+    description: str
+    icon: str
+    version: str
+    author: str | None
+    route: str  # Frontend route (e.g., "/cloud-ide")
+    sidebar_position: int
+    enabled: bool
+    open_in_new_tab: bool  # Whether to open in new browser tab
