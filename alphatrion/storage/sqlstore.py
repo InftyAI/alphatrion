@@ -512,12 +512,6 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
-    def get_experiment_by_name(
-        self, name: str, project_id: uuid.UUID
-    ) -> Experiment | None:
-        """Alias for get_exp_by_name."""
-        return self.get_exp_by_name(name, project_id)
-
     def list_exps_by_project_id(
         self,
         project_id: uuid.UUID,

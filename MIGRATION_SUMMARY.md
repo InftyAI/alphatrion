@@ -65,9 +65,9 @@ ExperimentConfig(
    - Added index on `experiment_id`
 
 3. **Metric Model Updates:**
-   
+
    - Added index on `(experiment_id, key)`
-   
+
 
 4. **New ContentSnapshot Model:**
    ```python
@@ -91,10 +91,6 @@ ExperimentConfig(
 
 **New Methods Added (13 total):**
 
-**Experiment Methods:**
-- `get_experiment_by_name(name, project_id)` - Lookup by name
-- `update_experiment_notes(experiment_id, notes)` - Update notes
-
 **Metric Methods:**
 - `list_metric_keys_by_experiment_id(experiment_id)` - Get unique metric keys
 - `list_metrics_by_experiment_id_and_key(experiment_id, key, page, page_size)` - Get metrics for specific key
@@ -109,7 +105,7 @@ ExperimentConfig(
 ---
 
 ### Task #4: GraphQL API ✓
-**Locations:** 
+**Locations:**
 - `alphatrion/server/graphql/types.py`
 - `alphatrion/server/graphql/schema.py`
 - `alphatrion/server/graphql/resolvers.py`
@@ -263,17 +259,17 @@ interface ContentSnapshotSummary {
 ## 🎯 What's Ready to Use
 
 ### Backend (100% Complete)
-✅ Experiment lifecycle management with advanced features  
-✅ Database models with proper indexes and relationships  
-✅ ORM methods for all CRUD operations  
-✅ GraphQL API fully implemented and tested  
-✅ Content snapshot tracking and versioning  
-✅ Metric aggregation and querying  
+✅ Experiment lifecycle management with advanced features
+✅ Database models with proper indexes and relationships
+✅ ORM methods for all CRUD operations
+✅ GraphQL API fully implemented and tested
+✅ Content snapshot tracking and versioning
+✅ Metric aggregation and querying
 
 ### Frontend (Foundation Complete)
-✅ TypeScript types for all entities  
-✅ Basic hooks for experiments and notes  
-✅ GraphQL query functions  
+✅ TypeScript types for all entities
+✅ Basic hooks for experiments and notes
+✅ GraphQL query functions
 ⚠️ **To Complete:** Full UI components (6 major pages)
 
 ---
@@ -308,7 +304,7 @@ To fully migrate the frontend UI, you need to:
    ```bash
    # From: /Users/kerthcet/Workspaces/hiverge/alphatrion/dashboard/src/components/trials/
    # To: /Users/kerthcet/Workspaces/InftyAI/alphatrion/dashboard/src/components/ai-studio/experiments/
-   
+
    - trials-page.tsx → experiments-page.tsx
    - trial-detail-new.tsx → experiment-detail.tsx
    - new-trial-page.tsx → new-experiment-page.tsx
@@ -328,7 +324,7 @@ To fully migrate the frontend UI, you need to:
    ```typescript
    import ExperimentsPage from '@/components/ai-studio/experiments/experiments-page'
    import ExperimentDetail from '@/components/ai-studio/experiments/experiment-detail'
-   
+
    // Add routes
    <Route path="/ai-studio/experiments" element={<ExperimentsPage />} />
    <Route path="/ai-studio/experiments/:id" element={<ExperimentDetail />} />
@@ -420,5 +416,5 @@ query GetExperimentWithData($id: ID!) {
 
 The backend infrastructure is **100% complete** and ready for production use. The frontend foundation is in place, requiring only the UI component migration from the forked project.
 
-**Total Development Time:** ~2 hours  
+**Total Development Time:** ~2 hours
 **Code Quality:** Production-ready with proper error handling, type safety, and documentation
