@@ -119,6 +119,24 @@ class Experiment:
 
         return GraphQLResolvers.list_exp_metrics(experiment_id=self.id)
 
+    @strawberry.field
+    def runs(self) -> list["Run"]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_runs(experiment_id=self.id, page_size=-1)
+
+    @strawberry.field
+    def metric_keys(self) -> list[str]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_metric_keys(experiment_id=self.id)
+
+    @strawberry.field
+    def content_snapshots(self) -> list["ContentSnapshot"]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_content_snapshots(experiment_id=self.id)
+
     def _get_token_data(self) -> dict[str, int]:
         """Get token data with caching to avoid multiple ClickHouse queries."""
         if self._token_cache is None:
@@ -205,6 +223,42 @@ class Metric:
     project_id: strawberry.ID
     experiment_id: strawberry.ID
     run_id: strawberry.ID
+    created_at: datetime
+
+
+@strawberry.type
+class ContentSnapshot:
+    id: strawberry.ID
+    team_id: strawberry.ID
+    project_id: strawberry.ID
+    experiment_id: strawberry.ID
+    run_id: strawberry.ID | None
+    content_uid: str
+    content_text: str | None
+    parent_uid: str | None
+    co_parent_uids: JSON | None
+    fitness: JSON | None
+    evaluation: JSON | None
+    metainfo: JSON | None
+    language: str | None
+    created_at: datetime
+
+
+@strawberry.type
+class ContentSnapshotSummary:
+    """Lightweight content snapshot without full text."""
+    id: strawberry.ID
+    team_id: strawberry.ID
+    project_id: strawberry.ID
+    experiment_id: strawberry.ID
+    run_id: strawberry.ID | None
+    content_uid: str
+    parent_uid: str | None
+    co_parent_uids: JSON | None
+    fitness: JSON | None
+    evaluation: JSON | None
+    metainfo: JSON | None
+    language: str | None
     created_at: datetime
 
 

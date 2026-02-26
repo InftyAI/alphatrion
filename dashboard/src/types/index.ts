@@ -80,6 +80,9 @@ export interface Experiment {
   inputTokens: number;
   outputTokens: number;
   metrics?: Metric[];
+  runs?: Run[];
+  metricKeys?: string[];
+  contentSnapshots?: ContentSnapshot[];
 }
 
 export interface Run {
@@ -106,6 +109,39 @@ export interface Metric {
   projectId: string;
   experimentId: string;
   runId: string;
+  createdAt: string;
+}
+
+export interface ContentSnapshot {
+  id: string;
+  teamId: string;
+  projectId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  contentText?: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  evaluation: Record<string, unknown> | null;
+  metainfo: Record<string, unknown> | null;
+  language: string | null;
+  createdAt: string;
+}
+
+export interface ContentSnapshotSummary {
+  id: string;
+  teamId: string;
+  projectId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  evaluation: Record<string, unknown> | null;
+  metainfo: Record<string, unknown> | null;
+  language: string | null;
   createdAt: string;
 }
 

@@ -6,10 +6,13 @@ from alphatrion.server.graphql.types import (
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    ContentSnapshot,
+    ContentSnapshotSummary,
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    Metric,
     PluginInfo,
     Project,
     RemoveUserFromTeamInput,
@@ -86,6 +89,59 @@ class Query:
         )
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
+
+    @strawberry.field
+    def metric_keys(self, experiment_id: strawberry.ID) -> list[str]:
+        """Get unique metric keys for an experiment."""
+        return GraphQLResolvers.list_metric_keys(experiment_id=experiment_id)
+
+    @strawberry.field
+    def metrics_by_key(
+        self,
+        experiment_id: strawberry.ID,
+        key: str,
+        page: int = 0,
+        page_size: int = 1000,
+    ) -> list[Metric]:
+        """Get metrics for a specific key in an experiment."""
+        return GraphQLResolvers.list_metrics_by_key(
+            experiment_id=experiment_id,
+            key=key,
+            page=page,
+            page_size=page_size,
+        )
+
+    @strawberry.field
+    def content_snapshots(
+        self,
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[ContentSnapshot]:
+        """List content snapshots for an experiment."""
+        return GraphQLResolvers.list_content_snapshots(
+            experiment_id=experiment_id,
+            page=page,
+            page_size=page_size,
+        )
+
+    @strawberry.field
+    def content_snapshots_summary(
+        self,
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[ContentSnapshotSummary]:
+        """List content snapshot summaries (without full text)."""
+        return GraphQLResolvers.list_content_snapshots_summary(
+            experiment_id=experiment_id,
+            page=page,
+            page_size=page_size,
+        )
+
+    content_snapshot: ContentSnapshot | None = strawberry.field(
+        resolver=GraphQLResolvers.get_content_snapshot
+    )
 
     # Trace queries
     @strawberry.field

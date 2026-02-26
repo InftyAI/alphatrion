@@ -15,6 +15,8 @@ from .types import (
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    ContentSnapshot,
+    ContentSnapshotSummary,
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
@@ -253,6 +255,39 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
+    def list_metric_keys(experiment_id: strawberry.ID) -> list[str]:
+        """Get unique metric keys for an experiment."""
+        metadb = runtime.storage_runtime().metadb
+        return metadb.list_metric_keys_by_experiment_id(
+            experiment_id=uuid.UUID(experiment_id)
+        )
+
+    @staticmethod
+    def list_metrics_by_key(
+        experiment_id: strawberry.ID,
+        key: str,
+    ) -> list[Metric]:
+        """Get metrics for a specific key in an experiment."""
+        metadb = runtime.storage_runtime().metadb
+        metrics = metadb.list_metrics_by_experiment_id_and_key(
+            experiment_id=uuid.UUID(experiment_id),
+            key=key,
+        )
+        return [
+            Metric(
+                id=m.uuid,
+                key=m.key,
+                value=m.value,
+                team_id=m.team_id,
+                project_id=m.project_id,
+                experiment_id=m.experiment_id,
+                run_id=m.run_id,
+                created_at=m.created_at,
+            )
+            for m in metrics
+        ]
+
+    @staticmethod
     def list_run_metrics(run_id: strawberry.ID) -> list[Metric]:
         metadb = runtime.storage_runtime().metadb
         metrics = metadb.list_metrics_by_run_id(run_id=run_id)
@@ -269,6 +304,95 @@ class GraphQLResolvers:
             )
             for m in metrics
         ]
+
+    @staticmethod
+    def list_content_snapshots(
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[ContentSnapshot]:
+        """List content snapshots for an experiment."""
+        metadb = runtime.storage_runtime().metadb
+        snapshots = metadb.list_content_snapshots_by_experiment_id(
+            experiment_id=uuid.UUID(experiment_id),
+            page=page,
+            page_size=page_size,
+        )
+        return [
+            ContentSnapshot(
+                id=s.uuid,
+                team_id=s.team_id,
+                project_id=s.project_id,
+                experiment_id=s.experiment_id,
+                run_id=s.run_id,
+                content_uid=s.content_uid,
+                content_text=s.content_text,
+                parent_uid=s.parent_uid,
+                co_parent_uids=s.co_parent_uids,
+                fitness=s.fitness,
+                evaluation=s.evaluation,
+                metainfo=s.metainfo,
+                language=s.language,
+                created_at=s.created_at,
+            )
+            for s in snapshots
+        ]
+
+    @staticmethod
+    def list_content_snapshots_summary(
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[ContentSnapshotSummary]:
+        """List content snapshot summaries (without full text) for an experiment."""
+        metadb = runtime.storage_runtime().metadb
+        summaries = metadb.list_content_snapshots_summary_by_experiment_id(
+            experiment_id=uuid.UUID(experiment_id),
+            page=page,
+            page_size=page_size,
+        )
+        return [
+            ContentSnapshotSummary(
+                id=s["id"],
+                team_id=s["team_id"],
+                project_id=s["project_id"],
+                experiment_id=s["experiment_id"],
+                run_id=s["run_id"],
+                content_uid=s["content_uid"],
+                parent_uid=s["parent_uid"],
+                co_parent_uids=s["co_parent_uids"],
+                fitness=s["fitness"],
+                evaluation=s["evaluation"],
+                metainfo=s["metainfo"],
+                language=s["language"],
+                created_at=datetime.fromisoformat(s["created_at"]),
+            )
+            for s in summaries
+        ]
+
+    @staticmethod
+    def get_content_snapshot(id: strawberry.ID) -> ContentSnapshot | None:
+        """Get a content snapshot by ID."""
+        metadb = runtime.storage_runtime().metadb
+        snapshot = metadb.get_content_snapshot(snapshot_id=uuid.UUID(id))
+        if snapshot:
+            return ContentSnapshot(
+                id=snapshot.uuid,
+                team_id=snapshot.team_id,
+                project_id=snapshot.project_id,
+                experiment_id=snapshot.experiment_id,
+                run_id=snapshot.run_id,
+                content_uid=snapshot.content_uid,
+                content_text=snapshot.content_text,
+                parent_uid=snapshot.parent_uid,
+                co_parent_uids=snapshot.co_parent_uids,
+                fitness=snapshot.fitness,
+                evaluation=snapshot.evaluation,
+                metainfo=snapshot.metainfo,
+                language=snapshot.language,
+                created_at=snapshot.created_at,
+            )
+        return None
 
     @staticmethod
     def total_projects(team_id: strawberry.ID) -> int:

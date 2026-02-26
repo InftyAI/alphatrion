@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from alphatrion.storage.metastore import MetaStore
 from alphatrion.storage.sql_models import (
     Base,
+    ContentSnapshot,
     Experiment,
     Metric,
     Model,
@@ -511,6 +512,12 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
+    def get_experiment_by_name(
+        self, name: str, project_id: uuid.UUID
+    ) -> Experiment | None:
+        """Alias for get_exp_by_name."""
+        return self.get_exp_by_name(name, project_id)
+
     def list_exps_by_project_id(
         self,
         project_id: uuid.UUID,
@@ -638,16 +645,26 @@ class SQLStore(MetaStore):
         order_desc: bool = True,
     ) -> list[Run]:
         session = self._session()
-        runs = (
-            session.query(Run)
-            .filter(Run.experiment_id == exp_id, Run.is_del == 0)
-            .order_by(
-                getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
+        if page_size == -1:
+            runs = (
+                session.query(Run)
+                .filter(Run.experiment_id == exp_id, Run.is_del == 0)
+                .order_by(
+                    getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
+                )
+                .all()
             )
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
+        else:
+            runs = (
+                session.query(Run)
+                .filter(Run.experiment_id == exp_id, Run.is_del == 0)
+                .order_by(
+                    getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
+                )
+                .offset(page * page_size)
+                .limit(page_size)
+                .all()
+            )
         session.close()
         return runs
 
@@ -696,6 +713,23 @@ class SQLStore(MetaStore):
         session.close()
         return metrics
 
+    def list_metrics_by_experiment_id_and_key(
+        self,
+        experiment_id: uuid.UUID,
+        key: str,
+    ) -> list[Metric]:
+        """Get metrics for a specific key in an experiment."""
+        session = self._session()
+        metrics = (
+            session.query(Metric)
+            .filter(Metric.experiment_id == experiment_id, Metric.key == key)
+            .order_by(Metric.created_at.asc())
+            .all()
+        )
+        session.close()
+        return metrics
+
+
     def list_metrics_by_run_id(self, run_id: uuid.UUID) -> list[Metric]:
         session = self._session()
         metrics = (
@@ -706,3 +740,160 @@ class SQLStore(MetaStore):
         )
         session.close()
         return metrics
+
+    def list_metric_keys_by_experiment_id(self, experiment_id: uuid.UUID) -> list[str]:
+        """Get unique metric keys for an experiment."""
+        session = self._session()
+        keys = (
+            session.query(Metric.key)
+            .filter(Metric.experiment_id == experiment_id)
+            .distinct()
+            .all()
+        )
+        session.close()
+        return [k[0] for k in keys]
+
+    # ---------- ContentSnapshot APIs ----------
+
+    def create_content_snapshot(
+        self,
+        team_id: uuid.UUID,
+        project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        content_uid: str,
+        content_text: str,
+        run_id: uuid.UUID | None = None,
+        parent_uid: str | None = None,
+        co_parent_uids: list[str] | None = None,
+        fitness: dict | list | float | None = None,
+        evaluation: dict | None = None,
+        metainfo: dict | None = None,
+        language: str = "python",
+    ) -> uuid.UUID:
+        """Create a content snapshot."""
+        session = self._session()
+        new_snapshot = ContentSnapshot(
+            team_id=team_id,
+            project_id=project_id,
+            experiment_id=experiment_id,
+            run_id=run_id,
+            content_uid=content_uid,
+            content_text=content_text,
+            parent_uid=parent_uid,
+            co_parent_uids=co_parent_uids,
+            fitness=fitness,
+            evaluation=evaluation,
+            metainfo=metainfo,
+            language=language,
+        )
+        session.add(new_snapshot)
+        session.commit()
+        snapshot_id = new_snapshot.uuid
+        session.close()
+        return snapshot_id
+
+    def get_content_snapshot(self, snapshot_id: uuid.UUID) -> ContentSnapshot | None:
+        """Get a content snapshot by ID."""
+        session = self._session()
+        snapshot = (
+            session.query(ContentSnapshot)
+            .filter(ContentSnapshot.uuid == snapshot_id, ContentSnapshot.is_del == 0)
+            .first()
+        )
+        session.close()
+        return snapshot
+
+    def list_content_snapshots_by_experiment_id(
+        self,
+        experiment_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[ContentSnapshot]:
+        """List content snapshots for an experiment."""
+        session = self._session()
+        snapshots = (
+            session.query(ContentSnapshot)
+            .filter(
+                ContentSnapshot.experiment_id == experiment_id,
+                ContentSnapshot.is_del == 0,
+            )
+            .order_by(ContentSnapshot.created_at.desc())
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return snapshots
+
+    def list_content_snapshots_summary_by_experiment_id(
+        self,
+        experiment_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 100,
+    ) -> list[dict]:
+        """List content snapshot summaries (without full text) for an experiment."""
+        session = self._session()
+        # Query specific columns to avoid loading content_text
+        snapshots = (
+            session.query(
+                ContentSnapshot.uuid,
+                ContentSnapshot.team_id,
+                ContentSnapshot.project_id,
+                ContentSnapshot.experiment_id,
+                ContentSnapshot.run_id,
+                ContentSnapshot.content_uid,
+                ContentSnapshot.parent_uid,
+                ContentSnapshot.co_parent_uids,
+                ContentSnapshot.fitness,
+                ContentSnapshot.evaluation,
+                ContentSnapshot.metainfo,
+                ContentSnapshot.language,
+                ContentSnapshot.created_at,
+            )
+            .filter(
+                ContentSnapshot.experiment_id == experiment_id,
+                ContentSnapshot.is_del == 0,
+            )
+            .order_by(ContentSnapshot.created_at.desc())
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+
+        # Convert to dict format
+        return [
+            {
+                "id": str(s.uuid),
+                "team_id": str(s.team_id),
+                "project_id": str(s.project_id),
+                "experiment_id": str(s.experiment_id),
+                "run_id": str(s.run_id) if s.run_id else None,
+                "content_uid": s.content_uid,
+                "parent_uid": s.parent_uid,
+                "co_parent_uids": s.co_parent_uids,
+                "fitness": s.fitness,
+                "evaluation": s.evaluation,
+                "metainfo": s.metainfo,
+                "language": s.language,
+                "created_at": s.created_at.isoformat(),
+            }
+            for s in snapshots
+        ]
+
+    def get_content_snapshot_by_content_uid(
+        self, content_uid: str, experiment_id: uuid.UUID
+    ) -> ContentSnapshot | None:
+        """Get a content snapshot by content UID."""
+        session = self._session()
+        snapshot = (
+            session.query(ContentSnapshot)
+            .filter(
+                ContentSnapshot.content_uid == content_uid,
+                ContentSnapshot.experiment_id == experiment_id,
+                ContentSnapshot.is_del == 0,
+            )
+            .first()
+        )
+        session.close()
+        return snapshot

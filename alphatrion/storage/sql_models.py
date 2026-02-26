@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, Float, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import declarative_base
@@ -122,6 +122,7 @@ class ExperimentType(enum.IntEnum):
 
 class Experiment(Base):
     __tablename__ = "experiments"
+    __table_args__ = (Index("ix_experiments_project_id", "project_id"),)
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
@@ -132,7 +133,10 @@ class Experiment(Base):
     meta = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
-        comment="Additional metadata for the trial",
+        comment="Additional metadata for the experiment",
+    )
+    notes = Column(
+        String, nullable=True, comment="User-editable notes for the experiment"
     )
     params = Column(
         MutableDict.as_mutable(JSON),
@@ -145,12 +149,12 @@ class Experiment(Base):
         nullable=False,
         comment="Type of the experiment",
     )
-    duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
+    duration = Column(Float, default=0.0, comment="Duration of the experiment in seconds")
     status = Column(
         Integer,
         default=Status.PENDING,
         nullable=False,
-        comment="Status of the trial, \
+        comment="Status of the experiment, \
             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
             10: CANCELLED, 11: FAILED",
     )
@@ -166,6 +170,7 @@ class Experiment(Base):
 
 class Run(Base):
     __tablename__ = "runs"
+    __table_args__ = (Index("ix_runs_experiment_id", "experiment_id"),)
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
@@ -220,7 +225,9 @@ class Model(Base):
 
 class Metric(Base):
     __tablename__ = "metrics"
-    __table_args__ = (UniqueConstraint("run_id", "key", name="idx_unique_metric"),)
+    __table_args__ = (
+        Index("ix_metrics_experiment_id_key", "experiment_id", "key"),
+    )
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)
@@ -230,3 +237,59 @@ class Metric(Base):
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+
+
+class ContentSnapshot(Base):
+    __tablename__ = "content_snapshots"
+    __table_args__ = (
+        Index("ix_content_snapshots_experiment_id", "experiment_id"),
+        Index("ix_content_snapshots_experiment_id_is_del", "experiment_id", "is_del"),
+    )
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    project_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
+    run_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="Run ID, null for seed content"
+    )
+
+    content_uid = Column(
+        String, nullable=False, comment="UID for content identification"
+    )
+    content_text = Column(String, nullable=False, comment="Actual code content as text")
+
+    parent_uid = Column(
+        String, nullable=True, comment="Parent content UID (null for seed)"
+    )
+    co_parent_uids = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="List of co-parent UIDs for crossover",
+    )
+
+    fitness = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Multi-dimensional fitness values",
+    )
+    evaluation = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Full evaluation results",
+    )
+    metainfo = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the content snapshot",
+    )
+
+    language = Column(
+        String,
+        nullable=True,
+        default="python",
+        comment="Programming language for syntax highlighting",
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
