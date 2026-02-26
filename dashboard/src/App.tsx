@@ -11,11 +11,9 @@ import { ProjectsPage } from './pages/projects';
 import { ProjectDetailPage } from './pages/projects/[id]';
 import { ExperimentsPage } from './pages/experiments';
 import { ExperimentDetailPage } from './pages/experiments/[id]';
-import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
 import { ArtifactsPage } from './pages/artifacts';
-import AIStudioPage from './pages/ai-studio';
 import type { Team } from './types';
 
 function App() {
@@ -133,29 +131,24 @@ function App() {
     <div className="h-full">
       <UserProvider user={currentUser}>
         <Routes>
-          {/* AI Studio - standalone page without layout */}
-          <Route path="/ai-studio" element={<AIStudioPage />} />
-
-          {/* Main dashboard with layout */}
           <Route path="/" element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="projects">
-            <Route index element={<ProjectsPage />} />
-            <Route path=":id" element={<ProjectDetailPage />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="projects">
+              <Route index element={<ProjectsPage />} />
+              <Route path=":id" element={<ProjectDetailPage />} />
+            </Route>
+            <Route path="experiments">
+              <Route index element={<ExperimentsPage />} />
+              <Route path=":id" element={<ExperimentDetailPage />} />
+            </Route>
+            <Route path="runs">
+              <Route index element={<RunsPage />} />
+              <Route path=":id" element={<RunDetailPage />} />
+            </Route>
+            <Route path="artifacts" element={<ArtifactsPage />} />
           </Route>
-          <Route path="experiments">
-            <Route index element={<ExperimentsPage />} />
-            <Route path=":id" element={<ExperimentDetailPage />} />
-            <Route path="compare" element={<ExperimentComparePage />} />
-          </Route>
-          <Route path="runs">
-            <Route index element={<RunsPage />} />
-            <Route path=":id" element={<RunDetailPage />} />
-          </Route>
-          <Route path="artifacts" element={<ArtifactsPage />} />
-        </Route>
-      </Routes>
-    </UserProvider>
+        </Routes>
+      </UserProvider>
     </div>
   );
 }

@@ -14,7 +14,6 @@ export interface Experiment {
   description: string | null;
   kind: number;
   meta: Record<string, unknown> | null;
-  notes: string | null;
   params: Record<string, unknown> | null;
   duration: number;
   status: GraphQLStatus;
@@ -44,42 +43,8 @@ export interface Metric {
   createdAt: string;
 }
 
-export interface ContentSnapshot {
-  id: string;
-  teamId: string;
-  projectId: string;
-  experimentId: string;
-  runId: string | null;
-  contentUid: string;
-  contentText?: string;
-  parentUid: string | null;
-  coParentUids: string[] | null;
-  fitness: number | number[] | Record<string, number> | null;
-  evaluation: Record<string, unknown> | null;
-  metainfo: Record<string, unknown> | null;
-  language: string | null;
-  createdAt: string;
-}
-
-export interface ContentSnapshotSummary {
-  id: string;
-  teamId: string;
-  projectId: string;
-  experimentId: string;
-  runId: string | null;
-  contentUid: string;
-  parentUid: string | null;
-  coParentUids: string[] | null;
-  fitness: number | number[] | Record<string, number> | null;
-  evaluation: Record<string, unknown> | null;
-  metainfo: Record<string, unknown> | null;
-  language: string | null;
-  createdAt: string;
-}
-
 export interface ExperimentWithRuns extends Experiment {
   runs?: Run[];
   metrics?: Metric[];
   metricKeys?: string[];
-  contentSnapshots?: ContentSnapshot[];
 }

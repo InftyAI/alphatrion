@@ -135,9 +135,6 @@ class Experiment(Base):
         nullable=True,
         comment="Additional metadata for the experiment",
     )
-    notes = Column(
-        String, nullable=True, comment="User-editable notes for the experiment"
-    )
     params = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
