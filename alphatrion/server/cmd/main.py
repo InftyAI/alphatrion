@@ -21,6 +21,7 @@ from rich.text import Text
 from alphatrion import envs
 from alphatrion.storage import runtime
 from alphatrion.utils import log
+from alphatrion.server.cmd import plugin
 
 load_dotenv()
 console = Console()
@@ -203,8 +204,15 @@ def run_server(args):
     # Configure logging before starting the server
     log.configure_logging()
 
+    # Initialize storage runtime (database, tracing, etc.)
     runtime.init()
-    uvicorn.run("alphatrion.server.cmd.app:app", host=args.host, port=args.port)
+
+    # Initialize server runtime (plugins, etc.) BEFORE importing app
+    plugin.init()
+
+    # Import app after runtimes are initialized
+    from alphatrion.server.cmd.app import app
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 def start_dashboard(args):

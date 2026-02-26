@@ -132,6 +132,9 @@ def mount_plugin_routes():
             logger.info(f"Mounted routes for plugin: {metadata.name}")
 
 
-# Initialize plugins and mount routes
-# This is called after importing the app module
-mount_plugin_routes()
+# Mount plugin routes on startup (after runtime.init() is called in main.py)
+@app.on_event("startup")
+async def startup_event():
+    """Initialize plugins on application startup."""
+    # Now mount plugin routes
+    mount_plugin_routes()

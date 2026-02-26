@@ -15,6 +15,7 @@ import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
 import { ArtifactsPage } from './pages/artifacts';
+import AIStudioPage from './pages/ai-studio';
 import type { Team } from './types';
 
 function App() {
@@ -132,6 +133,9 @@ function App() {
     <div className="h-full">
       <UserProvider user={currentUser}>
         <Routes>
+          {/* AI Studio - standalone page without layout */}
+          <Route path="/ai-studio" element={<AIStudioPage />} />
+
           {/* Main dashboard with layout */}
           <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />
