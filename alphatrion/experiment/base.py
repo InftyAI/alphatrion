@@ -381,6 +381,13 @@ class Experiment(ABC):
                           It must be a async and lambda function.
         :return: the Run instance."""
 
+        # Check if experiment is already done. This usually happens when we
+        # cancel the experiment with Ctrl+C directly.
+        if self.is_done():
+            raise RuntimeError(
+                f"Cannot create new run: Experiment {self.id} is already completed."
+            )
+
         run = Run(exp_id=self.id)
         run.start(call_func)
         self._runs[run.id] = run
