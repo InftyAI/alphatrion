@@ -275,10 +275,10 @@ class SQLStore(MetaStore):
         session.add(new_proj)
         session.commit()
 
-        exp_id = new_proj.uuid
+        proj_id = new_proj.uuid
         session.close()
 
-        return exp_id
+        return proj_id
 
     # Soft delete the project now.
     def delete_project(self, project_id: uuid.UUID):
