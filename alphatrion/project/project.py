@@ -46,7 +46,7 @@ class Project:
         self._runtime = global_runtime()
         # All experiments in this project,
         # key is experiment_id, value is Experiment instance.
-        self._experiments: dict[int, experiment.Experiment] = {}
+        self._experiments: dict[uuid.UUID, experiment.Experiment] = {}
         self._config = config or ProjectConfig()
         self._runtime.current_proj = self
 
@@ -130,7 +130,7 @@ class Project:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._signal_task
 
-    def get_experiment(self, id: int) -> experiment.Experiment | None:
+    def get_experiment(self, id: uuid.UUID) -> experiment.Experiment | None:
         return self._experiments.get(id)
 
     # done() is safe to call multiple times.
