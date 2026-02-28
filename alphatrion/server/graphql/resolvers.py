@@ -84,7 +84,7 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def list_labels(experiment_id: strawberry.ID) -> list[Label]:
+    def list_labels_by_exp_id(experiment_id: strawberry.ID) -> list[Label]:
         metadb = runtime.storage_runtime().metadb
         labels = metadb.list_labels_by_exp_id(experiment_id=experiment_id)
         return [
@@ -94,15 +94,6 @@ class GraphQLResolvers:
             )
             for label in labels
         ]
-
-    @staticmethod
-    def list_label_keys(team_id: strawberry.ID) -> list[str]:
-        metadb = runtime.storage_runtime().metadb
-        labels = metadb.list_labels_by_team_id(team_id=team_id)
-        unique_keys = set()
-        for label in labels:
-            unique_keys.add(f"{label.label_name}:{label.label_value}")
-        return list(unique_keys)
 
     @staticmethod
     def list_experiments(

@@ -39,11 +39,11 @@ class Team:
             end_time=end_time,
         )
 
-    @strawberry.field
-    def label_keys(self) -> list[str]:
-        from .resolvers import GraphQLResolvers
+    # @strawberry.field
+    # def labels(self) -> list["Label"]:
+    #     from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_label_keys(team_id=self.id)
+    #     return GraphQLResolvers.list_labels_by_team_id(team_id=self.id)
 
 
 @strawberry.type
@@ -110,7 +110,7 @@ class Experiment:
     def labels(self) -> list[Label]:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_labels(experiment_id=self.id)
+        return GraphQLResolvers.list_labels_by_exp_id(experiment_id=self.id)
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:
