@@ -41,7 +41,7 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-// Predefined color palette for label keys
+// Predefined color palette for label keys (20 distinct colors)
 const LABEL_COLORS = [
   { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
   { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
@@ -53,17 +53,17 @@ const LABEL_COLORS = [
   { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-300' },
   { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300' },
   { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-300' },
+  { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300' },
+  { bg: 'bg-lime-100', text: 'text-lime-700', border: 'border-lime-300' },
+  { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', border: 'border-fuchsia-300' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300' },
+  { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-300' },
+  { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+  { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' },
+  { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
+  { bg: 'bg-zinc-100', text: 'text-zinc-700', border: 'border-zinc-300' },
+  { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
 ];
-
-// Simple hash function to get consistent color for a label key
-function getLabelColor(labelName: string) {
-  let hash = 0;
-  for (let i = 0; i < labelName.length; i++) {
-    hash = labelName.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % LABEL_COLORS.length;
-  return LABEL_COLORS[index];
-}
 
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
@@ -76,6 +76,29 @@ export function ExperimentsPage() {
     selectedTeamId || '',
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
+
+  // Create a stable color mapping for label keys (no collisions)
+  const labelKeyColorMap = useMemo(() => {
+    if (!experiments || experiments.length === 0) {
+      return new Map<string, typeof LABEL_COLORS[0]>();
+    }
+
+    const uniqueKeys = new Set<string>();
+    experiments.forEach(exp => {
+      exp.labels?.forEach(label => {
+        uniqueKeys.add(label.name);
+      });
+    });
+
+    const sortedKeys = Array.from(uniqueKeys).sort();
+    const colorMap = new Map<string, typeof LABEL_COLORS[0]>();
+
+    sortedKeys.forEach((key, index) => {
+      colorMap.set(key, LABEL_COLORS[index % LABEL_COLORS.length]);
+    });
+
+    return colorMap;
+  }, [experiments]);
 
   // Build label options grouped by key, showing all unique values per key
   const labelOptions = useMemo(() => {
@@ -265,7 +288,7 @@ export function ExperimentsPage() {
                         {experiment.labels && experiment.labels.length > 0 ? (
                           <div className="flex gap-1 flex-wrap">
                             {experiment.labels.map((label, idx) => {
-                              const colors = getLabelColor(label.name);
+                              const colors = labelKeyColorMap.get(label.name) || LABEL_COLORS[0];
                               return (
                                 <Badge
                                   key={idx}
