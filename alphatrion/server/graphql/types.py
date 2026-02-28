@@ -1,7 +1,6 @@
 # ruff: noqa: PLC0415
 from datetime import datetime
 from enum import Enum
-from turtle import st
 
 import strawberry
 from strawberry.scalars import JSON
@@ -83,10 +82,12 @@ class GraphQLExperimentType(Enum):
 
 GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
 
+
 @strawberry.type
 class Label:
     name: str
     value: str
+
 
 @strawberry.type
 class Experiment:

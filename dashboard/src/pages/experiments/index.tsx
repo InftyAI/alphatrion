@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useExperiments } from '../../hooks/use-experiments';
+import { useLabelKeys } from '../../hooks/use-label-keys';
 import {
   Card,
   CardContent,
@@ -52,25 +53,23 @@ export function ExperimentsPage() {
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
 
-  // Extract unique labels from experiments
-  const labelOptions = useMemo(() => {
-    if (!experiments) return [{ value: 'ALL', label: 'All Labels' }];
+  // Fetch label keys from team
+  const { data: labelKeys } = useLabelKeys(selectedTeamId || '', { enabled: !!selectedTeamId });
 
-    const uniqueLabels = new Set<string>();
-    experiments.forEach(exp => {
-      exp.labels?.forEach(label => {
-        uniqueLabels.add(`${label.name}:${label.value}`);
-      });
-    });
+  // Build label options from team label keys
+  const labelOptions = useMemo(() => {
+    if (!labelKeys || labelKeys.length === 0) {
+      return [{ value: 'ALL', label: 'All Labels' }];
+    }
 
     return [
       { value: 'ALL', label: 'All Labels' },
-      ...Array.from(uniqueLabels).sort().map(labelStr => ({
-        value: labelStr,
-        label: labelStr.replace(':', ': ')
+      ...labelKeys.sort().map(key => ({
+        value: key,
+        label: key
       }))
     ];
-  }, [experiments]);
+  }, [labelKeys]);
 
   // Filter and sort experiments
   const filteredExperiments = useMemo(() => {
@@ -98,13 +97,10 @@ export function ExperimentsPage() {
       filtered = filtered.filter(exp => exp.status === statusFilter);
     }
 
-    // Apply label filter
+    // Apply label filter (filter by label key name)
     if (labelFilter !== 'ALL') {
-      const [filterName, filterValue] = labelFilter.split(':');
       filtered = filtered.filter(exp =>
-        exp.labels?.some(label =>
-          label.name === filterName && label.value === filterValue
-        )
+        exp.labels?.some(label => label.name === labelFilter)
       );
     }
 

@@ -466,23 +466,27 @@ class SQLStore(MetaStore):
         self,
         team_id: uuid.UUID,
         label_name: str,
-        label_value: str,
+        label_value: str | None = None,
         page: int = 0,
         page_size: int = 10,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Experiment]:
         session = self._session()
-        exps = (
+        query = (
             session.query(Experiment)
             .join(ExperimentLabel, ExperimentLabel.experiment_id == Experiment.uuid)
             .filter(
                 Experiment.team_id == team_id,
                 Experiment.is_del == 0,
                 ExperimentLabel.label_name == label_name,
-                ExperimentLabel.label_value == label_value,
             )
-            .order_by(
+        )
+        if label_value is not None:
+            query = query.filter(ExperimentLabel.label_value == label_value)
+
+        exps = (
+            query.order_by(
                 getattr(Experiment, order_by).desc()
                 if order_desc
                 else getattr(Experiment, order_by)

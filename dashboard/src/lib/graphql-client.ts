@@ -112,7 +112,7 @@ export const queries = {
       team(id: $id) {
         id
         name
-        listExpsByTimeframe(startTime: $startTime, endTime: $endTime) {
+        expsByTimeframe(startTime: $startTime, endTime: $endTime) {
           id
           teamId
           userId
@@ -120,6 +120,15 @@ export const queries = {
           status
           createdAt
         }
+      }
+    }
+  `,
+
+  getTeamWithLabelKeys: `
+    query GetTeamWithLabelKeys($id: ID!) {
+      team(id: $id) {
+        id
+        labelKeys
       }
     }
   `,

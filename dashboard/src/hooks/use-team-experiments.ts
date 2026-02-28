@@ -6,7 +6,6 @@ export interface TeamExperiment {
   id: string;
   teamId: string;
   userId: string;
-  projectId: string;
   name: string;
   status: string;
   createdAt: string;
@@ -16,7 +15,7 @@ interface GetTeamWithExperimentsResponse {
   team: {
     id: string;
     name: string;
-    listExpsByTimeframe: TeamExperiment[];
+    expsByTimeframe: TeamExperiment[];
   };
 }
 
@@ -41,7 +40,7 @@ export function useTeamExperiments(
           endTime: endTime.toISOString(),
         }
       );
-      return data.team.listExpsByTimeframe;
+      return data.team.expsByTimeframe;
     },
     enabled: enabled && !!teamId,
     staleTime: 5 * 60 * 1000, // 5 minutes

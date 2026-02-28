@@ -8,7 +8,7 @@ import strawberry
 from alphatrion import envs
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import ExperimentLabel, Status
+from alphatrion.storage.sql_models import Status
 
 from .types import (
     AddUserToTeamInput,
@@ -89,10 +89,10 @@ class GraphQLResolvers:
         labels = metadb.list_labels_by_exp_id(experiment_id=experiment_id)
         return [
             Label(
-                name=l.label_name,
-                value=l.label_value,
+                name=label.label_name,
+                value=label.label_value,
             )
-            for l in labels
+            for label in labels
         ]
 
     @staticmethod
@@ -100,8 +100,8 @@ class GraphQLResolvers:
         metadb = runtime.storage_runtime().metadb
         labels = metadb.list_labels_by_team_id(team_id=team_id)
         unique_keys = set()
-        for l in labels:
-            unique_keys.add(f"{l.label_name}:{l.label_value}")
+        for label in labels:
+            unique_keys.add(f"{label.label_name}:{label.label_value}")
         return list(unique_keys)
 
     @staticmethod
@@ -115,7 +115,7 @@ class GraphQLResolvers:
         label_value: str | None = None,
     ) -> list[Experiment]:
         metadb = runtime.storage_runtime().metadb
-        if label_name and label_value:
+        if label_name:
             exps = metadb.list_exps_by_label(
                 team_id=uuid.UUID(team_id),
                 label_name=label_name,
