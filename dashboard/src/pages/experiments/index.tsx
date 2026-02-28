@@ -18,7 +18,7 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
-import { Select } from '../../components/ui/select';
+import { Dropdown } from '../../components/ui/dropdown';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
@@ -30,6 +30,15 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
   COMPLETED: 'success',
   FAILED: 'destructive',
 };
+
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'All Status' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'RUNNING', label: 'Running' },
+  { value: 'FAILED', label: 'Failed' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
 
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
@@ -99,18 +108,12 @@ export function ExperimentsPage() {
           </div>
 
           {/* Status Filter */}
-          <Select
+          <Dropdown
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as Status | 'ALL')}
-            className="w-40 h-9 text-sm"
-          >
-            <option value="ALL">All Status</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="RUNNING">Running</option>
-            <option value="FAILED">Failed</option>
-            <option value="PENDING">Pending</option>
-            <option value="CANCELLED">Cancelled</option>
-          </Select>
+            onChange={(value) => setStatusFilter(value as Status | 'ALL')}
+            options={STATUS_OPTIONS}
+            className="w-40"
+          />
         </div>
       </div>
 
