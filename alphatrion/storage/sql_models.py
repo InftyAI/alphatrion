@@ -145,7 +145,9 @@ class Experiment(Base):
         nullable=False,
         comment="Type of the experiment",
     )
-    duration = Column(Float, default=0.0, comment="Duration of the experiment in seconds")
+    duration = Column(
+        Float, default=0.0, comment="Duration of the experiment in seconds"
+    )
     status = Column(
         Integer,
         default=Status.PENDING,
