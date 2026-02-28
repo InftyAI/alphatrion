@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useExperiments } from '../../hooks/use-experiments';
-import { useLabelKeys } from '../../hooks/use-label-keys';
 import {
   Card,
   CardContent,
@@ -20,6 +19,7 @@ import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
+import { MultiSelectDropdown } from '../../components/ui/multi-select-dropdown';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
@@ -44,7 +44,7 @@ const STATUS_OPTIONS = [
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
-  const [labelFilter, setLabelFilter] = useState<string>('ALL');
+  const [labelFilters, setLabelFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch experiments directly for the team
@@ -53,23 +53,51 @@ export function ExperimentsPage() {
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
 
-  // Fetch label keys from team
-  const { data: labelKeys } = useLabelKeys(selectedTeamId || '', { enabled: !!selectedTeamId });
-
-  // Build label options from team label keys
+  // Build label options grouped by key, showing all unique values per key
   const labelOptions = useMemo(() => {
-    if (!labelKeys || labelKeys.length === 0) {
-      return [{ value: 'ALL', label: 'All Labels' }];
+    if (!experiments || experiments.length === 0) {
+      return [];
     }
 
-    return [
-      { value: 'ALL', label: 'All Labels' },
-      ...labelKeys.sort().map(key => ({
-        value: key,
-        label: key
-      }))
-    ];
-  }, [labelKeys]);
+    // Collect labels by key
+    const labelsByKey = new Map<string, Set<string>>();
+
+    experiments.forEach(exp => {
+      exp.labels?.forEach(label => {
+        if (!labelsByKey.has(label.name)) {
+          labelsByKey.set(label.name, new Set());
+        }
+        labelsByKey.get(label.name)!.add(label.value);
+      });
+    });
+
+    // Build options grouped by key
+    const options: { value: string; label: string; group: string }[] = [];
+
+    Array.from(labelsByKey.entries())
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .forEach(([key, values]) => {
+        // Add "Any" option for this key
+        options.push({
+          value: `${key}:*`,
+          label: `(Any ${key})`,
+          group: key
+        });
+
+        // Add specific value options
+        Array.from(values)
+          .sort()
+          .forEach(value => {
+            options.push({
+              value: `${key}:${value}`,
+              label: value,
+              group: key
+            });
+          });
+      });
+
+    return options;
+  }, [experiments]);
 
   // Filter and sort experiments
   const filteredExperiments = useMemo(() => {
@@ -97,18 +125,31 @@ export function ExperimentsPage() {
       filtered = filtered.filter(exp => exp.status === statusFilter);
     }
 
-    // Apply label filter (filter by label key name)
-    if (labelFilter !== 'ALL') {
-      filtered = filtered.filter(exp =>
-        exp.labels?.some(label => label.name === labelFilter)
-      );
+    // Apply label filters (AND logic - experiment must match ALL selected labels)
+    if (labelFilters.length > 0) {
+      filtered = filtered.filter(exp => {
+        // Check if experiment matches ALL selected label filters
+        return labelFilters.every(filter => {
+          const [labelName, labelValue] = filter.split(':', 2);
+
+          if (labelValue === '*') {
+            // "key:*" means any experiment with this key
+            return exp.labels?.some(label => label.name === labelName);
+          } else {
+            // "key:value" means exact match
+            return exp.labels?.some(label =>
+              label.name === labelName && label.value === labelValue
+            );
+          }
+        });
+      });
     }
 
     // Sort by creation time descending (newest first)
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [experiments, statusFilter, labelFilter, searchQuery]);
+  }, [experiments, statusFilter, labelFilters, searchQuery]);
 
   return (
     <div className="space-y-4">
@@ -135,11 +176,12 @@ export function ExperimentsPage() {
           </div>
 
           {/* Label Filter */}
-          <Dropdown
-            value={labelFilter}
-            onChange={(value) => setLabelFilter(value)}
+          <MultiSelectDropdown
+            values={labelFilters}
+            onChange={(values) => setLabelFilters(values)}
             options={labelOptions}
-            className="w-48"
+            className="w-64"
+            placeholder="Filter by labels..."
           />
 
           {/* Status Filter */}
@@ -161,7 +203,9 @@ export function ExperimentsPage() {
             </div>
           ) : !filteredExperiments || filteredExperiments.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              {searchQuery.trim() ? 'No experiments match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} experiments found` : 'No experiments found'}
+              {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
+                ? 'No experiments match your filters'
+                : 'No experiments found'}
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg">
