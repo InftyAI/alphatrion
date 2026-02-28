@@ -41,6 +41,30 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+// Predefined color palette for label keys
+const LABEL_COLORS = [
+  { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
+  { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
+  { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300' },
+  { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300' },
+  { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-300' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-700', border: 'border-cyan-300' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-300' },
+  { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-300' },
+  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300' },
+  { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-300' },
+];
+
+// Simple hash function to get consistent color for a label key
+function getLabelColor(labelName: string) {
+  let hash = 0;
+  for (let i = 0; i < labelName.length; i++) {
+    hash = labelName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % LABEL_COLORS.length;
+  return LABEL_COLORS[index];
+}
+
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
@@ -240,11 +264,18 @@ export function ExperimentsPage() {
                       <TableCell className="py-3 text-sm">
                         {experiment.labels && experiment.labels.length > 0 ? (
                           <div className="flex gap-1 flex-wrap">
-                            {experiment.labels.map((label, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs px-2 py-0.5 font-normal">
-                                {label.name}: {label.value}
-                              </Badge>
-                            ))}
+                            {experiment.labels.map((label, idx) => {
+                              const colors = getLabelColor(label.name);
+                              return (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className={`text-xs px-2 py-0.5 font-normal ${colors.bg} ${colors.text} ${colors.border}`}
+                                >
+                                  {label.name}: {label.value}
+                                </Badge>
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
