@@ -91,30 +91,6 @@ class TeamMember(Base):
     __table_args__ = (UniqueConstraint("team_id", "user_id", name="unique_team_user"),)
 
 
-# Define the Project model for SQLAlchemy
-class Project(Base):
-    __tablename__ = "projects"
-
-    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
-    creator_id = Column(UUID(as_uuid=True), nullable=True)
-    meta = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="Additional metadata for the project",
-    )
-
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
-
-
 class ExperimentType(enum.IntEnum):
     UNKNOWN = 0
     CRAFT_EXPERIMENT = 1
@@ -125,7 +101,6 @@ class Experiment(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=True)
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
@@ -171,7 +146,6 @@ class Run(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=True)
     meta = Column(
@@ -197,27 +171,27 @@ class Run(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
-class Model(Base):
-    __tablename__ = "models"
+# class Model(Base):
+#     __tablename__ = "models"
 
-    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, nullable=False, unique=True)
-    description = Column(String, nullable=True)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
-    version = Column(String, nullable=False)
-    meta = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="Additional metadata for the model",
-    )
+#     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+#     name = Column(String, nullable=False, unique=True)
+#     description = Column(String, nullable=True)
+#     team_id = Column(UUID(as_uuid=True), nullable=False)
+#     version = Column(String, nullable=False)
+#     meta = Column(
+#         MutableDict.as_mutable(JSON),
+#         nullable=True,
+#         comment="Additional metadata for the model",
+#     )
 
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+#     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+#     updated_at = Column(
+#         DateTime(timezone=True),
+#         default=lambda: datetime.now(UTC),
+#         onupdate=lambda: datetime.now(UTC),
+#     )
+#     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
 class Metric(Base):
@@ -228,7 +202,23 @@ class Metric(Base):
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+
+
+class ExperimentLabel(Base):
+    __tablename__ = "experiment_labels"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
+    label_name = Column(String, nullable=False)
+    label_value = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )

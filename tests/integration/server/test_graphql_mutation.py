@@ -35,7 +35,6 @@ def test_create_team_mutation():
             meta
             createdAt
             updatedAt
-            totalProjects
             totalExperiments
             totalRuns
         }
@@ -49,7 +48,6 @@ def test_create_team_mutation():
     assert response.data["createTeam"]["name"] == "Test Team"
     assert response.data["createTeam"]["description"] == "A team created via mutation"
     assert response.data["createTeam"]["meta"] == {"foo": "bar", "count": 42}
-    assert response.data["createTeam"]["totalProjects"] == 0
     assert response.data["createTeam"]["totalExperiments"] == 0
     assert response.data["createTeam"]["totalRuns"] == 0
 
@@ -80,7 +78,6 @@ def test_create_team_mutation_with_uuid():
             meta
             createdAt
             updatedAt
-            totalProjects
             totalExperiments
             totalRuns
         }}

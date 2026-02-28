@@ -98,7 +98,6 @@ def snapshot_path() -> str:
         Path(runtime.root_path)
         / "snapshots"
         / f"team_{runtime.team_id}"
-        / f"project_{runtime.current_proj.id}"
         / f"user_{runtime.user_id}"
         / f"exp_{current_exp_id.get()}"
         / f"run_{current_run_id.get()}"
@@ -111,7 +110,6 @@ def checkpoint_path() -> str:
         Path(runtime.root_path)
         / "snapshots"
         / f"team_{runtime.team_id}"
-        / f"project_{runtime.current_proj.id}"
         / f"user_{runtime.user_id}"
         / f"exp_{current_exp_id.get()}"
         / "checkpoints"

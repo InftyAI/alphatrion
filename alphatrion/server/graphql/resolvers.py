@@ -23,7 +23,6 @@ from .types import (
     GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
     Metric,
-    Project,
     RemoveUserFromTeamInput,
     Run,
     Span,
@@ -84,74 +83,42 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
-    def list_projects(
+    def list_experiments(
         team_id: strawberry.ID,
         page: int = 0,
-        page_size: int = 10,
+        page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> list[Project]:
-        metadb = runtime.storage_runtime().metadb
-        projects = metadb.list_projects(
-            team_id=uuid.UUID(team_id),
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
-        )
-        return [
-            Project(
-                id=proj.uuid,
-                team_id=proj.team_id,
-                creator_id=proj.creator_id,
-                name=proj.name,
-                description=proj.description,
-                meta=proj.meta,
-                created_at=proj.created_at,
-                updated_at=proj.updated_at,
-            )
-            for proj in projects
-        ]
-
-    @staticmethod
-    def get_project(id: strawberry.ID) -> Project | None:
-        metadb = runtime.storage_runtime().metadb
-        proj = metadb.get_project(project_id=uuid.UUID(id))
-        if proj:
-            return Project(
-                id=proj.uuid,
-                team_id=proj.team_id,
-                creator_id=proj.creator_id,
-                name=proj.name,
-                description=proj.description,
-                meta=proj.meta,
-                created_at=proj.created_at,
-                updated_at=proj.updated_at,
-            )
-        return None
-
-    @staticmethod
-    def list_experiments(
-        project_id: strawberry.ID,
-        page: int = 0,
-        page_size: int = 10,
-        order_by: str = "created_at",
-        order_desc: bool = True,
+        label_name: str | None = None,
+        label_value: str | None = None,
     ) -> list[Experiment]:
         metadb = runtime.storage_runtime().metadb
-        exps = metadb.list_exps_by_project_id(
-            project_id=uuid.UUID(project_id),
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
-        )
+        if label_name and label_value:
+            exps = metadb.list_exps_by_label(
+                team_id=uuid.UUID(team_id),
+                label_name=label_name,
+                label_value=label_value,
+                page=page,
+                page_size=page_size,
+                order_by=order_by,
+                order_desc=order_desc,
+            )
+        else:
+            exps = metadb.list_exps_by_team_id(
+                team_id=uuid.UUID(team_id),
+                page=page,
+                page_size=page_size,
+                order_by=order_by,
+                order_desc=order_desc,
+                label_name=label_name,
+                label_value=label_value,
+            )
+
         return [
             Experiment(
                 id=e.uuid,
                 team_id=e.team_id,
                 user_id=e.user_id,
-                project_id=e.project_id,
                 name=e.name,
                 description=e.description,
                 meta=e.meta,
@@ -174,7 +141,6 @@ class GraphQLResolvers:
                 id=exp.uuid,
                 team_id=exp.team_id,
                 user_id=exp.user_id,
-                project_id=exp.project_id,
                 name=exp.name,
                 description=exp.description,
                 meta=exp.meta,
@@ -208,7 +174,6 @@ class GraphQLResolvers:
                 id=r.uuid,
                 team_id=r.team_id,
                 user_id=r.user_id,
-                project_id=r.project_id,
                 experiment_id=r.experiment_id,
                 meta=r.meta,
                 status=GraphQLStatusEnum[Status(r.status).name],
@@ -226,7 +191,6 @@ class GraphQLResolvers:
                 id=run.uuid,
                 team_id=run.team_id,
                 user_id=run.user_id,
-                project_id=run.project_id,
                 experiment_id=run.experiment_id,
                 meta=run.meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
@@ -244,7 +208,6 @@ class GraphQLResolvers:
                 key=m.key,
                 value=m.value,
                 team_id=m.team_id,
-                project_id=m.project_id,
                 experiment_id=m.experiment_id,
                 run_id=m.run_id,
                 created_at=m.created_at,
@@ -262,18 +225,12 @@ class GraphQLResolvers:
                 key=m.key,
                 value=m.value,
                 team_id=m.team_id,
-                project_id=m.project_id,
                 experiment_id=m.experiment_id,
                 run_id=m.run_id,
                 created_at=m.created_at,
             )
             for m in metrics
         ]
-
-    @staticmethod
-    def total_projects(team_id: strawberry.ID) -> int:
-        metadb = runtime.storage_runtime().metadb
-        return metadb.count_projects(team_id=team_id)
 
     @staticmethod
     def total_experiments(team_id: strawberry.ID) -> int:
@@ -303,7 +260,6 @@ class GraphQLResolvers:
                 id=e.uuid,
                 team_id=e.team_id,
                 user_id=e.user_id,
-                project_id=e.project_id,
                 name=e.name,
                 description=e.description,
                 meta=e.meta,
@@ -337,34 +293,29 @@ class GraphQLResolvers:
 
     @staticmethod
     async def list_artifact_tags(
-        team_id: str, project_id: str, repo_type: str | None = None
+        team_id: str,
+        repo_name: str,
     ) -> list[ArtifactTag]:
         """List tags for a repository."""
 
         arf = artifact.Artifact(team_id=team_id, insecure=True)
-        # Append repo_type suffix to project_id if provided
-        # (e.g., "project/execution" or "project/checkpoint")
-        repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
-        return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_path)]
+        return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_name)]
 
     @staticmethod
     async def get_artifact_content(
-        team_id: str, project_id: str, tag: str, repo_type: str | None = None
+        team_id: str, tag: str, repo_name: str | None = None
     ) -> ArtifactContent:
         """Get artifact content from registry."""
         try:
             # Initialize artifact client
             arf = artifact.Artifact(team_id=team_id, insecure=True)
 
-            # Construct repository path
-            repo_path = f"{project_id}/{repo_type}" if repo_type else project_id
-
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
             # Note: One potential issue is if we download too many large files,
             # it may fill up disk space. For now we assume artifacts are
             # reasonably sized and/or users will manage their registry storage.
-            file_paths = arf.pull(repo_name=repo_path, version=tag)
+            file_paths = arf.pull(repo_name=repo_name, version=tag)
 
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
@@ -537,7 +488,6 @@ class GraphQLResolvers:
                         status_code=t["StatusCode"],
                         status_message=t["StatusMessage"],
                         team_id=t["TeamId"],
-                        project_id=t["ProjectId"],
                         run_id=t["RunId"],
                         experiment_id=t["ExperimentId"],
                         span_attributes=t["SpanAttributes"],

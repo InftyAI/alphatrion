@@ -16,12 +16,6 @@ class Team:
     updated_at: datetime
 
     @strawberry.field
-    def total_projects(self) -> int:
-        from .resolvers import GraphQLResolvers
-
-        return GraphQLResolvers.total_projects(team_id=self.id)
-
-    @strawberry.field
     def total_experiments(self) -> int:
         from .resolvers import GraphQLResolvers
 
@@ -63,18 +57,6 @@ class User:
         return GraphQLResolvers.list_teams(user_id=self.id)
 
 
-@strawberry.type
-class Project:
-    id: strawberry.ID
-    team_id: strawberry.ID
-    creator_id: strawberry.ID
-    name: str | None
-    description: str | None
-    meta: JSON | None
-    created_at: datetime
-    updated_at: datetime
-
-
 class GraphQLStatus(Enum):
     UNKNOWN = "UNKNOWN"
     PENDING = "PENDING"
@@ -100,7 +82,6 @@ class Experiment:
     id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
-    project_id: strawberry.ID
     name: str
     description: str | None
     kind: GraphQLExperimentTypeEnum
@@ -150,7 +131,6 @@ class Run:
     id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None
     status: GraphQLStatusEnum
@@ -202,7 +182,6 @@ class Metric:
     key: str | None
     value: float | None
     team_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     run_id: strawberry.ID
     created_at: datetime
@@ -292,7 +271,6 @@ class Span:
     status_message: str
 
     team_id: str
-    project_id: str
     run_id: str
     experiment_id: str
 
