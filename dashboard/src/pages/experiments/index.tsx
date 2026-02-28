@@ -130,8 +130,8 @@ export function ExperimentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
-                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Labels</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</TableHead>
@@ -141,9 +141,6 @@ export function ExperimentsPage() {
               <TableBody>
                 {filteredExperiments.map((experiment) => (
                   <TableRow key={experiment.id}>
-                    <TableCell className="py-3.5 text-sm text-foreground">
-                      {experiment.name}
-                    </TableCell>
                     <TableCell className="py-3.5 text-sm">
                       <Link
                         to={`/experiments/${experiment.id}`}
@@ -151,6 +148,9 @@ export function ExperimentsPage() {
                       >
                         {experiment.id}
                       </Link>
+                    </TableCell>
+                    <TableCell className="py-3.5 text-sm text-foreground">
+                      {experiment.name}
                     </TableCell>
                     <TableCell className="py-3.5 text-sm">
                       {experiment.labels && experiment.labels.length > 0 ? (

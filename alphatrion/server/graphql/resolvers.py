@@ -89,8 +89,8 @@ class GraphQLResolvers:
         labels = metadb.list_labels_by_exp_id(experiment_id=experiment_id)
         return [
             Label(
-                name=l.name,
-                value=l.value,
+                name=l.label_name,
+                value=l.label_value,
             )
             for l in labels
         ]

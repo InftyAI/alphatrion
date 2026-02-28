@@ -78,8 +78,7 @@ export function RunDetailPage() {
 
   // Use the cached artifact content hook
   // Only fetch when dialog is open to avoid unnecessary requests
-  // Repository name is constructed as: team_id/execution
-  const repoName = run?.teamId ? `${run.teamId}/execution` : '';
+  // Repository name is just 'execution' - the backend prepends teamId
   const {
     data: artifactContent,
     isLoading: loadingArtifact,
@@ -87,8 +86,8 @@ export function RunDetailPage() {
   } = useArtifactContent(
     run?.teamId || '',
     artifactTag,
-    repoName,
-    dialogOpen && hasExecutionResult && !!repoName // Only fetch when dialog is open
+    'execution',
+    dialogOpen && hasExecutionResult // Only fetch when dialog is open
   );
 
   const handleViewArtifact = () => {
