@@ -96,6 +96,15 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
+    def list_label_keys(team_id: strawberry.ID) -> list[str]:
+        metadb = runtime.storage_runtime().metadb
+        labels = metadb.list_labels_by_team_id(team_id=team_id)
+        unique_keys = set()
+        for l in labels:
+            unique_keys.add(l.label_name)
+        return list(unique_keys)
+
+    @staticmethod
     def list_experiments(
         team_id: strawberry.ID,
         page: int = 0,
