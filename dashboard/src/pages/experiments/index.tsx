@@ -218,7 +218,7 @@ export function ExperimentsPage() {
               placeholder="Search experiments..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
+              className="pl-8 h-9 text-[13px] font-medium focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
             />
           </div>
 

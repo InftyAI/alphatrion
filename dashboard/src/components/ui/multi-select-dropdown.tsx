@@ -76,7 +76,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex min-h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-1.5 text-sm",
+          "flex min-h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-1.5 text-[13px]",
           "hover:bg-accent hover:text-accent-foreground transition-colors",
           "focus:outline-none focus:border-blue-300 focus:bg-blue-50",
           "disabled:cursor-not-allowed disabled:opacity-50"
@@ -84,7 +84,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
       >
         <div className="flex flex-wrap gap-1 flex-1">
           {selectedOptions.length === 0 ? (
-            <span className="text-muted-foreground">{placeholder || "Select labels..."}</span>
+            <span className="text-muted-foreground font-medium">{placeholder || "Select labels..."}</span>
           ) : (
             selectedOptions.map((option) => {
               // For "Any" options, show the full label. For specific values, show key:value
@@ -96,7 +96,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
                 <Badge
                   key={option.value}
                   variant="outline"
-                  className="text-xs px-2 py-0.5 font-normal"
+                  className="text-[11px] px-1.5 py-0 font-normal"
                 >
                   {displayLabel}
                   <X
@@ -111,11 +111,11 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
         <div className="flex items-center gap-1 ml-2">
           {selectedOptions.length > 0 && (
             <X
-              className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer"
+              className="h-3.5 w-3.5 opacity-50 hover:opacity-100 cursor-pointer"
               onClick={clearAll}
             />
           )}
-          <ChevronDown className={cn("h-4 w-4 opacity-50 transition-transform", isOpen && "transform rotate-180")} />
+          <ChevronDown className={cn("h-3.5 w-3.5 opacity-50 transition-transform", isOpen && "transform rotate-180")} />
         </div>
       </button>
 
@@ -124,7 +124,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
           <div className="max-h-80 overflow-auto p-1">
             {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
               <div key={groupName}>
-                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {groupName}
                 </div>
                 {groupOptions.map((option) => (
@@ -133,7 +133,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
                     type="button"
                     onClick={() => toggleOption(option.value)}
                     className={cn(
-                      "w-full rounded-sm px-2 py-1.5 pl-6 text-sm text-left cursor-pointer transition-colors flex items-center gap-2",
+                      "w-full rounded-sm px-2 py-1.5 pl-6 text-[13px] text-left cursor-pointer transition-colors flex items-center gap-2",
                       "hover:bg-accent hover:text-accent-foreground"
                     )}
                   >
@@ -141,7 +141,7 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
                       type="checkbox"
                       checked={values.includes(option.value)}
                       onChange={() => {}}
-                      className="h-4 w-4 rounded border-gray-300"
+                      className="h-3.5 w-3.5 rounded border-gray-300"
                     />
                     <span className={cn(values.includes(option.value) && "font-medium")}>
                       {option.label}
