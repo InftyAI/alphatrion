@@ -24,6 +24,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Dropdown } from '../../components/ui/dropdown';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -37,6 +38,15 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
   COMPLETED: 'success',
   FAILED: 'destructive',
 };
+
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'All Status' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'RUNNING', label: 'Running' },
+  { value: 'FAILED', label: 'Failed' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
 
 const PAGE_SIZE = 20;
 
@@ -326,22 +336,12 @@ export function ExperimentDetailPage() {
                 </div>
 
                 {/* Status Filter */}
-                <div className="flex gap-1">
-                  {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
-                    <Button
-                      key={status}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setStatusFilter(status)}
-                      className={`h-8 px-2.5 text-xs transition-colors ${statusFilter === status
-                          ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
-                          : 'bg-white hover:bg-gray-50'
-                        }`}
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </div>
+                <Dropdown
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value as Status | 'ALL')}
+                  options={STATUS_OPTIONS}
+                  className="w-40"
+                />
               </div>
 
               {runsLoading ? (
@@ -359,7 +359,7 @@ export function ExperimentDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
+                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
                         <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
                         <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
                       </TableRow>
