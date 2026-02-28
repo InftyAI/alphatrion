@@ -110,7 +110,7 @@ class MetaStore(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def get_experiment(self, exp_id: uuid.UUID) -> Experiment | None:
+    def get_experiment(self, experiment_id: uuid.UUID) -> Experiment | None:
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod

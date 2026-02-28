@@ -132,7 +132,7 @@ class Experiment(Base):
     meta = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
-        comment="Additional metadata for the trial",
+        comment="Additional metadata for the experiment",
     )
     params = Column(
         MutableDict.as_mutable(JSON),
@@ -145,12 +145,14 @@ class Experiment(Base):
         nullable=False,
         comment="Type of the experiment",
     )
-    duration = Column(Float, default=0.0, comment="Duration of the trial in seconds")
+    duration = Column(
+        Float, default=0.0, comment="Duration of the experiment in seconds"
+    )
     status = Column(
         Integer,
         default=Status.PENDING,
         nullable=False,
-        comment="Status of the trial, \
+        comment="Status of the experiment, \
             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
             10: CANCELLED, 11: FAILED",
     )
