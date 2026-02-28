@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
-import { useProjects } from '../../hooks/use-projects';
 import { useExperiments } from '../../hooks/use-experiments';
 import {
   Card,
@@ -37,19 +36,10 @@ export function ExperimentsPage() {
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch all projects to get their experiments
-  const { data: projects, isLoading: projectsLoading } = useProjects(
+  // Fetch experiments directly for the team
+  const { data: experiments, isLoading } = useExperiments(
     selectedTeamId || '',
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
-  );
-
-  // For now, we'll fetch experiments from the first project as an example
-  // In production, you'd want a dedicated API endpoint to get all experiments
-  const firstProjectId = projects?.[0]?.id || '';
-
-  const { data: experiments, isLoading: experimentsLoading } = useExperiments(
-    firstProjectId,
-    { page: 0, pageSize: 100, enabled: !!firstProjectId }
   );
 
   // Filter and sort experiments
@@ -66,7 +56,10 @@ export function ExperimentsPage() {
           exp.name?.toLowerCase().includes(query) ||
           exp.description?.toLowerCase().includes(query) ||
           exp.id?.toLowerCase().includes(query) ||
-          exp.projectId?.toLowerCase().includes(query)
+          exp.labels?.some(label =>
+            label.name.toLowerCase().includes(query) ||
+            label.value.toLowerCase().includes(query)
+          )
       );
     }
 
@@ -80,8 +73,6 @@ export function ExperimentsPage() {
 
     return filtered;
   }, [experiments, statusFilter, searchQuery]);
-
-  const isLoading = projectsLoading || experimentsLoading;
 
   return (
     <div className="space-y-4">
@@ -141,7 +132,7 @@ export function ExperimentsPage() {
                 <TableRow>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Experiment ID</TableHead>
-                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Project ID</TableHead>
+                  <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Labels</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</TableHead>
                   <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
@@ -162,12 +153,17 @@ export function ExperimentsPage() {
                       </Link>
                     </TableCell>
                     <TableCell className="py-3.5 text-sm">
-                      <Link
-                        to={`/projects/${experiment.projectId}`}
-                        className="font-mono text-primary font-medium hover:underline"
-                      >
-                        {experiment.projectId}
-                      </Link>
+                      {experiment.labels && experiment.labels.length > 0 ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {experiment.labels.map((label, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0">
+                              {label.name}: {label.value}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="py-3.5">
                       <Badge variant={STATUS_VARIANTS[experiment.status]} className="text-xs px-2 py-0.5">

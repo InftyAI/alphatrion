@@ -18,9 +18,8 @@ Open, modular framework to build GenAI applications.
 
 ## Concepts
 
-- **Team**: A Team is the highest-level organizational unit in AlphaTrion. It represents a group of users collaborating on projects and experiments.
-- **Project**: A Project is a namespace-level abstraction that contains multiple experiments. It helps organize experiments related to a specific goal or topic.
-- **Experiment**: An Experiment is a logic-level abstraction for organizing and managing a series of related runs. It allows users to group runs that share a common purpose or configuration.
+- **Team**: A Team is the highest-level organizational unit in AlphaTrion. It represents a group of users collaborating on experiments.
+- **Experiment**: An Experiment is a logic-level abstraction for organizing and managing a series of related runs. It allows users to group runs that share a common purpose or configuration. Experiments can be organized using labels.
 - **Run**: A Run is a real execution instance of an experiment. It represents the actual execution of the code with the specified configuration and hyperparameters defined in the experiment.
 
 ## Quick Start
@@ -70,7 +69,7 @@ Below is a simple example with two approaches demonstrating how to create an exp
 
 ```python
 import alphatrion as alpha
-from alphatrion import experiment, project
+from alphatrion import experiment
 
 # Use the user ID generated from the `alphatrion init` command.
 alpha.init(user_id=<user_id>)
@@ -79,17 +78,16 @@ async def your_task():
   # Run your code here then log metrics.
   await alpha.log_metrics({"accuracy": 0.95})
 
-async with project.Project.setup(name="my_project"):
-  async with experiment.CraftExperiment.start(name="my_experiment") as exp:
-    task = exp.run(your_task) # use lambda or partial if you need to pass arguments to your_task
-    await task.wait()
+async with experiment.CraftExperiment.start(name="my_experiment") as exp:
+  task = exp.run(your_task) # use lambda or partial if you need to pass arguments to your_task
+  await task.wait()
 ```
 
 ### View Dashboard
 
 ![dashboard](./site/images/dashboard.png)
 
-The dashboard provides a web interface to explore projects, experiments, runs, and metrics through an intuitive UI.
+The dashboard provides a web interface to explore experiments, runs, and metrics through an intuitive UI.
 
 #### Launch Dashboard
 

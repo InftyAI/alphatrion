@@ -7,8 +7,6 @@ import { User, UserProvider } from './context/user-context';
 import { useTeamContext } from './context/team-context';
 import { Layout } from './components/layout/layout';
 import { DashboardPage } from './pages/dashboard';
-import { ProjectsPage } from './pages/projects';
-import { ProjectDetailPage } from './pages/projects/[id]';
 import { ExperimentsPage } from './pages/experiments';
 import { ExperimentDetailPage } from './pages/experiments/[id]';
 import { ExperimentComparePage } from './pages/experiments/compare';
@@ -133,24 +131,20 @@ function App() {
       <UserProvider user={currentUser}>
         <Routes>
           <Route path="/" element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="projects">
-            <Route index element={<ProjectsPage />} />
-            <Route path=":id" element={<ProjectDetailPage />} />
+            <Route index element={<DashboardPage />} />
+            <Route path="experiments">
+              <Route index element={<ExperimentsPage />} />
+              <Route path=":id" element={<ExperimentDetailPage />} />
+              <Route path="compare" element={<ExperimentComparePage />} />
+            </Route>
+            <Route path="runs">
+              <Route index element={<RunsPage />} />
+              <Route path=":id" element={<RunDetailPage />} />
+            </Route>
+            <Route path="artifacts" element={<ArtifactsPage />} />
           </Route>
-          <Route path="experiments">
-            <Route index element={<ExperimentsPage />} />
-            <Route path=":id" element={<ExperimentDetailPage />} />
-            <Route path="compare" element={<ExperimentComparePage />} />
-          </Route>
-          <Route path="runs">
-            <Route index element={<RunsPage />} />
-            <Route path=":id" element={<RunDetailPage />} />
-          </Route>
-          <Route path="artifacts" element={<ArtifactsPage />} />
-        </Route>
-      </Routes>
-    </UserProvider>
+        </Routes>
+      </UserProvider>
     </div>
   );
 }

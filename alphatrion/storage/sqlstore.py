@@ -440,6 +440,17 @@ class SQLStore(MetaStore):
         session.close()
         return exps
 
+    def list_labels_by_exp_id(self, experiment_id: uuid.UUID) -> list[ExperimentLabel]:
+        session = self._session()
+        labels = (
+            session.query(ExperimentLabel)
+            .filter(ExperimentLabel.experiment_id == experiment_id)
+            .order_by(ExperimentLabel.created_at.asc())
+            .all()
+        )
+        session.close()
+        return labels
+
     def list_exps_by_label(
         self,
         team_id: uuid.UUID,

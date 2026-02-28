@@ -90,9 +90,9 @@ class Query:
     async def artifact_tags(
         self,
         team_id: strawberry.ID,
-        repo_type: str,
+        repo_name: str,
     ) -> list[ArtifactTag]:
-        return await GraphQLResolvers.list_artifact_tags(str(team_id), repo_type)
+        return await GraphQLResolvers.list_artifact_tags(str(team_id), repo_name)
 
     @strawberry.field
     async def artifact_content(

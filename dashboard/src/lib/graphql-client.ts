@@ -4,7 +4,7 @@ import axios from 'axios';
  * GraphQL client for AlphaTrion backend
  *
  * The backend provides a read-only GraphQL API at /graphql
- * with queries for teams, projects, experiments, runs, and metrics.
+ * with queries for teams, experiments, runs, and metrics.
  *
  * No subscriptions or mutations are currently supported.
  */
@@ -101,7 +101,6 @@ export const queries = {
         meta
         createdAt
         updatedAt
-        totalProjects
         totalExperiments
         totalRuns
       }
@@ -117,7 +116,6 @@ export const queries = {
           id
           teamId
           userId
-          projectId
           name
           status
           createdAt
@@ -126,48 +124,21 @@ export const queries = {
     }
   `,
 
-  listProjects: `
-    query ListProjects($teamId: ID!, $page: Int, $pageSize: Int) {
-      projects(teamId: $teamId, page: $page, pageSize: $pageSize) {
-        id
-        teamId
-        creatorId
-        name
-        description
-        meta
-        createdAt
-        updatedAt
-      }
-    }
-  `,
-
-  getProject: `
-    query GetProject($id: ID!) {
-      project(id: $id) {
-        id
-        teamId
-        creatorId
-        name
-        description
-        meta
-        createdAt
-        updatedAt
-      }
-    }
-  `,
-
   listExperiments: `
-    query ListExperiments($projectId: ID!, $page: Int, $pageSize: Int) {
-      experiments(projectId: $projectId, page: $page, pageSize: $pageSize) {
+    query ListExperiments($teamId: ID!, $labelName: String, $labelValue: String, $page: Int, $pageSize: Int) {
+      experiments(teamId: $teamId, labelName: $labelName, labelValue: $labelValue, page: $page, pageSize: $pageSize) {
         id
         teamId
         userId
-        projectId
         name
         description
         kind
         meta
         params
+        labels {
+          name
+          value
+        }
         duration
         status
         createdAt
@@ -182,12 +153,15 @@ export const queries = {
         id
         teamId
         userId
-        projectId
         name
         description
         kind
         meta
         params
+        labels {
+          name
+          value
+        }
         duration
         status
         createdAt
@@ -200,7 +174,6 @@ export const queries = {
           key
           value
           teamId
-          projectId
           experimentId
           runId
           createdAt
@@ -215,7 +188,6 @@ export const queries = {
         id
         teamId
         userId
-        projectId
         experimentId
         meta
         status
@@ -230,7 +202,6 @@ export const queries = {
         id
         teamId
         userId
-        projectId
         experimentId
         meta
         status
@@ -243,7 +214,6 @@ export const queries = {
           key
           value
           teamId
-          projectId
           experimentId
           runId
           createdAt
@@ -261,7 +231,6 @@ export const queries = {
           statusCode
           statusMessage
           teamId
-          projectId
           runId
           experimentId
           spanAttributes
@@ -291,16 +260,16 @@ export const queries = {
   `,
 
   listArtifactTags: `
-    query ListArtifactTags($team_id: ID!, $project_id: ID!, $repo_type: String) {
-      artifactTags(teamId: $team_id, projectId: $project_id, repoType: $repo_type) {
+    query ListArtifactTags($team_id: ID!, $repo_name: String!) {
+      artifactTags(teamId: $team_id, repoName: $repo_name) {
         name
       }
     }
   `,
 
   getArtifactContent: `
-    query GetArtifactContent($team_id: ID!, $project_id: ID!, $tag: String!, $repo_type: String) {
-      artifactContent(teamId: $team_id, projectId: $project_id, tag: $tag, repoType: $repo_type) {
+    query GetArtifactContent($team_id: ID!, $tag: String!, $repo_name: String!) {
+      artifactContent(teamId: $team_id, tag: $tag, repoName: $repo_name) {
         filename
         content
         contentType
@@ -324,7 +293,6 @@ export const queries = {
         statusCode
         statusMessage
         teamId
-        projectId
         runId
         experimentId
         spanAttributes

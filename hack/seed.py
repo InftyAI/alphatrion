@@ -200,7 +200,6 @@ def cleanup():
     session.query(Run).delete()
     session.query(Team).delete()
     session.query(Experiment).delete()
-    session.query(Project).delete()
     session.commit()
     print("🧼 cleanup completed.")
 

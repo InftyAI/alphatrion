@@ -1,6 +1,7 @@
 # ruff: noqa: PLC0415
 from datetime import datetime
 from enum import Enum
+from turtle import st
 
 import strawberry
 from strawberry.scalars import JSON
@@ -76,6 +77,10 @@ class GraphQLExperimentType(Enum):
 
 GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
 
+@strawberry.type
+class Label:
+    name: str
+    value: str
 
 @strawberry.type
 class Experiment:
@@ -93,6 +98,12 @@ class Experiment:
     updated_at: datetime
 
     _token_cache: strawberry.Private[dict[str, int] | None] = None
+
+    @strawberry.field
+    def labels(self) -> list[Label]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_labels(experiment_id=self.id)
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:

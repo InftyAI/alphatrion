@@ -22,7 +22,6 @@ export interface Team {
   meta: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
-  totalProjects: number;
   totalExperiments: number;
   totalRuns: number;
 }
@@ -37,27 +36,21 @@ export interface User {
   updatedAt: string;
 }
 
-export interface Project {
-  id: string;
-  teamId: string;
-  creatorId: string;
-  name: string | null;
-  description: string | null;
-  meta: Record<string, unknown> | null;
-  createdAt: string;
-  updatedAt: string;
+export interface Label {
+  name: string;
+  value: string;
 }
 
 export interface Experiment {
   id: string;
   teamId: string;
   userId: string;
-  projectId: string;
   name: string;
   description: string | null;
   kind: ExperimentType;
   meta: Record<string, unknown> | null;
   params: Record<string, unknown> | null;
+  labels: Label[];
   duration: number;
   status: Status;
   createdAt: string;
@@ -72,7 +65,6 @@ export interface Run {
   id: string;
   teamId: string;
   userId: string;
-  projectId: string;
   experimentId: string;
   meta: Record<string, unknown> | null;
   status: Status;
@@ -89,7 +81,6 @@ export interface Metric {
   key: string | null;
   value: number | null;
   teamId: string;
-  projectId: string;
   experimentId: string;
   runId: string;
   createdAt: string;
@@ -175,7 +166,6 @@ export interface Span {
   statusCode: string;
   statusMessage: string;
   teamId: string;
-  projectId: string;
   runId: string;
   experimentId: string;
   spanAttributes: Record<string, string>;

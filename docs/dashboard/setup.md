@@ -10,7 +10,7 @@ The "badly formed hexadecimal UUID string" error occurs when the backend expects
 
 ### 1. Create Test Data
 
-First, create a team, project, and experiments for testing:
+First, create a team, user, and experiments for testing:
 
 ```bash
 cd /Users/kerthcet/Workspaces/InftyAI/alphatrion
@@ -28,8 +28,7 @@ python scripts/create_test_data.py
 This will create:
 - ✅ A test team with UUID
 - ✅ A test user with UUID
-- ✅ A test project called "Test Project"
-- ✅ 3 sample experiments with different configurations
+- ✅ 3 sample experiments with different configurations and labels
 - ✅ Sample metrics for each experiment
 
 ### 2. Start the Backend
@@ -66,14 +65,14 @@ npm run dev
 
 ## Dashboard Features
 
-The dashboard follows a clean hierarchical structure: **Projects → Experiments → Runs**
+The dashboard follows a clean hierarchical structure: **Experiments → Runs → Metrics**
 
 ### Navigation Structure
 
 **Sidebar Menu:**
-- 🏠 **Dashboard** - Overview with quick stats and recent projects
-- 📁 **Projects** - Browse all projects
-  - Click a project → View experiments in that project
+- 🏠 **Dashboard** - Overview with quick stats and recent experiments
+- 🧪 **Experiments** - Browse all experiments
+  - Filter experiments by labels
   - Click an experiment → View runs and metrics
 - 📦 **Artifacts** - Browse ORAS registry artifacts
 - 🔗 **Tracing** - View roadmap for future tracing features
@@ -81,25 +80,26 @@ The dashboard follows a clean hierarchical structure: **Projects → Experiments
 ### Key Features
 
 1. **Dashboard Overview**
-   - Quick stats showing teams and projects count
+   - Quick stats showing teams and experiments count
    - Visual hierarchy explanation
-   - Recent projects list
+   - Recent experiments list
    - Getting started guide
 
-2. **Projects Page**
-   - List all projects in your team
-   - Click any project to drill down
-
-3. **Project Detail Page**
-   - View all experiments in the project
-   - See experiment status, duration, and parameters
+2. **Experiments Page**
+   - List all experiments in your team
+   - Filter by labels for organization
    - Click any experiment to view details
 
-4. **Experiment Detail Page**
-   - View experiment parameters and metadata
+3. **Experiment Detail Page**
+   - View experiment parameters, metadata, and labels
+   - See experiment status, duration, and parameters
+   - Click to view run details
+
+4. **Run Detail Page**
+   - View run metadata
    - Real-time metrics charts with auto-refresh
-   - View all runs in the experiment
-   - Compare with other experiments
+   - View all metrics for the run
+   - Compare with other runs
 
 5. **Experiment Comparison**
    - Side-by-side parameter diff
@@ -139,7 +139,7 @@ team_id = uuid.uuid4()
 user_id = uuid.uuid4()
 
 alphatrion.init(team_id=team_id, user_id=user_id)
-# Now create projects and experiments...
+# Now create experiments...
 ```
 
 ### Dashboard shows "No teams found"

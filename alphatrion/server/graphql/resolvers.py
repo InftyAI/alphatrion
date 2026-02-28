@@ -8,7 +8,7 @@ import strawberry
 from alphatrion import envs
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import Status
+from alphatrion.storage.sql_models import ExperimentLabel, Status
 
 from .types import (
     AddUserToTeamInput,
@@ -22,6 +22,7 @@ from .types import (
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
+    Label,
     Metric,
     RemoveUserFromTeamInput,
     Run,
@@ -83,6 +84,18 @@ class GraphQLResolvers:
         return None
 
     @staticmethod
+    def list_labels(experiment_id: strawberry.ID) -> list[Label]:
+        metadb = runtime.storage_runtime().metadb
+        labels = metadb.list_labels_by_exp_id(experiment_id=experiment_id)
+        return [
+            Label(
+                name=l.name,
+                value=l.value,
+            )
+            for l in labels
+        ]
+
+    @staticmethod
     def list_experiments(
         team_id: strawberry.ID,
         page: int = 0,
@@ -110,8 +123,6 @@ class GraphQLResolvers:
                 page_size=page_size,
                 order_by=order_by,
                 order_desc=order_desc,
-                label_name=label_name,
-                label_value=label_value,
             )
 
         return [

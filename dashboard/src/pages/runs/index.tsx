@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
-import { useProjects } from '../../hooks/use-projects';
 import { useExperiments } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import {
@@ -38,26 +37,19 @@ export function RunsPage() {
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch all projects to get their experiments
-  const { data: projects, isLoading: projectsLoading } = useProjects(
+  // Fetch experiments directly for the team
+  const { data: experiments, isLoading: experimentsLoading } = useExperiments(
     selectedTeamId || '',
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
 
-  // For now, we'll fetch experiments from the first project
-  const firstProjectId = projects?.[0]?.id || '';
-
-  const { data: experiments, isLoading: experimentsLoading } = useExperiments(
-    firstProjectId,
-    { page: 0, pageSize: 100, enabled: !!firstProjectId }
-  );
-
-  // Fetch runs from the first experiment
+  // Fetch runs from the first experiment (temporary solution)
+  // TODO: Add a backend query to fetch all runs for a team
   const firstExperimentId = experiments?.[0]?.id || '';
 
   const { data: runs, isLoading: runsLoading } = useRuns(
     firstExperimentId,
-    { page: 0, pageSize: 100, enabled: !!firstExperimentId }
+    { page: 0, pageSize: 1000, enabled: !!firstExperimentId }
   );
 
   // Filter and sort runs
@@ -87,13 +79,13 @@ export function RunsPage() {
     return filtered;
   }, [runs, statusFilter, searchQuery]);
 
-  const isLoading = projectsLoading || experimentsLoading || runsLoading;
+  const isLoading = experimentsLoading || runsLoading;
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Runs</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Runs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Browse and monitor individual runs
         </p>
