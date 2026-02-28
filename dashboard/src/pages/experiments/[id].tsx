@@ -358,29 +358,29 @@ export function ExperimentDetailPage() {
                 <>
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</TableHead>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredRuns.map((run) => (
-                        <TableRow key={run.id}>
-                          <TableCell className="py-3.5 text-sm">
+                        <TableRow key={run.id} className="hover:bg-accent/50 transition-colors border-b last:border-0">
+                          <TableCell className="py-3 text-sm font-mono">
                             <Link
                               to={`/runs/${run.id}`}
-                              className="font-mono text-primary font-medium hover:underline"
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
                             >
                               {run.id}
                             </Link>
                           </TableCell>
-                          <TableCell className="py-3.5">
-                            <Badge variant={STATUS_VARIANTS[run.status]} className="text-xs px-2 py-0.5">
+                          <TableCell className="py-3">
+                            <Badge variant={STATUS_VARIANTS[run.status]} className="text-xs px-2.5 py-0.5 font-medium">
                               {run.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-3.5 text-sm text-foreground">
+                          <TableCell className="py-3 text-sm text-muted-foreground text-right">
                             {formatDistanceToNow(new Date(run.createdAt), {
                               addSuffix: true,
                             })}
