@@ -43,6 +43,7 @@ const STATUS_OPTIONS = [
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
+  const [labelFilter, setLabelFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch experiments directly for the team
@@ -50,6 +51,26 @@ export function ExperimentsPage() {
     selectedTeamId || '',
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
+
+  // Extract unique labels from experiments
+  const labelOptions = useMemo(() => {
+    if (!experiments) return [{ value: 'ALL', label: 'All Labels' }];
+
+    const uniqueLabels = new Set<string>();
+    experiments.forEach(exp => {
+      exp.labels?.forEach(label => {
+        uniqueLabels.add(`${label.name}:${label.value}`);
+      });
+    });
+
+    return [
+      { value: 'ALL', label: 'All Labels' },
+      ...Array.from(uniqueLabels).sort().map(labelStr => ({
+        value: labelStr,
+        label: labelStr.replace(':', ': ')
+      }))
+    ];
+  }, [experiments]);
 
   // Filter and sort experiments
   const filteredExperiments = useMemo(() => {
@@ -77,11 +98,21 @@ export function ExperimentsPage() {
       filtered = filtered.filter(exp => exp.status === statusFilter);
     }
 
+    // Apply label filter
+    if (labelFilter !== 'ALL') {
+      const [filterName, filterValue] = labelFilter.split(':');
+      filtered = filtered.filter(exp =>
+        exp.labels?.some(label =>
+          label.name === filterName && label.value === filterValue
+        )
+      );
+    }
+
     // Sort by creation time descending (newest first)
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [experiments, statusFilter, searchQuery]);
+  }, [experiments, statusFilter, labelFilter, searchQuery]);
 
   return (
     <div className="space-y-4">
@@ -106,6 +137,14 @@ export function ExperimentsPage() {
               className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
             />
           </div>
+
+          {/* Label Filter */}
+          <Dropdown
+            value={labelFilter}
+            onChange={(value) => setLabelFilter(value)}
+            options={labelOptions}
+            className="w-48"
+          />
 
           {/* Status Filter */}
           <Dropdown

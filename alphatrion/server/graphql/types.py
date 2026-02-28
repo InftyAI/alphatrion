@@ -29,7 +29,7 @@ class Team:
         return GraphQLResolvers.total_runs(team_id=self.id)
 
     @strawberry.field
-    def list_exps_by_timeframe(
+    def exps_by_timeframe(
         self, start_time: datetime, end_time: datetime
     ) -> list["Experiment"]:
         from .resolvers import GraphQLResolvers
@@ -39,6 +39,12 @@ class Team:
             start_time=start_time,
             end_time=end_time,
         )
+
+    @strawberry.field
+    def label_keys(self) -> list[str]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_label_keys(team_id=self.id)
 
 
 @strawberry.type

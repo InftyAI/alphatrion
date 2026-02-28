@@ -101,7 +101,7 @@ class GraphQLResolvers:
         labels = metadb.list_labels_by_team_id(team_id=team_id)
         unique_keys = set()
         for l in labels:
-            unique_keys.add(l.label_name)
+            unique_keys.add(f"{l.label_name}:{l.label_value}")
         return list(unique_keys)
 
     @staticmethod
