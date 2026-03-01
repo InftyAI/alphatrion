@@ -1,0 +1,192 @@
+# Default values for alphatrion
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Server service configuration
+server:
+  image:
+    repository: alphatrion-server
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  service:
+    type: ClusterIP
+    port: 8000
+
+  env:
+    # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    logLevel: INFO
+    # Automatically cleanup old records
+    autoCleanup: true
+    # Enable tracing with ClickHouse
+    enableTracing: false
+    # Enable artifact storage with Docker Registry
+    enableArtifactStorage: false
+    # Root path for API (useful if behind a reverse proxy)
+    rootPath: ""
+
+  # Health check configuration
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Dashboard service configuration
+dashboard:
+  image:
+    repository: alphatrion-dashboard
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  # Health check configuration
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 2
+    failureThreshold: 3
+
+# PostgreSQL configuration (external database required)
+postgresql:
+  enabled: true
+  host: ""
+  port: 5432
+  database: alphatrion
+  username: alphatrion
+  password: ""
+  # Use existing secret for password (key should be 'password')
+  existingSecret: ""
+  # Automatically initialize database tables on first run
+  initTables: true
+
+# ClickHouse configuration (optional - for tracing)
+clickhouse:
+  enabled: false
+  host: ""
+  port: 8123
+  database: alphatrion_tracing
+  username: default
+  password: ""
+  # Use existing secret for password (key should be 'password')
+  existingSecret: ""
+  # Automatically initialize tables
+  initTables: true
+  # Enable batch operations for better performance
+  enableBatch: true
+
+# Docker Registry configuration (optional - for artifact storage)
+registry:
+  enabled: false
+  url: ""
+  # Set to true if using HTTP instead of HTTPS
+  insecure: false
+  # Authentication (if required)
+  username: ""
+  password: ""
+  # Use existing secret for credentials (keys should be 'username' and 'password')
+  existingSecret: ""
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: alphatrion.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+  #  - secretName: alphatrion-tls
+  #    hosts:
+  #      - alphatrion.example.com
+
+# Image pull secrets (if using private registry)
+imagePullSecrets: []
+
+# Service account configuration
+serviceAccount:
+  create: false
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Migration job configuration
+migration:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Time to live for completed migration jobs (in seconds)
+  ttlSecondsAfterFinished: 300

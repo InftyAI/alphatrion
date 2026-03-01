@@ -1,0 +1,10 @@
+apiVersion: v2
+name: alphatrion
+description: A Helm chart for deploying AlphaTrion - An open-source framework for GenAI applications
+type: application
+version: 0.1.0
+appVersion: "0.1.1"
+home: https://github.com/InftyAI/alphatrion
+maintainers:
+  - name: InftyAI
+    url: https://github.com/InftyAI

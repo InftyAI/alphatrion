@@ -44,7 +44,7 @@ python-version
 testenv/
 ptest/
 /node_modules/
-/package.json
-/package-lock.json
 
 .claude/
+values-dev.yaml
+values-prod.yaml
