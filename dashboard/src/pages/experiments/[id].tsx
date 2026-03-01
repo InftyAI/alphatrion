@@ -148,25 +148,32 @@ export function ExperimentDetailPage() {
     <div className="space-y-4">
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            {experiment.name}
-          </h1>
-          <p className="mt-0.5 text-muted-foreground font-mono text-sm">
-            {experiment.id}
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="flex items-baseline gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                {experiment.name}
+              </h1>
+              <Button
+                variant="default"
+                size="sm"
+                className="h-6 px-2.5 text-xs bg-blue-500 hover:bg-blue-600 text-white"
+                asChild
+              >
+                <Link to={`/experiments/${id}/ide`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  <span>Open in IDE</span>
+                </Link>
+              </Button>
+            </div>
+            <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+              {experiment.id}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Link to={`/experiments/${id}/ide`} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open in IDE
-            </Button>
-          </Link>
-          <Badge variant={STATUS_VARIANTS[experiment.status]}>
-            {experiment.status}
-          </Badge>
-        </div>
+        <Badge variant={STATUS_VARIANTS[experiment.status]}>
+          {experiment.status}
+        </Badge>
       </div>
 
       {/* Tabs */}
