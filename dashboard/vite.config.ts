@@ -36,7 +36,12 @@ export default defineConfig(({ command }) => ({
                 target: "http://localhost:8000",
                 changeOrigin: true,
             },
-            // Proxy artifact API requests to backend
+            // Proxy config requests to dashboard server
+            "/api/config": {
+                target: "http://localhost:5173",
+                changeOrigin: true,
+            },
+            // Proxy other API requests to backend
             "/api": {
                 target: "http://localhost:8000",
                 changeOrigin: true,

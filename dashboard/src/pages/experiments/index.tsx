@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useExperiments } from '../../hooks/use-experiments';
 import { useTeam } from '../../hooks/use-teams';
@@ -17,11 +17,11 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
 import { MultiSelectDropdown } from '../../components/ui/multi-select-dropdown';
+import { Pagination } from '../../components/ui/pagination';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
@@ -67,7 +67,7 @@ const LABEL_COLORS = [
   { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
 ];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
@@ -338,37 +338,15 @@ export function ExperimentsPage() {
           )}
 
           {/* Pagination */}
-          {filteredExperiments && filteredExperiments.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="text-[13px] text-muted-foreground">
-                Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, totalExperiments)} of {totalExperiments} experiments
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
-                  disabled={currentPage === 0}
-                  className="h-8"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <div className="text-[13px] font-medium">
-                  Page {currentPage + 1} of {totalPages}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
-                  disabled={currentPage >= totalPages - 1}
-                  className="h-8"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
+          {filteredExperiments && filteredExperiments.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={PAGE_SIZE}
+              totalItems={totalExperiments}
+              onPageChange={setCurrentPage}
+              itemName="experiments"
+            />
           )}
         </CardContent>
       </Card>
