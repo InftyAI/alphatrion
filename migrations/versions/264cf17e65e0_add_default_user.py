@@ -22,15 +22,15 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.execute(
         """
-        INSERT INTO users (uuid, username, email, avatar_url, meta, created_at, updated_at)
-        VALUES ('00000000-0000-0000-0000-000000000001', 'neo', 'neo@hiverge.ai', NULL, NULL, NOW(), NOW())
+        INSERT INTO users (uuid, username, email, avatar_url, meta, created_at, updated_at, is_del)
+        VALUES ('00000000-0000-0000-0000-000000000001', 'neo', 'neo@hiverge.ai', NULL, NULL, NOW(), NOW(), 0)
         ON CONFLICT (uuid) DO NOTHING;
         """
     )
     op.execute(
         """
-        INSERT INTO teams (uuid, name, description, meta, created_at, updated_at)
-        VALUES ('00000000-0000-0000-0000-000000000001', 'Default Team', 'This is the default team.', NULL, NOW(), NOW())
+        INSERT INTO teams (uuid, name, description, meta, created_at, updated_at, is_del)
+        VALUES ('00000000-0000-0000-0000-000000000001', 'Default Team', 'This is the default team.', NULL, NOW(), NOW(), 0)
         ON CONFLICT (uuid) DO NOTHING;
         """
     )
