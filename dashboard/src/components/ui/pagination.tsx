@@ -18,7 +18,7 @@ export function Pagination({
   onPageChange,
   itemName = 'items'
 }: PaginationProps) {
-  if (totalPages <= 1) {
+  if (totalItems === 0) {
     return null;
   }
 

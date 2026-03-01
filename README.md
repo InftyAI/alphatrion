@@ -109,6 +109,12 @@ The dashboard will automatically open in your browser at `http://127.0.0.1:5173`
 - [Dashboard CLI Guide](./docs/dashboard/dashboard-cli.md) - Using the dashboard CLI command
 - [Dashboard Architecture](./docs/dashboard/dashboard-architecture.md) - Technical architecture and deployment patterns
 
+### Tracing
+
+AlphaTrion automatically captures tracing data for all runs, including spans for each run and associated metadata. You can query this data to analyze model performance, latency, and token usage.
+
+![tracing](./site/images/trace.png)
+
 ### Cleanup
 
 ```bash

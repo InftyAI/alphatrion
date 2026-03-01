@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -21,10 +21,10 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
+import { Pagination } from '../../components/ui/pagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -48,12 +48,12 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
 
@@ -61,7 +61,7 @@ export function ExperimentDetailPage() {
 
   // Fetch paginated runs for display in Runs tab
   const { data: runs, isLoading: runsLoading } = useRuns(id!, {
-    page: currentPage - 1,
+    page: currentPage,
     pageSize: PAGE_SIZE,
   });
 
@@ -70,6 +70,9 @@ export function ExperimentDetailPage() {
     page: 0,
     pageSize: 1000, // Large page size to get all runs
   });
+
+  const totalRuns = allRuns?.length || 0;
+  const totalPages = Math.ceil(totalRuns / PAGE_SIZE);
 
   const { data: groupedMetrics, isLoading: metricsLoading } = useGroupedMetrics(id!);
 
@@ -321,9 +324,9 @@ export function ExperimentDetailPage() {
         {/* Runs Tab */}
         <TabsContent value="runs" className="space-y-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-0">
               {/* Search Bar and Status Filter */}
-              <div className="flex gap-2 mb-3 items-center">
+              <div className="flex gap-2 mb-3 items-center px-4 pt-4">
                 {/* Search Bar */}
                 <div className="relative w-64">
                   <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -345,17 +348,19 @@ export function ExperimentDetailPage() {
               </div>
 
               {runsLoading ? (
-                <Skeleton className="h-24 w-full" />
+                <div className="p-8">
+                  <Skeleton className="h-24 w-full" />
+                </div>
               ) : !runs || runs.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
                   No runs found
                 </div>
               ) : filteredRuns.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
                   No runs match your search
                 </div>
               ) : (
-                <>
+                <div className="overflow-hidden rounded-lg">
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent border-b">
@@ -389,40 +394,19 @@ export function ExperimentDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              )}
 
-                  {/* Pagination */}
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Page {currentPage}
-                    </div>
-                    <div className="flex gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentPage(currentPage - 1);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        disabled={currentPage === 1}
-                        className="h-9 w-9 p-0"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentPage(currentPage + 1);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        disabled={runs.length < PAGE_SIZE}
-                        className="h-9 w-9 p-0"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </>
+              {/* Pagination */}
+              {!runsLoading && filteredRuns && filteredRuns.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={PAGE_SIZE}
+                  totalItems={totalRuns}
+                  onPageChange={setCurrentPage}
+                  itemName="runs"
+                />
               )}
             </CardContent>
           </Card>

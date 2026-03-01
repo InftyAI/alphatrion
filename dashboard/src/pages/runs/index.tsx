@@ -43,7 +43,7 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 export function RunsPage() {
   const { selectedTeamId } = useTeamContext();
