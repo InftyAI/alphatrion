@@ -43,13 +43,13 @@ export function Dropdown({ value, onChange, options, className, placeholder }: D
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-[13px]",
+          "flex h-9 w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-[13px] font-medium text-foreground",
           "hover:bg-accent hover:text-accent-foreground transition-colors",
           "focus:outline-none focus:border-blue-300 focus:bg-blue-50",
           "disabled:cursor-not-allowed disabled:opacity-50"
         )}
       >
-        <span className="font-medium">{selectedOption?.label || placeholder || "Select..."}</span>
+        <span>{selectedOption?.label || placeholder || "Select..."}</span>
         <ChevronDown className={cn("h-3.5 w-3.5 opacity-50 transition-transform", isOpen && "transform rotate-180")} />
       </button>
 
