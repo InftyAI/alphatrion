@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir uv
 WORKDIR /app
 
 # Copy dependency files and source code for installation
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 COPY alphatrion/ ./alphatrion/
 
 # Install dependencies and package using uv (non-editable for Docker)
