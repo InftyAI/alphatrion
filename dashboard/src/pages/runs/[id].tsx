@@ -9,20 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from '../../components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../../components/ui/dialog';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { TraceTimeline } from '../../components/traces/trace-timeline';
+import { ArtifactViewer } from '../../components/artifact-viewer';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Copy, Check } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import type { Status } from '../../types';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
@@ -40,7 +34,6 @@ export function RunDetailPage() {
   const { data: run, isLoading: runLoading, error: runError } = useRun(id!);
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Get metrics and traces from the nested run data
@@ -92,7 +85,6 @@ export function RunDetailPage() {
 
   const handleViewArtifact = () => {
     if (!hasExecutionResult || !run) return;
-    setCopied(false);
     setDialogOpen(true);
   };
 
@@ -100,43 +92,6 @@ export function RunDetailPage() {
   if (artifactError && dialogOpen) {
     console.error('Failed to load artifact:', artifactError);
   }
-
-  const handleCopy = () => {
-    if (artifactContent?.content) {
-      navigator.clipboard.writeText(artifactContent.content);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const formatContent = () => {
-    if (!artifactContent) return '';
-
-    const { content, filename, contentType } = artifactContent;
-
-    // Try to parse and format JSON
-    if (contentType === 'application/json' || filename.endsWith('.json')) {
-      try {
-        const parsed = JSON.parse(content);
-        return JSON.stringify(parsed, null, 2);
-      } catch {
-        return content;
-      }
-    }
-
-    return content;
-  };
-
-  const getLanguageClass = () => {
-    if (!artifactContent) return '';
-
-    const { filename, contentType } = artifactContent;
-
-    if (contentType === 'application/json' || filename.endsWith('.json')) {
-      return 'language-json';
-    }
-    return '';
-  };
 
   if (runLoading) {
     return (
@@ -310,51 +265,15 @@ export function RunDetailPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Artifact Content Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex-1 min-w-0">
-                <DialogTitle className="text-base">Artifact Content</DialogTitle>
-                <DialogDescription className="text-xs font-mono mt-1 truncate">
-                  {artifactContent?.filename || 'Loading...'}
-                </DialogDescription>
-              </div>
-              {artifactContent && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopy}
-                  className="ml-2 h-7 w-7 p-0 flex-shrink-0"
-                  title={copied ? 'Copied!' : 'Copy to clipboard'}
-                >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-green-600" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              )}
-            </div>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto border rounded-md bg-slate-950 dark:bg-slate-950">
-            {loadingArtifact && !artifactContent ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-slate-400 text-sm">Loading artifact...</div>
-              </div>
-            ) : artifactError ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-red-400 text-sm">Failed to load artifact</div>
-              </div>
-            ) : (
-              <pre className={`text-xs p-4 overflow-auto text-slate-50 ${getLanguageClass()}`}>
-                <code className="text-slate-50">{formatContent()}</code>
-              </pre>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Artifact Content Viewer */}
+      <ArtifactViewer
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        artifactContent={artifactContent}
+        isLoading={loadingArtifact}
+        error={artifactError}
+        title="Artifact Content"
+      />
     </div>
   );
 }
