@@ -10,7 +10,6 @@ from alphatrion.server.graphql.types import (
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
-    Project,
     RemoveUserFromTeamInput,
     Run,
     Span,
@@ -28,39 +27,24 @@ class Query:
     user: User | None = strawberry.field(resolver=GraphQLResolvers.get_user)
 
     @strawberry.field
-    def projects(
+    def experiments(
         self,
         team_id: strawberry.ID,
         page: int = 0,
         page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> list[Project]:
-        return GraphQLResolvers.list_projects(
+        label_name: str | None = None,
+        label_value: str | None = None,
+    ) -> list[Experiment]:
+        return GraphQLResolvers.list_experiments(
             team_id=team_id,
             page=page,
             page_size=page_size,
             order_by=order_by,
             order_desc=order_desc,
-        )
-
-    project: Project | None = strawberry.field(resolver=GraphQLResolvers.get_project)
-
-    @strawberry.field
-    def experiments(
-        self,
-        project_id: strawberry.ID,
-        page: int = 0,
-        page_size: int = 20,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Experiment]:
-        return GraphQLResolvers.list_experiments(
-            project_id=project_id,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
+            label_name=label_name,
+            label_value=label_value,
         )
 
     experiment: Experiment | None = strawberry.field(
@@ -106,24 +90,18 @@ class Query:
     async def artifact_tags(
         self,
         team_id: strawberry.ID,
-        project_id: strawberry.ID,
-        repo_type: str | None = None,
+        repo_name: str,
     ) -> list[ArtifactTag]:
-        return await GraphQLResolvers.list_artifact_tags(
-            str(team_id), str(project_id), repo_type
-        )
+        return await GraphQLResolvers.list_artifact_tags(str(team_id), repo_name)
 
     @strawberry.field
     async def artifact_content(
         self,
         team_id: strawberry.ID,
-        project_id: strawberry.ID,
         tag: str,
-        repo_type: str | None = None,
+        repo_name: str,
     ) -> ArtifactContent:
-        return await GraphQLResolvers.get_artifact_content(
-            str(team_id), str(project_id), tag, repo_type
-        )
+        return await GraphQLResolvers.get_artifact_content(str(team_id), tag, repo_name)
 
 
 @strawberry.type

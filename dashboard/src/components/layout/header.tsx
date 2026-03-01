@@ -1,7 +1,6 @@
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { TeamSwitcher } from './team-switcher';
-import { useProject } from '../../hooks/use-projects';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRun } from '../../hooks/use-runs';
 import { truncateId } from '../../lib/format';
@@ -13,18 +12,15 @@ interface BreadcrumbItem {
 
 export function Header() {
   const location = useLocation();
-  const params = useParams();
 
   // Fetch data based on current route - only fetch if we have valid IDs
   const paths = location.pathname.split('/').filter(Boolean);
 
   // Check if we're on a detail page (not a list page)
-  const projectId = paths[0] === 'projects' && paths[1] && paths[1] !== 'projects' ? paths[1] : undefined;
   const experimentId = paths[0] === 'experiments' && paths[1] && paths[1] !== 'compare' ? paths[1] : undefined;
   const runId = paths[0] === 'runs' && paths[1] ? paths[1] : undefined;
 
   // Only fetch if we have valid IDs (not empty strings)
-  const { data: project } = useProject(projectId || '', { enabled: !!projectId });
   const { data: experiment } = useExperiment(experimentId || '', { enabled: !!experimentId });
   const { data: run } = useRun(runId || '', { enabled: !!runId });
 
@@ -41,24 +37,9 @@ export function Header() {
     ];
 
     // Handle different route patterns
-    if (paths[0] === 'projects') {
-      breadcrumbs.push({ label: 'Projects', href: '/projects' });
-
-      if (projectId && project) {
-        breadcrumbs.push({
-          label: truncateId(project.id),
-          href: `/projects/${project.id}`
-        });
-      }
-    } else if (paths[0] === 'experiments') {
+    if (paths[0] === 'experiments') {
       if (experimentId && experiment) {
-        // Show full hierarchy: Projects > projectId > Experiments > experimentId
-        breadcrumbs.push({ label: 'Projects', href: '/projects' });
-        breadcrumbs.push({
-          label: truncateId(experiment.projectId),
-          href: `/projects/${experiment.projectId}`
-        });
-        breadcrumbs.push({ label: 'Experiments', href: `/projects/${experiment.projectId}` });
+        breadcrumbs.push({ label: 'Experiments', href: '/experiments' });
         breadcrumbs.push({
           label: truncateId(experiment.id),
           href: paths.length === 2 ? undefined : `/experiments/${experiment.id}`
@@ -68,13 +49,8 @@ export function Header() {
       }
     } else if (paths[0] === 'runs') {
       if (runId && run) {
-        // Show full hierarchy: Projects > projectId > Experiments > experimentId > Runs > runId
-        breadcrumbs.push({ label: 'Projects', href: '/projects' });
-        breadcrumbs.push({
-          label: truncateId(run.projectId),
-          href: `/projects/${run.projectId}`
-        });
-        breadcrumbs.push({ label: 'Experiments', href: `/projects/${run.projectId}` });
+        // Show hierarchy: Experiments > experimentId > Runs > runId
+        breadcrumbs.push({ label: 'Experiments', href: '/experiments' });
         breadcrumbs.push({
           label: truncateId(run.experimentId),
           href: `/experiments/${run.experimentId}`

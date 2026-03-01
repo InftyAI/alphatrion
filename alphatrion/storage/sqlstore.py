@@ -8,9 +8,8 @@ from alphatrion.storage.metastore import MetaStore
 from alphatrion.storage.sql_models import (
     Base,
     Experiment,
+    ExperimentLabel,
     Metric,
-    Model,
-    Project,
     Run,
     Status,
     Team,
@@ -254,200 +253,82 @@ class SQLStore(MetaStore):
         session.close()
         return members
 
-    # ---------- Project APIs ----------
-
-    def create_project(
-        self,
-        name: str,
-        team_id: uuid.UUID,
-        user_id: uuid.UUID,
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> uuid.UUID:
-        session = self._session()
-        new_proj = Project(
-            name=name,
-            team_id=team_id,
-            creator_id=user_id,
-            description=description,
-            meta=meta,
-        )
-        session.add(new_proj)
-        session.commit()
-
-        proj_id = new_proj.uuid
-        session.close()
-
-        return proj_id
-
-    # Soft delete the project now.
-    def delete_project(self, project_id: uuid.UUID):
-        session = self._session()
-        proj = (
-            session.query(Project)
-            .filter(Project.uuid == project_id, Project.is_del == 0)
-            .first()
-        )
-        if proj:
-            proj.is_del = 1
-            session.commit()
-        session.close()
-
-    # We don't support append-only update, the complete fields should be provided.
-    def update_project(self, project_id: uuid.UUID, **kwargs) -> None:
-        session = self._session()
-        proj = (
-            session.query(Project)
-            .filter(Project.uuid == project_id, Project.is_del == 0)
-            .first()
-        )
-        if proj:
-            for key, value in kwargs.items():
-                if key == "meta" and isinstance(value, dict):
-                    if proj.meta is None:
-                        proj.meta = {}
-                    proj.meta.update(value)
-                else:
-                    setattr(proj, key, value)
-            session.commit()
-        session.close()
-
-    # get function will ignore the deleted ones.
-    def get_project(self, project_id: uuid.UUID) -> Project | None:
-        session = self._session()
-        proj = (
-            session.query(Project)
-            .filter(Project.uuid == project_id, Project.is_del == 0)
-            .first()
-        )
-        session.close()
-        return proj
-
-    def get_proj_by_name(self, name: str, team_id: uuid.UUID) -> Project | None:
-        session = self._session()
-        proj = (
-            session.query(Project)
-            .filter(
-                Project.name == name,
-                Project.team_id == team_id,
-                Project.is_del == 0,
-            )
-            .first()
-        )
-        session.close()
-        return proj
-
-    # paginate the projects in case of too many projects.
-    def list_projects(
-        self,
-        team_id: uuid.UUID,
-        page: int = 0,
-        page_size: int = 10,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Project]:
-        session = self._session()
-        projects = (
-            session.query(Project)
-            .filter(Project.team_id == team_id, Project.is_del == 0)
-            .order_by(
-                getattr(Project, order_by).desc()
-                if order_desc
-                else getattr(Project, order_by)
-            )
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-        session.close()
-        return projects
-
-    def count_projects(self, team_id: uuid.UUID) -> int:
-        session = self._session()
-        count = (
-            session.query(Project)
-            .filter(Project.team_id == team_id, Project.is_del == 0)
-            .count()
-        )
-        session.close()
-        return count
-
     # ---------- Model APIs ----------
 
-    def create_model(
-        self,
-        name: str,
-        team_id: uuid.UUID,
-        version: str = "latest",
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> uuid.UUID:
-        session = self._session()
-        new_model = Model(
-            name=name,
-            team_id=team_id,
-            version=version,
-            description=description,
-            meta=meta,
-        )
-        session.add(new_model)
-        session.commit()
-        model_id = new_model.uuid
-        session.close()
+    # def create_model(
+    #     self,
+    #     name: str,
+    #     team_id: uuid.UUID,
+    #     version: str = "latest",
+    #     description: str | None = None,
+    #     meta: dict | None = None,
+    # ) -> uuid.UUID:
+    #     session = self._session()
+    #     new_model = Model(
+    #         name=name,
+    #         team_id=team_id,
+    #         version=version,
+    #         description=description,
+    #         meta=meta,
+    #     )
+    #     session.add(new_model)
+    #     session.commit()
+    #     model_id = new_model.uuid
+    #     session.close()
 
-        return model_id
+    #     return model_id
 
-    def update_model(self, model_id: uuid.UUID, **kwargs) -> None:
-        session = self._session()
-        model = (
-            session.query(Model)
-            .filter(Model.uuid == model_id, Model.is_del == 0)
-            .first()
-        )
-        if model:
-            for key, value in kwargs.items():
-                if key == "meta" and isinstance(value, dict):
-                    if model.meta is None:
-                        model.meta = {}
-                    model.meta.update(value)
-                else:
-                    setattr(model, key, value)
-            session.commit()
-        session.close()
+    # def update_model(self, model_id: uuid.UUID, **kwargs) -> None:
+    #     session = self._session()
+    #     model = (
+    #         session.query(Model)
+    #         .filter(Model.uuid == model_id, Model.is_del == 0)
+    #         .first()
+    #     )
+    #     if model:
+    #         for key, value in kwargs.items():
+    #             if key == "meta" and isinstance(value, dict):
+    #                 if model.meta is None:
+    #                     model.meta = {}
+    #                 model.meta.update(value)
+    #             else:
+    #                 setattr(model, key, value)
+    #         session.commit()
+    #     session.close()
 
-    def get_model(self, model_id: uuid.UUID) -> Model | None:
-        session = self._session()
-        model = (
-            session.query(Model)
-            .filter(Model.uuid == model_id, Model.is_del == 0)
-            .first()
-        )
-        session.close()
-        return model
+    # def get_model(self, model_id: uuid.UUID) -> Model | None:
+    #     session = self._session()
+    #     model = (
+    #         session.query(Model)
+    #         .filter(Model.uuid == model_id, Model.is_del == 0)
+    #         .first()
+    #     )
+    #     session.close()
+    #     return model
 
-    def list_models(self, page: int = 0, page_size: int = 10) -> list[Model]:
-        session = self._session()
-        models = (
-            session.query(Model)
-            .filter(Model.is_del == 0)
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-        session.close()
-        return models
+    # def list_models(self, page: int = 0, page_size: int = 10) -> list[Model]:
+    #     session = self._session()
+    #     models = (
+    #         session.query(Model)
+    #         .filter(Model.is_del == 0)
+    #         .offset(page * page_size)
+    #         .limit(page_size)
+    #         .all()
+    #     )
+    #     session.close()
+    #     return models
 
-    def delete_model(self, model_id: uuid.UUID):
-        session = self._session()
-        model = (
-            session.query(Model)
-            .filter(Model.uuid == model_id, Model.is_del == 0)
-            .first()
-        )
-        if model:
-            model.is_del = 1
-            session.commit()
-        session.close()
+    # def delete_model(self, model_id: uuid.UUID):
+    #     session = self._session()
+    #     model = (
+    #         session.query(Model)
+    #         .filter(Model.uuid == model_id, Model.is_del == 0)
+    #         .first()
+    #     )
+    #     if model:
+    #         model.is_del = 1
+    #         session.commit()
+    #     session.close()
 
     # ---------- Experiment APIs ----------
 
@@ -456,17 +337,19 @@ class SQLStore(MetaStore):
         name: str,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        project_id: uuid.UUID,
         description: str | None = None,
+        labels: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
         status: Status = Status.PENDING,
     ) -> uuid.UUID:
+        uid = uuid.uuid4()
+
         session = self._session()
         new_exp = Experiment(
+            uuid=uid,
             team_id=team_id,
             user_id=user_id,
-            project_id=project_id,
             name=name,
             description=description,
             meta=meta,
@@ -474,9 +357,31 @@ class SQLStore(MetaStore):
             status=status,
         )
         session.add(new_exp)
+
+        if labels:
+            # labels look like "label1:value1,label2:value2",
+            label_pairs = labels.rstrip().split(",")
+            for pair in label_pairs:
+                print("Label pair:", pair)
+                if ":" in pair:
+                    label_name, label_value = pair.split(":", 1)
+                elif "=" in pair:
+                    label_name, label_value = pair.split("=", 1)
+                else:
+                    continue  # skip invalid label
+
+                exp_label = ExperimentLabel(
+                    team_id=team_id,
+                    experiment_id=uid,
+                    label_name=label_name.strip(),
+                    label_value=label_value.strip(),
+                )
+                session.add(exp_label)
+
         session.commit()
 
         exp_id = new_exp.uuid
+        assert exp_id == uid
         session.close()
 
         return exp_id
@@ -491,11 +396,11 @@ class SQLStore(MetaStore):
         session.close()
         return exp
 
-    # Different project may have the same experiment name.
-    def get_exp_by_name(self, name: str, project_id: uuid.UUID) -> Experiment | None:
-        # make sure the project exists
-        proj = self.get_project(project_id)
-        if proj is None:
+    # Different team may have the same experiment name.
+    def get_exp_by_name(self, name: str, team_id: uuid.UUID) -> Experiment | None:
+        # make sure the team exists
+        team = self.get_team(team_id)
+        if team is None:
             return None
 
         session = self._session()
@@ -503,7 +408,7 @@ class SQLStore(MetaStore):
             session.query(Experiment)
             .filter(
                 Experiment.name == name,
-                Experiment.project_id == project_id,
+                Experiment.team_id == team_id,
                 Experiment.is_del == 0,
             )
             .first()
@@ -511,9 +416,9 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
-    def list_exps_by_project_id(
+    def list_exps_by_team_id(
         self,
-        project_id: uuid.UUID,
+        team_id: uuid.UUID,
         page: int = 0,
         page_size: int = 10,
         order_by: str = "created_at",
@@ -522,8 +427,55 @@ class SQLStore(MetaStore):
         session = self._session()
         exps = (
             session.query(Experiment)
-            .filter(Experiment.project_id == project_id, Experiment.is_del == 0)
+            .filter(Experiment.team_id == team_id, Experiment.is_del == 0)
             .order_by(
+                getattr(Experiment, order_by).desc()
+                if order_desc
+                else getattr(Experiment, order_by)
+            )
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return exps
+
+    def list_labels_by_exp_id(self, experiment_id: uuid.UUID) -> list[ExperimentLabel]:
+        session = self._session()
+        labels = (
+            session.query(ExperimentLabel)
+            .filter(ExperimentLabel.experiment_id == experiment_id)
+            .order_by(ExperimentLabel.created_at.asc())
+            .all()
+        )
+        session.close()
+        return labels
+
+    def list_exps_by_label(
+        self,
+        team_id: uuid.UUID,
+        label_name: str,
+        label_value: str | None = None,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Experiment]:
+        session = self._session()
+        query = (
+            session.query(Experiment)
+            .join(ExperimentLabel, ExperimentLabel.experiment_id == Experiment.uuid)
+            .filter(
+                Experiment.team_id == team_id,
+                Experiment.is_del == 0,
+                ExperimentLabel.label_name == label_name,
+            )
+        )
+        if label_value is not None:
+            query = query.filter(ExperimentLabel.label_value == label_value)
+
+        exps = (
+            query.order_by(
                 getattr(Experiment, order_by).desc()
                 if order_desc
                 else getattr(Experiment, order_by)
@@ -587,7 +539,6 @@ class SQLStore(MetaStore):
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         meta: dict | None = None,
         status: Status = Status.PENDING,
@@ -595,7 +546,6 @@ class SQLStore(MetaStore):
         session = self._session()
 
         new_run = Run(
-            project_id=project_id,
             team_id=team_id,
             user_id=user_id,
             experiment_id=experiment_id,
@@ -664,7 +614,6 @@ class SQLStore(MetaStore):
     def create_metric(
         self,
         team_id: uuid.UUID,
-        project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         run_id: uuid.UUID,
         key: str,
@@ -673,7 +622,6 @@ class SQLStore(MetaStore):
         session = self._session()
         new_metric = Metric(
             team_id=team_id,
-            project_id=project_id,
             experiment_id=experiment_id,
             run_id=run_id,
             key=key,

@@ -14,6 +14,7 @@ class CraftExperiment(base.Experiment):
         cls,
         name: str,
         description: str | None = None,
+        labels: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
         config: base.ExperimentConfig | None = None,
@@ -27,6 +28,7 @@ class CraftExperiment(base.Experiment):
         exp._start(
             name=name,
             description=description,
+            labels=labels,
             meta=meta,
             params=params,
         )

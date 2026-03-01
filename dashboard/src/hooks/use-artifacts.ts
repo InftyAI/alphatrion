@@ -23,13 +23,12 @@ export function useRepositories() {
  */
 export function useTags(
   teamId: string,
-  projectId: string,
-  repoType?: 'execution' | 'checkpoint'
+  repoName: string
 ) {
   return useQuery({
-    queryKey: ['artifacts', 'tags', teamId, projectId, repoType],
-    queryFn: () => listTags(teamId, projectId, repoType),
-    enabled: Boolean(teamId && projectId),
+    queryKey: ['artifacts', 'tags', teamId, repoName],
+    queryFn: () => listTags(teamId, repoName),
+    enabled: Boolean(teamId && repoName),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 }
@@ -40,15 +39,14 @@ export function useTags(
  */
 export function useArtifactContent(
   teamId: string,
-  projectId: string,
   tag: string,
-  repoType?: 'execution' | 'checkpoint',
+  repoName: string,
   enabled: boolean = true
 ) {
   return useQuery({
-    queryKey: ['artifacts', 'content', teamId, projectId, tag, repoType],
-    queryFn: () => getArtifactContent(teamId, projectId, tag, repoType),
-    enabled: Boolean(enabled && teamId && projectId && tag),
+    queryKey: ['artifacts', 'content', teamId, tag, repoName],
+    queryFn: () => getArtifactContent(teamId, tag, repoName),
+    enabled: Boolean(enabled && teamId && tag && repoName),
     // Artifacts are immutable - cache indefinitely
     staleTime: Infinity,
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes after last use (renamed from cacheTime in React Query v5)

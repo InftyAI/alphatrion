@@ -12,25 +12,25 @@ interface GetExperimentResponse {
 }
 
 /**
- * Hook to fetch all experiments for a project
+ * Hook to fetch all experiments for a team
  * Polls every 5s when any experiment is RUNNING or PENDING
  */
 export function useExperiments(
-  projectId: string,
-  options?: { page?: number; pageSize?: number; enabled?: boolean }
+  teamId: string,
+  options?: { page?: number; pageSize?: number; labelName?: string; labelValue?: string; enabled?: boolean }
 ) {
-  const { page = 0, pageSize = 100, enabled = true } = options || {};
+  const { page = 0, pageSize = 100, labelName, labelValue, enabled = true } = options || {};
 
   return useQuery({
-    queryKey: ['experiments', projectId, page, pageSize],
+    queryKey: ['experiments', teamId, labelName, labelValue, page, pageSize],
     queryFn: async () => {
       const data = await graphqlQuery<ListExperimentsResponse>(
         queries.listExperiments,
-        { projectId, page, pageSize }
+        { teamId, labelName, labelValue, page, pageSize }
       );
       return data.experiments;
     },
-    enabled: enabled && !!projectId,
+    enabled: enabled && !!teamId,
     // Poll when any experiment is active
     refetchInterval: (query) => {
       const experiments = query.state.data;

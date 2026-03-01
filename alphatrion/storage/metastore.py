@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 
-from alphatrion.storage.sql_models import Experiment, Model, User
+from alphatrion.storage.sql_models import Experiment, User
 
 
 class MetaStore(ABC):
@@ -38,72 +38,41 @@ class MetaStore(ABC):
     ) -> list[User]:
         raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod
-    def create_project(
-        self,
-        name: str,
-        team_id: uuid.UUID,
-        user_id: uuid.UUID,
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> int:
-        raise NotImplementedError("Subclasses must implement this method.")
+    # @abstractmethod
+    # def create_model(
+    #     self,
+    #     name: str,
+    #     team_id: uuid.UUID,
+    #     version: str = "latest",
+    #     description: str | None = None,
+    #     meta: dict | None = None,
+    # ) -> int:
+    #     raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod
-    def delete_project(self, project_id: uuid.UUID):
-        raise NotImplementedError("Subclasses must implement this method.")
+    # @abstractmethod
+    # def update_model(self, model_id: uuid.UUID, **kwargs):
+    #     raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod
-    def update_project(self, project_id: uuid.UUID, **kwargs):
-        raise NotImplementedError("Subclasses must implement this method.")
+    # @abstractmethod
+    # def get_model(self, model_id: uuid.UUID) -> Model | None:
+    #     raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod
-    def get_project(self, project_id: uuid.UUID):
-        raise NotImplementedError("Subclasses must implement this method.")
+    # @abstractmethod
+    # def list_models(self, team_id: uuid.UUID, page: int, page_size: int):
+    #     raise NotImplementedError("Subclasses must implement this method.")
 
-    @abstractmethod
-    def get_proj_by_name(self, name: str, team_id: uuid.UUID):
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def list_projects(self, team_id: uuid.UUID, page: int, page_size: int):
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def create_model(
-        self,
-        name: str,
-        team_id: uuid.UUID,
-        version: str = "latest",
-        description: str | None = None,
-        meta: dict | None = None,
-    ) -> int:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def update_model(self, model_id: uuid.UUID, **kwargs):
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def get_model(self, model_id: uuid.UUID) -> Model | None:
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def list_models(self, team_id: uuid.UUID, page: int, page_size: int):
-        raise NotImplementedError("Subclasses must implement this method.")
-
-    @abstractmethod
-    def delete_model(self, model_id: uuid.UUID):
-        raise NotImplementedError("Subclasses must implement this method.")
+    # @abstractmethod
+    # def delete_model(self, model_id: uuid.UUID):
+    #     raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
     def create_experiment(
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        project_id: uuid.UUID,
         name: str,
         description: str | None = None,
+        labels: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
     ) -> int:
@@ -114,7 +83,7 @@ class MetaStore(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
-    def get_exp_by_name(self, name: str, project_id: uuid.UUID) -> Experiment | None:
+    def get_exp_by_name(self, name: str, team_id: uuid.UUID) -> Experiment | None:
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
@@ -126,7 +95,6 @@ class MetaStore(ABC):
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         meta: dict | None = None,
     ) -> int:
@@ -136,7 +104,6 @@ class MetaStore(ABC):
     def create_metric(
         self,
         team_id: uuid.UUID,
-        project_id: uuid.UUID,
         experiment_id: uuid.UUID,
         run_id: uuid.UUID,
         key: str,

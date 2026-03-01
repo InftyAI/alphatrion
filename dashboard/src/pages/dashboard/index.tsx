@@ -13,7 +13,7 @@ import { ExperimentsTimelineChart } from '../../components/dashboard/experiments
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FolderKanban, FlaskConical, Play } from 'lucide-react';
+import { FlaskConical, Play, Coins } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -64,13 +64,11 @@ export function DashboardPage() {
   return (
     <div className="space-y-3">
       {/* Header */}
-      <div className="pb-2 border-b">
+      <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-        {selectedTeamId && (
-          <p className="mt-0.5 text-muted-foreground font-mono text-xs">
-            TeamID: {selectedTeamId}
-          </p>
-        )}
+        <p className="mt-1 text-sm text-muted-foreground">
+          Overview of your team's experiments and activity
+        </p>
       </div>
 
       {/* Overview Section */}
@@ -87,21 +85,6 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-          {/* Total Projects */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">PROJECTS</p>
-                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalProjects || 0}</p>
-                </div>
-                <div className="p-1.5 bg-blue-100 rounded-lg">
-                  <FolderKanban className="h-3.5 w-3.5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Total Experiments */}
           <Card>
             <CardContent className="p-3">
@@ -127,6 +110,26 @@ export function DashboardPage() {
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Tokens */}
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-medium text-muted-foreground">TOKENS</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">
+                    {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
+                    <span className="text-muted-foreground text-xs ml-1 font-normal">
+                      ({(team?.aggregatedTokens?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedTokens?.outputTokens || 0).toLocaleString()}↑)
+                    </span>
+                  </p>
+                </div>
+                <div className="p-1.5 bg-orange-100 rounded-lg">
+                  <Coins className="h-3.5 w-3.5 text-orange-600" />
                 </div>
               </div>
             </CardContent>

@@ -75,7 +75,6 @@ class Artifact:
                 or "does not exist" in error_msg
             ):
                 # Return empty list if repository doesn't exist yet
-                # This is expected for projects without artifacts
                 return []
             # Re-raise other errors
             raise RuntimeError(f"Failed to list artifacts versions: {e}") from e

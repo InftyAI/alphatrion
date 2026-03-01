@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
-  FolderKanban,
+  FlaskConical,
   Package,
   Github,
   User as UserIcon,
@@ -25,9 +25,9 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: 'Projects',
-    href: '/projects',
-    icon: FolderKanban,
+    title: 'Experiments',
+    href: '/experiments',
+    icon: FlaskConical,
   },
   {
     title: 'Artifacts',
@@ -58,15 +58,14 @@ export function Sidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
 
-          // Special handling for Projects: also active when on experiments or runs pages
-          // since they're conceptually part of projects
+          // Special handling for Experiments: also active when on runs pages
+          // since runs are conceptually part of experiments
           let isActive =
             location.pathname === item.href ||
             (item.href !== '/' && location.pathname.startsWith(item.href));
 
-          if (item.href === '/projects') {
+          if (item.href === '/experiments') {
             isActive = isActive ||
-              location.pathname.startsWith('/experiments') ||
               location.pathname.startsWith('/runs');
           }
 

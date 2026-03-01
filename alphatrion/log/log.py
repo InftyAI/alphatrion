@@ -18,8 +18,8 @@ EXECUTION_RESULT = "execution_result"
 
 async def log_artifact(
     paths: str | list[str],
+    repo_name: str,
     version: str | None = None,
-    repo_name: str | None = None,
     pre_save_hook: Callable | None = None,
 ) -> str:
     """
@@ -35,7 +35,7 @@ async def log_artifact(
            If want to save something, make sure it's under the paths.
 
     :return: the path of the logged artifact in the format of
-    {team_id}/{project_id}:{version}
+    {team_id}/{repo_name}:{version}
     """
 
     if not paths:
@@ -57,15 +57,9 @@ async def log_artifact(
         else:
             raise ValueError("pre_save_hook must be a callable function")
 
-    # We use project ID as the repo name rather than the project name,
-    # because project name is not unique and might change over time.
-    proj = runtime.current_proj
-    if proj is None:
-        raise RuntimeError("No running project found in the current context.")
-
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, repo_name or str(proj.id), paths, version
+        None, runtime._artifact.push, repo_name, paths, version
     )
 
 
@@ -97,13 +91,12 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
         raise RuntimeError("log_metrics must be called inside a Run.")
 
     runtime = global_runtime()
-    proj = runtime.current_proj
 
     exp_id = current_exp_id.get()
     if exp_id is None:
         raise RuntimeError("log_metrics must be called inside a Experiment.")
 
-    exp = proj.get_experiment(id=exp_id)
+    exp = runtime.current_experiment
     if exp is None:
         raise RuntimeError(f"Experiment {exp_id} not found in the database.")
 
@@ -117,7 +110,6 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
             key=key,
             value=value,
             team_id=runtime._team_id,
-            project_id=proj.id,
             experiment_id=exp_id,
             run_id=run_id,
         )
@@ -138,7 +130,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
-            repo_name=f"{str(proj.id)}/ckpt",
+            repo_name="ckpt",
             # If not provided, will use the default checkpoint path.
             paths=exp.config().checkpoint.path or checkpoint_path(),
             pre_save_hook=exp.config().checkpoint.pre_save_hook,
@@ -154,23 +146,23 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     return is_best_metric
 
 
-# log_execution is used to log the record of a run/experiment/project,
+# log_result is used to log the result of a run/experiment,
 # including both input and output, e.g. you want to save the code snippet.
 # It will be stored in the object storage as a JSON file if object storage
 # is enabled or locally otherwise.
-async def log_execution(
+async def log_result(
     output: dict[str, Any],
     input: dict[str, Any] | None = None,
     phase: str = "success",
     kind: ExecutionKind = ExecutionKind.RUN,
 ):
-    execution = None
+    result = None
 
     if kind == ExecutionKind.RUN:
-        execution = build_run_execution(output=output, input=input, phase=phase)
+        result = build_run_execution(output=output, input=input, phase=phase)
     else:
         raise NotImplementedError(
-            f"Logging record of kind {execution.kind} is not implemented yet."
+            f"Logging record of kind {result.kind} is not implemented yet."
         )
 
     # Can I get the file size to store in the database?
@@ -179,20 +171,20 @@ async def log_execution(
     if os.path.exists(path) is False:
         os.makedirs(path, exist_ok=True)
 
-    # Will eventually be cleanup on Project done() if AUTO_CLEANUP is enabled.
+    # Will eventually be cleanup on Experiment done() if AUTO_CLEANUP is enabled.
     # Considering the record file is small, we just save it locally first.
     # If this changes in the future, we should delete them after uploading.
-    with open(os.path.join(path, "execution.json"), "w") as f:
-        f.write(execution.model_dump_json())
+    with open(os.path.join(path, "result.json"), "w") as f:
+        f.write(result.model_dump_json())
 
-    file_size = os.path.getsize(os.path.join(path, "execution.json"))
+    file_size = os.path.getsize(os.path.join(path, "result.json"))
     runtime = global_runtime()
 
     # If not enabled, only save to local disk.
     if runtime.artifact_storage_enabled():
         path = await log_artifact(
-            paths=os.path.join(path, "execution.json"),
-            repo_name=f"{str(runtime.current_proj.id)}/execution",
+            paths=os.path.join(path, "result.json"),
+            repo_name="execution",
         )
         runtime.metadb.update_run(
             run_id=current_run_id.get(),
@@ -200,7 +192,7 @@ async def log_execution(
                 EXECUTION_RESULT: {
                     "path": path,
                     "size": file_size,
-                    "file_name": "execution.json",
+                    "file_name": "result.json",
                 }
             },
         )

@@ -21,7 +21,7 @@ from alphatrion.runtime.runtime import global_runtime
         │   │   └── exp_f751ec9c-4aa2-46c5-8cab-1f92af6f001d
         │   │       ├── checkpoints
         │   │       ├── run_94a82594-01a7-463f-b63b-ab896be9830e
-        │   │       │   └── execution.json
+        │   │       │   └── result.json
         │   │       └── run_c0e3c730-c213-4a8e-9e10-7af57fcf8bf9
         │   └── user_f303c129-c4b5-4f24-957c-d28dd78cce89
         │       └── exp_efeb5430-6593-4675-969c-325aa25af986
@@ -52,7 +52,7 @@ class Status(BaseModel):
     phase: str
 
 
-class Execution(BaseModel):
+class ExecutionResult(BaseModel):
     schema_version: str
     kind: ExecutionKind
     metadata: Metadata
@@ -62,7 +62,7 @@ class Execution(BaseModel):
 
 def build_run_execution(
     output: dict[str, Any], input: dict[str, Any] | None = None, phase: str = "success"
-) -> Execution:
+) -> ExecutionResult:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
     if run_obj is None:
@@ -76,7 +76,7 @@ def build_run_execution(
             f"Experiment {run_obj.experiment_id} not found in the database."
         )
 
-    execution = Execution(
+    result = ExecutionResult(
         schema_version="1.0",
         kind=ExecutionKind.RUN,
         metadata=Metadata(
@@ -89,7 +89,7 @@ def build_run_execution(
             phase=phase,
         ),
     )
-    return execution
+    return result
 
 
 def snapshot_path() -> str:
@@ -98,7 +98,6 @@ def snapshot_path() -> str:
         Path(runtime.root_path)
         / "snapshots"
         / f"team_{runtime.team_id}"
-        / f"project_{runtime.current_proj.id}"
         / f"user_{runtime.user_id}"
         / f"exp_{current_exp_id.get()}"
         / f"run_{current_run_id.get()}"
@@ -111,7 +110,6 @@ def checkpoint_path() -> str:
         Path(runtime.root_path)
         / "snapshots"
         / f"team_{runtime.team_id}"
-        / f"project_{runtime.current_proj.id}"
         / f"user_{runtime.user_id}"
         / f"exp_{current_exp_id.get()}"
         / "checkpoints"

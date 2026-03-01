@@ -1,4 +1,9 @@
+import asyncio
+import contextlib
 import enum
+import os
+import shutil
+import signal
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -6,9 +11,11 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
+from alphatrion import envs
 from alphatrion.run.run import Run
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
+from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.types import CallableEntry
 from alphatrion.utils import context
@@ -65,7 +72,6 @@ class ExperimentConfig(BaseModel):
     max_execution_seconds: int = Field(
         default=-1,
         description="Maximum execution seconds for the Experiment. \
-        Experiment timeout will override project timeout if both are set. \
         Default is -1 (no limit).",
     )
     early_stopping_runs: int = Field(
@@ -152,11 +158,16 @@ class Experiment(ABC):
         "_total_runs_counter",
         # The end status, None, Err or Cancelled.
         "_end_status",
+        "_stopped",
+        "_signal_task",
     )
 
     def __init__(self, config: ExperimentConfig | None = None):
         self._config = config or ExperimentConfig()
+
         self._runtime = global_runtime()
+        self._runtime.current_experiment = self
+
         self._construct_meta()
         self._runs = dict[uuid.UUID, Run]()
         self._early_stopping_counter = 0
@@ -165,35 +176,59 @@ class Experiment(ABC):
         # if experiment starts to wait, it will auto stop when the runs
         # are all finished.
         self._start_waiting = False
+        self._end_status = None
+        self._stopped = asyncio.Event()
+        self._signal_task: asyncio.Task | None = None
 
     async def __aenter__(self):
+        self._signal_task = self._start_signal_handlers()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.done()
+        self._end_status = None
+
+        if self._signal_task:
+            # Already done, will not update the status again.
+            self._signal_task.cancel()
+
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._signal_task
+
         if self._token:
             current_exp_id.reset(self._token)
+            self._runtime.current_experiment = None
 
     def _start(
         self,
         name: str,
         description: str | None = None,
+        labels: str | None = None,
         meta: dict | None = None,
         params: dict | None = None,
     ):
-        proj = self._runtime.current_proj
-        exp_obj = self._runtime.metadb.get_exp_by_name(name=name, project_id=proj.id)
+        exp_obj = self._runtime.metadb.get_exp_by_name(
+            name=name, team_id=self._runtime.team_id
+        )
 
-        # FIXME: what if the existing Experiment is completed, will lead to confusion?
-        if exp_obj:
+        # Just in case of kubernetes pod restarts, we want to make sure the experiment
+        # can be resumed if it is not completed, instead of creating a new experiment
+        # with the same name. If the experiment is already completed, we raise an error
+        # to avoid confusion.
+        if exp_obj and exp_obj.status != Status.COMPLETED:
             self._id = exp_obj.uuid
+        elif exp_obj and exp_obj.status == Status.COMPLETED:
+            raise RuntimeError(
+                f"Experiment with name '{name}' already exists and is completed. \
+                Please choose a different name or delete the existing experiment."
+            )
         else:
             self._id = self._runtime._metadb.create_experiment(
                 name=name,
                 team_id=self._runtime._team_id,
                 user_id=self._runtime._user_id,
-                project_id=proj.id,
                 description=description,
+                labels=labels,
                 meta=meta,
                 params=params,
                 status=Status.RUNNING,
@@ -204,10 +239,7 @@ class Experiment(ABC):
             timeout=self._timeout(),
         )
 
-        # We don't reset the Experiment id context var,
-        # because each experiment runs in its own context.
         self._token = current_exp_id.set(self._id)
-        proj.register_experiment(id=self.id, instance=self)
 
     @property
     def id(self) -> uuid.UUID:
@@ -335,6 +367,7 @@ class Experiment(ABC):
     # TODO: Should we distinguish done and cancel?
     def done(self):
         self._cancel()
+        self._cleanup()
 
     def done_with_err(self):
         self._end_status = "Err"
@@ -369,8 +402,6 @@ class Experiment(ABC):
             self._runtime.metadb.update_experiment(
                 experiment_id=self._id, status=status, duration=duration
             )
-
-        self._runtime.current_proj.unregister_experiment(self.id)
 
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self.id)
@@ -425,3 +456,28 @@ class Experiment(ABC):
         params: dict | None = None,
     ) -> "Experiment":
         raise NotImplementedError
+
+    def _cleanup(self):
+        # remove the whole folder once the experiment is done.
+        if (
+            os.path.exists(team_path())
+            and os.getenv(envs.AUTO_CLEANUP, "true").lower() == "true"
+        ):
+            shutil.rmtree(team_path(), ignore_errors=True)
+
+    def _start_signal_handlers(self):
+        loop = asyncio.get_running_loop()
+
+        # Handle SIGINT and SIGTERM to allow graceful shutdown.
+        # Make sure to call done() on receiving the signal.
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, self._on_signal)
+
+        return asyncio.create_task(self._wait_for_stop())
+
+    def _on_signal(self):
+        self._stopped.set()
+
+    async def _wait_for_stop(self):
+        await self._stopped.wait()
+        self.done_with_cancel()

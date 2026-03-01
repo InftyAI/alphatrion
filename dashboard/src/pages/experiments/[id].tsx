@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -21,9 +21,10 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
+import { Dropdown } from '../../components/ui/dropdown';
+import { Pagination } from '../../components/ui/pagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -38,12 +39,21 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
   FAILED: 'destructive',
 };
 
-const PAGE_SIZE = 20;
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'All Status' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'RUNNING', label: 'Running' },
+  { value: 'FAILED', label: 'Failed' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+const PAGE_SIZE = 10;
 
 export function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
 
@@ -51,7 +61,7 @@ export function ExperimentDetailPage() {
 
   // Fetch paginated runs for display in Runs tab
   const { data: runs, isLoading: runsLoading } = useRuns(id!, {
-    page: currentPage - 1,
+    page: currentPage,
     pageSize: PAGE_SIZE,
   });
 
@@ -60,6 +70,9 @@ export function ExperimentDetailPage() {
     page: 0,
     pageSize: 1000, // Large page size to get all runs
   });
+
+  const totalRuns = allRuns?.length || 0;
+  const totalPages = Math.ceil(totalRuns / PAGE_SIZE);
 
   const { data: groupedMetrics, isLoading: metricsLoading } = useGroupedMetrics(id!);
 
@@ -178,12 +191,12 @@ export function ExperimentDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">
-                    {experiment.totalTokens !== undefined && experiment.totalTokens > 0 ? (
+                    {experiment.aggregatedTokens?.totalTokens !== undefined && experiment.aggregatedTokens.totalTokens > 0 ? (
                       <>
-                        {Number(experiment.totalTokens).toLocaleString()}
-                        {experiment.inputTokens !== undefined && experiment.outputTokens !== undefined && (
+                        {Number(experiment.aggregatedTokens.totalTokens).toLocaleString()}
+                        {experiment.aggregatedTokens.inputTokens !== undefined && experiment.aggregatedTokens.outputTokens !== undefined && (
                           <span className="text-muted-foreground text-xs ml-1">
-                            ({Number(experiment.inputTokens).toLocaleString()}↓ {Number(experiment.outputTokens).toLocaleString()}↑)
+                            ({Number(experiment.aggregatedTokens.inputTokens).toLocaleString()}↓ {Number(experiment.aggregatedTokens.outputTokens).toLocaleString()}↑)
                           </span>
                         )}
                       </>
@@ -311,9 +324,9 @@ export function ExperimentDetailPage() {
         {/* Runs Tab */}
         <TabsContent value="runs" className="space-y-4">
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-0">
               {/* Search Bar and Status Filter */}
-              <div className="flex gap-2 mb-3 items-center">
+              <div className="flex gap-2 mb-3 items-center px-4 pt-4">
                 {/* Search Bar */}
                 <div className="relative w-64">
                   <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -326,61 +339,53 @@ export function ExperimentDetailPage() {
                 </div>
 
                 {/* Status Filter */}
-                <div className="flex gap-1">
-                  {(['ALL', 'COMPLETED', 'RUNNING', 'FAILED', 'PENDING', 'CANCELLED'] as const).map((status) => (
-                    <Button
-                      key={status}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setStatusFilter(status)}
-                      className={`h-8 px-2.5 text-xs transition-colors ${statusFilter === status
-                          ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
-                          : 'bg-white hover:bg-gray-50'
-                        }`}
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </div>
+                <Dropdown
+                  value={statusFilter}
+                  onChange={(value) => setStatusFilter(value as Status | 'ALL')}
+                  options={STATUS_OPTIONS}
+                  className="w-40"
+                />
               </div>
 
               {runsLoading ? (
-                <Skeleton className="h-24 w-full" />
+                <div className="p-8">
+                  <Skeleton className="h-24 w-full" />
+                </div>
               ) : !runs || runs.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
                   No runs found
                 </div>
               ) : filteredRuns.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
                   No runs match your search
                 </div>
               ) : (
-                <>
+                <div className="overflow-hidden rounded-lg">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Run ID</TableHead>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</TableHead>
-                        <TableHead className="h-10 text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</TableHead>
+                      <TableRow className="hover:bg-transparent border-b">
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredRuns.map((run) => (
-                        <TableRow key={run.id}>
-                          <TableCell className="py-3.5 text-sm">
+                        <TableRow key={run.id} className="hover:bg-accent/50 transition-colors border-b last:border-0">
+                          <TableCell className="py-3 text-sm font-mono">
                             <Link
                               to={`/runs/${run.id}`}
-                              className="font-mono text-primary font-medium hover:underline"
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
                             >
                               {run.id}
                             </Link>
                           </TableCell>
-                          <TableCell className="py-3.5">
-                            <Badge variant={STATUS_VARIANTS[run.status]} className="text-xs px-2 py-0.5">
+                          <TableCell className="py-3">
+                            <Badge variant={STATUS_VARIANTS[run.status]}>
                               {run.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-3.5 text-sm text-foreground">
+                          <TableCell className="py-3 text-sm text-muted-foreground text-right">
                             {formatDistanceToNow(new Date(run.createdAt), {
                               addSuffix: true,
                             })}
@@ -389,40 +394,19 @@ export function ExperimentDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                </div>
+              )}
 
-                  {/* Pagination */}
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Page {currentPage}
-                    </div>
-                    <div className="flex gap-1.5">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentPage(currentPage - 1);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        disabled={currentPage === 1}
-                        className="h-9 w-9 p-0"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setCurrentPage(currentPage + 1);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        disabled={runs.length < PAGE_SIZE}
-                        className="h-9 w-9 p-0"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </>
+              {/* Pagination */}
+              {!runsLoading && filteredRuns && filteredRuns.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={PAGE_SIZE}
+                  totalItems={totalRuns}
+                  onPageChange={setCurrentPage}
+                  itemName="runs"
+                />
               )}
             </CardContent>
           </Card>

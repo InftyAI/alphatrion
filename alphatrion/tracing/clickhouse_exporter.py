@@ -114,7 +114,6 @@ class ClickHouseSpanExporter(SpanExporter):
 
         # Extract core identifiers from span attributes
         team_id = span_attributes.get("team_id", "")
-        project_id = span_attributes.get("project_id", "")
         run_id = span_attributes.get("run_id", "")
         experiment_id = span_attributes.get("experiment_id", "")
 
@@ -167,7 +166,6 @@ class ClickHouseSpanExporter(SpanExporter):
             "StatusCode": status_code,
             "StatusMessage": status_message,
             "TeamId": team_id,
-            "ProjectId": project_id,
             "RunId": run_id,
             "ExperimentId": experiment_id,
             "SpanAttributes": span_attributes,

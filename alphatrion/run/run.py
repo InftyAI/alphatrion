@@ -30,7 +30,6 @@ class Run:
         self._id = self._runtime.metadb.create_run(
             team_id=self._runtime.team_id,
             user_id=self._runtime.user_id,
-            project_id=self._runtime.current_proj.id,
             experiment_id=self._exp_id,
             status=Status.RUNNING,
         )

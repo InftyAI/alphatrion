@@ -38,7 +38,7 @@ def global_runtime():
 
 
 # Runtime contains all kinds of clients, e.g., metadb client, artifact client, etc.
-# Stateful information will also be stored here, e.g., current running Project.
+# Stateful information will also be stored here.
 class Runtime:
     __slots__ = (
         "_user_id",
@@ -46,8 +46,8 @@ class Runtime:
         "_metadb",
         "_tracestore",
         "_artifact",
-        "__current_proj",
         "_root_path",
+        "_current_experiment",
     )
 
     def __init__(
@@ -86,15 +86,6 @@ class Runtime:
     def artifact_storage_enabled(self) -> bool:
         return os.getenv(envs.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
 
-    # current_proj is the current running Project.
-    @property
-    def current_proj(self):
-        return self.__current_proj
-
-    @current_proj.setter
-    def current_proj(self, value) -> None:
-        self.__current_proj = value
-
     @property
     def metadb(self) -> SQLStore:
         return self._metadb
@@ -114,3 +105,11 @@ class Runtime:
     @property
     def root_path(self) -> str:
         return self._root_path
+
+    @property
+    def current_experiment(self):
+        return self._current_experiment
+
+    @current_experiment.setter
+    def current_experiment(self, exp):
+        self._current_experiment = exp

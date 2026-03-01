@@ -7,6 +7,13 @@ from strawberry.scalars import JSON
 
 
 @strawberry.type
+class TokenStats:
+    total_tokens: int
+    input_tokens: int
+    output_tokens: int
+
+
+@strawberry.type
 class Team:
     id: strawberry.ID
     name: str | None
@@ -14,12 +21,6 @@ class Team:
     meta: JSON | None
     created_at: datetime
     updated_at: datetime
-
-    @strawberry.field
-    def total_projects(self) -> int:
-        from .resolvers import GraphQLResolvers
-
-        return GraphQLResolvers.total_projects(team_id=self.id)
 
     @strawberry.field
     def total_experiments(self) -> int:
@@ -34,7 +35,18 @@ class Team:
         return GraphQLResolvers.total_runs(team_id=self.id)
 
     @strawberry.field
-    def list_exps_by_timeframe(
+    def aggregated_tokens(self) -> TokenStats:
+        from .resolvers import GraphQLResolvers
+
+        token_data = GraphQLResolvers.aggregate_team_tokens(team_id=self.id)
+        return TokenStats(
+            total_tokens=token_data["total_tokens"],
+            input_tokens=token_data["input_tokens"],
+            output_tokens=token_data["output_tokens"],
+        )
+
+    @strawberry.field
+    def exps_by_timeframe(
         self, start_time: datetime, end_time: datetime
     ) -> list["Experiment"]:
         from .resolvers import GraphQLResolvers
@@ -44,6 +56,12 @@ class Team:
             start_time=start_time,
             end_time=end_time,
         )
+
+    # @strawberry.field
+    # def labels(self) -> list["Label"]:
+    #     from .resolvers import GraphQLResolvers
+
+    #     return GraphQLResolvers.list_labels_by_team_id(team_id=self.id)
 
 
 @strawberry.type
@@ -61,18 +79,6 @@ class User:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_teams(user_id=self.id)
-
-
-@strawberry.type
-class Project:
-    id: strawberry.ID
-    team_id: strawberry.ID
-    creator_id: strawberry.ID
-    name: str | None
-    description: str | None
-    meta: JSON | None
-    created_at: datetime
-    updated_at: datetime
 
 
 class GraphQLStatus(Enum):
@@ -96,11 +102,16 @@ GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
 
 
 @strawberry.type
+class Label:
+    name: str
+    value: str
+
+
+@strawberry.type
 class Experiment:
     id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
-    project_id: strawberry.ID
     name: str
     description: str | None
     kind: GraphQLExperimentTypeEnum
@@ -114,35 +125,27 @@ class Experiment:
     _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
+    def labels(self) -> list[Label]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_labels_by_exp_id(experiment_id=self.id)
+
+    @strawberry.field
     def metrics(self) -> list["Metric"]:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_exp_metrics(experiment_id=self.id)
 
-    def _get_token_data(self) -> dict[str, int]:
-        """Get token data with caching to avoid multiple ClickHouse queries."""
-        if self._token_cache is None:
-            from .resolvers import GraphQLResolvers
-
-            self._token_cache = GraphQLResolvers.aggregate_experiment_tokens(
-                experiment_id=self.id
-            )
-        return self._token_cache
-
     @strawberry.field
-    def total_tokens(self) -> int:
-        """Get total token usage from ClickHouse."""
-        return self._get_token_data()["total_tokens"]
+    def aggregated_tokens(self) -> TokenStats:
+        from .resolvers import GraphQLResolvers
 
-    @strawberry.field
-    def input_tokens(self) -> int:
-        """Get input token usage from ClickHouse."""
-        return self._get_token_data()["input_tokens"]
-
-    @strawberry.field
-    def output_tokens(self) -> int:
-        """Get output token usage from ClickHouse."""
-        return self._get_token_data()["output_tokens"]
+        tokens = GraphQLResolvers.aggregate_experiment_tokens(experiment_id=self.id)
+        return TokenStats(
+            total_tokens=tokens["total_tokens"],
+            input_tokens=tokens["input_tokens"],
+            output_tokens=tokens["output_tokens"],
+        )
 
 
 @strawberry.type
@@ -150,7 +153,6 @@ class Run:
     id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None
     status: GraphQLStatusEnum
@@ -172,28 +174,17 @@ class Run:
 
         return GraphQLResolvers.list_spans(run_id=str(self.id))
 
-    def _get_token_data(self) -> dict[str, int]:
-        """Get token data with caching to avoid multiple ClickHouse queries."""
-        if self._token_cache is None:
-            from alphatrion.server.graphql.resolvers import GraphQLResolvers
-
-            self._token_cache = GraphQLResolvers.aggregate_run_tokens(run_id=self.id)
-        return self._token_cache
-
     @strawberry.field
-    def total_tokens(self) -> int:
-        """Get total token usage from ClickHouse."""
-        return self._get_token_data()["total_tokens"]
+    def aggregated_tokens(self) -> TokenStats:
+        """Get aggregated token usage for this run."""
+        from .resolvers import GraphQLResolvers
 
-    @strawberry.field
-    def input_tokens(self) -> int:
-        """Get input token usage from ClickHouse."""
-        return self._get_token_data()["input_tokens"]
-
-    @strawberry.field
-    def output_tokens(self) -> int:
-        """Get output token usage from ClickHouse."""
-        return self._get_token_data()["output_tokens"]
+        token_data = GraphQLResolvers.aggregate_run_tokens(run_id=self.id)
+        return TokenStats(
+            total_tokens=token_data["total_tokens"],
+            input_tokens=token_data["input_tokens"],
+            output_tokens=token_data["output_tokens"],
+        )
 
 
 @strawberry.type
@@ -202,7 +193,6 @@ class Metric:
     key: str | None
     value: float | None
     team_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     run_id: strawberry.ID
     created_at: datetime
@@ -292,7 +282,6 @@ class Span:
     status_message: str
 
     team_id: str
-    project_id: str
     run_id: str
     experiment_id: str
 
