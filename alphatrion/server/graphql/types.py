@@ -140,14 +140,13 @@ class Experiment:
     def aggregated_tokens(self) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
-        tokens = GraphQLResolvers.aggregate_experiment_tokens(
-            experiment_id=self.id
-        )
+        tokens = GraphQLResolvers.aggregate_experiment_tokens(experiment_id=self.id)
         return TokenStats(
             total_tokens=tokens["total_tokens"],
             input_tokens=tokens["input_tokens"],
             output_tokens=tokens["output_tokens"],
         )
+
 
 @strawberry.type
 class Run:
@@ -186,6 +185,7 @@ class Run:
             input_tokens=token_data["input_tokens"],
             output_tokens=token_data["output_tokens"],
         )
+
 
 @strawberry.type
 class Metric:
