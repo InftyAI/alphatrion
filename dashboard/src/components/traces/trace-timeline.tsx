@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot, X, Route } from 'lucide-react';
+import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot, X, GitBranch } from 'lucide-react';
 import type { Span } from '../../types';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -41,7 +41,7 @@ const getSpanType = (span: Span): { label: string; icon: JSX.Element; badgeColor
     return { label: 'DB', icon: <Database className="h-3 w-3" />, badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
   }
   if (span.spanAttributes?.['traceloop.span.kind'] === 'workflow') {
-    return { label: 'Workflow', icon: <Route className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+    return { label: 'Workflow', icon: <GitBranch className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
   }
   if (span.spanAttributes?.['traceloop.span.kind'] === 'task') {
     return { label: 'Task', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' };
