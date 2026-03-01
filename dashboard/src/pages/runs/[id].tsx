@@ -169,11 +169,11 @@ export function RunDetailPage() {
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">
-                {run.totalTokens !== undefined && run.totalTokens > 0 ? (
+                {run.aggregatedTokens?.totalTokens !== undefined && run.aggregatedTokens.totalTokens > 0 ? (
                   <>
-                    {Number(run.totalTokens).toLocaleString()}
+                    {Number(run.aggregatedTokens.totalTokens).toLocaleString()}
                     <span className="text-muted-foreground text-xs ml-1">
-                      ({Number(run.inputTokens || 0).toLocaleString()}↓ {Number(run.outputTokens || 0).toLocaleString()}↑)
+                      ({Number(run.aggregatedTokens.inputTokens || 0).toLocaleString()}↓ {Number(run.aggregatedTokens.outputTokens || 0).toLocaleString()}↑)
                     </span>
                   </>
                 ) : (

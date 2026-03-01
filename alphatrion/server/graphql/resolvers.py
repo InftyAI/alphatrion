@@ -254,6 +254,20 @@ class GraphQLResolvers:
         return metadb.count_runs(team_id=team_id)
 
     @staticmethod
+    def aggregate_team_tokens(team_id: strawberry.ID) -> dict[str, int]:
+        from alphatrion import envs
+
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        trace_store = runtime.storage_runtime().tracestore
+        result = trace_store.get_llm_spans_by_team_id(team_id=team_id)
+        # get_llm_spans_by_team_id returns a list with one dict
+        if result and len(result) > 0:
+            return result[0]
+        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
     def list_exps_by_timeframe(
         team_id: strawberry.ID,
         start_time: datetime,

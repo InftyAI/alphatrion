@@ -13,7 +13,7 @@ import { ExperimentsTimelineChart } from '../../components/dashboard/experiments
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FlaskConical, Play } from 'lucide-react';
+import { FlaskConical, Play, Coins } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -78,12 +78,13 @@ export function DashboardPage() {
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
           {/* Total Experiments */}
           <Card>
             <CardContent className="p-3">
@@ -109,6 +110,23 @@ export function DashboardPage() {
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Tokens */}
+          <Card>
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-medium text-muted-foreground">TOKENS</p>
+                  <p className="text-lg font-bold tabular-nums text-foreground">
+                    {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-1.5 bg-orange-100 rounded-lg">
+                  <Coins className="h-3.5 w-3.5 text-orange-600" />
                 </div>
               </div>
             </CardContent>

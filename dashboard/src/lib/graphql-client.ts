@@ -103,6 +103,11 @@ export const queries = {
         updatedAt
         totalExperiments
         totalRuns
+        aggregatedTokens {
+          totalTokens
+          inputTokens
+          outputTokens
+        }
       }
     }
   `,
@@ -175,9 +180,11 @@ export const queries = {
         status
         createdAt
         updatedAt
-        totalTokens
-        inputTokens
-        outputTokens
+        aggregatedTokens {
+          totalTokens
+          inputTokens
+          outputTokens
+        }
         metrics {
           id
           key
@@ -215,9 +222,11 @@ export const queries = {
         meta
         status
         createdAt
-        totalTokens
-        inputTokens
-        outputTokens
+        aggregatedTokens {
+          totalTokens
+          inputTokens
+          outputTokens
+        }
         metrics {
           id
           key

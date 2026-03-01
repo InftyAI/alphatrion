@@ -15,6 +15,12 @@ export enum ExperimentType {
   CRAFT_EXPERIMENT = 1,
 }
 
+export interface TokenStats {
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export interface Team {
   id: string;
   name: string | null;
@@ -24,6 +30,7 @@ export interface Team {
   updatedAt: string;
   totalExperiments: number;
   totalRuns: number;
+  aggregatedTokens: TokenStats;
 }
 
 export interface User {
@@ -55,9 +62,7 @@ export interface Experiment {
   status: Status;
   createdAt: string;
   updatedAt: string;
-  totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
+  aggregatedTokens: TokenStats;
   metrics?: Metric[];
 }
 
@@ -69,9 +74,7 @@ export interface Run {
   meta: Record<string, unknown> | null;
   status: Status;
   createdAt: string;
-  totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
+  aggregatedTokens: TokenStats;
   metrics?: Metric[];
   spans?: Span[];
 }

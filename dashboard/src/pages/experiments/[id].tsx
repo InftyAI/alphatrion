@@ -188,12 +188,12 @@ export function ExperimentDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">
-                    {experiment.totalTokens !== undefined && experiment.totalTokens > 0 ? (
+                    {experiment.aggregatedTokens?.totalTokens !== undefined && experiment.aggregatedTokens.totalTokens > 0 ? (
                       <>
-                        {Number(experiment.totalTokens).toLocaleString()}
-                        {experiment.inputTokens !== undefined && experiment.outputTokens !== undefined && (
+                        {Number(experiment.aggregatedTokens.totalTokens).toLocaleString()}
+                        {experiment.aggregatedTokens.inputTokens !== undefined && experiment.aggregatedTokens.outputTokens !== undefined && (
                           <span className="text-muted-foreground text-xs ml-1">
-                            ({Number(experiment.inputTokens).toLocaleString()}↓ {Number(experiment.outputTokens).toLocaleString()}↑)
+                            ({Number(experiment.aggregatedTokens.inputTokens).toLocaleString()}↓ {Number(experiment.aggregatedTokens.outputTokens).toLocaleString()}↑)
                           </span>
                         )}
                       </>

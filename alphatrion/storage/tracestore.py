@@ -331,6 +331,40 @@ class TraceStore:
                 logger.error(f"Failed to get spans by exp_id: {e}")
                 return []
 
+    def get_llm_spans_by_team_id(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+        """Get all LLM spans for a specific team_id.
+
+        Args:
+            team_id: The team ID to filter by
+        Returns:
+            List of LLM span dictionaries
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                FROM {self.database}.otel_spans
+                WHERE TeamId = '{team_id}'
+                  AND SemanticKind = 'llm'
+                """
+
+                result = self.client.query(query)
+                # Convert date to string format and ensure integers
+                return [
+                    {
+                        "total_tokens": int(row["total_tokens"]),
+                        "input_tokens": int(row["input_tokens"]),
+                        "output_tokens": int(row["output_tokens"]),
+                    }
+                    for row in result.named_results()
+                ]
+            except Exception as e:
+                logger.error(f"Failed to get daily token usage: {e}")
+                return []
+
     def get_daily_token_usage(
         self, team_id: uuid.UUID, days: int = 30
     ) -> list[dict[str, Any]]:
