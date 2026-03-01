@@ -146,23 +146,23 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     return is_best_metric
 
 
-# log_execution is used to log the record of a run/experiment,
+# log_result is used to log the result of a run/experiment,
 # including both input and output, e.g. you want to save the code snippet.
 # It will be stored in the object storage as a JSON file if object storage
 # is enabled or locally otherwise.
-async def log_execution(
+async def log_result(
     output: dict[str, Any],
     input: dict[str, Any] | None = None,
     phase: str = "success",
     kind: ExecutionKind = ExecutionKind.RUN,
 ):
-    execution = None
+    result = None
 
     if kind == ExecutionKind.RUN:
-        execution = build_run_execution(output=output, input=input, phase=phase)
+        result = build_run_execution(output=output, input=input, phase=phase)
     else:
         raise NotImplementedError(
-            f"Logging record of kind {execution.kind} is not implemented yet."
+            f"Logging record of kind {result.kind} is not implemented yet."
         )
 
     # Can I get the file size to store in the database?
@@ -175,7 +175,7 @@ async def log_execution(
     # Considering the record file is small, we just save it locally first.
     # If this changes in the future, we should delete them after uploading.
     with open(os.path.join(path, "execution.json"), "w") as f:
-        f.write(execution.model_dump_json())
+        f.write(result.model_dump_json())
 
     file_size = os.path.getsize(os.path.join(path, "execution.json"))
     runtime = global_runtime()

@@ -52,7 +52,7 @@ class Status(BaseModel):
     phase: str
 
 
-class Execution(BaseModel):
+class ExecutionResult(BaseModel):
     schema_version: str
     kind: ExecutionKind
     metadata: Metadata
@@ -62,7 +62,7 @@ class Execution(BaseModel):
 
 def build_run_execution(
     output: dict[str, Any], input: dict[str, Any] | None = None, phase: str = "success"
-) -> Execution:
+) -> ExecutionResult:
     run_id = current_run_id.get()
     run_obj = global_runtime().metadb.get_run(run_id=run_id)
     if run_obj is None:
@@ -76,7 +76,7 @@ def build_run_execution(
             f"Experiment {run_obj.experiment_id} not found in the database."
         )
 
-    execution = Execution(
+    result = ExecutionResult(
         schema_version="1.0",
         kind=ExecutionKind.RUN,
         metadata=Metadata(
@@ -89,7 +89,7 @@ def build_run_execution(
             phase=phase,
         ),
     )
-    return execution
+    return result
 
 
 def snapshot_path() -> str:

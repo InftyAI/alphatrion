@@ -487,7 +487,7 @@ async def test_log_metrics_with_min_target_meet():
 
 
 @pytest.mark.asyncio
-async def test_log_execution():
+async def test_log_result():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
@@ -499,7 +499,7 @@ async def test_log_execution():
             os.makedirs(path, exist_ok=True)
         os.chdir(path)
 
-        await alpha.log_execution(
+        await alpha.log_result(
             output={
                 "example": "test",
                 "value": 123,
