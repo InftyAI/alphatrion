@@ -149,10 +149,10 @@ export function RunDetailPage() {
         <CardContent className="p-4">
           <h3 className="text-base font-semibold mb-3">Overview</h3>
           <dl className="grid grid-cols-3 gap-3 text-sm">
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execution Result</dt>
-              <dd className="mt-1.5 text-foreground text-sm">
-                {hasExecutionResult ? (
+            {hasExecutionResult && (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execution Result</dt>
+                <dd className="mt-1.5 text-foreground text-sm">
                   <button
                     onClick={handleViewArtifact}
                     disabled={loadingArtifact}
@@ -161,11 +161,9 @@ export function RunDetailPage() {
                     <Eye className="h-3.5 w-3.5" />
                     {executionResult.file_name}
                   </button>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </dd>
-            </div>
+                </dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">
