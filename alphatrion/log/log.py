@@ -174,16 +174,16 @@ async def log_result(
     # Will eventually be cleanup on Experiment done() if AUTO_CLEANUP is enabled.
     # Considering the record file is small, we just save it locally first.
     # If this changes in the future, we should delete them after uploading.
-    with open(os.path.join(path, "execution.json"), "w") as f:
+    with open(os.path.join(path, "result.json"), "w") as f:
         f.write(result.model_dump_json())
 
-    file_size = os.path.getsize(os.path.join(path, "execution.json"))
+    file_size = os.path.getsize(os.path.join(path, "result.json"))
     runtime = global_runtime()
 
     # If not enabled, only save to local disk.
     if runtime.artifact_storage_enabled():
         path = await log_artifact(
-            paths=os.path.join(path, "execution.json"),
+            paths=os.path.join(path, "result.json"),
             repo_name="execution",
         )
         runtime.metadb.update_run(
@@ -192,7 +192,7 @@ async def log_result(
                 EXECUTION_RESULT: {
                     "path": path,
                     "size": file_size,
-                    "file_name": "execution.json",
+                    "file_name": "result.json",
                 }
             },
         )

@@ -21,7 +21,7 @@ from alphatrion.runtime.runtime import global_runtime
         │   │   └── exp_f751ec9c-4aa2-46c5-8cab-1f92af6f001d
         │   │       ├── checkpoints
         │   │       ├── run_94a82594-01a7-463f-b63b-ab896be9830e
-        │   │       │   └── execution.json
+        │   │       │   └── result.json
         │   │       └── run_c0e3c730-c213-4a8e-9e10-7af57fcf8bf9
         │   └── user_f303c129-c4b5-4f24-957c-d28dd78cce89
         │       └── exp_efeb5430-6593-4675-969c-325aa25af986

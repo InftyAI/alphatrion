@@ -533,7 +533,7 @@ async def test_log_result():
             == f"{runtime.team_id}/execution:" + list_versions[0]
         )
         assert run_obj.meta["execution_result"]["size"] > 0
-        assert run_obj.meta["execution_result"]["file_name"] == "execution.json"
+        assert run_obj.meta["execution_result"]["file_name"] == "result.json"
         artifact_path = run_obj.meta["execution_result"]["path"]
         assert artifact_path == f"{runtime.team_id}/execution:" + list_versions[0]
 

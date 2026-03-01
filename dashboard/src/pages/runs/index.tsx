@@ -169,7 +169,7 @@ export function RunsPage() {
                         </Link>
                       </TableCell>
                       <TableCell className="py-3">
-                        <Badge variant={STATUS_VARIANTS[run.status]} className="text-xs px-2.5 py-0.5 font-medium">
+                        <Badge variant={STATUS_VARIANTS[run.status]}>
                           {run.status}
                         </Badge>
                       </TableCell>

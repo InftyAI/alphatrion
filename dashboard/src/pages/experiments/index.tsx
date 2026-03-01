@@ -305,7 +305,7 @@ export function ExperimentsPage() {
                         )}
                       </TableCell>
                       <TableCell className="py-3">
-                        <Badge variant={STATUS_VARIANTS[experiment.status]} className="text-xs px-2.5 py-0.5 font-medium">
+                        <Badge variant={STATUS_VARIANTS[experiment.status]}>
                           {experiment.status}
                         </Badge>
                       </TableCell>
