@@ -148,7 +148,7 @@ PostgreSQL password secret name
 PostgreSQL password secret key
 */}}
 {{- define "alphatrion.postgresql.secretKey" -}}
-{{- "password" }}
+{{- "postgres-password" }}
 {{- end }}
 
 {{/*

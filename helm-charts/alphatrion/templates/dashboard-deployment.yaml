@@ -16,11 +16,10 @@ spec:
       {{- include "alphatrion.dashboard.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- with .Values.podAnnotations }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/dashboard-configmap.yaml") . | sha256sum }}
-        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- end }}
       labels:
         {{- include "alphatrion.dashboard.selectorLabels" . | nindent 8 }}
     spec:
@@ -32,21 +31,25 @@ spec:
       serviceAccountName: {{ include "alphatrion.serviceAccountName" . }}
       {{- end }}
       securityContext:
+        {{- if .Values.dashboard.podSecurityContext }}
+        {{- toYaml .Values.dashboard.podSecurityContext | nindent 8 }}
+        {{- else }}
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- end }}
       containers:
         - name: dashboard
           securityContext:
+            {{- if .Values.dashboard.securityContext }}
+            {{- toYaml .Values.dashboard.securityContext | nindent 12 }}
+            {{- else }}
             {{- toYaml .Values.securityContext | nindent 12 }}
+            {{- end }}
           image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
           imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: 80
+              containerPort: 8080
               protocol: TCP
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /etc/nginx/conf.d/default.conf
-              subPath: nginx.conf
 
           {{- if .Values.dashboard.livenessProbe.enabled }}
           livenessProbe:
@@ -72,11 +75,6 @@ spec:
 
           resources:
             {{- toYaml .Values.dashboard.resources | nindent 12 }}
-
-      volumes:
-        - name: nginx-config
-          configMap:
-            name: {{ include "alphatrion.dashboard.fullname" . }}
 
       {{- with .Values.nodeSelector }}
       nodeSelector:

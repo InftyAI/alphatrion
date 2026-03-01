@@ -65,6 +65,12 @@ def main():
         default=os.getenv(envs.DASHBOARD_USER_ID),
         help="User ID to scope the dashboard (required)",
     )
+    dashboard.add_argument(
+        "--teamid",
+        type=str,
+        default=None,
+        help="Team ID to scope the dashboard (optional)",
+    )
     dashboard.set_defaults(func=start_dashboard)
 
     # init command
@@ -299,6 +305,8 @@ def start_dashboard(args):
         return
     # Store user ID in app state
     app.state.user_id = args.userid
+    if args.teamid:
+        app.state.team_id = args.teamid
 
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
@@ -306,7 +314,10 @@ def start_dashboard(args):
     # Endpoint to get current user ID (for frontend)
     @app.get("/api/config")
     async def get_config():
-        return {"userId": app.state.user_id}
+        config = {"userId": app.state.user_id}
+        if hasattr(app.state, "team_id"):
+            config["teamId"] = app.state.team_id
+        return config
 
     # Proxy /graphql requests to backend (MUST be before catch-all route)
     @app.api_route("/graphql", methods=["GET", "POST"])
