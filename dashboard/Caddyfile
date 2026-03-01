@@ -1,0 +1,17 @@
+:8080 {
+    # Proxy API and GraphQL requests to backend (must be first)
+    handle /api/* {
+        reverse_proxy alphatrion-server:8000
+    }
+
+    handle /graphql {
+        reverse_proxy alphatrion-server:8000
+    }
+
+    # Serve static files and SPA
+    handle {
+        root * /usr/share/caddy
+        try_files {path} /index.html
+        file_server
+    }
+}

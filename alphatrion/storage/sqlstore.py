@@ -362,7 +362,6 @@ class SQLStore(MetaStore):
             # labels look like "label1:value1,label2:value2",
             label_pairs = labels.rstrip().split(",")
             for pair in label_pairs:
-                print("Label pair:", pair)
                 if ":" in pair:
                     label_name, label_value = pair.split(":", 1)
                 elif "=" in pair:
