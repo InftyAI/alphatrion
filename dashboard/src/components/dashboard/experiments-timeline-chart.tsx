@@ -76,7 +76,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
       </div>
 
       <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 15 }}>
+        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 50 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
