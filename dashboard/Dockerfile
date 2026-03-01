@@ -19,7 +19,13 @@ COPY --from=build /app/static/assets /usr/share/caddy/static/assets
 
 COPY Caddyfile /etc/caddy/Caddyfile
 
+# Copy and setup entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Switch to non-root user
 USER caddy
 
 EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

@@ -1,25 +1,41 @@
 /**
- * Configuration fetching from dashboard backend
+ * Configuration fetching
  *
- * The dashboard is started with --userid flag, which stores the user ID
- * in the backend. The frontend fetches this configuration on startup.
+ * In CLI mode: The dashboard is started with --userid flag, which stores the user ID
+ * in the backend. The frontend fetches this via /api/config endpoint.
+ *
+ * In Kubernetes mode: The dashboard pod writes userId from environment variables
+ * to /config.json file at startup. The frontend fetches this static file.
  */
 
 interface Config {
   userId: string;
+  teamId?: string;
 }
 
 /**
- * Fetch configuration from the dashboard backend
+ * Fetch configuration
  * Always fetches fresh config to avoid stale user ID when dashboard is restarted with different user
  */
 export async function getConfig(): Promise<Config> {
-  const response = await fetch('/api/config', {
+  // Try /config.json first (Kubernetes mode)
+  let response = await fetch('/config.json', {
     cache: 'no-store',
     headers: {
       'Cache-Control': 'no-cache',
     },
   });
+
+  // Fallback to /api/config (CLI mode)
+  if (!response.ok) {
+    response = await fetch('/api/config', {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
   if (!response.ok) {
     throw new Error('Failed to load configuration');
   }
