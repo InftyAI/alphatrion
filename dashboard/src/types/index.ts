@@ -176,3 +176,83 @@ export interface Span {
   events: TraceEvent[];
   links: TraceLink[];
 }
+
+// Content Snapshot types (for IDE component)
+// Note: We use experiment instead of trial since they are the same entity
+export interface ContentSnapshot {
+  id: string;
+  teamId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  contentText?: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  evaluation: Record<string, unknown> | null;
+  metainfo: Record<string, unknown> | null;
+  language: string | null;
+  createdAt: string;
+}
+
+// Lightweight version without contentText for charts/listings
+export interface ContentSnapshotSummary {
+  id: string;
+  teamId: string;
+  experimentId: string;
+  runId: string | null;
+  contentUid: string;
+  parentUid: string | null;
+  coParentUids: string[] | null;
+  fitness: number | number[] | Record<string, number> | null;
+  language: string | null;
+  metainfo: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+// Repository File Browser Types (for IDE component)
+export interface RepoFileEntry {
+  name: string;
+  path: string;
+  isDir: boolean;
+  children?: RepoFileEntry[];
+}
+
+export interface RepoFileTree {
+  exists: boolean;
+  root?: RepoFileEntry;
+  error?: string;
+}
+
+export interface RepoFileContent {
+  path: string;
+  content?: string;
+  language?: string;
+  error?: string;
+}
+
+// Query Params for experiment/content operations
+export interface ContentSnapshotsQueryParams {
+  experimentId: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ContentLineageQueryParams {
+  experimentId: string;
+  contentUid: string;
+}
+
+// Code Analysis Types (for IDE component)
+export interface AnalysisFinding {
+  reason: string;
+  impact: string;
+  filename: string;
+  start_line_number: number;
+  end_line_number: number;
+}
+
+export interface AnalyzeResponse {
+  findings: AnalysisFinding[];
+  error?: string;
+}

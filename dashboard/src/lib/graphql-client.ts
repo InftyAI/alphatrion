@@ -340,4 +340,251 @@ export const queries = {
     }
   `,
 
+  // Content Snapshot queries (for IDE component)
+  listContentSnapshots: `
+    query ListContentSnapshots($experimentId: ID!, $page: Int, $pageSize: Int) {
+      contentSnapshots(experimentId: $experimentId, page: $page, pageSize: $pageSize) {
+        id
+        teamId
+        experimentId
+        runId
+        contentUid
+        contentText
+        parentUid
+        coParentUids
+        fitness
+        evaluation
+        metainfo
+        language
+        createdAt
+      }
+    }
+  `,
+
+  listContentSnapshotsSummary: `
+    query ListContentSnapshotsSummary($experimentId: ID!, $page: Int, $pageSize: Int) {
+      contentSnapshotsSummary(experimentId: $experimentId, page: $page, pageSize: $pageSize) {
+        id
+        teamId
+        experimentId
+        runId
+        contentUid
+        parentUid
+        coParentUids
+        fitness
+        language
+        metainfo
+        createdAt
+      }
+    }
+  `,
+
+  getContentSnapshot: `
+    query GetContentSnapshot($id: ID!) {
+      contentSnapshot(id: $id) {
+        id
+        teamId
+        experimentId
+        runId
+        contentUid
+        contentText
+        parentUid
+        coParentUids
+        fitness
+        evaluation
+        metainfo
+        language
+        createdAt
+      }
+    }
+  `,
+
+  getContentLineage: `
+    query GetContentLineage($experimentId: ID!, $contentUid: String!) {
+      contentLineage(experimentId: $experimentId, contentUid: $contentUid) {
+        id
+        teamId
+        experimentId
+        runId
+        contentUid
+        parentUid
+        coParentUids
+        fitness
+        evaluation
+        metainfo
+        language
+        createdAt
+      }
+    }
+  `,
+
+  // Repository File Browser queries (for IDE component)
+  getRepoFileTree: `
+    query GetRepoFileTree($experimentId: ID!) {
+      repoFileTree(experimentId: $experimentId) {
+        exists
+        root {
+          name
+          path
+          isDir
+          children {
+            name
+            path
+            isDir
+            children {
+              name
+              path
+              isDir
+              children {
+                name
+                path
+                isDir
+                children {
+                  name
+                  path
+                  isDir
+                  children {
+                    name
+                    path
+                    isDir
+                    children {
+                      name
+                      path
+                      isDir
+                      children {
+                        name
+                        path
+                        isDir
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        error
+      }
+    }
+  `,
+
+  getRepoFileContent: `
+    query GetRepoFileContent($experimentId: ID!, $filePath: String!) {
+      repoFileContent(experimentId: $experimentId, filePath: $filePath) {
+        path
+        content
+        language
+        error
+      }
+    }
+  `,
+
+  // Metrics queries for experiment (for IDE component)
+  listMetricKeys: `
+    query ListMetricKeys($experimentId: ID!) {
+      metricKeys(experimentId: $experimentId)
+    }
+  `,
+
+  listMetricsByKey: `
+    query ListMetricsByKey($experimentId: ID!, $key: String!, $maxPoints: Int) {
+      metricsByKey(experimentId: $experimentId, key: $key, maxPoints: $maxPoints) {
+        id
+        key
+        value
+        teamId
+        experimentId
+        runId
+        createdAt
+      }
+    }
+  `,
+
 };
+
+// Import types for helper functions
+import type {
+  Metric,
+  ContentSnapshot,
+  ContentSnapshotSummary,
+  ContentSnapshotsQueryParams,
+  ContentLineageQueryParams,
+  RepoFileTree,
+  RepoFileContent,
+} from '../types';
+
+// Helper functions for IDE component hooks
+
+export async function fetchContentSnapshotsSummary(
+  params: ContentSnapshotsQueryParams
+): Promise<ContentSnapshotSummary[]> {
+  const data = await graphqlQuery<{ contentSnapshotsSummary: ContentSnapshotSummary[] }>(
+    queries.listContentSnapshotsSummary,
+    {
+      experimentId: params.experimentId,
+      page: params.page ?? 0,
+      pageSize: params.pageSize ?? 2000,
+    }
+  );
+  return data.contentSnapshotsSummary;
+}
+
+export async function fetchContentSnapshot(id: string): Promise<ContentSnapshot | null> {
+  const data = await graphqlQuery<{ contentSnapshot: ContentSnapshot | null }>(
+    queries.getContentSnapshot,
+    { id }
+  );
+  return data.contentSnapshot;
+}
+
+export async function fetchContentLineage(
+  params: ContentLineageQueryParams
+): Promise<ContentSnapshot[]> {
+  const data = await graphqlQuery<{ contentLineage: ContentSnapshot[] }>(
+    queries.getContentLineage,
+    {
+      experimentId: params.experimentId,
+      contentUid: params.contentUid,
+    }
+  );
+  return data.contentLineage;
+}
+
+export async function fetchRepoFileTree(experimentId: string): Promise<RepoFileTree> {
+  const data = await graphqlQuery<{ repoFileTree: RepoFileTree }>(
+    queries.getRepoFileTree,
+    { experimentId }
+  );
+  return data.repoFileTree;
+}
+
+export async function fetchRepoFileContent(
+  experimentId: string,
+  filePath: string
+): Promise<RepoFileContent> {
+  const data = await graphqlQuery<{ repoFileContent: RepoFileContent }>(
+    queries.getRepoFileContent,
+    { experimentId, filePath }
+  );
+  return data.repoFileContent;
+}
+
+export async function fetchMetricKeys(experimentId: string): Promise<string[]> {
+  const data = await graphqlQuery<{ metricKeys: string[] }>(
+    queries.listMetricKeys,
+    { experimentId }
+  );
+  return data.metricKeys;
+}
+
+export async function fetchMetricsByKey(
+  experimentId: string,
+  key: string,
+  maxPoints: number = 1000
+): Promise<Metric[]> {
+  const data = await graphqlQuery<{ metricsByKey: Metric[] }>(
+    queries.listMetricsByKey,
+    { experimentId, key, maxPoints }
+  );
+  return data.metricsByKey;
+}

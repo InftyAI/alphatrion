@@ -297,3 +297,78 @@ class DailyTokenUsage:
     total_tokens: int
     input_tokens: int
     output_tokens: int
+
+
+# WILL BE DEPRECATED SOON
+
+@strawberry.type
+class ContentSnapshot:
+    id: strawberry.ID
+    team_id: strawberry.ID
+    project_id: strawberry.ID
+    experiment_id: strawberry.ID
+    run_id: strawberry.ID | None
+    content_uid: str
+    content_text: str
+    parent_uid: str | None
+    co_parent_uids: JSON | None
+    fitness: JSON | None
+    evaluation: JSON | None
+    metainfo: JSON | None
+    language: str | None
+    created_at: datetime
+
+
+@strawberry.type
+class ContentSnapshotSummary:
+    """Lightweight ContentSnapshot without content_text for listing/charting."""
+
+    id: strawberry.ID
+    team_id: strawberry.ID
+    project_id: strawberry.ID
+    experiment_id: strawberry.ID
+    run_id: strawberry.ID | None
+    content_uid: str
+    parent_uid: str | None
+    co_parent_uids: JSON | None
+    fitness: JSON | None
+    language: str | None
+    metainfo: JSON | None
+    created_at: datetime
+
+
+@strawberry.type
+class ExperimentFitnessSummary:
+    """Batch fitness data for an experiment — just experiment_id and list of fitness values."""
+
+    experiment_id: strawberry.ID
+    fitness_values: list[JSON]
+
+
+@strawberry.type
+class RepoFileEntry:
+    """Represents a file or directory entry in a repository."""
+
+    name: str
+    path: str
+    is_dir: bool
+    children: list["RepoFileEntry"] | None = None
+
+
+@strawberry.type
+class RepoFileTree:
+    """File tree structure for a trial's repository."""
+
+    exists: bool
+    root: RepoFileEntry | None = None
+    error: str | None = None
+
+
+@strawberry.type
+class RepoFileContent:
+    """Content of a file from a trial's repository."""
+
+    path: str
+    content: str | None = None
+    language: str | None = None
+    error: str | None = None

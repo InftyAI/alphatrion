@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, Float, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import declarative_base
@@ -221,4 +221,66 @@ class ExperimentLabel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
+    )
+
+class ContentSnapshot(Base):
+    __tablename__ = "content_snapshots"
+    __table_args__ = (
+        Index("ix_content_snapshots_trial_id", "trial_id"),
+        Index("ix_content_snapshots_trial_id_is_del", "trial_id", "is_del"),
+    )
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False, name="experiment_id")
+    trial_id = Column(UUID(as_uuid=True), nullable=False, name="trial_id")
+    run_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="Run ID, null for seed content"
+    )
+
+    content_uid = Column(
+        String, nullable=False, comment="UID from hive ContentDatabase"
+    )
+    content_text = Column(String, nullable=False, comment="Actual code content as text")
+
+    parent_uid = Column(
+        String, nullable=True, comment="Parent content UID (null for seed)"
+    )
+    co_parent_uids = Column(
+        JSON, nullable=True, comment="List of co-parent UIDs for crossover"
+    )
+
+    fitness = Column(JSON, nullable=True, comment="Multi-dimensional fitness values")
+    evaluation = Column(JSON, nullable=True, comment="Full evaluation results")
+    metainfo = Column(
+        JSON, nullable=True, comment="Additional metadata for the content snapshot"
+    )
+
+    language = Column(
+        String,
+        nullable=True,
+        default="python",
+        comment="Programming language for syntax highlighting",
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
+class ImageBuildCache(Base):
+    __tablename__ = "image_build_cache"
+    __table_args__ = (Index("ix_image_build_cache_hash", "content_hash", unique=True),)
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_hash = Column(String(64), nullable=False, comment="SHA256 hex digest")
+    image_type = Column(String(20), nullable=False, comment="'base' or 'sandbox'")
+    image_name = Column(String(500), nullable=False, comment="Full image URL")
+    inputs_summary = Column(JSON, nullable=True, comment="Debug info about hash inputs")
+    hit_count = Column(Integer, default=0, comment="Number of cache hits")
+    last_hit_at = Column(
+        DateTime(timezone=True), nullable=True, comment="Last cache hit"
+    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    is_valid = Column(
+        Integer, default=1, comment="1 for valid, 0 for invalidated"
     )

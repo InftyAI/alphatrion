@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getUserId } from './lib/config';
@@ -12,8 +12,29 @@ import { ExperimentDetailPage } from './pages/experiments/[id]';
 import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
+import { ExperimentIDEPage } from './pages/experiments/ide/[id]';
 import { ArtifactsPage } from './pages/artifacts';
 import type { Team } from './types';
+
+// Selection Context for IDE component
+interface SelectionContextType {
+  experimentId: string | null;
+  setExperimentId: (id: string | null) => void;
+  experimentName: string | null;
+  setExperimentName: (name: string | null) => void;
+  selectedPointName: string | null;
+  setSelectedPointName: (name: string | null) => void;
+  chartPanelMode: "results" | "metrics";
+  setChartPanelMode: (mode: "results" | "metrics") => void;
+}
+
+const SelectionContext = createContext<SelectionContextType | null>(null);
+
+export function useSelection() {
+  const ctx = useContext(SelectionContext);
+  if (!ctx) throw new Error("useSelection must be used within App");
+  return ctx;
+}
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -21,6 +42,12 @@ function App() {
   const [error, setError] = useState<Error | null>(null);
   const { selectedTeamId, setSelectedTeamId } = useTeamContext();
   const queryClient = useQueryClient();
+
+  // Selection state for IDE component
+  const [experimentId, setExperimentId] = useState<string | null>(null);
+  const [experimentName, setExperimentName] = useState<string | null>(null);
+  const [selectedPointName, setSelectedPointName] = useState<string | null>(null);
+  const [chartPanelMode, setChartPanelMode] = useState<"results" | "metrics">("results");
 
   useEffect(() => {
     async function initialize() {
@@ -126,24 +153,41 @@ function App() {
     return null;
   }
 
+  const selectionValue = {
+    experimentId,
+    setExperimentId,
+    experimentName,
+    setExperimentName,
+    selectedPointName,
+    setSelectedPointName,
+    chartPanelMode,
+    setChartPanelMode,
+  };
+
   return (
     <div className="h-full">
       <UserProvider user={currentUser}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="experiments">
-              <Route index element={<ExperimentsPage />} />
-              <Route path=":id" element={<ExperimentDetailPage />} />
-              <Route path="compare" element={<ExperimentComparePage />} />
+        <SelectionContext.Provider value={selectionValue}>
+          <Routes>
+            {/* IDE view - full page without layout */}
+            <Route path="experiments/:id/ide" element={<ExperimentIDEPage />} />
+
+            {/* Main app with layout */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="experiments">
+                <Route index element={<ExperimentsPage />} />
+                <Route path=":id" element={<ExperimentDetailPage />} />
+                <Route path="compare" element={<ExperimentComparePage />} />
+              </Route>
+              <Route path="runs">
+                <Route index element={<RunsPage />} />
+                <Route path=":id" element={<RunDetailPage />} />
+              </Route>
+              <Route path="artifacts" element={<ArtifactsPage />} />
             </Route>
-            <Route path="runs">
-              <Route index element={<RunsPage />} />
-              <Route path=":id" element={<RunDetailPage />} />
-            </Route>
-            <Route path="artifacts" element={<ArtifactsPage />} />
-          </Route>
-        </Routes>
+          </Routes>
+        </SelectionContext.Provider>
       </UserProvider>
     </div>
   );

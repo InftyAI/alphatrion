@@ -1,4 +1,5 @@
 import datetime
+from math import exp
 import uuid
 
 from sqlalchemy import create_engine
@@ -15,6 +16,7 @@ from alphatrion.storage.sql_models import (
     Team,
     TeamMember,
     User,
+    ContentSnapshot,
 )
 
 
@@ -653,3 +655,204 @@ class SQLStore(MetaStore):
         )
         session.close()
         return metrics
+
+
+    def create_content_snapshot(
+        self,
+        project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        trial_id: uuid.UUID,
+        run_id: uuid.UUID | None,
+        content_uid: str,
+        content_text: str,
+        parent_uid: str | None = None,
+        co_parent_uids: list[str] | None = None,
+        fitness: dict | list | None = None,
+        evaluation: dict | None = None,
+        metainfo: dict | None = None,
+        language: str = "python",
+    ) -> uuid.UUID:
+        with self._session() as session:
+            new_snapshot = ContentSnapshot(
+                project_id=project_id,
+                experiment_id=experiment_id,
+                trial_id=trial_id,
+                run_id=run_id,
+                content_uid=content_uid,
+                content_text=content_text,
+                parent_uid=parent_uid,
+                co_parent_uids=co_parent_uids,
+                fitness=fitness,
+                evaluation=evaluation,
+                metainfo=metainfo,
+                language=language,
+            )
+            session.add(new_snapshot)
+            session.commit()
+            return new_snapshot.uuid
+
+    def get_content_snapshot(self, snapshot_id: uuid.UUID) -> ContentSnapshot | None:
+        with self._session() as session:
+            return (
+                session.query(ContentSnapshot)
+                .filter(
+                    ContentSnapshot.uuid == snapshot_id,
+                    ContentSnapshot.is_del == 0,
+                )
+                .first()
+            )
+
+    def get_content_snapshot_by_uid(
+        self, trial_id: uuid.UUID, content_uid: str
+    ) -> ContentSnapshot | None:
+        with self._session() as session:
+            return (
+                session.query(ContentSnapshot)
+                .filter(
+                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.content_uid == content_uid,
+                    ContentSnapshot.is_del == 0,
+                )
+                .first()
+            )
+
+    def list_content_snapshots_by_trial_id(
+        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 1000
+    ) -> list[ContentSnapshot]:
+        with self._session() as session:
+            return (
+                session.query(ContentSnapshot)
+                .filter(
+                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.is_del == 0,
+                )
+                .offset(page * page_size)
+                .limit(page_size)
+                .all()
+            )
+
+    def list_content_snapshots_summary_by_trial_id(
+        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10000
+    ) -> list[dict]:
+        """
+        Returns lightweight content snapshot data without content_text and evaluation.
+        Used for charts and listings where full content is not needed.
+        """
+        with self._session() as session:
+            results = (
+                session.query(
+                    ContentSnapshot.uuid,
+                    ContentSnapshot.project_id,
+                    ContentSnapshot.experiment_id,
+                    ContentSnapshot.trial_id,
+                    ContentSnapshot.run_id,
+                    ContentSnapshot.content_uid,
+                    ContentSnapshot.parent_uid,
+                    ContentSnapshot.co_parent_uids,
+                    ContentSnapshot.fitness,
+                    ContentSnapshot.language,
+                    ContentSnapshot.metainfo,
+                    ContentSnapshot.created_at,
+                )
+                .filter(
+                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.is_del == 0,
+                )
+                .order_by(ContentSnapshot.created_at.asc())
+                .offset(page * page_size)
+                .limit(page_size)
+                .all()
+            )
+            return [
+                {
+                    "uuid": r.uuid,
+                    "project_id": r.project_id,
+                    "experiment_id": r.experiment_id,
+                    "trial_id": r.trial_id,
+                    "run_id": r.run_id,
+                    "content_uid": r.content_uid,
+                    "parent_uid": r.parent_uid,
+                    "co_parent_uids": r.co_parent_uids,
+                    "fitness": r.fitness,
+                    "language": r.language,
+                    "metainfo": r.metainfo,
+                    "created_at": r.created_at,
+                }
+                for r in results
+            ]
+
+    def list_fitness_by_trial_ids(
+        self, trial_ids: list[uuid.UUID]
+    ) -> dict[uuid.UUID, list[dict]]:
+        """
+        Batch-fetch fitness values for multiple trials in a single query.
+        Returns {trial_id: [{fitness: ..., content_uid: ...}, ...]} for each trial.
+        Only fetches the fitness and content_uid columns to minimize payload.
+        """
+        if not trial_ids:
+            return {}
+        with self._session() as session:
+            results = (
+                session.query(
+                    ContentSnapshot.trial_id,
+                    ContentSnapshot.content_uid,
+                    ContentSnapshot.fitness,
+                )
+                .filter(
+                    ContentSnapshot.trial_id.in_(trial_ids),
+                    ContentSnapshot.is_del == 0,
+                )
+                .all()
+            )
+            grouped: dict[uuid.UUID, list[dict]] = {}
+            for r in results:
+                grouped.setdefault(r.trial_id, []).append(
+                    {"content_uid": r.content_uid, "fitness": r.fitness}
+                )
+            return grouped
+
+    def get_content_lineage(
+        self, trial_id: uuid.UUID, content_uid: str
+    ) -> list[ContentSnapshot]:
+        """
+        Get the full lineage of a content snapshot, from the given content_uid
+        back to the seed content (content with no parent).
+        Fetches all snapshots for the trial in one query and traverses in Python.
+        Returns list ordered from seed (oldest first) to child.
+        """
+        with self._session() as session:
+            all_snapshots = (
+                session.query(ContentSnapshot)
+                .filter(
+                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.is_del == 0,
+                )
+                .all()
+            )
+
+            uid_map = {s.content_uid: s for s in all_snapshots}
+            lineage = []
+            current_uid: str | None = content_uid
+            visited: set[str] = set()
+
+            while current_uid and current_uid not in visited:
+                visited.add(current_uid)
+                snapshot = uid_map.get(current_uid)
+                if snapshot:
+                    lineage.append(snapshot)
+                    current_uid = snapshot.parent_uid
+                else:
+                    break
+
+            return list(reversed(lineage))
+
+    def list_metric_keys_by_exp_id(self, exp_id: uuid.UUID) -> list[str]:
+        """Returns unique metric keys for an experiment."""
+        with self._session() as session:
+            keys = (
+                session.query(Metric.key)
+                .filter(Metric.experiment_id == exp_id)
+                .distinct()
+                .all()
+            )
+            return [k[0] for k in keys]

@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
+from fastapi import logger
 import httpx
 import strawberry
 
@@ -9,8 +10,12 @@ from alphatrion import envs
 from alphatrion.artifact import artifact
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
+from alphatrion.server.repo.gcs_repo import GCSRepoService, detect_language
+from alphatrion.server.repo.local_repo import LocalRepoService
 
 from .types import (
+    ContentSnapshot,
+    ContentSnapshotSummary,
     AddUserToTeamInput,
     ArtifactContent,
     ArtifactRepository,
@@ -32,6 +37,11 @@ from .types import (
     TraceLink,
     UpdateUserInput,
     User,
+    RepoFileContent,
+    RepoFileEntry,
+    RepoFileTree,
+    Run,
+    ExperimentFitnessSummary,
 )
 
 
@@ -564,6 +574,318 @@ class GraphQLResolvers:
             print(f"Failed to fetch daily token usage: {e}")
             return []
 
+    @staticmethod
+    def list_content_snapshots(
+        trial_id: str, page: int = 0, page_size: int = 1000
+    ) -> list[ContentSnapshot]:
+        metadb = runtime.storage_runtime().metadb
+        snapshots = metadb.list_content_snapshots_by_trial_id(
+            trial_id=uuid.UUID(trial_id), page=page, page_size=page_size
+        )
+        return [
+            ContentSnapshot(
+                id=s.uuid,
+                team_id=s.team_id,
+                project_id=s.project_id,
+                experiment_id=s.experiment_id,
+                run_id=s.run_id,
+                content_uid=s.content_uid,
+                content_text=s.content_text,
+                parent_uid=s.parent_uid,
+                co_parent_uids=s.co_parent_uids,
+                fitness=s.fitness,
+                evaluation=s.evaluation,
+                metainfo=s.metainfo,
+                language=s.language,
+                created_at=s.created_at,
+            )
+            for s in snapshots
+        ]
+
+    @staticmethod
+    def list_content_snapshots_summary(
+        trial_id: str, page: int = 0, page_size: int = 10000
+    ) -> list[ContentSnapshotSummary]:
+        """Returns lightweight content snapshots without content_text for charts."""
+        metadb = runtime.storage_runtime().metadb
+        snapshots = metadb.list_content_snapshots_summary_by_trial_id(
+            trial_id=uuid.UUID(trial_id), page=page, page_size=page_size
+        )
+        return [
+            ContentSnapshotSummary(
+                id=s["uuid"],
+                team_id=s["team_id"],
+                project_id=s["project_id"],
+                experiment_id=s["experiment_id"],
+                run_id=s["run_id"],
+                content_uid=s["content_uid"],
+                parent_uid=s["parent_uid"],
+                co_parent_uids=s["co_parent_uids"],
+                fitness=s["fitness"],
+                language=s["language"],
+                metainfo=s["metainfo"],
+                created_at=s["created_at"],
+            )
+            for s in snapshots
+        ]
+
+    @staticmethod
+    def batch_trial_fitness(
+        trial_ids: list[str],
+    ) -> list[ExperimentFitnessSummary]:
+        """Batch-fetch fitness values for multiple experiments in one query."""
+        metadb = runtime.storage_runtime().metadb
+        uuids = [uuid.UUID(tid) for tid in trial_ids]
+        grouped = metadb.list_fitness_by_trial_ids(uuids)
+        return [
+            ExperimentFitnessSummary(
+                experiment_id=tid,
+                fitness_values=[
+                    s["fitness"] for s in grouped.get(uuid.UUID(tid), [])
+                    if s["fitness"] is not None
+                ],
+            )
+            for tid in trial_ids
+        ]
+
+    @staticmethod
+    def get_content_snapshot(id: str) -> ContentSnapshot | None:
+        metadb = runtime.storage_runtime().metadb
+        snapshot = metadb.get_content_snapshot(snapshot_id=uuid.UUID(id))
+        if snapshot:
+            return ContentSnapshot(
+                id=snapshot.uuid,
+                team_id=snapshot.team_id,
+                project_id=snapshot.project_id,
+                experiment_id=snapshot.experiment_id,
+                run_id=snapshot.run_id,
+                content_uid=snapshot.content_uid,
+                content_text=snapshot.content_text,
+                parent_uid=snapshot.parent_uid,
+                co_parent_uids=snapshot.co_parent_uids,
+                fitness=snapshot.fitness,
+                evaluation=snapshot.evaluation,
+                metainfo=snapshot.metainfo,
+                language=snapshot.language,
+                created_at=snapshot.created_at,
+            )
+        return None
+
+    @staticmethod
+    def get_content_lineage(
+        trial_id: str, content_uid: str
+    ) -> list[ContentSnapshot]:
+        metadb = runtime.storage_runtime().metadb
+        lineage = metadb.get_content_lineage(
+            trial_id=uuid.UUID(trial_id), content_uid=content_uid
+        )
+        return [
+            ContentSnapshot(
+                id=s.uuid,
+                team_id=s.team_id,
+                project_id=s.project_id,
+                experiment_id=s.experiment_id,
+                run_id=s.run_id,
+                content_uid=s.content_uid,
+                content_text=s.content_text,
+                parent_uid=s.parent_uid,
+                co_parent_uids=s.co_parent_uids,
+                fitness=s.fitness,
+                evaluation=s.evaluation,
+                metainfo=s.metainfo,
+                language=s.language,
+                created_at=s.created_at,
+            )
+            for s in lineage
+        ]
+
+    @staticmethod
+    def delete_trials(ids: list[str]) -> bool:
+        metadb = runtime.storage_runtime().metadb
+        for trial_id in ids:
+            metadb.delete_trial(trial_id=uuid.UUID(trial_id))
+        return True
+
+    @staticmethod
+    def _get_trial_repo_name(trial_id: str) -> str | None:
+        """Get the trial name to use for GCS repo lookup."""
+        metadb = runtime.storage_runtime().metadb
+        trial = metadb.get_trial(trial_id=uuid.UUID(trial_id))
+        if trial:
+            return trial.name
+        return None
+
+    @staticmethod
+    def get_repo_file_tree(trial_id: str) -> RepoFileTree:
+        """Get the file tree structure for a trial's repository."""
+        try:
+            # Get trial name to use for GCS path
+            trial_name = GraphQLResolvers._get_trial_repo_name(trial_id)
+            if not trial_name:
+                return RepoFileTree(exists=False, error="Experiment not found")
+
+            repo_service = GCSRepoService.get_instance()
+
+            # Check if repo exists using trial name
+            if not repo_service.repo_exists(trial_name):
+                return RepoFileTree(exists=False)
+
+            # Get file tree
+            tree_dict = repo_service.get_file_tree(trial_name)
+            if tree_dict is None:
+                return RepoFileTree(exists=False)
+
+            # Convert dict to RepoFileEntry
+            def dict_to_entry(d: dict) -> RepoFileEntry:
+                children = None
+                if d.get("children") is not None:
+                    children = [dict_to_entry(c) for c in d["children"]]
+                return RepoFileEntry(
+                    name=d["name"],
+                    path=d["path"],
+                    is_dir=d["is_dir"],
+                    children=children,
+                )
+
+            root = dict_to_entry(tree_dict)
+            return RepoFileTree(exists=True, root=root)
+
+        except Exception as e:
+            logger.error(f"Error getting repo file tree for trial {trial_id}: {e}")
+            return RepoFileTree(exists=False, error=str(e))
+
+    @staticmethod
+    def get_repo_file_content(trial_id: str, file_path: str) -> RepoFileContent:
+        """Get the content of a specific file from a trial's repository."""
+        try:
+            # Get trial name to use for GCS path
+            trial_name = GraphQLResolvers._get_trial_repo_name(trial_id)
+            if not trial_name:
+                return RepoFileContent(path=file_path, error="Experiment not found")
+
+            repo_service = GCSRepoService.get_instance()
+
+            # Get file content using trial name
+            content = repo_service.get_file_content(trial_name, file_path)
+            if content is None:
+                return RepoFileContent(
+                    path=file_path,
+                    error="File not found or could not be read",
+                )
+
+            # Detect language from file path
+            language = detect_language(file_path)
+
+            return RepoFileContent(
+                path=file_path,
+                content=content,
+                language=language,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Error getting repo file content for trial {trial_id}, "
+                f"file {file_path}: {e}"
+            )
+            return RepoFileContent(path=file_path, error=str(e))
+
+    @staticmethod
+    def get_local_repo_file_tree(path: str) -> RepoFileTree:
+        """Get the file tree structure for a local directory."""
+        try:
+            repo_service = LocalRepoService.get_instance()
+
+            # Check if path exists
+            if not repo_service.path_exists(path):
+                return RepoFileTree(exists=False, error="Path not found or not a directory")
+
+            # Get file tree
+            tree_dict = repo_service.get_file_tree(path)
+            if tree_dict is None:
+                return RepoFileTree(exists=False, error="Could not read directory")
+
+            # Convert dict to RepoFileEntry
+            def dict_to_entry(d: dict) -> RepoFileEntry:
+                children = None
+                if d.get("children") is not None:
+                    children = [dict_to_entry(c) for c in d["children"]]
+                return RepoFileEntry(
+                    name=d["name"],
+                    path=d["path"],
+                    is_dir=d["is_dir"],
+                    children=children,
+                )
+
+            root = dict_to_entry(tree_dict)
+            return RepoFileTree(exists=True, root=root)
+
+        except Exception as e:
+            logger.error(f"Error getting local repo file tree for path {path}: {e}")
+            return RepoFileTree(exists=False, error=str(e))
+
+    @staticmethod
+    def get_local_repo_file_content(base_path: str, file_path: str) -> RepoFileContent:
+        """Get the content of a specific file from a local directory."""
+        try:
+            repo_service = LocalRepoService.get_instance()
+
+            # Get file content
+            content = repo_service.get_file_content(base_path, file_path)
+            if content is None:
+                return RepoFileContent(
+                    path=file_path,
+                    error="File not found or could not be read",
+                )
+
+            # Detect language from file path
+            language = detect_language(file_path)
+
+            return RepoFileContent(
+                path=file_path,
+                content=content,
+                language=language,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Error getting local repo file content for path {base_path}, "
+                f"file {file_path}: {e}"
+            )
+            return RepoFileContent(path=file_path, error=str(e))
+
+    @staticmethod
+    def list_metric_keys(experiment_id: str) -> list[str]:
+        metadb = runtime.storage_runtime().metadb
+        return metadb.list_metric_keys_by_exp_id(exp_id=uuid.UUID(experiment_id))
+
+    @staticmethod
+    def list_metrics_by_key(
+        experiment_id: str, key: str, max_points: int | None = None
+    ) -> list[Metric]:
+        """Get metrics for a specific experiment filtered by key."""
+        metadb = runtime.storage_runtime().metadb
+        # Get all metrics for the experiment
+        metrics = metadb.list_metrics_by_exp_id(exp_id=uuid.UUID(experiment_id))
+        # Filter by key
+        filtered = [m for m in metrics if m.key == key]
+        # Limit to max_points if specified
+        if max_points is not None and len(filtered) > max_points:
+            # Take evenly spaced samples
+            step = len(filtered) / max_points
+            indices = [int(i * step) for i in range(max_points)]
+            filtered = [filtered[i] for i in indices]
+        return [
+            Metric(
+                id=m.uuid,
+                key=m.key,
+                value=m.value,
+                team_id=m.team_id,
+                experiment_id=m.experiment_id,
+                run_id=m.run_id,
+                created_at=m.created_at,
+            )
+            for m in filtered
+        ]
 
 class GraphQLMutations:
     @staticmethod

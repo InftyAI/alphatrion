@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ExternalLink } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
@@ -155,9 +156,17 @@ export function ExperimentDetailPage() {
             {experiment.id}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[experiment.status]}>
-          {experiment.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Link to={`/experiments/${id}/ide`} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open in IDE
+            </Button>
+          </Link>
+          <Badge variant={STATUS_VARIANTS[experiment.status]}>
+            {experiment.status}
+          </Badge>
+        </div>
       </div>
 
       {/* Tabs */}

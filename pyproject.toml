@@ -23,6 +23,7 @@ dependencies = [
     "httpx>=0.28.1",
     "clickhouse-connect>=0.7.0",
     "faker>=37.12",
+    "google-cloud-storage>=2.0.0",
 ]
 
 [dependency-groups]

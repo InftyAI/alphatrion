@@ -10,12 +10,18 @@ from alphatrion.server.graphql.types import (
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    Metric,
     RemoveUserFromTeamInput,
     Run,
     Span,
     Team,
+    ExperimentFitnessSummary,
     UpdateUserInput,
     User,
+    ContentSnapshot,
+    ContentSnapshotSummary,
+    RepoFileContent,
+    RepoFileTree,
 )
 
 
@@ -102,6 +108,84 @@ class Query:
         repo_name: str,
     ) -> ArtifactContent:
         return await GraphQLResolvers.get_artifact_content(str(team_id), tag, repo_name)
+
+    @strawberry.field
+    def content_snapshots(
+        self, experiment_id: strawberry.ID, page: int = 0, page_size: int = 200
+    ) -> list[ContentSnapshot]:
+        return GraphQLResolvers.list_content_snapshots(
+            trial_id=str(experiment_id), page=page, page_size=page_size
+        )
+
+    @strawberry.field
+    def content_snapshots_summary(
+        self, experiment_id: strawberry.ID, page: int = 0, page_size: int = 2000
+    ) -> list[ContentSnapshotSummary]:
+        """Lightweight content snapshots without content_text for charts."""
+        return GraphQLResolvers.list_content_snapshots_summary(
+            trial_id=str(experiment_id), page=page, page_size=page_size
+        )
+
+    content_snapshot: ContentSnapshot | None = strawberry.field(
+        resolver=GraphQLResolvers.get_content_snapshot
+    )
+
+    @strawberry.field
+    def batch_trial_fitness(
+        self, trial_ids: list[str]
+    ) -> list[ExperimentFitnessSummary]:
+        """Batch-fetch fitness values for multiple experiments in one query."""
+        return GraphQLResolvers.batch_trial_fitness(trial_ids=trial_ids)
+
+    @strawberry.field
+    def content_lineage(
+        self, experiment_id: strawberry.ID, content_uid: str
+    ) -> list[ContentSnapshot]:
+        return GraphQLResolvers.get_content_lineage(
+            trial_id=str(experiment_id), content_uid=content_uid
+        )
+
+    # WILL BE DEPRECATED --- IGNORE ---
+
+    @strawberry.field
+    def repo_file_tree(self, experiment_id: strawberry.ID) -> RepoFileTree:
+        """Get the file tree structure for an experiment's repository."""
+        return GraphQLResolvers.get_repo_file_tree(trial_id=str(experiment_id))
+
+    @strawberry.field
+    def repo_file_content(self, experiment_id: strawberry.ID, file_path: str) -> RepoFileContent:
+        """Get the content of a specific file from an experiment's repository."""
+        return GraphQLResolvers.get_repo_file_content(
+            trial_id=str(experiment_id), file_path=file_path
+        )
+
+    @strawberry.field
+    def local_repo_file_tree(self, path: str) -> RepoFileTree:
+        """Get the file tree structure for a local directory."""
+        return GraphQLResolvers.get_local_repo_file_tree(path=path)
+
+    @strawberry.field
+    def local_repo_file_content(
+        self, base_path: str, file_path: str
+    ) -> RepoFileContent:
+        """Get the content of a specific file from a local directory."""
+        return GraphQLResolvers.get_local_repo_file_content(
+            base_path=base_path, file_path=file_path
+        )
+
+    @strawberry.field
+    def metric_keys(self, experiment_id: strawberry.ID) -> list[str]:
+        """Get available metric keys for an experiment."""
+        return GraphQLResolvers.list_metric_keys(experiment_id=str(experiment_id))
+
+    @strawberry.field
+    def metrics_by_key(
+        self, experiment_id: strawberry.ID, key: str, max_points: int | None = None
+    ) -> list["Metric"]:
+        """Get metrics for a specific experiment filtered by key."""
+        return GraphQLResolvers.list_metrics_by_key(
+            experiment_id=str(experiment_id), key=key, max_points=max_points
+        )
 
 
 @strawberry.type
