@@ -37,7 +37,12 @@ def test_query_single_team():
             updatedAt
             totalExperiments
             totalRuns
-            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+            aggregatedTokens {{
+                totalTokens
+                inputTokens
+                outputTokens
+            }}
+            expsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
                 id
                updatedAt
             }}
@@ -53,7 +58,7 @@ def test_query_single_team():
     assert response.data["team"]["name"] == "Test Team"
     assert response.data["team"]["totalExperiments"] == 0
     assert response.data["team"]["totalRuns"] == 0
-    assert len(response.data["team"]["listExpsByTimeframe"]) == 0
+    assert len(response.data["team"]["expsByTimeframe"]) == 0
 
 
 def test_query_team_with_experiments():
@@ -96,7 +101,7 @@ def test_query_team_with_experiments():
             updatedAt
             totalExperiments
             totalRuns
-            listExpsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
+            expsByTimeframe(startTime: "{yesterday}", endTime: "{tomorrow}") {{
                 id
             }}
         }}
@@ -109,7 +114,7 @@ def test_query_team_with_experiments():
     assert response.errors is None
     assert response.data["team"]["totalExperiments"] == 1
     assert response.data["team"]["totalRuns"] == 2
-    assert len(response.data["team"]["listExpsByTimeframe"]) == 1
+    assert len(response.data["team"]["expsByTimeframe"]) == 1
 
 
 def test_query_teams():
