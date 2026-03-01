@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useExperiments } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
+import { useTeam } from '../../hooks/use-teams';
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
@@ -41,10 +43,16 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
+const PAGE_SIZE = 50;
+
 export function RunsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Fetch team info for total count
+  const { data: team } = useTeam(selectedTeamId || '', { enabled: !!selectedTeamId });
 
   // Fetch experiments directly for the team
   const { data: experiments, isLoading: experimentsLoading } = useExperiments(
@@ -58,8 +66,11 @@ export function RunsPage() {
 
   const { data: runs, isLoading: runsLoading } = useRuns(
     firstExperimentId,
-    { page: 0, pageSize: 1000, enabled: !!firstExperimentId }
+    { page: currentPage, pageSize: PAGE_SIZE, enabled: !!firstExperimentId }
   );
+
+  const totalRuns = team?.totalRuns || 0;
+  const totalPages = Math.ceil(totalRuns / PAGE_SIZE);
 
   // Filter and sort runs
   const filteredRuns = useMemo(() => {
@@ -182,6 +193,40 @@ export function RunsPage() {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {filteredRuns && filteredRuns.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between px-6 py-4 border-t">
+              <div className="text-[13px] text-muted-foreground">
+                Showing {currentPage * PAGE_SIZE + 1} to {Math.min((currentPage + 1) * PAGE_SIZE, totalRuns)} of {totalRuns} runs
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                  disabled={currentPage === 0}
+                  className="h-8"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </Button>
+                <div className="text-[13px] font-medium">
+                  Page {currentPage + 1} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                  disabled={currentPage >= totalPages - 1}
+                  className="h-8"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>

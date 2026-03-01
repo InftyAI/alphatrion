@@ -123,6 +123,9 @@ export function DashboardPage() {
                   <p className="text-xs font-medium text-muted-foreground">TOKENS</p>
                   <p className="text-lg font-bold tabular-nums text-foreground">
                     {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
+                    <span className="text-muted-foreground text-xs ml-1 font-normal">
+                      ({(team?.aggregatedTokens?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedTokens?.outputTokens || 0).toLocaleString()}↑)
+                    </span>
                   </p>
                 </div>
                 <div className="p-1.5 bg-orange-100 rounded-lg">
