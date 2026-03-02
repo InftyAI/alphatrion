@@ -379,18 +379,19 @@ export function ExperimentDetailPage() {
                           )}
                         </h4>
                         <ResponsiveContainer width="100%" height={240}>
-                          <BarChart data={iterationHistogramData} margin={{ top: 10, right: 20, left: 10, bottom: 50 }}>
+                          <BarChart data={iterationHistogramData} margin={{ top: 5, right: 15, left: 5, bottom: 65 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis
                               dataKey="range"
-                              label={{ value: 'Duration Range', position: 'insideBottom', offset: -35, style: { fontSize: '11px' } }}
-                              tick={{ fontSize: '9px', angle: -45, textAnchor: 'end' }}
+                              label={{ value: 'Duration Range', position: 'insideBottom', offset: -48, style: { fontSize: '10px' } }}
+                              tick={{ fontSize: '8px', angle: -45, textAnchor: 'end' }}
                               stroke="hsl(var(--muted-foreground))"
-                              height={60}
+                              height={75}
+                              interval={0}
                             />
                             <YAxis
-                              label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
-                              tick={{ fontSize: '10px' }}
+                              label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: '10px' } }}
+                              tick={{ fontSize: '9px' }}
                               stroke="hsl(var(--muted-foreground))"
                               allowDecimals={false}
                             />
