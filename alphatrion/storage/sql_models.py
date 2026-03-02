@@ -227,7 +227,7 @@ class ContentSnapshot(Base):
     __tablename__ = "content_snapshots"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    team_id = Column(UUID(as_uuid=True), nullable=False)
+    team_id = Column(UUID(as_uuid=True), nullable=False, name="team_id")
     experiment_id = Column(UUID(as_uuid=True), nullable=False, name="experiment_id")
     run_id = Column(
         UUID(as_uuid=True), nullable=True, comment="Run ID, null for seed content"
