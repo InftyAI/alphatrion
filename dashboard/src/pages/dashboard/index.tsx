@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useTeamContext } from '../../context/team-context';
 import { useTeam } from '../../hooks/use-teams';
 import { useTeamExperiments } from '../../hooks/use-team-experiments';
-import { useDailyTokenUsage } from '../../hooks/use-token-usage';
 import {
   Card,
   CardContent,
@@ -11,9 +10,8 @@ import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
-import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FlaskConical, Play, Coins } from 'lucide-react';
+import { FlaskConical, Play } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -32,14 +30,6 @@ export function DashboardPage() {
   const { data: teamExperiments, isLoading: experimentsLoading } = useTeamExperiments(
     selectedTeamId || '',
     { enabled: !!selectedTeamId }
-  );
-
-  // Get days for selected time range
-  const days = TIME_RANGE_OPTIONS.find((opt) => opt.value === timeRange)?.days || 30;
-
-  const { data: dailyTokenUsage, isLoading: tokenUsageLoading } = useDailyTokenUsage(
-    selectedTeamId || '',
-    days
   );
 
   // Filter experiments based on selected time range
@@ -78,13 +68,12 @@ export function DashboardPage() {
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-          <Skeleton className="h-14 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {/* Total Experiments */}
           <Card>
             <CardContent className="p-3">
@@ -110,26 +99,6 @@ export function DashboardPage() {
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Total Tokens */}
-          <Card>
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">TOKENS</p>
-                  <p className="text-lg font-bold tabular-nums text-foreground">
-                    {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
-                    <span className="text-muted-foreground text-xs ml-1 font-normal">
-                      ({(team?.aggregatedTokens?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedTokens?.outputTokens || 0).toLocaleString()}↑)
-                    </span>
-                  </p>
-                </div>
-                <div className="p-1.5 bg-orange-100 rounded-lg">
-                  <Coins className="h-3.5 w-3.5 text-orange-600" />
                 </div>
               </div>
             </CardContent>
@@ -191,21 +160,6 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Token Usage Chart */}
-        <Card>
-          <CardContent className="p-4">
-            {tokenUsageLoading ? (
-              <Skeleton className="h-80 w-full" />
-            ) : dailyTokenUsage ? (
-              <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
-            ) : (
-              <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
-                No token usage data available for this time range
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
