@@ -98,9 +98,9 @@ export function ExperimentDetailPage() {
                 className="h-6 px-2.5 text-xs bg-blue-500 hover:bg-blue-600 text-white"
                 asChild
               >
-                <Link to={`/experiments/${id}/ide`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
+                <Link to={`/experiments/${id}/tracker`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
                   <ExternalLink className="h-3 w-3" />
-                  <span>Open in IDE</span>
+                  <span>Track Progress</span>
                 </Link>
               </Button>
             </div>
@@ -109,9 +109,16 @@ export function ExperimentDetailPage() {
             </p>
           </div>
         </div>
-        <Badge variant={STATUS_VARIANTS[experiment.status]}>
-          {experiment.status}
-        </Badge>
+        <div className="flex items-center gap-3">
+          {runStatuses && runStatuses.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium">{runStatuses.length}</span> iterations
+            </div>
+          )}
+          <Badge variant={STATUS_VARIANTS[experiment.status]}>
+            {experiment.status}
+          </Badge>
+        </div>
       </div>
 
       {/* Experiment Details */}
@@ -189,7 +196,7 @@ export function ExperimentDetailPage() {
               {runStatuses && runStatuses.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
                   <h3 className="text-base font-semibold mb-6">
-                    Statistics ({runStatuses.length} iterations)
+                    Statistics
                   </h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>

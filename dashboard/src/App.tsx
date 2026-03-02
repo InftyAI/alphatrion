@@ -12,7 +12,7 @@ import { ExperimentDetailPage } from './pages/experiments/[id]';
 import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
-import { ExperimentIDEPage } from './pages/experiments/ide/[id]';
+import { ExperimentIDEPage } from './pages/experiments/tracker/[id]';
 import { ArtifactsPage } from './pages/artifacts';
 import type { Team } from './types';
 
@@ -169,8 +169,8 @@ function App() {
       <UserProvider user={currentUser}>
         <SelectionContext.Provider value={selectionValue}>
           <Routes>
-            {/* IDE view - full page without layout */}
-            <Route path="experiments/:id/ide" element={<ExperimentIDEPage />} />
+            {/* Tracker view - full page without layout */}
+            <Route path="experiments/:id/tracker" element={<ExperimentIDEPage />} />
 
             {/* Main app with layout */}
             <Route path="/" element={<Layout />}>
