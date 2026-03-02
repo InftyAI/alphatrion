@@ -339,13 +339,13 @@ export function ExperimentDetailPage() {
                         </span>
                       </h4>
                       <ResponsiveContainer width="100%" height={280}>
-                        <PieChart margin={{ top: 20, bottom: 10 }}>
+                        <PieChart margin={{ top: 5, bottom: 10 }}>
                           <Pie
                             data={runStatsData}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
-                            cy="50%"
+                            cy="45%"
                             outerRadius={70}
                             label={({ name, value }) => `${name}: ${value}`}
                             style={{ fontSize: '10px' }}
@@ -379,7 +379,7 @@ export function ExperimentDetailPage() {
                           )}
                         </h4>
                         <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={iterationHistogramData} margin={{ top: 20, right: 15, left: 5, bottom: 70 }}>
+                          <BarChart data={iterationHistogramData} margin={{ top: 35, right: 15, left: 5, bottom: 70 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis
                               dataKey="range"
