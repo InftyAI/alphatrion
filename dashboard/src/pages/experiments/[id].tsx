@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
-import { useRunStatistics, useRunDurations } from '../../hooks/use-run-statistics';
+import { useRunDurations } from '../../hooks/use-run-statistics';
 import {
   Card,
   CardContent,
@@ -32,18 +32,15 @@ export function ExperimentDetailPage() {
 
   const { data: experiment, isLoading: experimentLoading, error: experimentError } = useExperiment(id!);
 
-  // Fetch run statuses for statistics - optimized to only fetch status field
-  const { data: runStatuses } = useRunStatistics(id!);
-
-  // Fetch run durations for calculating average iteration time
+  // Fetch run durations (includes both status and duration)
   const { data: runDurations } = useRunDurations(id!);
 
   // Calculate run statistics for pie chart - optimized to single pass
   const runStatsData = useMemo(() => {
-    if (!runStatuses || runStatuses.length === 0) return [];
+    if (!runDurations || runDurations.length === 0) return [];
 
     // Single pass through the array instead of 6 separate filter operations
-    const counts = runStatuses.reduce((acc, run) => {
+    const counts = runDurations.reduce((acc, run) => {
       acc[run.status] = (acc[run.status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -58,7 +55,7 @@ export function ExperimentDetailPage() {
     ];
 
     return stats.filter(s => s.value > 0);
-  }, [runStatuses]);
+  }, [runDurations]);
 
   // Prepare iteration duration histogram data
   const { iterationHistogramData, iterationStats } = useMemo(() => {
@@ -241,9 +238,9 @@ export function ExperimentDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {runStatuses && runStatuses.length > 0 && (
+          {runDurations && runDurations.length > 0 && (
             <div className="text-sm text-muted-foreground">
-              <span className="font-medium">{runStatuses.length}</span> iterations
+              <span className="font-medium">{runDurations.length}</span> iterations
             </div>
           )}
           <Badge variant={STATUS_VARIANTS[experiment.status]}>
@@ -324,7 +321,7 @@ export function ExperimentDetailPage() {
               )}
 
               {/* Statistics Section */}
-              {runStatuses && runStatuses.length > 0 && runStatsData.length > 0 && (
+              {runDurations && runDurations.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
                   <h3 className="text-base font-semibold mb-6">
                     Statistics
@@ -335,7 +332,7 @@ export function ExperimentDetailPage() {
                       <h4 className="text-sm font-medium mb-3 text-muted-foreground">
                         Iteration Status
                         <span className="ml-2 text-xs font-normal">
-                          ({runStatuses.length} total)
+                          ({runDurations.length} total)
                         </span>
                       </h4>
                       <ResponsiveContainer width="100%" height={280}>
