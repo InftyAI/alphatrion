@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from datetime import UTC, datetime
 
 from alphatrion.runtime.contextvars import current_run_id
 from alphatrion.runtime.runtime import global_runtime
@@ -50,9 +51,13 @@ class Run:
         if self.cancelled():
             return
 
+        run = self._runtime._metadb.get_run(run_id=self.id)
+        duration = (
+            datetime.now(UTC) - run.created_at.replace(tzinfo=UTC)
+        ).total_seconds()
+
         self._runtime.metadb.update_run(
-            run_id=self._id,
-            status=Status.COMPLETED,
+            run_id=self._id, status=Status.COMPLETED, duration=duration
         )
         self._result = self._task.result()
 
@@ -60,9 +65,14 @@ class Run:
         # TODO: we should wait for the task to be actually cancelled
         # and catch the CancelledError exception in the task function.
         self._task.cancel()
+
+        run = self._runtime._metadb.get_run(run_id=self.id)
+        duration = (
+            datetime.now(UTC) - run.created_at.replace(tzinfo=UTC)
+        ).total_seconds()
+
         self._runtime.metadb.update_run(
-            run_id=self._id,
-            status=Status.CANCELLED,
+            run_id=self._id, status=Status.CANCELLED, duration=duration
         )
 
     def cancelled(self) -> bool:
