@@ -1,8 +1,8 @@
 """add duration for run
 
-Revision ID: 0f417c7cf4d3
-Revises: 766c8b7fe6c5
-Create Date: 2026-03-02 20:20:56.486059
+Revision ID: 203ea6f694b7
+Revises: f23c33ff866a
+Create Date: 2026-03-02 21:01:24.249403
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0f417c7cf4d3'
-down_revision: Union[str, Sequence[str], None] = '766c8b7fe6c5'
+revision: str = '203ea6f694b7'
+down_revision: Union[str, Sequence[str], None] = 'f23c33ff866a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
