@@ -197,6 +197,7 @@ class GraphQLResolvers:
                 user_id=r.user_id,
                 experiment_id=r.experiment_id,
                 meta=r.meta,
+                duration=r.duration,
                 status=GraphQLStatusEnum[Status(r.status).name],
                 created_at=r.created_at,
             )
@@ -214,6 +215,7 @@ class GraphQLResolvers:
                 user_id=run.user_id,
                 experiment_id=run.experiment_id,
                 meta=run.meta,
+                duration=run.duration,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 created_at=run.created_at,
             )
