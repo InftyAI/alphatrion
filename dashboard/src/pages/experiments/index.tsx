@@ -24,6 +24,7 @@ import { MultiSelectDropdown } from '../../components/ui/multi-select-dropdown';
 import { Pagination } from '../../components/ui/pagination';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
+import { formatDuration } from '../../lib/format';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
@@ -322,7 +323,7 @@ export function ExperimentsPage() {
                       </TableCell>
                       <TableCell className="py-3 text-sm text-foreground tabular-nums text-right">
                         {experiment.duration > 0
-                          ? `${experiment.duration.toFixed(2)}s`
+                          ? formatDuration(experiment.duration)
                           : '-'}
                       </TableCell>
                       <TableCell className="py-3 text-sm text-muted-foreground text-right">
