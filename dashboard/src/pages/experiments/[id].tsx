@@ -14,7 +14,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import type { Status } from '../../types';
 import { formatDuration } from '../../lib/format';
 
@@ -226,118 +226,122 @@ export function ExperimentDetailPage() {
                 </div>
               )}
 
-              {/* Iteration Statistics */}
+              {/* Statistics Section */}
               {runStatuses && runStatuses.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
                   <h3 className="text-base font-semibold mb-6">
                     Statistics
                   </h3>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart margin={{ top: 20, bottom: 5 }}>
-                      <Pie
-                        data={runStatsData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="48%"
-                        outerRadius={48}
-                        label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '10px' }}
-                      >
-                        {runStatsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          fontSize: '10px',
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Iteration Status Pie Chart */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-3 text-muted-foreground">
+                        Iteration Status
+                        <span className="ml-2 text-xs font-normal">
+                          ({runStatuses.length} total)
+                        </span>
+                      </h4>
+                      <ResponsiveContainer width="100%" height={240}>
+                        <PieChart margin={{ top: 10, bottom: 5 }}>
+                          <Pie
+                            data={runStatsData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="45%"
+                            outerRadius={60}
+                            label={({ name, value }) => `${name}: ${value}`}
+                            style={{ fontSize: '10px' }}
+                          >
+                            {runStatsData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              fontSize: '10px',
+                              backgroundColor: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '6px',
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
 
-              {/* Iteration Duration Chart */}
-              {iterationDurationData.length > 0 && (
-                <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-3">
-                    Iteration Duration
-                    {iterationStats && (
-                      <span className="ml-3 text-xs font-normal text-muted-foreground">
-                        Mean: {formatDuration(iterationStats.mean)} • Median: {formatDuration(iterationStats.median)}
-                      </span>
+                    {/* Iteration Duration Bar Chart */}
+                    {iterationDurationData.length > 0 && (
+                      <div>
+                        <h4 className="text-sm font-medium mb-3 text-muted-foreground">
+                          Iteration Duration
+                          {iterationStats && (
+                            <span className="ml-2 text-xs font-normal">
+                              • Mean: {formatDuration(iterationStats.mean)} • Median: {formatDuration(iterationStats.median)}
+                            </span>
+                          )}
+                        </h4>
+                        <ResponsiveContainer width="100%" height={240}>
+                          <BarChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis
+                              dataKey="iteration"
+                              label={{ value: 'Iteration', position: 'insideBottom', offset: -10, style: { fontSize: '11px' } }}
+                              tick={{ fontSize: '10px' }}
+                              stroke="hsl(var(--muted-foreground))"
+                            />
+                            <YAxis
+                              label={{ value: 'Duration', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
+                              tick={{ fontSize: '10px' }}
+                              stroke="hsl(var(--muted-foreground))"
+                              tickFormatter={(value) => formatDuration(value)}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                fontSize: '11px',
+                                backgroundColor: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '6px',
+                              }}
+                              labelFormatter={(value) => `Iteration ${value}`}
+                              formatter={(value: number) => [formatDuration(value), 'Duration']}
+                            />
+                            {iterationStats && (
+                              <>
+                                <ReferenceLine
+                                  y={iterationStats.mean}
+                                  stroke="#3b82f6"
+                                  strokeDasharray="3 3"
+                                  strokeWidth={2}
+                                  label={{
+                                    value: 'Mean',
+                                    position: 'right',
+                                    fontSize: '10px',
+                                    fill: '#3b82f6',
+                                    fontWeight: 600
+                                  }}
+                                />
+                                <ReferenceLine
+                                  y={iterationStats.median}
+                                  stroke="#f59e0b"
+                                  strokeDasharray="3 3"
+                                  strokeWidth={2}
+                                  label={{
+                                    value: 'Median',
+                                    position: 'right',
+                                    fontSize: '10px',
+                                    fill: '#f59e0b',
+                                    fontWeight: 600
+                                  }}
+                                />
+                              </>
+                            )}
+                            <Bar dataKey="duration" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
                     )}
-                  </h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis
-                        dataKey="iteration"
-                        label={{ value: 'Iteration', position: 'insideBottom', offset: -10, style: { fontSize: '11px' } }}
-                        tick={{ fontSize: '10px' }}
-                        stroke="hsl(var(--muted-foreground))"
-                      />
-                      <YAxis
-                        label={{ value: 'Duration (s)', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
-                        tick={{ fontSize: '10px' }}
-                        stroke="hsl(var(--muted-foreground))"
-                        tickFormatter={(value) => formatDuration(value)}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          fontSize: '11px',
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                        }}
-                        labelFormatter={(value) => `Iteration ${value}`}
-                        formatter={(value: number) => [formatDuration(value), 'Duration']}
-                      />
-                      {iterationStats && (
-                        <>
-                          <ReferenceLine
-                            y={iterationStats.mean}
-                            stroke="#3b82f6"
-                            strokeDasharray="3 3"
-                            strokeWidth={2}
-                            label={{
-                              value: 'Mean',
-                              position: 'right',
-                              fontSize: '11px',
-                              fill: '#3b82f6',
-                              fontWeight: 600
-                            }}
-                          />
-                          <ReferenceLine
-                            y={iterationStats.median}
-                            stroke="#f59e0b"
-                            strokeDasharray="3 3"
-                            strokeWidth={2}
-                            label={{
-                              value: 'Median',
-                              position: 'right',
-                              fontSize: '11px',
-                              fill: '#f59e0b',
-                              fontWeight: 600
-                            }}
-                          />
-                        </>
-                      )}
-                      <Line
-                        type="monotone"
-                        dataKey="duration"
-                        stroke="#22c55e"
-                        strokeWidth={2}
-                        dot={{ fill: '#22c55e', r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  </div>
                 </div>
               )}
             </CardContent>
