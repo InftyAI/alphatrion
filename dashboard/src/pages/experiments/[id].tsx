@@ -237,16 +237,9 @@ export function ExperimentDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {runDurations && runDurations.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium">{runDurations.length}</span> iterations
-            </div>
-          )}
-          <Badge variant={STATUS_VARIANTS[experiment.status]}>
-            {experiment.status}
-          </Badge>
-        </div>
+        <Badge variant={STATUS_VARIANTS[experiment.status]}>
+          {experiment.status}
+        </Badge>
       </div>
 
       {/* Experiment Details */}
