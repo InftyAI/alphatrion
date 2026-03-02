@@ -338,15 +338,15 @@ export function ExperimentDetailPage() {
                           ({runStatuses.length} total)
                         </span>
                       </h4>
-                      <ResponsiveContainer width="100%" height={240}>
-                        <PieChart margin={{ top: 10, bottom: 5 }}>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart margin={{ top: 20, bottom: 10 }}>
                           <Pie
                             data={runStatsData}
                             dataKey="value"
                             nameKey="name"
                             cx="50%"
-                            cy="45%"
-                            outerRadius={60}
+                            cy="50%"
+                            outerRadius={70}
                             label={({ name, value }) => `${name}: ${value}`}
                             style={{ fontSize: '10px' }}
                           >
@@ -369,7 +369,7 @@ export function ExperimentDetailPage() {
 
                     {/* Iteration Duration Distribution Histogram */}
                     {iterationHistogramData.length > 0 && (
-                      <div className="mt-8">
+                      <div>
                         <h4 className="text-sm font-medium mb-3 text-muted-foreground">
                           Iteration Duration Distribution
                           {iterationStats && (
@@ -378,8 +378,8 @@ export function ExperimentDetailPage() {
                             </span>
                           )}
                         </h4>
-                        <ResponsiveContainer width="100%" height={240}>
-                          <BarChart data={iterationHistogramData} margin={{ top: 5, right: 15, left: 5, bottom: 65 }}>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <BarChart data={iterationHistogramData} margin={{ top: 20, right: 15, left: 5, bottom: 70 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis
                               dataKey="range"
