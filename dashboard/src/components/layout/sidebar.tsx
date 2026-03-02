@@ -32,11 +32,11 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-48 flex-col bg-card">
       {/* Logo */}
-      <Link to="/" className="flex h-14 items-center px-3 hover:bg-accent/50 transition-colors">
+      <Link to="/" className="flex h-12 items-center px-3 hover:bg-accent/50 transition-colors">
         <img
           src={logoImage}
           alt="Hiverge Logo"
-          className="h-8 w-auto"
+          className="h-6 w-auto"
         />
       </Link>
 

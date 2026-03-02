@@ -76,14 +76,14 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
       </div>
 
       <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 5 }}>
+        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 25 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
             tick={{ fontSize: 10 }}
             angle={-45}
             textAnchor="end"
-            height={100}
+            height={85}
           />
           <YAxis
             tick={{ fontSize: 10 }}
@@ -121,9 +121,10 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '10px' }}
+            wrapperStyle={{ fontSize: '12px', paddingTop: '5px' }}
             iconType="circle"
-            iconSize={8}
+            iconSize={10}
+            verticalAlign="bottom"
           />
           <Line
             type="monotone"
