@@ -26,8 +26,12 @@ export async function getConfig(): Promise<Config> {
     },
   });
 
-  // Fallback to /api/config (CLI mode)
-  if (!response.ok) {
+  // Check if response is actually JSON (not HTML from SPA fallback)
+  const contentType = response.headers.get('content-type');
+  const isJson = contentType?.includes('application/json');
+
+  // Fallback to /api/config (CLI mode) if not JSON or not ok
+  if (!response.ok || !isJson) {
     response = await fetch('/api/config', {
       cache: 'no-store',
       headers: {

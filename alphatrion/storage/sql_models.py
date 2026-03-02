@@ -225,15 +225,10 @@ class ExperimentLabel(Base):
 
 class ContentSnapshot(Base):
     __tablename__ = "content_snapshots"
-    __table_args__ = (
-        Index("ix_content_snapshots_trial_id", "trial_id"),
-        Index("ix_content_snapshots_trial_id_is_del", "trial_id", "is_del"),
-    )
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False, name="experiment_id")
-    trial_id = Column(UUID(as_uuid=True), nullable=False, name="trial_id")
     run_id = Column(
         UUID(as_uuid=True), nullable=True, comment="Run ID, null for seed content"
     )
