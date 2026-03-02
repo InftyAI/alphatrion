@@ -277,6 +277,12 @@ class ExperimentLabel(Base):
 
 class ContentSnapshot(Base):
     __tablename__ = "content_snapshots"
+    __table_args__ = (
+        Index("ix_content_snapshots_experiment_id_is_del", "experiment_id", "is_del"),
+        Index("ix_content_snapshots_experiment_id_content_uid", "experiment_id", "content_uid"),
+        Index("ix_content_snapshots_experiment_id_created_at", "experiment_id", "created_at"),
+        Index("ix_content_snapshots_team_id", "team_id"),
+    )
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False, name="team_id")
@@ -316,7 +322,11 @@ class ContentSnapshot(Base):
 
 class ImageBuildCache(Base):
     __tablename__ = "image_build_cache"
-    __table_args__ = (Index("ix_image_build_cache_hash", "content_hash", unique=True),)
+    __table_args__ = (
+        Index("ix_image_build_cache_hash", "content_hash", unique=True),
+        Index("ix_image_build_cache_type_valid", "image_type", "is_valid"),
+        Index("ix_image_build_cache_last_hit_at", "last_hit_at"),
+    )
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     content_hash = Column(String(64), nullable=False, comment="SHA256 hex digest")
