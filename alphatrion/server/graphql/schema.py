@@ -114,7 +114,7 @@ class Query:
         self, experiment_id: strawberry.ID, page: int = 0, page_size: int = 200
     ) -> list[ContentSnapshot]:
         return GraphQLResolvers.list_content_snapshots(
-            trial_id=str(experiment_id), page=page, page_size=page_size
+            experiment_id=str(experiment_id), page=page, page_size=page_size
         )
 
     @strawberry.field
@@ -131,18 +131,18 @@ class Query:
     )
 
     @strawberry.field
-    def batch_trial_fitness(
-        self, trial_ids: list[str]
+    def batch_experiment_fitness(
+        self, experiment_ids: list[str]
     ) -> list[ExperimentFitnessSummary]:
         """Batch-fetch fitness values for multiple experiments in one query."""
-        return GraphQLResolvers.batch_trial_fitness(trial_ids=trial_ids)
+        return GraphQLResolvers.batch_experiment_fitness(experiment_ids=experiment_ids)
 
     @strawberry.field
     def content_lineage(
         self, experiment_id: strawberry.ID, content_uid: str
     ) -> list[ContentSnapshot]:
         return GraphQLResolvers.get_content_lineage(
-            trial_id=str(experiment_id), content_uid=content_uid
+            experiment_id=str(experiment_id), content_uid=content_uid
         )
 
     # WILL BE DEPRECATED --- IGNORE ---
@@ -150,13 +150,13 @@ class Query:
     @strawberry.field
     def repo_file_tree(self, experiment_id: strawberry.ID) -> RepoFileTree:
         """Get the file tree structure for an experiment's repository."""
-        return GraphQLResolvers.get_repo_file_tree(trial_id=str(experiment_id))
+        return GraphQLResolvers.get_repo_file_tree(experiment_id=str(experiment_id))
 
     @strawberry.field
     def repo_file_content(self, experiment_id: strawberry.ID, file_path: str) -> RepoFileContent:
         """Get the content of a specific file from an experiment's repository."""
         return GraphQLResolvers.get_repo_file_content(
-            trial_id=str(experiment_id), file_path=file_path
+            experiment_id=str(experiment_id), file_path=file_path
         )
 
     @strawberry.field

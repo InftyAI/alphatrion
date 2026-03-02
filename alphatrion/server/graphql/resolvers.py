@@ -628,7 +628,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def batch_trial_fitness(
+    def batch_experiment_fitness(
         experiment_ids: list[str],
     ) -> list[ExperimentFitnessSummary]:
         """Batch-fetch fitness values for multiple experiments in one query."""
@@ -639,7 +639,7 @@ class GraphQLResolvers:
             ExperimentFitnessSummary(
                 experiment_id=eid,
                 fitness_values=[
-                    s["fitness"] for s in grouped.get(uuid.UUID(tid), [])
+                    s["fitness"] for s in grouped.get(uuid.UUID(eid), [])
                     if s["fitness"] is not None
                 ],
             )
