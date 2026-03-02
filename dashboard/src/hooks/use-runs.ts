@@ -31,6 +31,7 @@ export function useRuns(
       return data.runs;
     },
     enabled: enabled && !!experimentId,
+    staleTime: 30000, // Cache for 30 seconds
     // Poll when any run is active
     refetchInterval: (query) => {
       const runs = query.state.data;

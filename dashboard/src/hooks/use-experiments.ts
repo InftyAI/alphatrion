@@ -62,6 +62,7 @@ export function useExperiment(experimentId: string, options?: { enabled?: boolea
       return data.experiment;
     },
     enabled: enabled && !!experimentId,
+    staleTime: 30000, // Cache for 30 seconds
     // Poll when experiment is active
     refetchInterval: (query) => {
       const experiment = query.state.data;

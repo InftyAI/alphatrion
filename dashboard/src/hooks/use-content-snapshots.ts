@@ -14,6 +14,7 @@ export function useContentSnapshotsSummary(experimentId: string | null, options?
         queryFn: () => fetchContentSnapshotsSummary({ experimentId: experimentId! }),
         enabled: !!experimentId,
         refetchInterval: options?.refetchInterval,
+        staleTime: 60000, // Cache for 1 minute
     });
 
     return { snapshots: data ?? [], isLoading, error };
