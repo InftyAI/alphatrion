@@ -75,15 +75,15 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
-        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 20 }}>
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={chartData} margin={{ left: 0, right: 15, top: 15, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
             tick={{ fontSize: 10 }}
             angle={-45}
             textAnchor="end"
-            height={85}
+            height={100}
           />
           <YAxis
             tick={{ fontSize: 10 }}
