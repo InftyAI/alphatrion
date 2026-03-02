@@ -198,6 +198,30 @@ export const queries = {
     }
   `,
 
+  // Lightweight experiment query without metrics for detail page
+  getExperimentBasic: `
+    query GetExperimentBasic($id: ID!) {
+      experiment(id: $id) {
+        id
+        teamId
+        userId
+        name
+        description
+        kind
+        meta
+        params
+        labels {
+          name
+          value
+        }
+        duration
+        status
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
   listRuns: `
     query ListRuns($experimentId: ID!, $page: Int, $pageSize: Int) {
       runs(experimentId: $experimentId, page: $page, pageSize: $pageSize) {

@@ -9,7 +9,7 @@ import { useExperiment } from './use-experiments';
  * - availableMetrics: Array of unique metric keys across all runs
  */
 export function useRunMetrics(experimentId: string) {
-  const { data: experiment, ...rest } = useExperiment(experimentId);
+  const { data: experiment, ...rest } = useExperiment(experimentId, { includeMetrics: true });
 
   const { runMetrics, availableMetrics } = useMemo(() => {
     const metrics = experiment?.metrics || [];

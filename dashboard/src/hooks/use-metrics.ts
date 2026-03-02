@@ -7,7 +7,7 @@ import { useExperiment } from './use-experiments';
  * Metrics are now part of the Experiment object
  */
 export function useMetrics(experimentId: string) {
-  const { data: experiment, ...rest } = useExperiment(experimentId);
+  const { data: experiment, ...rest } = useExperiment(experimentId, { includeMetrics: true });
 
   return {
     ...rest,
@@ -19,7 +19,7 @@ export function useMetrics(experimentId: string) {
  * Hook to group metrics by key for easier chart rendering
  */
 export function useGroupedMetrics(experimentId: string) {
-  const { data: experiment, ...rest } = useExperiment(experimentId);
+  const { data: experiment, ...rest } = useExperiment(experimentId, { includeMetrics: true });
 
   const groupedMetrics: GroupedMetrics = useMemo(() => {
     const grouped: GroupedMetrics = {};

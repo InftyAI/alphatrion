@@ -45,15 +45,16 @@ export function useExperiments(
 /**
  * Hook to fetch a single experiment by ID
  * Polls every 5s when experiment is RUNNING or PENDING
+ * Uses lightweight query without metrics for better performance
  */
-export function useExperiment(experimentId: string, options?: { enabled?: boolean }) {
-  const { enabled = true } = options || {};
+export function useExperiment(experimentId: string, options?: { enabled?: boolean; includeMetrics?: boolean }) {
+  const { enabled = true, includeMetrics = false } = options || {};
 
   return useQuery({
-    queryKey: ['experiment', experimentId],
+    queryKey: ['experiment', experimentId, includeMetrics],
     queryFn: async () => {
       const data = await graphqlQuery<GetExperimentResponse>(
-        queries.getExperiment,
+        includeMetrics ? queries.getExperiment : queries.getExperimentBasic,
         { id: experimentId }
       );
       return data.experiment;
