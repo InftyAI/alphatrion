@@ -2,7 +2,16 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import declarative_base
@@ -79,7 +88,7 @@ class TeamMember(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -88,7 +97,11 @@ class TeamMember(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
-    __table_args__ = (UniqueConstraint("team_id", "user_id", name="unique_team_user"),)
+    __table_args__ = (
+        # Prevents duplicate team memberships and creates index on (team_id, user_id)
+        # This index covers queries filtering by team_id (via leftmost prefix rule)
+        UniqueConstraint("team_id", "user_id", name="unique_team_user"),
+    )
 
 
 class ExperimentType(enum.IntEnum):
@@ -140,6 +153,17 @@ class Experiment(Base):
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
+    __table_args__ = (
+        # For get_exp_by_name() - line 407-412: (team_id, name, is_del)
+        Index("idx_experiment_team_name", "team_id", "name", "is_del"),
+        # For list_exps_by_team_id() - line 428-429: (team_id, is_del) +
+        # ORDER BY created_at
+        # For list_exps_by_timeframe() - line 521-528: (team_id, created_at range,
+        # is_del)
+        # For count_experiments() - line 507-515: (team_id, is_del)
+        Index("idx_experiment_team_active_time", "team_id", "is_del", "created_at"),
+    )
+
 
 class Run(Base):
     __tablename__ = "runs"
@@ -170,6 +194,14 @@ class Run(Base):
     )
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
+    __table_args__ = (
+        # For list_runs_by_exp_id() - line 592: (experiment_id, is_del) +
+        # ORDER BY created_at
+        Index("idx_run_experiment_active", "experiment_id", "is_del", "created_at"),
+        # For count_runs() - line 606: (team_id, is_del)
+        Index("idx_run_team_active", "team_id", "is_del"),
+    )
+
 
 # class Model(Base):
 #     __tablename__ = "models"
@@ -196,7 +228,6 @@ class Run(Base):
 
 class Metric(Base):
     __tablename__ = "metrics"
-    __table_args__ = (UniqueConstraint("run_id", "key", name="idx_unique_metric"),)
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)
@@ -205,6 +236,17 @@ class Metric(Base):
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
+
+    __table_args__ = (
+        # For list_metrics_by_experiment_id() - line 639: filter + ORDER BY created_at
+        Index("idx_metric_experiment_time", "experiment_id", "created_at"),
+        # For list_metrics_by_run_id() - line 650: filter + ORDER BY created_at
+        # Note: UniqueConstraint below provides (run_id, key) index, but not optimal
+        # for ORDER BY created_at
+        Index("idx_metric_run_time", "run_id", "created_at"),
+        # Unique constraint for data integrity
+        UniqueConstraint("run_id", "key", name="idx_unique_metric"),
+    )
 
 
 class ExperimentLabel(Base):
@@ -221,4 +263,14 @@ class ExperimentLabel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        # For list_labels_by_exp_id() - line 446: filter by experiment_id
+        # For list_exps_by_label() join - line 464-474: join + filter by
+        # label_name/value
+        # This composite index covers both via leftmost prefix rule
+        Index(
+            "idx_experiment_label_lookup", "experiment_id", "label_name", "label_value"
+        ),
     )
