@@ -14,7 +14,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import type { Status } from '../../types';
 import { formatDuration } from '../../lib/format';
 
@@ -60,16 +60,36 @@ export function ExperimentDetailPage() {
     return stats.filter(s => s.value > 0);
   }, [runStatuses]);
 
-  // Calculate average iteration time for completed runs only
-  const avgIterationTime = useMemo(() => {
-    if (!runDurations || runDurations.length === 0) return null;
+  // Prepare iteration duration data for chart
+  const iterationDurationData = useMemo(() => {
+    if (!runDurations || runDurations.length === 0) return [];
 
-    const completedRuns = runDurations.filter(run => run.status === 'COMPLETED' && run.duration > 0);
-    if (completedRuns.length === 0) return null;
+    const completedRuns = runDurations
+      .map((run, index) => ({
+        iteration: index + 1,
+        duration: run.status === 'COMPLETED' && run.duration > 0 ? run.duration : null,
+        status: run.status,
+      }))
+      .filter(run => run.duration !== null);
 
-    const totalDuration = completedRuns.reduce((sum, run) => sum + run.duration, 0);
-    return totalDuration / completedRuns.length;
+    return completedRuns;
   }, [runDurations]);
+
+  // Calculate statistics for display
+  const iterationStats = useMemo(() => {
+    if (iterationDurationData.length === 0) return null;
+
+    const durations = iterationDurationData.map(d => d.duration!);
+    const mean = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+
+    const sorted = [...durations].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const median = sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+
+    return { mean, median };
+  }, [iterationDurationData]);
 
   if (experimentLoading) {
     return (
@@ -151,14 +171,6 @@ export function ExperimentDetailPage() {
                   <dd className="mt-1.5 text-foreground text-sm">
                     {experiment.duration > 0
                       ? formatDuration(experiment.duration)
-                      : '-'}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avg Iteration Time</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">
-                    {avgIterationTime !== null && avgIterationTime > 0
-                      ? formatDuration(avgIterationTime)
                       : '-'}
                   </dd>
                 </div>
@@ -246,6 +258,85 @@ export function ExperimentDetailPage() {
                       />
                       <Legend wrapperStyle={{ fontSize: '10px' }} />
                     </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Iteration Duration Chart */}
+              {iterationDurationData.length > 0 && (
+                <div className="mt-5 pt-5 border-t">
+                  <h3 className="text-base font-semibold mb-3">
+                    Iteration Duration
+                    {iterationStats && (
+                      <span className="ml-3 text-xs font-normal text-muted-foreground">
+                        Mean: {formatDuration(iterationStats.mean)} • Median: {formatDuration(iterationStats.median)}
+                      </span>
+                    )}
+                  </h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis
+                        dataKey="iteration"
+                        label={{ value: 'Iteration', position: 'insideBottom', offset: -10, style: { fontSize: '11px' } }}
+                        tick={{ fontSize: '10px' }}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <YAxis
+                        label={{ value: 'Duration (s)', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
+                        tick={{ fontSize: '10px' }}
+                        stroke="hsl(var(--muted-foreground))"
+                        tickFormatter={(value) => formatDuration(value)}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          fontSize: '11px',
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                        }}
+                        labelFormatter={(value) => `Iteration ${value}`}
+                        formatter={(value: number) => [formatDuration(value), 'Duration']}
+                      />
+                      {iterationStats && (
+                        <>
+                          <ReferenceLine
+                            y={iterationStats.mean}
+                            stroke="#3b82f6"
+                            strokeDasharray="3 3"
+                            strokeWidth={2}
+                            label={{
+                              value: 'Mean',
+                              position: 'right',
+                              fontSize: '11px',
+                              fill: '#3b82f6',
+                              fontWeight: 600
+                            }}
+                          />
+                          <ReferenceLine
+                            y={iterationStats.median}
+                            stroke="#f59e0b"
+                            strokeDasharray="3 3"
+                            strokeWidth={2}
+                            label={{
+                              value: 'Median',
+                              position: 'right',
+                              fontSize: '11px',
+                              fill: '#f59e0b',
+                              fontWeight: 600
+                            }}
+                          />
+                        </>
+                      )}
+                      <Line
+                        type="monotone"
+                        dataKey="duration"
+                        stroke="#22c55e"
+                        strokeWidth={2}
+                        dot={{ fill: '#22c55e', r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               )}
