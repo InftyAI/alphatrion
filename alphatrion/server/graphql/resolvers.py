@@ -586,7 +586,6 @@ class GraphQLResolvers:
             ContentSnapshot(
                 id=s.uuid,
                 team_id=s.team_id,
-                project_id=s.project_id,
                 experiment_id=s.experiment_id,
                 run_id=s.run_id,
                 content_uid=s.content_uid,
@@ -604,18 +603,17 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_content_snapshots_summary(
-        trial_id: str, page: int = 0, page_size: int = 10000
+        experiment_id: str, page: int = 0, page_size: int = 10000
     ) -> list[ContentSnapshotSummary]:
         """Returns lightweight content snapshots without content_text for charts."""
         metadb = runtime.storage_runtime().metadb
-        snapshots = metadb.list_content_snapshots_summary_by_trial_id(
-            trial_id=uuid.UUID(trial_id), page=page, page_size=page_size
+        snapshots = metadb.list_content_snapshots_summary_by_experiment_id(
+            experiment_id=uuid.UUID(experiment_id), page=page, page_size=page_size
         )
         return [
             ContentSnapshotSummary(
                 id=s["uuid"],
                 team_id=s["team_id"],
-                project_id=s["project_id"],
                 experiment_id=s["experiment_id"],
                 run_id=s["run_id"],
                 content_uid=s["content_uid"],
@@ -656,7 +654,6 @@ class GraphQLResolvers:
             return ContentSnapshot(
                 id=snapshot.uuid,
                 team_id=snapshot.team_id,
-                project_id=snapshot.project_id,
                 experiment_id=snapshot.experiment_id,
                 run_id=snapshot.run_id,
                 content_uid=snapshot.content_uid,
@@ -683,7 +680,6 @@ class GraphQLResolvers:
             ContentSnapshot(
                 id=s.uuid,
                 team_id=s.team_id,
-                project_id=s.project_id,
                 experiment_id=s.experiment_id,
                 run_id=s.run_id,
                 content_uid=s.content_uid,

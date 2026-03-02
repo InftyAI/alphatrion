@@ -305,7 +305,6 @@ class DailyTokenUsage:
 class ContentSnapshot:
     id: strawberry.ID
     team_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     run_id: strawberry.ID | None
     content_uid: str
@@ -325,7 +324,6 @@ class ContentSnapshotSummary:
 
     id: strawberry.ID
     team_id: strawberry.ID
-    project_id: strawberry.ID
     experiment_id: strawberry.ID
     run_id: strawberry.ID | None
     content_uid: str
