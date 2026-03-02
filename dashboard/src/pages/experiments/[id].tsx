@@ -60,20 +60,25 @@ export function ExperimentDetailPage() {
     return stats.filter(s => s.value > 0);
   }, [runStatuses]);
 
-  // Prepare iteration duration histogram data
-  const { iterationHistogramData, iterationStats } = useMemo(() => {
+  // Adaptive iteration duration data - individual bars or histogram based on count
+  const { iterationDurationData, iterationStats, useHistogram } = useMemo(() => {
     if (!runDurations || runDurations.length === 0) {
-      return { iterationHistogramData: [], iterationStats: null };
+      return { iterationDurationData: [], iterationStats: null, useHistogram: false };
     }
 
-    // Get completed run durations
-    const durations = runDurations
-      .filter(run => run.status === 'COMPLETED' && run.duration > 0)
-      .map(run => run.duration);
+    // Get completed runs with durations
+    const completedRuns = runDurations
+      .map((run, index) => ({
+        iteration: index + 1,
+        duration: run.status === 'COMPLETED' && run.duration > 0 ? run.duration : null,
+      }))
+      .filter(run => run.duration !== null);
 
-    if (durations.length === 0) {
-      return { iterationHistogramData: [], iterationStats: null };
+    if (completedRuns.length === 0) {
+      return { iterationDurationData: [], iterationStats: null, useHistogram: false };
     }
+
+    const durations = completedRuns.map(r => r.duration!);
 
     // Calculate statistics
     const mean = durations.reduce((sum, d) => sum + d, 0) / durations.length;
@@ -83,7 +88,21 @@ export function ExperimentDetailPage() {
       ? (sorted[mid - 1] + sorted[mid]) / 2
       : sorted[mid];
 
-    // Create histogram bins
+    const stats = { mean, median };
+
+    // Threshold for switching to histogram (50 iterations)
+    const HISTOGRAM_THRESHOLD = 50;
+
+    if (completedRuns.length <= HISTOGRAM_THRESHOLD) {
+      // Show individual bars
+      return {
+        iterationDurationData: completedRuns,
+        iterationStats: stats,
+        useHistogram: false,
+      };
+    }
+
+    // Create histogram bins for large datasets
     const min = Math.min(...durations);
     const max = Math.max(...durations);
     const range = max - min;
@@ -115,8 +134,9 @@ export function ExperimentDetailPage() {
     const nonEmptyBins = bins.filter(bin => bin.count > 0);
 
     return {
-      iterationHistogramData: nonEmptyBins,
-      iterationStats: { mean, median },
+      iterationDurationData: nonEmptyBins,
+      iterationStats: stats,
+      useHistogram: true,
     };
   }, [runDurations]);
 
@@ -299,11 +319,11 @@ export function ExperimentDetailPage() {
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Iteration Duration Histogram */}
-                    {iterationHistogramData.length > 0 && (
+                    {/* Iteration Duration - Adaptive Chart */}
+                    {iterationDurationData.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-                          Iteration Duration Distribution
+                          {useHistogram ? 'Iteration Duration Distribution' : 'Iteration Duration'}
                           {iterationStats && (
                             <span className="ml-2 text-xs font-normal">
                               • Avg: {formatDuration(iterationStats.mean)} • Med: {formatDuration(iterationStats.median)}
@@ -311,33 +331,64 @@ export function ExperimentDetailPage() {
                           )}
                         </h4>
                         <ResponsiveContainer width="100%" height={240}>
-                          <BarChart data={iterationHistogramData} margin={{ top: 10, right: 20, left: 10, bottom: 50 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis
-                              dataKey="range"
-                              label={{ value: 'Duration Range', position: 'insideBottom', offset: -35, style: { fontSize: '11px' } }}
-                              tick={{ fontSize: '9px', angle: -45, textAnchor: 'end' }}
-                              stroke="hsl(var(--muted-foreground))"
-                              height={60}
-                            />
-                            <YAxis
-                              label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
-                              tick={{ fontSize: '10px' }}
-                              stroke="hsl(var(--muted-foreground))"
-                              allowDecimals={false}
-                            />
-                            <Tooltip
-                              contentStyle={{
-                                fontSize: '11px',
-                                backgroundColor: 'hsl(var(--card))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '6px',
-                              }}
-                              labelFormatter={(value) => `Duration: ${value}`}
-                              formatter={(value: number) => [value, 'Iterations']}
-                            />
-                            <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                          </BarChart>
+                          {useHistogram ? (
+                            // Histogram for large datasets
+                            <BarChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 50 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                              <XAxis
+                                dataKey="range"
+                                label={{ value: 'Duration Range', position: 'insideBottom', offset: -35, style: { fontSize: '11px' } }}
+                                tick={{ fontSize: '9px', angle: -45, textAnchor: 'end' }}
+                                stroke="hsl(var(--muted-foreground))"
+                                height={60}
+                              />
+                              <YAxis
+                                label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
+                                tick={{ fontSize: '10px' }}
+                                stroke="hsl(var(--muted-foreground))"
+                                allowDecimals={false}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  fontSize: '11px',
+                                  backgroundColor: 'hsl(var(--card))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px',
+                                }}
+                                labelFormatter={(value) => `Duration: ${value}`}
+                                formatter={(value: number) => [value, 'Iterations']}
+                              />
+                              <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          ) : (
+                            // Individual bars for smaller datasets
+                            <BarChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                              <XAxis
+                                dataKey="iteration"
+                                label={{ value: 'Iteration', position: 'insideBottom', offset: -10, style: { fontSize: '11px' } }}
+                                tick={{ fontSize: '10px' }}
+                                stroke="hsl(var(--muted-foreground))"
+                              />
+                              <YAxis
+                                label={{ value: 'Duration', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
+                                tick={{ fontSize: '10px' }}
+                                stroke="hsl(var(--muted-foreground))"
+                                tickFormatter={(value) => formatDuration(value)}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  fontSize: '11px',
+                                  backgroundColor: 'hsl(var(--card))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px',
+                                }}
+                                labelFormatter={(value) => `Iteration ${value}`}
+                                formatter={(value: number) => [formatDuration(value), 'Duration']}
+                              />
+                              <Bar dataKey="duration" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          )}
                         </ResponsiveContainer>
                       </div>
                     )}
