@@ -101,6 +101,9 @@ export function ExperimentDetailPage() {
                 </Link>
               </Button>
             </div>
+            <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+              {experiment.id}
+            </p>
           </div>
         </div>
         <Badge variant={STATUS_VARIANTS[experiment.status]}>
@@ -113,10 +116,6 @@ export function ExperimentDetailPage() {
             <CardContent className="p-4">
               <h3 className="text-base font-semibold mb-3">Details</h3>
               <dl className="grid grid-cols-4 gap-3 text-sm">
-                <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">UUID</dt>
-                  <dd className="mt-1.5 text-foreground font-mono text-sm break-all">{experiment.id}</dd>
-                </div>
                 {experiment.description && (
                   <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
