@@ -576,11 +576,11 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_content_snapshots(
-        trial_id: str, page: int = 0, page_size: int = 1000
+        experiment_id: strawberry.ID, page: int = 0, page_size: int = 1000
     ) -> list[ContentSnapshot]:
         metadb = runtime.storage_runtime().metadb
-        snapshots = metadb.list_content_snapshots_by_trial_id(
-            trial_id=uuid.UUID(trial_id), page=page, page_size=page_size
+        snapshots = metadb.list_content_snapshots_by_experiment_id(
+            experiment_id=uuid.UUID(experiment_id), page=page, page_size=page_size
         )
         return [
             ContentSnapshot(
@@ -603,7 +603,7 @@ class GraphQLResolvers:
 
     @staticmethod
     def list_content_snapshots_summary(
-        experiment_id: str, page: int = 0, page_size: int = 10000
+        experiment_id: strawberry.ID, page: int = 0, page_size: int = 1000000
     ) -> list[ContentSnapshotSummary]:
         """Returns lightweight content snapshots without content_text for charts."""
         metadb = runtime.storage_runtime().metadb
@@ -629,27 +629,27 @@ class GraphQLResolvers:
 
     @staticmethod
     def batch_trial_fitness(
-        trial_ids: list[str],
+        experiment_ids: list[str],
     ) -> list[ExperimentFitnessSummary]:
         """Batch-fetch fitness values for multiple experiments in one query."""
         metadb = runtime.storage_runtime().metadb
-        uuids = [uuid.UUID(tid) for tid in trial_ids]
-        grouped = metadb.list_fitness_by_trial_ids(uuids)
+        uuids = [uuid.UUID(eid) for eid in experiment_ids]
+        grouped = metadb.list_fitness_by_experiment_ids(uuids)
         return [
             ExperimentFitnessSummary(
-                experiment_id=tid,
+                experiment_id=eid,
                 fitness_values=[
                     s["fitness"] for s in grouped.get(uuid.UUID(tid), [])
                     if s["fitness"] is not None
                 ],
             )
-            for tid in trial_ids
+            for eid in experiment_ids
         ]
 
     @staticmethod
-    def get_content_snapshot(id: str) -> ContentSnapshot | None:
+    def get_content_snapshot(id: strawberry.ID) -> ContentSnapshot | None:
         metadb = runtime.storage_runtime().metadb
-        snapshot = metadb.get_content_snapshot(snapshot_id=uuid.UUID(id))
+        snapshot = metadb.get_content_snapshot(snapshot_id=uuid.UUID(str(id)))
         if snapshot:
             return ContentSnapshot(
                 id=snapshot.uuid,
@@ -670,11 +670,11 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_content_lineage(
-        trial_id: str, content_uid: str
+        experiment_id: strawberry.ID, content_uid: str
     ) -> list[ContentSnapshot]:
         metadb = runtime.storage_runtime().metadb
         lineage = metadb.get_content_lineage(
-            trial_id=uuid.UUID(trial_id), content_uid=content_uid
+            experiment_id=uuid.UUID(experiment_id), content_uid=content_uid
         )
         return [
             ContentSnapshot(
@@ -696,38 +696,31 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
-    def delete_trials(ids: list[str]) -> bool:
+    def _get_experiment_repo_name(experiment_id: strawberry.ID) -> str | None:
+        """Get the experiment name to use for GCS repo lookup."""
         metadb = runtime.storage_runtime().metadb
-        for trial_id in ids:
-            metadb.delete_trial(trial_id=uuid.UUID(trial_id))
-        return True
-
-    @staticmethod
-    def _get_trial_repo_name(trial_id: str) -> str | None:
-        """Get the trial name to use for GCS repo lookup."""
-        metadb = runtime.storage_runtime().metadb
-        trial = metadb.get_trial(trial_id=uuid.UUID(trial_id))
-        if trial:
-            return trial.name
+        exp = metadb.get_experiment(experiment_id=uuid.UUID(experiment_id))
+        if exp:
+            return exp.name
         return None
 
     @staticmethod
-    def get_repo_file_tree(trial_id: str) -> RepoFileTree:
-        """Get the file tree structure for a trial's repository."""
+    def get_repo_file_tree(experiment_id: strawberry.ID) -> RepoFileTree:
+        """Get the file tree structure for an experiment's repository."""
         try:
-            # Get trial name to use for GCS path
-            trial_name = GraphQLResolvers._get_trial_repo_name(trial_id)
-            if not trial_name:
+            # Get experiment name to use for GCS path
+            experiment_name = GraphQLResolvers._get_experiment_repo_name(experiment_id)
+            if not experiment_name:
                 return RepoFileTree(exists=False, error="Experiment not found")
 
             repo_service = GCSRepoService.get_instance()
 
-            # Check if repo exists using trial name
-            if not repo_service.repo_exists(trial_name):
+            # Check if repo exists using experiment name
+            if not repo_service.repo_exists(experiment_name):
                 return RepoFileTree(exists=False)
 
             # Get file tree
-            tree_dict = repo_service.get_file_tree(trial_name)
+            tree_dict = repo_service.get_file_tree(experiment_name)
             if tree_dict is None:
                 return RepoFileTree(exists=False)
 
@@ -747,22 +740,22 @@ class GraphQLResolvers:
             return RepoFileTree(exists=True, root=root)
 
         except Exception as e:
-            logger.error(f"Error getting repo file tree for trial {trial_id}: {e}")
+            logger.error(f"Error getting repo file tree for experiment {experiment_id}: {e}")
             return RepoFileTree(exists=False, error=str(e))
 
     @staticmethod
-    def get_repo_file_content(trial_id: str, file_path: str) -> RepoFileContent:
-        """Get the content of a specific file from a trial's repository."""
+    def get_repo_file_content(experiment_id: strawberry.ID, file_path: str) -> RepoFileContent:
+        """Get the content of a specific file from an experiment's repository."""
         try:
-            # Get trial name to use for GCS path
-            trial_name = GraphQLResolvers._get_trial_repo_name(trial_id)
-            if not trial_name:
+            # Get experiment name to use for GCS path
+            experiment_name = GraphQLResolvers._get_experiment_repo_name(experiment_id)
+            if not experiment_name:
                 return RepoFileContent(path=file_path, error="Experiment not found")
 
             repo_service = GCSRepoService.get_instance()
 
-            # Get file content using trial name
-            content = repo_service.get_file_content(trial_name, file_path)
+            # Get file content using experiment name
+            content = repo_service.get_file_content(experiment_name, file_path)
             if content is None:
                 return RepoFileContent(
                     path=file_path,
@@ -780,7 +773,7 @@ class GraphQLResolvers:
 
         except Exception as e:
             logger.error(
-                f"Error getting repo file content for trial {trial_id}, "
+                f"Error getting repo file content for experiment {experiment_id}, "
                 f"file {file_path}: {e}"
             )
             return RepoFileContent(path=file_path, error=str(e))
@@ -850,13 +843,13 @@ class GraphQLResolvers:
             return RepoFileContent(path=file_path, error=str(e))
 
     @staticmethod
-    def list_metric_keys(experiment_id: str) -> list[str]:
+    def list_metric_keys(experiment_id: strawberry.ID) -> list[str]:
         metadb = runtime.storage_runtime().metadb
         return metadb.list_metric_keys_by_exp_id(exp_id=uuid.UUID(experiment_id))
 
     @staticmethod
     def list_metrics_by_key(
-        experiment_id: str, key: str, max_points: int | None = None
+        experiment_id: strawberry.ID, key: str, max_points: int | None = None
     ) -> list[Metric]:
         """Get metrics for a specific experiment filtered by key."""
         metadb = runtime.storage_runtime().metadb
