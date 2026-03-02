@@ -177,6 +177,7 @@ class Run(Base):
         nullable=True,
         comment="Additional metadata for the run",
     )
+    duration = Column(Float, default=0.0, comment="Duration of the run in seconds")
     status = Column(
         Integer,
         default=Status.PENDING,

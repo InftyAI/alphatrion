@@ -220,15 +220,23 @@ async def test_create_experiment_with_run():
     async with CraftExperiment.start(name="first-experiment") as exp:
         start_time = datetime.now()
 
-        exp.run(lambda: fake_work(exp.id))
+        run1 = exp.run(lambda: fake_work(exp.id))
         assert len(exp._runs) == 1
 
-        exp.run(lambda: fake_work(exp.id))
+        run2 = exp.run(lambda: fake_work(exp.id))
         assert len(exp._runs) == 2
 
         await exp.wait()
         assert datetime.now() - start_time >= timedelta(seconds=3)
         assert len(exp._runs) == 0
+
+        run1_obj = run1._get_obj()
+        assert run1_obj.status == Status.COMPLETED
+        assert run1_obj.duration >= 3.0
+
+        run2_obj = run2._get_obj()
+        assert run2_obj.status == Status.COMPLETED
+        assert run2_obj.duration >= 3.0
 
 
 @pytest.mark.asyncio
@@ -256,12 +264,16 @@ async def test_create_experiment_with_run_cancelled():
 
         run_0_obj = run_0._get_obj()
         assert run_0_obj.status == Status.COMPLETED
+        assert run_0_obj.duration >= 1.0
         run_1_obj = run_1._get_obj()
         assert run_1_obj.status == Status.CANCELLED
+        assert run_1_obj.duration >= 2.0
         run_2_obj = run_2._get_obj()
         assert run_2_obj.status == Status.CANCELLED
+        assert run_2_obj.duration >= 2.0
         run_3_obj = run_3._get_obj()
         assert run_3_obj.status == Status.CANCELLED
+        assert run_3_obj.duration >= 2.0
 
 
 @pytest.mark.asyncio
