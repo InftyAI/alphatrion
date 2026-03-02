@@ -659,9 +659,8 @@ class SQLStore(MetaStore):
 
     def create_content_snapshot(
         self,
-        project_id: uuid.UUID,
+        team_id: uuid.UUID,
         experiment_id: uuid.UUID,
-        trial_id: uuid.UUID,
         run_id: uuid.UUID | None,
         content_uid: str,
         content_text: str,
@@ -674,9 +673,8 @@ class SQLStore(MetaStore):
     ) -> uuid.UUID:
         with self._session() as session:
             new_snapshot = ContentSnapshot(
-                project_id=project_id,
+                team_id=team_id,
                 experiment_id=experiment_id,
-                trial_id=trial_id,
                 run_id=run_id,
                 content_uid=content_uid,
                 content_text=content_text,
@@ -703,27 +701,27 @@ class SQLStore(MetaStore):
             )
 
     def get_content_snapshot_by_uid(
-        self, trial_id: uuid.UUID, content_uid: str
+        self, experiment_id: uuid.UUID, content_uid: str
     ) -> ContentSnapshot | None:
         with self._session() as session:
             return (
                 session.query(ContentSnapshot)
                 .filter(
-                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.experiment_id == experiment_id,
                     ContentSnapshot.content_uid == content_uid,
                     ContentSnapshot.is_del == 0,
                 )
                 .first()
             )
 
-    def list_content_snapshots_by_trial_id(
-        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 1000
+    def list_content_snapshots_by_experiment_id(
+        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 1000
     ) -> list[ContentSnapshot]:
         with self._session() as session:
             return (
                 session.query(ContentSnapshot)
                 .filter(
-                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.experiment_id == experiment_id,
                     ContentSnapshot.is_del == 0,
                 )
                 .offset(page * page_size)
@@ -731,8 +729,8 @@ class SQLStore(MetaStore):
                 .all()
             )
 
-    def list_content_snapshots_summary_by_trial_id(
-        self, trial_id: uuid.UUID, page: int = 0, page_size: int = 10000
+    def list_content_snapshots_summary_by_experiment_id(
+        self, experiment_id: uuid.UUID, page: int = 0, page_size: int = 10000
     ) -> list[dict]:
         """
         Returns lightweight content snapshot data without content_text and evaluation.
@@ -742,9 +740,8 @@ class SQLStore(MetaStore):
             results = (
                 session.query(
                     ContentSnapshot.uuid,
-                    ContentSnapshot.project_id,
+                    ContentSnapshot.team_id,
                     ContentSnapshot.experiment_id,
-                    ContentSnapshot.trial_id,
                     ContentSnapshot.run_id,
                     ContentSnapshot.content_uid,
                     ContentSnapshot.parent_uid,
@@ -755,7 +752,7 @@ class SQLStore(MetaStore):
                     ContentSnapshot.created_at,
                 )
                 .filter(
-                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.experiment_id == experiment_id,
                     ContentSnapshot.is_del == 0,
                 )
                 .order_by(ContentSnapshot.created_at.asc())
@@ -766,9 +763,8 @@ class SQLStore(MetaStore):
             return [
                 {
                     "uuid": r.uuid,
-                    "project_id": r.project_id,
+                    "team_id": r.team_id,
                     "experiment_id": r.experiment_id,
-                    "trial_id": r.trial_id,
                     "run_id": r.run_id,
                     "content_uid": r.content_uid,
                     "parent_uid": r.parent_uid,
@@ -781,50 +777,50 @@ class SQLStore(MetaStore):
                 for r in results
             ]
 
-    def list_fitness_by_trial_ids(
-        self, trial_ids: list[uuid.UUID]
+    def list_fitness_by_experiment_ids(
+        self, experiment_ids: list[uuid.UUID]
     ) -> dict[uuid.UUID, list[dict]]:
         """
         Batch-fetch fitness values for multiple trials in a single query.
         Returns {trial_id: [{fitness: ..., content_uid: ...}, ...]} for each trial.
         Only fetches the fitness and content_uid columns to minimize payload.
         """
-        if not trial_ids:
+        if not experiment_ids:
             return {}
         with self._session() as session:
             results = (
                 session.query(
-                    ContentSnapshot.trial_id,
+                    ContentSnapshot.experiment_id,
                     ContentSnapshot.content_uid,
                     ContentSnapshot.fitness,
                 )
                 .filter(
-                    ContentSnapshot.trial_id.in_(trial_ids),
+                    ContentSnapshot.experiment_id.in_(experiment_ids),
                     ContentSnapshot.is_del == 0,
                 )
                 .all()
             )
             grouped: dict[uuid.UUID, list[dict]] = {}
             for r in results:
-                grouped.setdefault(r.trial_id, []).append(
+                grouped.setdefault(r.experiment_id, []).append(
                     {"content_uid": r.content_uid, "fitness": r.fitness}
                 )
             return grouped
 
     def get_content_lineage(
-        self, trial_id: uuid.UUID, content_uid: str
+        self, experiment_id: uuid.UUID, content_uid: str
     ) -> list[ContentSnapshot]:
         """
         Get the full lineage of a content snapshot, from the given content_uid
         back to the seed content (content with no parent).
-        Fetches all snapshots for the trial in one query and traverses in Python.
+        Fetches all snapshots for the experiment in one query and traverses in Python.
         Returns list ordered from seed (oldest first) to child.
         """
         with self._session() as session:
             all_snapshots = (
                 session.query(ContentSnapshot)
                 .filter(
-                    ContentSnapshot.trial_id == trial_id,
+                    ContentSnapshot.experiment_id == experiment_id,
                     ContentSnapshot.is_del == 0,
                 )
                 .all()
