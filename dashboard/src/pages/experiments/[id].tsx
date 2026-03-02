@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
-import { useRunStatistics } from '../../hooks/use-run-statistics';
+import { useRunStatistics, useRunDurations } from '../../hooks/use-run-statistics';
 import {
   Card,
   CardContent,
@@ -35,6 +35,9 @@ export function ExperimentDetailPage() {
   // Fetch run statuses for statistics - optimized to only fetch status field
   const { data: runStatuses } = useRunStatistics(id!);
 
+  // Fetch run durations for calculating average iteration time
+  const { data: runDurations } = useRunDurations(id!);
+
   // Calculate run statistics for pie chart - optimized to single pass
   const runStatsData = useMemo(() => {
     if (!runStatuses || runStatuses.length === 0) return [];
@@ -56,6 +59,17 @@ export function ExperimentDetailPage() {
 
     return stats.filter(s => s.value > 0);
   }, [runStatuses]);
+
+  // Calculate average iteration time for completed runs only
+  const avgIterationTime = useMemo(() => {
+    if (!runDurations || runDurations.length === 0) return null;
+
+    const completedRuns = runDurations.filter(run => run.status === 'COMPLETED' && run.duration > 0);
+    if (completedRuns.length === 0) return null;
+
+    const totalDuration = completedRuns.reduce((sum, run) => sum + run.duration, 0);
+    return totalDuration / completedRuns.length;
+  }, [runDurations]);
 
   if (experimentLoading) {
     return (
@@ -137,6 +151,14 @@ export function ExperimentDetailPage() {
                   <dd className="mt-1.5 text-foreground text-sm">
                     {experiment.duration > 0
                       ? formatDuration(experiment.duration)
+                      : '-'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Avg Iteration Time</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">
+                    {avgIterationTime !== null && avgIterationTime > 0
+                      ? formatDuration(avgIterationTime)
                       : '-'}
                   </dd>
                 </div>

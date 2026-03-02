@@ -230,6 +230,7 @@ export const queries = {
         userId
         experimentId
         meta
+        duration
         status
         createdAt
       }
@@ -244,6 +245,7 @@ export const queries = {
         userId
         experimentId
         meta
+        duration
         status
         createdAt
         aggregatedTokens {
@@ -528,6 +530,16 @@ export const queries = {
   listRunStatuses: `
     query ListRunStatuses($experimentId: ID!) {
       runs(experimentId: $experimentId, page: 0, pageSize: 10000) {
+        status
+      }
+    }
+  `,
+
+  // Optimized query for run durations - fetches duration and status
+  listRunDurations: `
+    query ListRunDurations($experimentId: ID!) {
+      runs(experimentId: $experimentId, page: 0, pageSize: 10000) {
+        duration
         status
       }
     }
