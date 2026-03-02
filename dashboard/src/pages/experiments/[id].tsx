@@ -83,37 +83,73 @@ export function ExperimentDetailPage() {
       ? (sorted[mid - 1] + sorted[mid]) / 2
       : sorted[mid];
 
-    // Create histogram bins
-    const min = Math.min(...durations);
-    const max = Math.max(...durations);
-    const range = max - min;
+    // Detect and handle outliers using IQR method
+    const sortedDurations = [...durations].sort((a, b) => a - b);
+    const q1Index = Math.floor(sortedDurations.length * 0.25);
+    const q3Index = Math.floor(sortedDurations.length * 0.75);
+    const q1 = sortedDurations[q1Index];
+    const q3 = sortedDurations[q3Index];
+    const iqr = q3 - q1;
+    const lowerBound = q1 - 1.5 * iqr;
+    const upperBound = q3 + 1.5 * iqr;
 
-    // Determine number of bins with better algorithm
+    // Separate main data and outliers
+    const mainData = durations.filter(d => d >= lowerBound && d <= upperBound);
+    const outliers = durations.filter(d => d < lowerBound || d > upperBound);
+
+    if (mainData.length === 0) {
+      // All data are outliers, treat as normal
+      const min = Math.min(...durations);
+      const max = Math.max(...durations);
+      const range = max - min;
+      const numBins = Math.min(Math.max(5, Math.ceil(Math.sqrt(durations.length))), 15);
+      const binSize = range / numBins;
+
+      const bins: { range: string; count: number; minValue: number; maxValue: number }[] = [];
+      for (let i = 0; i < numBins; i++) {
+        const binMin = min + i * binSize;
+        const binMax = min + (i + 1) * binSize;
+        bins.push({
+          range: `${formatDuration(binMin)}-${formatDuration(binMax)}`,
+          count: 0,
+          minValue: binMin,
+          maxValue: binMax,
+        });
+      }
+
+      durations.forEach(duration => {
+        const binIndex = Math.min(Math.floor((duration - min) / binSize), numBins - 1);
+        bins[binIndex].count++;
+      });
+
+      return {
+        iterationHistogramData: bins.filter(bin => bin.count > 0),
+        iterationStats: { mean, median },
+      };
+    }
+
+    // Create bins for main data distribution
+    const mainMin = Math.min(...mainData);
+    const mainMax = Math.max(...mainData);
+    const mainRange = mainMax - mainMin;
+
+    // Determine number of bins
     let numBins: number;
-
-    if (durations.length < 10) {
-      // For very small datasets, use fixed bins
-      numBins = Math.min(5, durations.length);
-    } else if (durations.length < 30) {
-      // For small datasets, use square root rule
-      numBins = Math.max(5, Math.min(Math.ceil(Math.sqrt(durations.length)), 10));
+    if (mainData.length < 10) {
+      numBins = Math.min(5, mainData.length);
+    } else if (mainData.length < 30) {
+      numBins = Math.max(5, Math.min(Math.ceil(Math.sqrt(mainData.length)), 10));
     } else {
-      // For larger datasets, use Sturges' rule with minimum of 8 bins
-      numBins = Math.max(8, Math.min(Math.ceil(Math.log2(durations.length)) + 1, 20));
+      numBins = Math.max(8, Math.min(Math.ceil(Math.log2(mainData.length)) + 1, 15));
     }
 
-    // If range is very small, reduce bins to avoid too much granularity
-    if (range < numBins * 5) {
-      numBins = Math.max(5, Math.min(numBins, Math.floor(range / 2)));
-    }
+    const binSize = mainRange > 0 ? mainRange / numBins : 1;
 
-    const binSize = range / numBins;
-
-    // Initialize bins
-    const bins: { range: string; count: number; minValue: number; maxValue: number }[] = [];
+    // Initialize bins for main data
+    const bins: { range: string; count: number; minValue: number; maxValue: number; isOutlier?: boolean }[] = [];
     for (let i = 0; i < numBins; i++) {
-      const binMin = min + i * binSize;
-      const binMax = min + (i + 1) * binSize;
+      const binMin = mainMin + i * binSize;
+      const binMax = mainMin + (i + 1) * binSize;
       bins.push({
         range: `${formatDuration(binMin)}-${formatDuration(binMax)}`,
         count: 0,
@@ -122,11 +158,26 @@ export function ExperimentDetailPage() {
       });
     }
 
-    // Fill bins
-    durations.forEach(duration => {
-      const binIndex = Math.min(Math.floor((duration - min) / binSize), numBins - 1);
+    // Fill bins with main data
+    mainData.forEach(duration => {
+      const binIndex = Math.min(Math.floor((duration - mainMin) / binSize), numBins - 1);
       bins[binIndex].count++;
     });
+
+    // Add outlier bin if there are outliers
+    if (outliers.length > 0) {
+      const outlierMin = Math.min(...outliers);
+      const outlierMax = Math.max(...outliers);
+      bins.push({
+        range: outliers.length === 1
+          ? `${formatDuration(outliers[0])} (outlier)`
+          : `${formatDuration(outlierMin)}-${formatDuration(outlierMax)} (outliers)`,
+        count: outliers.length,
+        minValue: outlierMin,
+        maxValue: outlierMax,
+        isOutlier: true,
+      });
+    }
 
     // Filter out empty bins
     const nonEmptyBins = bins.filter(bin => bin.count > 0);
