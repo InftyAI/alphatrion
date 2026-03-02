@@ -123,7 +123,7 @@ class Query:
     ) -> list[ContentSnapshotSummary]:
         """Lightweight content snapshots without content_text for charts."""
         return GraphQLResolvers.list_content_snapshots_summary(
-            trial_id=str(experiment_id), page=page, page_size=page_size
+            experiment_id=str(experiment_id), page=page, page_size=page_size
         )
 
     content_snapshot: ContentSnapshot | None = strawberry.field(
