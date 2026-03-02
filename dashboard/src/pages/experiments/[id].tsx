@@ -88,8 +88,25 @@ export function ExperimentDetailPage() {
     const max = Math.max(...durations);
     const range = max - min;
 
-    // Determine number of bins (using Sturges' rule, capped at 20)
-    const numBins = Math.min(Math.ceil(Math.log2(durations.length)) + 1, 20);
+    // Determine number of bins with better algorithm
+    let numBins: number;
+
+    if (durations.length < 10) {
+      // For very small datasets, use fixed bins
+      numBins = Math.min(5, durations.length);
+    } else if (durations.length < 30) {
+      // For small datasets, use square root rule
+      numBins = Math.max(5, Math.min(Math.ceil(Math.sqrt(durations.length)), 10));
+    } else {
+      // For larger datasets, use Sturges' rule with minimum of 8 bins
+      numBins = Math.max(8, Math.min(Math.ceil(Math.log2(durations.length)) + 1, 20));
+    }
+
+    // If range is very small, reduce bins to avoid too much granularity
+    if (range < numBins * 5) {
+      numBins = Math.max(5, Math.min(numBins, Math.floor(range / 2)));
+    }
+
     const binSize = range / numBins;
 
     // Initialize bins
