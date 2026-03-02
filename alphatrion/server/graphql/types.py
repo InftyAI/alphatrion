@@ -155,6 +155,7 @@ class Run:
     user_id: strawberry.ID
     experiment_id: strawberry.ID
     meta: JSON | None
+    duration: float
     status: GraphQLStatusEnum
     created_at: datetime
 

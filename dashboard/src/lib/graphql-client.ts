@@ -206,6 +206,7 @@ export const queries = {
         userId
         experimentId
         meta
+        duration
         status
         createdAt
       }
@@ -220,6 +221,7 @@ export const queries = {
         userId
         experimentId
         meta
+        duration
         status
         createdAt
         aggregatedTokens {

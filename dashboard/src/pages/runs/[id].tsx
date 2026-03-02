@@ -180,6 +180,16 @@ export function RunDetailPage() {
               </dd>
             </div>
             <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
+              <dd className="mt-1.5 text-foreground font-mono text-sm">
+                {run.duration !== undefined && run.duration > 0 ? (
+                  `${run.duration.toFixed(2)}s`
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </dd>
+            </div>
+            <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
               <dd className="mt-1.5 text-foreground text-sm">
                 {formatDistanceToNow(new Date(run.createdAt), {
