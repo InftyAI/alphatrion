@@ -500,6 +500,15 @@ export const queries = {
     }
   `,
 
+  // Optimized query for run statistics - only fetches status field
+  listRunStatuses: `
+    query ListRunStatuses($experimentId: ID!) {
+      runs(experimentId: $experimentId, page: 0, pageSize: 10000) {
+        status
+      }
+    }
+  `,
+
 };
 
 // Import types for helper functions

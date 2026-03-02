@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
-import { useRuns } from '../../hooks/use-runs';
+import { useRunStatistics } from '../../hooks/use-run-statistics';
 import {
   Card,
   CardContent,
@@ -32,27 +32,30 @@ export function ExperimentDetailPage() {
 
   const { data: experiment, isLoading: experimentLoading, error: experimentError } = useExperiment(id!);
 
-  // Fetch ALL runs for statistics
-  const { data: allRuns } = useRuns(id!, {
-    page: 0,
-    pageSize: 1000, // Large page size to get all runs
-  });
+  // Fetch run statuses for statistics - optimized to only fetch status field
+  const { data: runStatuses } = useRunStatistics(id!);
 
-  // Calculate run statistics for pie chart
+  // Calculate run statistics for pie chart - optimized to single pass
   const runStatsData = useMemo(() => {
-    if (!allRuns || allRuns.length === 0) return [];
+    if (!runStatuses || runStatuses.length === 0) return [];
+
+    // Single pass through the array instead of 6 separate filter operations
+    const counts = runStatuses.reduce((acc, run) => {
+      acc[run.status] = (acc[run.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
     const stats = [
-      { name: 'COMPLETED', value: allRuns.filter(r => r.status === 'COMPLETED').length, color: '#22c55e' },
-      { name: 'RUNNING', value: allRuns.filter(r => r.status === 'RUNNING').length, color: '#3b82f6' },
-      { name: 'FAILED', value: allRuns.filter(r => r.status === 'FAILED').length, color: '#ef4444' },
-      { name: 'PENDING', value: allRuns.filter(r => r.status === 'PENDING').length, color: '#eab308' },
-      { name: 'CANCELLED', value: allRuns.filter(r => r.status === 'CANCELLED').length, color: '#6b7280' },
-      { name: 'UNKNOWN', value: allRuns.filter(r => r.status === 'UNKNOWN').length, color: '#a78bfa' },
+      { name: 'COMPLETED', value: counts.COMPLETED || 0, color: '#22c55e' },
+      { name: 'RUNNING', value: counts.RUNNING || 0, color: '#3b82f6' },
+      { name: 'FAILED', value: counts.FAILED || 0, color: '#ef4444' },
+      { name: 'PENDING', value: counts.PENDING || 0, color: '#eab308' },
+      { name: 'CANCELLED', value: counts.CANCELLED || 0, color: '#6b7280' },
+      { name: 'UNKNOWN', value: counts.UNKNOWN || 0, color: '#a78bfa' },
     ];
 
     return stats.filter(s => s.value > 0);
-  }, [allRuns]);
+  }, [runStatuses]);
 
   if (experimentLoading) {
     return (
@@ -183,9 +186,11 @@ export function ExperimentDetailPage() {
               )}
 
               {/* Iteration Statistics */}
-              {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
+              {runStatuses && runStatuses.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} iterations)</h3>
+                  <h3 className="text-base font-semibold mb-6">
+                    Statistics ({runStatuses.length} iterations)
+                  </h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
