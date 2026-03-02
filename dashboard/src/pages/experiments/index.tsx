@@ -270,7 +270,6 @@ export function ExperimentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
@@ -283,16 +282,13 @@ export function ExperimentsPage() {
                       key={experiment.id}
                       className="hover:bg-accent/50 transition-colors border-b last:border-0"
                     >
-                      <TableCell className="py-3 text-sm font-mono">
+                      <TableCell className="py-3 text-sm font-medium">
                         <Link
                           to={`/experiments/${experiment.id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
                         >
-                          {experiment.id}
+                          {experiment.name}
                         </Link>
-                      </TableCell>
-                      <TableCell className="py-3 text-sm font-medium text-foreground">
-                        {experiment.name}
                       </TableCell>
                       <TableCell className="py-3 text-sm">
                         {experiment.labels && experiment.labels.length > 0 ? (
