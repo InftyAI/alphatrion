@@ -60,36 +60,65 @@ export function ExperimentDetailPage() {
     return stats.filter(s => s.value > 0);
   }, [runStatuses]);
 
-  // Prepare iteration duration data for chart
-  const iterationDurationData = useMemo(() => {
-    if (!runDurations || runDurations.length === 0) return [];
+  // Prepare iteration duration histogram data
+  const { iterationHistogramData, iterationStats } = useMemo(() => {
+    if (!runDurations || runDurations.length === 0) {
+      return { iterationHistogramData: [], iterationStats: null };
+    }
 
-    const completedRuns = runDurations
-      .map((run, index) => ({
-        iteration: index + 1,
-        duration: run.status === 'COMPLETED' && run.duration > 0 ? run.duration : null,
-        status: run.status,
-      }))
-      .filter(run => run.duration !== null);
+    // Get completed run durations
+    const durations = runDurations
+      .filter(run => run.status === 'COMPLETED' && run.duration > 0)
+      .map(run => run.duration);
 
-    return completedRuns;
-  }, [runDurations]);
+    if (durations.length === 0) {
+      return { iterationHistogramData: [], iterationStats: null };
+    }
 
-  // Calculate statistics for display
-  const iterationStats = useMemo(() => {
-    if (iterationDurationData.length === 0) return null;
-
-    const durations = iterationDurationData.map(d => d.duration!);
+    // Calculate statistics
     const mean = durations.reduce((sum, d) => sum + d, 0) / durations.length;
-
     const sorted = [...durations].sort((a, b) => a - b);
     const mid = Math.floor(sorted.length / 2);
     const median = sorted.length % 2 === 0
       ? (sorted[mid - 1] + sorted[mid]) / 2
       : sorted[mid];
 
-    return { mean, median };
-  }, [iterationDurationData]);
+    // Create histogram bins
+    const min = Math.min(...durations);
+    const max = Math.max(...durations);
+    const range = max - min;
+
+    // Determine number of bins (using Sturges' rule, capped at 20)
+    const numBins = Math.min(Math.ceil(Math.log2(durations.length)) + 1, 20);
+    const binSize = range / numBins;
+
+    // Initialize bins
+    const bins: { range: string; count: number; minValue: number; maxValue: number }[] = [];
+    for (let i = 0; i < numBins; i++) {
+      const binMin = min + i * binSize;
+      const binMax = min + (i + 1) * binSize;
+      bins.push({
+        range: `${formatDuration(binMin)}-${formatDuration(binMax)}`,
+        count: 0,
+        minValue: binMin,
+        maxValue: binMax,
+      });
+    }
+
+    // Fill bins
+    durations.forEach(duration => {
+      const binIndex = Math.min(Math.floor((duration - min) / binSize), numBins - 1);
+      bins[binIndex].count++;
+    });
+
+    // Filter out empty bins
+    const nonEmptyBins = bins.filter(bin => bin.count > 0);
+
+    return {
+      iterationHistogramData: nonEmptyBins,
+      iterationStats: { mean, median },
+    };
+  }, [runDurations]);
 
   if (experimentLoading) {
     return (
@@ -270,31 +299,32 @@ export function ExperimentDetailPage() {
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Iteration Duration Bar Chart */}
-                    {iterationDurationData.length > 0 && (
+                    {/* Iteration Duration Histogram */}
+                    {iterationHistogramData.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-                          Iteration Duration
+                          Iteration Duration Distribution
                           {iterationStats && (
                             <span className="ml-2 text-xs font-normal">
-                              • Mean: {formatDuration(iterationStats.mean)} • Median: {formatDuration(iterationStats.median)}
+                              • Avg: {formatDuration(iterationStats.mean)} • Med: {formatDuration(iterationStats.median)}
                             </span>
                           )}
                         </h4>
                         <ResponsiveContainer width="100%" height={240}>
-                          <BarChart data={iterationDurationData} margin={{ top: 10, right: 20, left: 10, bottom: 30 }}>
+                          <BarChart data={iterationHistogramData} margin={{ top: 10, right: 20, left: 10, bottom: 50 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis
-                              dataKey="iteration"
-                              label={{ value: 'Iteration', position: 'insideBottom', offset: -10, style: { fontSize: '11px' } }}
-                              tick={{ fontSize: '10px' }}
+                              dataKey="range"
+                              label={{ value: 'Duration Range', position: 'insideBottom', offset: -35, style: { fontSize: '11px' } }}
+                              tick={{ fontSize: '9px', angle: -45, textAnchor: 'end' }}
                               stroke="hsl(var(--muted-foreground))"
+                              height={60}
                             />
                             <YAxis
-                              label={{ value: 'Duration', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
+                              label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: '11px' } }}
                               tick={{ fontSize: '10px' }}
                               stroke="hsl(var(--muted-foreground))"
-                              tickFormatter={(value) => formatDuration(value)}
+                              allowDecimals={false}
                             />
                             <Tooltip
                               contentStyle={{
@@ -303,40 +333,10 @@ export function ExperimentDetailPage() {
                                 border: '1px solid hsl(var(--border))',
                                 borderRadius: '6px',
                               }}
-                              labelFormatter={(value) => `Iteration ${value}`}
-                              formatter={(value: number) => [formatDuration(value), 'Duration']}
+                              labelFormatter={(value) => `Duration: ${value}`}
+                              formatter={(value: number) => [value, 'Iterations']}
                             />
-                            {iterationStats && (
-                              <>
-                                <ReferenceLine
-                                  y={iterationStats.mean}
-                                  stroke="#3b82f6"
-                                  strokeDasharray="3 3"
-                                  strokeWidth={2}
-                                  label={{
-                                    value: 'Mean',
-                                    position: 'right',
-                                    fontSize: '10px',
-                                    fill: '#3b82f6',
-                                    fontWeight: 600
-                                  }}
-                                />
-                                <ReferenceLine
-                                  y={iterationStats.median}
-                                  stroke="#f59e0b"
-                                  strokeDasharray="3 3"
-                                  strokeWidth={2}
-                                  label={{
-                                    value: 'Median',
-                                    position: 'right',
-                                    fontSize: '10px',
-                                    fill: '#f59e0b',
-                                    fontWeight: 600
-                                  }}
-                                />
-                              </>
-                            )}
-                            <Bar dataKey="duration" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
