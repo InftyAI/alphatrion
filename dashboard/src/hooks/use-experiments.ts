@@ -51,7 +51,9 @@ export function useExperiment(experimentId: string, options?: { enabled?: boolea
   const { enabled = true, includeMetrics = false } = options || {};
 
   return useQuery({
-    queryKey: ['experiment', experimentId, includeMetrics],
+    queryKey: includeMetrics
+      ? ['experiment', experimentId, 'with-metrics']
+      : ['experiment-basic', experimentId],
     queryFn: async () => {
       const data = await graphqlQuery<GetExperimentResponse>(
         includeMetrics ? queries.getExperiment : queries.getExperimentBasic,
