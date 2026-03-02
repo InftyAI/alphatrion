@@ -3,7 +3,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FlaskConical,
-  Package,
   Github,
   User as UserIcon,
 } from 'lucide-react';
@@ -28,11 +27,6 @@ const navItems: NavItem[] = [
     title: 'Experiments',
     href: '/experiments',
     icon: FlaskConical,
-  },
-  {
-    title: 'Artifacts',
-    href: '/artifacts',
-    icon: Package,
   },
 ];
 

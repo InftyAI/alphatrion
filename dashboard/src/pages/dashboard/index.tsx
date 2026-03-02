@@ -89,12 +89,12 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Total Runs */}
+          {/* Total Iterations */}
           <Card>
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">RUNS</p>
+                  <p className="text-xs font-medium text-muted-foreground">ITERATIONS</p>
                   <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">

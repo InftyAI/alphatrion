@@ -106,9 +106,9 @@ export function RunsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Runs</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Iterations</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse and monitor individual runs
+            Browse and monitor individual iterations
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export function RunsPage() {
           <div className="relative w-80">
             <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
-              placeholder="Search runs..."
+              placeholder="Search iterations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
@@ -144,7 +144,7 @@ export function RunsPage() {
             </div>
           ) : !filteredRuns || filteredRuns.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              {searchQuery.trim() ? 'No runs match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} runs found` : 'No runs found'}
+              {searchQuery.trim() ? 'No iterations match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} iterations found` : 'No iterations found'}
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg">
@@ -204,7 +204,7 @@ export function RunsPage() {
               pageSize={PAGE_SIZE}
               totalItems={totalRuns}
               onPageChange={setCurrentPage}
-              itemName="runs"
+              itemName="iterations"
             />
           )}
         </CardContent>

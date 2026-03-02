@@ -180,7 +180,7 @@ export function ExperimentDetailPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="runs">Runs</TabsTrigger>
+          <TabsTrigger value="runs">Iterations</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -273,10 +273,10 @@ export function ExperimentDetailPage() {
                 </div>
               )}
 
-              {/* Run Statistics */}
+              {/* Iteration Statistics */}
               {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
                 <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
+                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} iterations)</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart margin={{ top: 20, bottom: 5 }}>
                       <Pie
@@ -309,7 +309,7 @@ export function ExperimentDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Metrics Chart - All Runs */}
+          {/* Metrics Chart - All Iterations */}
           {metricsLoading ? (
             <Skeleton className="h-80 w-full" />
           ) : groupedMetrics && Object.keys(groupedMetrics).length > 0 ? (
@@ -329,7 +329,7 @@ export function ExperimentDetailPage() {
                 <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
                   {allRuns && allRuns.length > 0
                     ? 'No metrics logged yet'
-                    : 'No runs in this experiment'}
+                    : 'No iterations in this experiment'}
                 </div>
               </CardContent>
             </Card>
@@ -337,7 +337,7 @@ export function ExperimentDetailPage() {
 
         </TabsContent>
 
-        {/* Runs Tab */}
+        {/* Iterations Tab */}
         <TabsContent value="runs" className="space-y-4">
           <Card>
             <CardContent className="p-0">
@@ -347,7 +347,7 @@ export function ExperimentDetailPage() {
                 <div className="relative w-64">
                   <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Search runs..."
+                    placeholder="Search iterations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
@@ -369,11 +369,11 @@ export function ExperimentDetailPage() {
                 </div>
               ) : !runs || runs.length === 0 ? (
                 <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  No runs found
+                  No iterations found
                 </div>
               ) : filteredRuns.length === 0 ? (
                 <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-                  No runs match your search
+                  No iterations match your search
                 </div>
               ) : (
                 <div className="overflow-hidden rounded-lg">
@@ -421,7 +421,7 @@ export function ExperimentDetailPage() {
                   pageSize={PAGE_SIZE}
                   totalItems={totalRuns}
                   onPageChange={setCurrentPage}
-                  itemName="runs"
+                  itemName="iterations"
                 />
               )}
             </CardContent>

@@ -49,16 +49,16 @@ export function Header() {
       }
     } else if (paths[0] === 'runs') {
       if (runId && run) {
-        // Show hierarchy: Experiments > experimentId > Runs > runId
+        // Show hierarchy: Experiments > experimentId > Iterations > runId
         breadcrumbs.push({ label: 'Experiments', href: '/experiments' });
         breadcrumbs.push({
           label: truncateId(run.experimentId),
           href: `/experiments/${run.experimentId}`
         });
-        breadcrumbs.push({ label: 'Runs', href: `/experiments/${run.experimentId}` });
+        breadcrumbs.push({ label: 'Iterations', href: `/experiments/${run.experimentId}` });
         breadcrumbs.push({ label: truncateId(run.id), href: undefined });
       } else {
-        breadcrumbs.push({ label: 'Runs', href: undefined });
+        breadcrumbs.push({ label: 'Iterations', href: undefined });
       }
     } else {
       // Default handling for other routes
