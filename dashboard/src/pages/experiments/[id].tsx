@@ -369,7 +369,7 @@ export function ExperimentDetailPage() {
 
                     {/* Iteration Duration Distribution Histogram */}
                     {iterationHistogramData.length > 0 && (
-                      <div>
+                      <div className="mt-8">
                         <h4 className="text-sm font-medium mb-3 text-muted-foreground">
                           Iteration Duration Distribution
                           {iterationStats && (
