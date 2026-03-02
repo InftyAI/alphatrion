@@ -378,8 +378,8 @@ export function ExperimentDetailPage() {
                             </span>
                           )}
                         </h4>
-                        <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={iterationHistogramData} margin={{ top: 35, right: 15, left: 5, bottom: 70 }}>
+                        <ResponsiveContainer width="100%" height={320}>
+                          <BarChart data={iterationHistogramData} margin={{ top: 55, right: 15, left: 5, bottom: 70 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                             <XAxis
                               dataKey="range"
