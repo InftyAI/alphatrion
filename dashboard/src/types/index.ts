@@ -72,6 +72,7 @@ export interface Run {
   userId: string;
   experimentId: string;
   meta: Record<string, unknown> | null;
+  duration: number;
   status: Status;
   createdAt: string;
   aggregatedTokens: TokenStats;

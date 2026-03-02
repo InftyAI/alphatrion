@@ -270,11 +270,10 @@ export function ExperimentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">ID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Duration</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -319,11 +318,6 @@ export function ExperimentsPage() {
                         <Badge variant={STATUS_VARIANTS[experiment.status]}>
                           {experiment.status}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="py-3 text-sm text-foreground tabular-nums text-right">
-                        {experiment.duration > 0
-                          ? `${experiment.duration.toFixed(2)}s`
-                          : '-'}
                       </TableCell>
                       <TableCell className="py-3 text-sm text-muted-foreground text-right">
                         {formatDistanceToNow(new Date(experiment.createdAt), {

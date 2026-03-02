@@ -188,6 +188,7 @@ class GraphQLResolvers:
                 experiment_id=r.experiment_id,
                 meta=r.meta,
                 status=GraphQLStatusEnum[Status(r.status).name],
+                duration=r.duration,
                 created_at=r.created_at,
             )
             for r in runs
@@ -205,6 +206,7 @@ class GraphQLResolvers:
                 experiment_id=run.experiment_id,
                 meta=run.meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
+                duration=run.duration,
                 created_at=run.created_at,
             )
         return None
