@@ -42,7 +42,10 @@ class ClickHouseSpanExporter(SpanExporter):
             filtered_spans = [
                 span
                 for span in spans
-                if span.attributes and "traceloop.workflow.name" in span.attributes and span.attributes.get("traceloop.span.kind") in ["workflow", "task", "agent", "tool"]
+                if span.attributes
+                and "traceloop.workflow.name" in span.attributes
+                and span.attributes.get("traceloop.span.kind")
+                in ["workflow", "task", "agent", "tool"]
             ]
 
             if not filtered_spans:
