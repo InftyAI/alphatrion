@@ -66,7 +66,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "alphatrion.clickhouse.secretName" . }}
-                  key: password
+                  key: clickhouse-password
             {{- end }}
 
           envFrom:
