@@ -450,7 +450,7 @@ export function ExperimentDetailPage() {
                         <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
                         <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
                         <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Duration</TableHead>
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -475,7 +475,7 @@ export function ExperimentDetailPage() {
                           <TableCell className="py-3 text-sm font-mono">
                             {run.duration != null && run.duration > 0 ? formatDuration(run.duration) : '-'}
                           </TableCell>
-                          <TableCell className="py-3 text-sm text-muted-foreground text-right">
+                          <TableCell className="py-3 text-sm text-muted-foreground">
                             {formatDistanceToNow(new Date(run.createdAt), {
                               addSuffix: true,
                             })}
