@@ -184,7 +184,7 @@ affinity: {}
 
 # Migration job configuration
 migration:
-  enabled: true
+  enabled: false
   resources:
     requests:
       cpu: 100m

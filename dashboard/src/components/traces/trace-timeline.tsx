@@ -59,7 +59,8 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
   const [expandedSpans, setExpandedSpans] = useState<Set<string>>(() => {
     return new Set(spans.filter(s => !s.parentSpanId || s.parentSpanId === '').map(s => s.spanId));
   });
-  const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
+  // Disabled: clicking on spans to show details
+  // const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
 
   const expandAll = () => {
     const allSpanIds = new Set(spans.map(s => s.spanId));
@@ -226,14 +227,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       <div key={span.spanId}>
         {/* Span Row */}
         <div
-          className={`flex items-center border-b border-border hover:bg-muted/30 transition-colors cursor-pointer h-10 ${
-            selectedSpan?.spanId === span.spanId ? 'bg-accent' : ''
-          }`}
-          onClick={(e) => {
-            // Don't trigger if clicking expand button
-            if ((e.target as HTMLElement).closest('button')) return;
-            setSelectedSpan(span);
-          }}
+          className="flex items-center border-b border-border hover:bg-muted/30 transition-colors h-10"
         >
           {/* Left: Span info with expand button */}
           <div
@@ -527,12 +521,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
           {spanTree.map(node => renderSpanNode(node))}
         </div>
 
-        {/* Span Detail Panel */}
-        {selectedSpan && (
+        {/* Span Detail Panel - Disabled */}
+        {/* {selectedSpan && (
           <div className="mt-2">
             {renderSpanDetails(selectedSpan)}
           </div>
-        )}
+        )} */}
       </CardContent>
     </Card>
   );
