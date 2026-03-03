@@ -97,22 +97,26 @@ postgresql:
   # Use existing secret for password (key should be 'password')
   existingSecret: ""
   # Automatically initialize database tables on first run
-  initTables: true
+  initTables: false
 
 # ClickHouse configuration (optional - for tracing)
 clickhouse:
   enabled: false
-  host: ""
+  host: "clickhouse.alphatrion.svc.cluster.local"
   port: 8123
-  database: alphatrion_tracing
-  username: default
-  password: ""
+  database: alphatrion_traces
+  username: alphatrion
+  password: "alphatrion"
   # Use existing secret for password (key should be 'password')
   existingSecret: ""
   # Automatically initialize tables
-  initTables: true
+  initTables: false
   # Enable batch operations for better performance
   enableBatch: true
+  # Cluster name for HA ClickHouse (triggers migration job for ReplicatedMergeTree)
+  # Leave empty for single-node setup (manual table creation required)
+  # Migration job will create replicated tables across the cluster
+  clusterName: ""
 
 # Docker Registry configuration (optional - for artifact storage)
 registry:
@@ -180,7 +184,7 @@ affinity: {}
 
 # Migration job configuration
 migration:
-  enabled: true
+  enabled: false
   resources:
     requests:
       cpu: 100m

@@ -1,0 +1,144 @@
+{{- if .Values.clickhouse.enabled }}
+{{- if .Values.clickhouse.clusterName }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "alphatrion.fullname" . }}-clickhouse-migration
+  labels:
+    {{- include "alphatrion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: clickhouse-migration
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        {{- include "alphatrion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: clickhouse-migration
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: clickhouse-migration
+        image: clickhouse/clickhouse-server:24.3-alpine
+        command:
+        - sh
+        - -c
+        - |
+          set -e
+          echo "=========================================="
+          echo "ClickHouse Cluster Table Migration"
+          echo "=========================================="
+          echo ""
+          echo "Cluster: {{ .Values.clickhouse.clusterName }}"
+          echo "Database: {{ .Values.clickhouse.database }}"
+          echo ""
+
+          # Wait for ClickHouse to be ready
+          echo "Waiting for ClickHouse to be ready..."
+          until clickhouse-client --host {{ .Values.clickhouse.host }} --port 9000 \
+                --user {{ .Values.clickhouse.username }} --password "$CLICKHOUSE_PASSWORD" \
+                --query "SELECT 1" > /dev/null 2>&1; do
+            echo "  Waiting for ClickHouse..."
+            sleep 2
+          done
+          echo "✓ ClickHouse is ready"
+          echo ""
+
+          # Check if cluster exists
+          echo "Checking if cluster '{{ .Values.clickhouse.clusterName }}' exists..."
+          CLUSTER_EXISTS=$(clickhouse-client --host {{ .Values.clickhouse.host }} --port 9000 \
+                          --user {{ .Values.clickhouse.username }} --password "$CLICKHOUSE_PASSWORD" \
+                          --query "SELECT count() FROM system.clusters WHERE cluster='{{ .Values.clickhouse.clusterName }}'" 2>/dev/null || echo "0")
+
+          if [ "$CLUSTER_EXISTS" -eq "0" ]; then
+            echo "✗ Cluster '{{ .Values.clickhouse.clusterName }}' not found!"
+            echo "  Please configure ClickHouse cluster first."
+            exit 1
+          fi
+          echo "✓ Cluster exists"
+          echo ""
+
+          # Drop old non-replicated table if exists
+          echo "Dropping old non-replicated tables (if any)..."
+          clickhouse-client --host {{ .Values.clickhouse.host }} --port 9000 \
+                            --user {{ .Values.clickhouse.username }} --password "$CLICKHOUSE_PASSWORD" \
+                            --query "DROP TABLE IF EXISTS {{ .Values.clickhouse.database }}.otel_spans ON CLUSTER {{ .Values.clickhouse.clusterName }} SYNC" \
+                            2>/dev/null || echo "  No existing table to drop"
+          echo "✓ Old tables dropped"
+          echo ""
+
+          # Create replicated table on cluster
+          echo "Creating replicated table on cluster..."
+          clickhouse-client --host {{ .Values.clickhouse.host }} --port 9000 \
+                            --user {{ .Values.clickhouse.username }} --password "$CLICKHOUSE_PASSWORD" \
+                            --multiquery <<'EOF'
+          CREATE TABLE IF NOT EXISTS {{ .Values.clickhouse.database }}.otel_spans ON CLUSTER {{ .Values.clickhouse.clusterName }} (
+              Timestamp DateTime64(9) CODEC(Delta, ZSTD(1)),
+              TraceId String CODEC(ZSTD(1)),
+              SpanId String CODEC(ZSTD(1)),
+              ParentSpanId String CODEC(ZSTD(1)),
+              SpanName LowCardinality(String) CODEC(ZSTD(1)),
+              SpanKind LowCardinality(String) CODEC(ZSTD(1)),
+              SemanticKind LowCardinality(String) CODEC(ZSTD(1)),
+              ServiceName LowCardinality(String) CODEC(ZSTD(1)),
+              Duration UInt64 CODEC(ZSTD(1)),
+              StatusCode LowCardinality(String) CODEC(ZSTD(1)),
+              StatusMessage String CODEC(ZSTD(1)),
+              TeamId String CODEC(ZSTD(1)),
+              RunId String CODEC(ZSTD(1)),
+              ExperimentId String CODEC(ZSTD(1)),
+              SpanAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
+              ResourceAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
+              Events Nested(
+                  Timestamp DateTime64(9),
+                  Name LowCardinality(String),
+                  Attributes Map(LowCardinality(String), String)
+              ) CODEC(ZSTD(1)),
+              Links Nested(
+                  TraceId String,
+                  SpanId String,
+                  Attributes Map(LowCardinality(String), String)
+              ) CODEC(ZSTD(1)),
+              INDEX idx_trace_id TraceId TYPE bloom_filter(0.001) GRANULARITY 1,
+              INDEX idx_span_id SpanId TYPE bloom_filter(0.001) GRANULARITY 1,
+              INDEX idx_run_id RunId TYPE bloom_filter(0.001) GRANULARITY 1,
+              INDEX idx_team_id TeamId TYPE bloom_filter(0.001) GRANULARITY 1,
+              INDEX idx_semantic_kind SemanticKind TYPE set(0) GRANULARITY 1,
+              INDEX idx_attr_keys mapKeys(SpanAttributes) TYPE bloom_filter(0.01) GRANULARITY 1
+          ) ENGINE = ReplicatedMergeTree('/clickhouse/tables/{shard}/otel_spans', '{replica}')
+          PARTITION BY toDate(Timestamp)
+          ORDER BY (ServiceName, toUnixTimestamp(Timestamp))
+          SETTINGS index_granularity = 8192;
+          EOF
+
+          echo "✓ Replicated table created"
+          echo ""
+
+          # Verify table exists locally
+          echo "Verifying table creation..."
+          TABLE_COUNT=$(clickhouse-client --host {{ .Values.clickhouse.host }} --port 9000 \
+                            --user {{ .Values.clickhouse.username }} --password "$CLICKHOUSE_PASSWORD" \
+                            --query "SELECT count() FROM system.tables WHERE database = '{{ .Values.clickhouse.database }}' AND name = 'otel_spans'")
+
+          if [ "$TABLE_COUNT" -eq "1" ]; then
+            echo "✓ Table 'otel_spans' verified"
+          else
+            echo "✗ Table verification failed!"
+            exit 1
+          fi
+
+          echo ""
+          echo "=========================================="
+          echo "✓ Migration completed successfully!"
+          echo "=========================================="
+        env:
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "alphatrion.clickhouse.secretName" . }}
+              key: clickhouse-password
+{{- end }}
+{{- end }}

@@ -46,6 +46,16 @@ spec:
             {{- end }}
           image: "{{ .Values.dashboard.image.repository }}:{{ .Values.dashboard.image.tag }}"
           imagePullPolicy: {{ .Values.dashboard.image.pullPolicy }}
+
+          # TODO: Remove after quantinuum-nvidia collaboration is done.
+          env:
+            - name: ALPHATRION_DASHBOARD_USER_ID
+              value: {{ .Values.dashboard.userId | quote }}
+            {{- if .Values.dashboard.teamId }}
+            - name: ALPHATRION_DASHBOARD_TEAM_ID
+              value: {{ .Values.dashboard.teamId | quote }}
+            {{- end }}
+
           ports:
             - name: http
               containerPort: 8080

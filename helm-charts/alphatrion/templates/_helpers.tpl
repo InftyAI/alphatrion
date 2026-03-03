@@ -165,7 +165,7 @@ ClickHouse secret name
 {{- if .Values.clickhouse.existingSecret }}
 {{- .Values.clickhouse.existingSecret }}
 {{- else }}
-{{- printf "%s-clickhouse" (include "alphatrion.fullname" .) }}
+{{- include "alphatrion.server.fullname" . }}
 {{- end }}
 {{- end }}
 
