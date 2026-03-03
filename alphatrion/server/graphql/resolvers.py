@@ -2,34 +2,38 @@ import os
 import uuid
 from datetime import datetime
 
-from fastapi import logger
 import httpx
 import strawberry
+from fastapi import logger
 
 from alphatrion import envs
 from alphatrion.artifact import artifact
-from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import Status
 from alphatrion.server.repo.gcs_repo import GCSRepoService, detect_language
 from alphatrion.server.repo.local_repo import LocalRepoService
+from alphatrion.storage import runtime
+from alphatrion.storage.sql_models import Status
 
 from .types import (
-    ContentSnapshot,
-    ContentSnapshotSummary,
     AddUserToTeamInput,
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    ContentSnapshot,
+    ContentSnapshotSummary,
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    ExperimentFitnessSummary,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
     Label,
     Metric,
     RemoveUserFromTeamInput,
+    RepoFileContent,
+    RepoFileEntry,
+    RepoFileTree,
     Run,
     Span,
     Team,
@@ -37,11 +41,6 @@ from .types import (
     TraceLink,
     UpdateUserInput,
     User,
-    RepoFileContent,
-    RepoFileEntry,
-    RepoFileTree,
-    Run,
-    ExperimentFitnessSummary,
 )
 
 
@@ -641,7 +640,8 @@ class GraphQLResolvers:
             ExperimentFitnessSummary(
                 experiment_id=eid,
                 fitness_values=[
-                    s["fitness"] for s in grouped.get(uuid.UUID(eid), [])
+                    s["fitness"]
+                    for s in grouped.get(uuid.UUID(eid), [])
                     if s["fitness"] is not None
                 ],
             )
@@ -742,11 +742,15 @@ class GraphQLResolvers:
             return RepoFileTree(exists=True, root=root)
 
         except Exception as e:
-            logger.error(f"Error getting repo file tree for experiment {experiment_id}: {e}")
+            logger.error(
+                f"Error getting repo file tree for experiment {experiment_id}: {e}"
+            )
             return RepoFileTree(exists=False, error=str(e))
 
     @staticmethod
-    def get_repo_file_content(experiment_id: strawberry.ID, file_path: str) -> RepoFileContent:
+    def get_repo_file_content(
+        experiment_id: strawberry.ID, file_path: str
+    ) -> RepoFileContent:
         """Get the content of a specific file from an experiment's repository."""
         try:
             # Get experiment name to use for GCS path
@@ -788,7 +792,9 @@ class GraphQLResolvers:
 
             # Check if path exists
             if not repo_service.path_exists(path):
-                return RepoFileTree(exists=False, error="Path not found or not a directory")
+                return RepoFileTree(
+                    exists=False, error="Path not found or not a directory"
+                )
 
             # Get file tree
             tree_dict = repo_service.get_file_tree(path)
@@ -877,6 +883,7 @@ class GraphQLResolvers:
             )
             for m in filtered
         ]
+
 
 class GraphQLMutations:
     @staticmethod

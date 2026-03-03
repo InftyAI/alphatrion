@@ -150,7 +150,7 @@ clickhouse:
   database: alphatrion_traces
   username: alphatrion
   password: "alphatrion"  # or use existingSecret
-  initTables: true
+  initTables: false
 
 server:
   env:

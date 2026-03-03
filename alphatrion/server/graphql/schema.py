@@ -6,22 +6,22 @@ from alphatrion.server.graphql.types import (
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    ContentSnapshot,
+    ContentSnapshotSummary,
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    ExperimentFitnessSummary,
     Metric,
     RemoveUserFromTeamInput,
+    RepoFileContent,
+    RepoFileTree,
     Run,
     Span,
     Team,
-    ExperimentFitnessSummary,
     UpdateUserInput,
     User,
-    ContentSnapshot,
-    ContentSnapshotSummary,
-    RepoFileContent,
-    RepoFileTree,
 )
 
 
@@ -153,7 +153,9 @@ class Query:
         return GraphQLResolvers.get_repo_file_tree(experiment_id=str(experiment_id))
 
     @strawberry.field
-    def repo_file_content(self, experiment_id: strawberry.ID, file_path: str) -> RepoFileContent:
+    def repo_file_content(
+        self, experiment_id: strawberry.ID, file_path: str
+    ) -> RepoFileContent:
         """Get the content of a specific file from an experiment's repository."""
         return GraphQLResolvers.get_repo_file_content(
             experiment_id=str(experiment_id), file_path=file_path

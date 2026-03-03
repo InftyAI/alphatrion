@@ -28,7 +28,7 @@ class TraceStore:
             database: Database name
             username: Database username
             password: Database password
-            init_tables: If True, create tables on initialization
+            init_tables: If True, create tables on initialization (single-node only)
         """
         self.database = database
         self._lock = threading.Lock()  # Protect concurrent access to ClickHouse client
@@ -70,7 +70,7 @@ class TraceStore:
             raise
 
     def _create_tables(self) -> None:
-        """Create the otel_spans table if it doesn't exist."""
+        """Create the otel_spans table if it doesn't exist (single-node only)."""
         create_table_sql = f"""
         CREATE TABLE IF NOT EXISTS {self.database}.otel_spans (
             Timestamp DateTime64(9) CODEC(Delta, ZSTD(1)),

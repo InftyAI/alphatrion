@@ -302,6 +302,7 @@ class DailyTokenUsage:
 
 # WILL BE DEPRECATED SOON
 
+
 @strawberry.type
 class ContentSnapshot:
     id: strawberry.ID
@@ -338,7 +339,9 @@ class ContentSnapshotSummary:
 
 @strawberry.type
 class ExperimentFitnessSummary:
-    """Batch fitness data for an experiment — just experiment_id and list of fitness values."""
+    """Batch fitness data for an experiment — just experiment_id and list of
+    fitness values.
+    """
 
     experiment_id: strawberry.ID
     fitness_values: list[JSON]

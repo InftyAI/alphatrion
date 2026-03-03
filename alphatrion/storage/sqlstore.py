@@ -1,5 +1,4 @@
 import datetime
-from math import exp
 import uuid
 
 from sqlalchemy import create_engine
@@ -8,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from alphatrion.storage.metastore import MetaStore
 from alphatrion.storage.sql_models import (
     Base,
+    ContentSnapshot,
     Experiment,
     ExperimentLabel,
     Metric,
@@ -16,7 +16,6 @@ from alphatrion.storage.sql_models import (
     Team,
     TeamMember,
     User,
-    ContentSnapshot,
 )
 
 
@@ -655,7 +654,6 @@ class SQLStore(MetaStore):
         )
         session.close()
         return metrics
-
 
     def create_content_snapshot(
         self,

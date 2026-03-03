@@ -110,9 +110,13 @@ clickhouse:
   # Use existing secret for password (key should be 'password')
   existingSecret: ""
   # Automatically initialize tables
-  initTables: true
+  initTables: false
   # Enable batch operations for better performance
   enableBatch: true
+  # Cluster name for HA ClickHouse (triggers migration job for ReplicatedMergeTree)
+  # Leave empty for single-node setup (manual table creation required)
+  # Migration job will create replicated tables across the cluster
+  clusterName: ""
 
 # Docker Registry configuration (optional - for artifact storage)
 registry:

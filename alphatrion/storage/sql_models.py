@@ -276,12 +276,21 @@ class ExperimentLabel(Base):
         ),
     )
 
+
 class ContentSnapshot(Base):
     __tablename__ = "content_snapshots"
     __table_args__ = (
         Index("ix_content_snapshots_experiment_id_is_del", "experiment_id", "is_del"),
-        Index("ix_content_snapshots_experiment_id_content_uid", "experiment_id", "content_uid"),
-        Index("ix_content_snapshots_experiment_id_created_at", "experiment_id", "created_at"),
+        Index(
+            "ix_content_snapshots_experiment_id_content_uid",
+            "experiment_id",
+            "content_uid",
+        ),
+        Index(
+            "ix_content_snapshots_experiment_id_created_at",
+            "experiment_id",
+            "created_at",
+        ),
         Index("ix_content_snapshots_team_id", "team_id"),
     )
 
@@ -339,6 +348,4 @@ class ImageBuildCache(Base):
         DateTime(timezone=True), nullable=True, comment="Last cache hit"
     )
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    is_valid = Column(
-        Integer, default=1, comment="1 for valid, 0 for invalidated"
-    )
+    is_valid = Column(Integer, default=1, comment="1 for valid, 0 for invalidated")
