@@ -217,6 +217,11 @@ class Experiment(ABC):
         # to avoid confusion.
         if exp_obj and exp_obj.status != Status.COMPLETED:
             self._id = exp_obj.uuid
+            # reset to running status.
+            self._runtime._metadb.update_experiment(
+                experiment_id=self._id,
+                status=Status.RUNNING,
+            )
         elif exp_obj and exp_obj.status == Status.COMPLETED:
             raise RuntimeError(
                 f"Experiment with name '{name}' already exists and is completed. \

@@ -178,6 +178,16 @@ async def test_experiment_with_done_with_cancel():
 
     assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
 
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        run = exp.run(lambda: asyncio.sleep(2))
+        exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp.id)
+        # will be reset to running
+        assert exp_obj.status == Status.RUNNING
+
+    # finally should be completed after context exit
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.COMPLETED
+
 
 @pytest.mark.asyncio
 async def test_experiment_with_wait():
