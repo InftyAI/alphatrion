@@ -4,7 +4,7 @@ import {
   FlaskConical,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import logoImage from '../../assets/logo.svg';
+import logoImage from '../../assets/logotype.svg';
 
 interface NavItem {
   title: string;
@@ -32,12 +32,13 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-48 flex-col bg-card">
       {/* Logo */}
-      <Link to="/" className="flex h-12 items-center px-3 hover:bg-accent/50 transition-colors">
+      <Link to="/" className="flex h-14 items-center gap-2.5 px-3 hover:bg-accent/50 transition-colors border-b">
         <img
           src={logoImage}
           alt="Hiverge Logo"
-          className="h-6 w-auto"
+          className="h-7 w-auto"
         />
+        <span className="text-lg font-semibold text-foreground">Hiverge</span>
       </Link>
 
       {/* Navigation */}
