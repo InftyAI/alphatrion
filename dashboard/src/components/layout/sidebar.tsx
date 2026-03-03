@@ -45,16 +45,10 @@ export function Sidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
 
-          // Special handling for Experiments: also active when on runs pages
-          // since runs are conceptually part of experiments
-          let isActive =
+          // Check if current route matches this nav item
+          const isActive =
             location.pathname === item.href ||
             (item.href !== '/' && location.pathname.startsWith(item.href));
-
-          if (item.href === '/experiments') {
-            isActive = isActive ||
-              location.pathname.startsWith('/runs');
-          }
 
           return (
             <Link

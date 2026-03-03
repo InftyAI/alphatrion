@@ -36,10 +36,8 @@ export function RunDetailPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Get metrics and traces from the nested run data
-  const runMetrics = run?.metrics || [];
+  // Get traces from the nested run data
   const traces = run?.spans || [];
-  const metricsLoading = runLoading;
   const tracesLoading = runLoading;
   const tracesError = runError;
 
@@ -120,11 +118,11 @@ export function RunDetailPage() {
 
   return (
     <div className="space-y-4">
-      {/* Run Header */}
+      {/* Iteration Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Run Details
+            Iteration Details
           </h1>
           <p className="mt-1 text-muted-foreground font-mono text-sm">
             {run.id}
@@ -148,7 +146,7 @@ export function RunDetailPage() {
           <Card>
         <CardContent className="p-4">
           <h3 className="text-base font-semibold mb-3">Overview</h3>
-          <dl className="grid grid-cols-3 gap-3 text-sm">
+          <dl className="grid grid-cols-2 gap-3 text-sm">
             {hasExecutionResult && (
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Execution Result</dt>
@@ -164,21 +162,6 @@ export function RunDetailPage() {
                 </dd>
               </div>
             )}
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">
-                {run.aggregatedTokens?.totalTokens !== undefined && run.aggregatedTokens.totalTokens > 0 ? (
-                  <>
-                    {Number(run.aggregatedTokens.totalTokens).toLocaleString()}
-                    <span className="text-muted-foreground text-xs ml-1">
-                      ({Number(run.aggregatedTokens.inputTokens || 0).toLocaleString()}↓ {Number(run.aggregatedTokens.outputTokens || 0).toLocaleString()}↑)
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </dd>
-            </div>
             <div>
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
               <dd className="mt-1.5 text-foreground text-sm">
@@ -210,29 +193,6 @@ export function RunDetailPage() {
           )}
         </CardContent>
       </Card>
-
-          {/* Metrics */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-base font-semibold mb-3">Metrics</h3>
-              {metricsLoading ? (
-                <Skeleton className="h-32 w-full" />
-              ) : runMetrics.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
-                  No metrics logged for this run
-                </div>
-              ) : (
-                <dl className="grid grid-cols-3 gap-3 text-sm">
-                  {runMetrics.map((metric) => (
-                    <div key={metric.id}>
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.key}</dt>
-                      <dd className="mt-1.5 text-foreground font-mono text-sm">{metric.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Traces Tab */}
