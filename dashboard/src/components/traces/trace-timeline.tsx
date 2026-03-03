@@ -31,6 +31,16 @@ const getSpanType = (span: Span): { label: string; icon: JSX.Element; badgeColor
   const name = span.spanName.toLowerCase();
   const kind = span.spanKind;
 
+  // Priority 1: Check explicit semantic attributes (traceloop.span.kind)
+  // These are more reliable than name-based guessing
+  if (span.spanAttributes?.['traceloop.span.kind'] === 'workflow') {
+    return { label: 'Workflow', icon: <GitBranch className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
+  }
+  if (span.spanAttributes?.['traceloop.span.kind'] === 'task') {
+    return { label: 'Task', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' };
+  }
+
+  // Priority 2: Fallback to name-based detection for spans without semantic attributes
   if (name.includes('openai') || name.includes('chat') || name.includes('completion')) {
     return { label: 'LLM', icon: <Bot className="h-3 w-3" />, badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' };
   }
@@ -39,12 +49,6 @@ const getSpanType = (span: Span): { label: string; icon: JSX.Element; badgeColor
   }
   if (name.includes('db') || name.includes('database') || name.includes('query')) {
     return { label: 'DB', icon: <Database className="h-3 w-3" />, badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
-  }
-  if (span.spanAttributes?.['traceloop.span.kind'] === 'workflow') {
-    return { label: 'Workflow', icon: <GitBranch className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
-  }
-  if (span.spanAttributes?.['traceloop.span.kind'] === 'task') {
-    return { label: 'Task', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' };
   }
 
   return { label: 'Span', icon: <Clock className="h-3 w-3" />, badgeColor: 'bg-gray-100 text-gray-700 border-gray-200' };
