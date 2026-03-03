@@ -443,8 +443,8 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
           )}
 
-          {/* Show all attributes (collapsible) */}
-          <details className="mt-2">
+          {/* All Attributes - Disabled for now */}
+          {/* <details className="mt-2">
             <summary className="text-[11px] font-semibold cursor-pointer hover:text-foreground text-muted-foreground py-0.5 uppercase tracking-wide">
               All Attributes ({Object.keys(attrs).length})
             </summary>
@@ -456,7 +456,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                 </div>
               ))}
             </div>
-          </details>
+          </details> */}
         </CardContent>
       </Card>
     );

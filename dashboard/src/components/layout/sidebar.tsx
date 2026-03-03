@@ -46,9 +46,11 @@ export function Sidebar() {
           const Icon = item.icon;
 
           // Check if current route matches this nav item
+          // Special case: /runs/[id] should also highlight "Experiments" nav item
           const isActive =
             location.pathname === item.href ||
-            (item.href !== '/' && location.pathname.startsWith(item.href));
+            (item.href !== '/' && location.pathname.startsWith(item.href)) ||
+            (item.href === '/experiments' && location.pathname.startsWith('/runs'));
 
           return (
             <Link
