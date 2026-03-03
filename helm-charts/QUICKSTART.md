@@ -8,6 +8,7 @@ This guide will help you quickly deploy AlphaTrion on Kubernetes using Helm.
 - Helm 3.0+
 - kubectl configured to access your cluster
 - **PostgreSQL database** (external, version 12 or later)
+- **ClickHouse database** (optional, for tracing - see [Quick ClickHouse Setup](#optional-clickhouse-setup))
 
 ## Quick Install (Local Development)
 
@@ -91,6 +92,50 @@ kubectl port-forward svc/alphatrion-dashboard 8080:80
 ```
 
 Visit http://localhost:8080 in your browser.
+
+## Optional: ClickHouse Setup
+
+If you want to enable tracing support with ClickHouse, you have two options:
+
+### Option A: Single Node (Development/Testing)
+
+```bash
+# 1. Create gp3 storage class (AWS only)
+kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+
+# 2. Deploy single-node ClickHouse
+kubectl apply -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+
+# 3. Verify
+kubectl get pods -n alphatrion -l app=clickhouse
+kubectl exec -n alphatrion clickhouse-0 -- clickhouse-client --query "SELECT version()"
+```
+
+### Option B: High Availability (Production)
+
+For production workloads with automatic failover and data replication:
+
+```bash
+# 1. Create gp3 storage class (AWS only)
+kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+
+# 2. Deploy HA cluster (3 replicas + 3 keeper nodes)
+./helm-charts/clickhouse/deploy-ha.sh
+
+# Or manually:
+kubectl apply -f ./helm-charts/clickhouse/clickhouse-ha.yaml
+```
+
+See [HA Setup Guide](./clickhouse/HA-SETUP.md) for detailed instructions and migration guide.
+
+### Connect AlphaTrion to ClickHouse
+
+```bash
+helm upgrade alphatrion ./helm-charts/alphatrion \
+  -f ./helm-charts/alphatrion/values-with-clickhouse.yaml
+```
+
+For more details, see the [ClickHouse deployment guide](./clickhouse/README.md).
 
 ## Common Operations
 

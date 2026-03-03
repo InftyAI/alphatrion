@@ -1,0 +1,366 @@
+---
+# ConfigMap for ClickHouse cluster configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clickhouse-config
+  namespace: alphatrion
+data:
+  config.xml: |
+    <clickhouse>
+        <logger>
+            <level>information</level>
+            <console>true</console>
+        </logger>
+        <display_name>AlphaTrion ClickHouse Cluster</display_name>
+
+        <!-- ZooKeeper configuration for coordination -->
+        <zookeeper>
+            <node>
+                <host>clickhouse-keeper-0.clickhouse-keeper.alphatrion.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+            <node>
+                <host>clickhouse-keeper-1.clickhouse-keeper.alphatrion.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+            <node>
+                <host>clickhouse-keeper-2.clickhouse-keeper.alphatrion.svc.cluster.local</host>
+                <port>2181</port>
+            </node>
+        </zookeeper>
+
+        <!-- Macros for replication -->
+        <macros>
+            <shard from_env="CLICKHOUSE_SHARD"/>
+            <replica from_env="CLICKHOUSE_REPLICA"/>
+            <cluster>alphatrion_cluster</cluster>
+        </macros>
+
+        <!-- Remote servers (cluster) configuration -->
+        <remote_servers>
+            <alphatrion_cluster>
+                <shard>
+                    <internal_replication>true</internal_replication>
+                    <replica>
+                        <host>clickhouse-0.clickhouse.alphatrion.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                    <replica>
+                        <host>clickhouse-1.clickhouse.alphatrion.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                    <replica>
+                        <host>clickhouse-2.clickhouse.alphatrion.svc.cluster.local</host>
+                        <port>9000</port>
+                    </replica>
+                </shard>
+            </alphatrion_cluster>
+        </remote_servers>
+
+        <!-- Performance tuning -->
+        <max_concurrent_queries>100</max_concurrent_queries>
+        <max_connections>1024</max_connections>
+        <max_server_memory_usage_to_ram_ratio>0.8</max_server_memory_usage_to_ram_ratio>
+        <background_pool_size>16</background_pool_size>
+        <background_schedule_pool_size>16</background_schedule_pool_size>
+    </clickhouse>
+
+---
+# ClickHouse Keeper (ZooKeeper replacement) Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-keeper
+  namespace: alphatrion
+spec:
+  ports:
+  - port: 2181
+    name: client
+    targetPort: 2181
+  - port: 9181
+    name: raft
+    targetPort: 9181
+  selector:
+    app: clickhouse-keeper
+  clusterIP: None
+
+---
+# ClickHouse Keeper StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse-keeper
+  namespace: alphatrion
+spec:
+  serviceName: clickhouse-keeper
+  replicas: 3
+  selector:
+    matchLabels:
+      app: clickhouse-keeper
+  template:
+    metadata:
+      labels:
+        app: clickhouse-keeper
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: clickhouse-keeper
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: clickhouse-keeper
+        image: clickhouse/clickhouse-keeper:24.3-alpine
+        ports:
+        - containerPort: 2181
+          name: client
+        - containerPort: 9181
+          name: raft
+        env:
+        - name: KEEPER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: keeper-data
+          mountPath: /var/lib/clickhouse-keeper
+        - name: keeper-config
+          mountPath: /etc/clickhouse-keeper
+        command:
+        - sh
+        - -c
+        - |
+          # Extract keeper ID from pod name (clickhouse-keeper-0 -> 0)
+          KEEPER_ID=$(echo $KEEPER_ID | sed 's/clickhouse-keeper-//')
+          KEEPER_ID=$((KEEPER_ID + 1))
+
+          # Create keeper config
+          cat > /etc/clickhouse-keeper/keeper_config.xml <<EOF
+          <clickhouse>
+              <listen_host>::</listen_host>
+              <keeper_server>
+                  <tcp_port>2181</tcp_port>
+                  <server_id>${KEEPER_ID}</server_id>
+                  <log_storage_path>/var/lib/clickhouse-keeper/coordination/log</log_storage_path>
+                  <snapshot_storage_path>/var/lib/clickhouse-keeper/coordination/snapshots</snapshot_storage_path>
+
+                  <coordination_settings>
+                      <operation_timeout_ms>10000</operation_timeout_ms>
+                      <session_timeout_ms>30000</session_timeout_ms>
+                      <raft_logs_level>warning</raft_logs_level>
+                  </coordination_settings>
+
+                  <raft_configuration>
+                      <server>
+                          <id>1</id>
+                          <hostname>clickhouse-keeper-0.clickhouse-keeper.alphatrion.svc.cluster.local</hostname>
+                          <port>9181</port>
+                      </server>
+                      <server>
+                          <id>2</id>
+                          <hostname>clickhouse-keeper-1.clickhouse-keeper.alphatrion.svc.cluster.local</hostname>
+                          <port>9181</port>
+                      </server>
+                      <server>
+                          <id>3</id>
+                          <hostname>clickhouse-keeper-2.clickhouse-keeper.alphatrion.svc.cluster.local</hostname>
+                          <port>9181</port>
+                      </server>
+                  </raft_configuration>
+              </keeper_server>
+          </clickhouse>
+          EOF
+
+          # Start keeper
+          exec /usr/bin/clickhouse-keeper --config-file=/etc/clickhouse-keeper/keeper_config.xml
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          tcpSocket:
+            port: 9181
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 10
+        readinessProbe:
+          tcpSocket:
+            port: 9181
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 10
+      volumes:
+      - name: keeper-config
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: keeper-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 10Gi
+
+---
+# ClickHouse Service (ClusterIP for internal communication)
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse
+  namespace: alphatrion
+spec:
+  ports:
+  - port: 8123
+    targetPort: 8123
+    name: http
+  - port: 9000
+    targetPort: 9000
+    name: tcp
+  - port: 9009
+    targetPort: 9009
+    name: interserver
+  selector:
+    app: clickhouse
+  clusterIP: None
+
+---
+# ClickHouse Service (LoadBalancer for external access - optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-external
+  namespace: alphatrion
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8123
+    targetPort: 8123
+    name: http
+  - port: 9000
+    targetPort: 9000
+    name: tcp
+  selector:
+    app: clickhouse
+
+---
+# ClickHouse StatefulSet with 3 replicas
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clickhouse
+  namespace: alphatrion
+spec:
+  serviceName: clickhouse
+  replicas: 3
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+    spec:
+      affinity:
+        podAntiAffinity:
+          # Prefer to schedule pods on different nodes
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: clickhouse
+              topologyKey: kubernetes.io/hostname
+          # Try to schedule pods in different availability zones
+          - weight: 50
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: clickhouse
+              topologyKey: topology.kubernetes.io/zone
+      initContainers:
+      # Wait for ClickHouse Keeper to be ready
+      - name: wait-for-keeper
+        image: alpine:3.19
+        command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache netcat-openbsd
+          until nc -z clickhouse-keeper-0.clickhouse-keeper.alphatrion.svc.cluster.local 2181; do
+            echo "Waiting for ClickHouse Keeper..."
+            sleep 2
+          done
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:24.3-alpine
+        ports:
+        - containerPort: 8123
+          name: http
+        - containerPort: 9000
+          name: tcp
+        - containerPort: 9009
+          name: interserver
+        env:
+        - name: CLICKHOUSE_DB
+          value: "alphatrion_traces"
+        - name: CLICKHOUSE_USER
+          value: "alphatrion"
+        - name: CLICKHOUSE_PASSWORD
+          value: "alphatrion"
+        - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+          value: "1"
+        # Set shard and replica for macros
+        - name: CLICKHOUSE_SHARD
+          value: "01"
+        - name: CLICKHOUSE_REPLICA
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: clickhouse-data
+          mountPath: /var/lib/clickhouse
+        - name: clickhouse-config
+          mountPath: /etc/clickhouse-server/config.d/cluster.xml
+          subPath: config.xml
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 8123
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /ping
+            port: 8123
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+      volumes:
+      - name: clickhouse-config
+        configMap:
+          name: clickhouse-config
+  volumeClaimTemplates:
+  - metadata:
+      name: clickhouse-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 100Gi

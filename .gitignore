@@ -46,5 +46,4 @@ ptest/
 /node_modules/
 
 .claude/
-values-dev.yaml
-values-prod.yaml
+values-*.yaml
