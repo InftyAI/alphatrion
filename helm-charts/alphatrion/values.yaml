@@ -102,15 +102,15 @@ postgresql:
 # ClickHouse configuration (optional - for tracing)
 clickhouse:
   enabled: false
-  host: ""
+  host: "clickhouse.alphatrion.svc.cluster.local"
   port: 8123
   database: alphatrion_traces
-  username: default
-  password: ""
+  username: alphatrion
+  password: "alphatrion"
   # Use existing secret for password (key should be 'password')
   existingSecret: ""
   # Automatically initialize tables
-  initTables: false
+  initTables: true
   # Enable batch operations for better performance
   enableBatch: true
 
