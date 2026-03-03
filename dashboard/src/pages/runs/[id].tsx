@@ -173,8 +173,8 @@ export function RunDetailPage() {
           </dl>
 
 
-          {/* Metadata */}
-          {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
+          {/* Metadata - Disabled for now */}
+          {/* {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
             <div className="mt-5 pt-5 border-t">
               <h3 className="text-base font-semibold mb-3">Metadata</h3>
               <dl className="grid grid-cols-3 gap-3 text-sm">
@@ -190,7 +190,7 @@ export function RunDetailPage() {
                   ))}
               </dl>
             </div>
-          )}
+          )} */}
         </CardContent>
       </Card>
         </TabsContent>

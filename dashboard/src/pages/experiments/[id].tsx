@@ -473,7 +473,7 @@ export function ExperimentDetailPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="py-3 text-sm font-mono">
-                            {run.duration > 0 ? formatDuration(run.duration) : '-'}
+                            {run.duration != null && run.duration > 0 ? formatDuration(run.duration) : '-'}
                           </TableCell>
                           <TableCell className="py-3 text-sm text-muted-foreground text-right">
                             {formatDistanceToNow(new Date(run.createdAt), {
