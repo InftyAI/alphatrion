@@ -18,6 +18,7 @@ import { ArtifactViewer } from '../../components/artifact-viewer';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye } from 'lucide-react';
 import type { Status } from '../../types';
+import { formatDuration } from '../../lib/format';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
@@ -168,6 +169,12 @@ export function RunDetailPage() {
                 {formatDistanceToNow(new Date(run.createdAt), {
                   addSuffix: true,
                 })}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
+              <dd className="mt-1.5 text-foreground text-sm font-mono">
+                {run.duration != null && run.duration > 0 ? formatDuration(run.duration) : '-'}
               </dd>
             </div>
           </dl>
