@@ -273,25 +273,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             <span className="text-[11px] font-mono">{formatDuration(span.duration)}</span>
           </div>
 
-          {/* Middle: Tokens */}
-          <div className="flex-shrink-0 flex items-center whitespace-nowrap text-foreground h-full" style={{ width: '90px', paddingLeft: '8px', paddingRight: '4px' }}>
-            {totalTokens && totalTokens > 0 ? (
-              <div className="flex flex-col justify-center">
-                <div className="font-mono flex items-center text-[11px] leading-tight">
-                  {isAggregated && <span className="inline-block align-middle mr-0.5 text-muted-foreground text-[10px]">∑</span>}
-                  <span>{totalTokens.toLocaleString()}</span>
-                </div>
-                {inputTokens && outputTokens && inputTokens > 0 && outputTokens > 0 && (
-                  <div className="text-muted-foreground text-[9px] font-mono leading-tight mt-0.5">
-                    {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span className="text-muted-foreground/40 text-[11px]">—</span>
-            )}
-          </div>
-
           {/* Right: Timeline bar */}
           <div className="flex-1 relative h-full min-w-0 flex items-center" style={{ paddingLeft: '2px', paddingRight: '8px' }}>
             {renderSpanBar(node)}
@@ -508,9 +489,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
             <div className="flex-shrink-0 flex items-center h-full" style={{ width: '90px', paddingLeft: '8px', paddingRight: '8px' }}>
               Duration
-            </div>
-            <div className="flex-shrink-0 flex items-center h-full" style={{ width: '90px', paddingLeft: '8px', paddingRight: '4px' }}>
-              Tokens
             </div>
             <div className="flex-1 flex items-center h-full" style={{ paddingLeft: '2px', paddingRight: '8px' }}>
               Timeline
