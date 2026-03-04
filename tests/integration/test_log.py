@@ -58,10 +58,13 @@ async def test_log_artifact():
 
             exp_id = exp.id
 
-        got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
-        assert got_exp is not None
-        assert got_exp.name == "first-exp"
-        assert got_exp.status == Status.COMPLETED
+            got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
+            assert got_exp.status == Status.RUNNING
+
+    got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
+    assert got_exp is not None
+    assert got_exp.name == "first-exp"
+    assert got_exp.status == Status.COMPLETED
 
 
 @pytest.mark.asyncio

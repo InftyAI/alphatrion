@@ -1,0 +1,1 @@
+This is a local artifact file.It can be used to test the logging of artifacts.The content can be anything, e.g. a model checkpoint, a dataset, or a log file.
