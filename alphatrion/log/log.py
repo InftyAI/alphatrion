@@ -30,6 +30,7 @@ async def log_artifact(
         If a folder is provided, all files in the folder will be logged.
         Don't support nested folders currently, only files in the first level
         of the folder will be logged.
+    :param repo_name: the name of the repository to log the artifact to.
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
            If want to save something, make sure it's under the paths.
@@ -63,9 +64,13 @@ async def log_artifact(
     )
 
 
-# log_params is used to save a set of parameters, which is a dict of key-value pairs.
-# should be called after starting a Experiment.
 async def log_params(params: dict):
+    """
+    Log parameters to the database.
+    Support in Experiment level currently, should be called after starting a Experiment.
+
+    :param params: a dict of key-value pairs to log as parameters.
+    """
     exp_id = current_exp_id.get()
     if exp_id is None:
         raise RuntimeError("log_params must be called inside a Experiment.")
@@ -78,14 +83,14 @@ async def log_params(params: dict):
     )
 
 
-# log_metrics is used to log a set of metrics at once,
-# metric key must be string, value must be float.
-# If save_on_best is enabled in the experiment config, and the metric is the best metric
-# so far, the experiment will checkpoint the current data.
-#
-# Note: log_metrics can only be called inside a Run, because it needs a run_id.
-# Return bool indicates whether the metric is the best metric.
 async def log_metrics(metrics: dict[str, float]) -> bool:
+    """
+    Log metrics to the database.
+    Support in Run level currently, should be called after starting a Run.
+
+    :param metrics: a dict of key-value pairs to log as metrics.
+    :return: a bool indicating whether the metric is the best metric.
+    """
     run_id = current_run_id.get()
     if run_id is None:
         raise RuntimeError("log_metrics must be called inside a Run.")
@@ -150,6 +155,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 # including both input and output, e.g. you want to save the code snippet.
 # It will be stored in the object storage as a JSON file if object storage
 # is enabled or locally otherwise.
+# NOTE: will be deprecated in the v0.3.0, use log_dataset instead.
 async def log_result(
     output: dict[str, Any],
     input: dict[str, Any] | None = None,
@@ -196,3 +202,28 @@ async def log_result(
                 }
             },
         )
+
+
+# log_records is used to log a list of records, which is similar to log_metrics
+# but for tracing the execution of the code.
+# async def log_records():
+
+# log_dataset will store sometime in the artifacts als record in the database.
+# async def log_dataset(
+#     name: str,
+#     paths: str | list[str],
+#     version: str | None = None,
+# ):
+#     path = await log_artifact(
+#         paths=paths,
+#         repo_name="dataset",
+#         version=version,
+#     )
+
+#     runtime = global_runtime()
+#     runtime.metadb.create_dataset(
+#         name=name,
+#         team_id=runtime._team_id,
+#         path=path,
+#         version=version,
+#     )

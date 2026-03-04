@@ -23,46 +23,48 @@ async def test_log_artifact():
         user_id=uuid.uuid4(),
     )
 
-    exp = experiment.CraftExperiment.start(name="first-exp")
+    async with experiment.CraftExperiment.start(name="first-exp") as exp:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
+            file = "file.txt"
+            with open(file, "w") as f:
+                f.write("This is file1.")
 
-        file = "file.txt"
-        with open(file, "w") as f:
-            f.write("This is file1.")
+            address = await alpha.log_artifact(
+                paths=file, repo_name="log_artifact_repo", version="v1"
+            )
+            assert address == f"{exp._runtime._team_id}/log_artifact_repo:v1"
+            versions = exp._runtime._artifact.list_versions("log_artifact_repo")
+            assert "v1" in versions
 
-        address = await alpha.log_artifact(
-            paths=file, repo_name="log_artifact_repo", version="v1"
-        )
-        assert address == f"{exp._runtime._team_id}/log_artifact_repo:v1"
-        versions = exp._runtime._artifact.list_versions("log_artifact_repo")
-        assert "v1" in versions
+            with open(file, "w") as f:
+                f.write("This is modified file1.")
 
-        with open(file, "w") as f:
-            f.write("This is modified file1.")
+            # push folder instead
+            address = await alpha.log_artifact(
+                paths=[file], repo_name="log_artifact_repo", version="v2"
+            )
+            assert address == f"{exp._runtime._team_id}/log_artifact_repo:v2"
+            versions = exp._runtime._artifact.list_versions("log_artifact_repo")
+            assert "v2" in versions
 
-        # push folder instead
-        address = await alpha.log_artifact(
-            paths=[file], repo_name="log_artifact_repo", version="v2"
-        )
-        assert address == f"{exp._runtime._team_id}/log_artifact_repo:v2"
-        versions = exp._runtime._artifact.list_versions("log_artifact_repo")
-        assert "v2" in versions
+            exp._runtime._artifact.delete(
+                repo_name="log_artifact_repo",
+                versions=["v1", "v2"],
+            )
+            versions = exp._runtime._artifact.list_versions("log_artifact_repo")
+            assert len(versions) == 0
 
-        exp._runtime._artifact.delete(
-            repo_name="log_artifact_repo",
-            versions=["v1", "v2"],
-        )
-        versions = exp._runtime._artifact.list_versions("log_artifact_repo")
-        assert len(versions) == 0
+            exp_id = exp.id
 
-        exp.done()
+            got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
+            assert got_exp.status == Status.RUNNING
 
-        got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp.id)
-        assert got_exp is not None
-        assert got_exp.name == "first-exp"
-        assert got_exp.status == Status.COMPLETED
+    got_exp = exp._runtime._metadb.get_experiment(experiment_id=exp_id)
+    assert got_exp is not None
+    assert got_exp.name == "first-exp"
+    assert got_exp.status == Status.COMPLETED
 
 
 @pytest.mark.asyncio
@@ -88,11 +90,13 @@ async def test_log_params():
         assert new_exp.status == Status.RUNNING
         assert current_exp_id.get() == exp.id
 
-        exp.done()
+    assert current_exp_id.get() is None
 
-    exp = experiment.CraftExperiment.start(name="second-exp", params={"param1": 0.1})
-    assert current_exp_id.get() == exp.id
-    exp.done()
+    async with experiment.CraftExperiment.start(
+        name="second-exp", params={"param1": 0.1}
+    ) as exp:
+        assert current_exp_id.get() == exp.id
+    assert current_exp_id.get() is None
 
 
 @pytest.mark.asyncio
@@ -169,7 +173,7 @@ async def test_log_metrics_with_save_on_max():
             with open(file, "a") as f:
                 f.write("This is pre_save_hook modified file.\n")
 
-        exp = experiment.CraftExperiment.start(
+        async with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
@@ -182,67 +186,64 @@ async def test_log_metrics_with_save_on_max():
                 # Make sure raw max also works.
                 monitor_mode="max",
             ),
-        )
+        ) as exp:
+            with open(file, "w") as f:
+                f.write("This is file.\n")
 
-        with open(file, "w") as f:
-            f.write("This is file.\n")
+            run = exp.run(lambda: log_metric(0.90))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.90))
-        await run.wait()
+            # We need this because the returned version is unordered.
+            used_version = []
 
-        # We need this because the returned version is unordered.
-        used_version = []
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
+            run_obj = run._get_obj()
+            fixed_version = versions[0]
+            used_version.append(fixed_version)
+            assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
+            with open(file) as f:
+                assert len(f.readlines()) == 2
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
-        run_obj = run._get_obj()
-        fixed_version = versions[0]
-        used_version.append(fixed_version)
-        assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
-        with open(file) as f:
-            assert len(f.readlines()) == 2
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
 
-        # To avoid the same timestamp hash, we wait for 1 second
-        time.sleep(1)
+            run = exp.run(lambda: log_metric(0.78))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.78))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
+            time.sleep(1)
 
-        time.sleep(1)
+            run = exp.run(lambda: log_metric(0.91))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.91))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 2
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 2
+            fixed_version = find_unused_version(used_version, versions)
+            used_version.append(fixed_version)
+            run_obj = run._get_obj()
+            assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
 
-        fixed_version = find_unused_version(used_version, versions)
-        used_version.append(fixed_version)
-        run_obj = run._get_obj()
-        assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
+            with open(file) as f:
+                assert len(f.readlines()) == 3
 
-        with open(file) as f:
-            assert len(f.readlines()) == 3
+            time.sleep(1)
 
-        time.sleep(1)
+            run = exp.run(lambda: log_metric(0.98))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.98))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 3
+            run_obj = run._get_obj()
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 3
-        run_obj = run._get_obj()
-
-        fixed_version = find_unused_version(used_version, versions)
-        used_version.append(fixed_version)
-        assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
-        with open(file) as f:
-            assert len(f.readlines()) == 4
-
-        exp.done()
+            fixed_version = find_unused_version(used_version, versions)
+            used_version.append(fixed_version)
+            assert run_obj.meta[BEST_RESULT_PATH] == f"{team_id}/ckpt:" + fixed_version
+            with open(file) as f:
+                assert len(f.readlines()) == 4
 
 
 @pytest.mark.asyncio
@@ -258,7 +259,7 @@ async def test_log_metrics_with_save_on_min():
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
 
-        exp = experiment.CraftExperiment.start(
+        async with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
@@ -269,43 +270,40 @@ async def test_log_metrics_with_save_on_min():
                 monitor_metric="accuracy",
                 monitor_mode=experiment.MonitorMode.MIN,
             ),
-        )
+        ) as exp:
+            file1 = "file1.txt"
+            with open(file1, "w") as f:
+                f.write("This is file1.")
 
-        file1 = "file1.txt"
-        with open(file1, "w") as f:
-            f.write("This is file1.")
+            run = exp.run(lambda: log_metric(0.30))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.30))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
 
-        # To avoid the same timestamp hash, we wait for 1 second
-        time.sleep(1)
+            run = exp.run(lambda: log_metric(0.58))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.58))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
+            time.sleep(1)
 
-        time.sleep(1)
+            run = exp.run(lambda: log_metric(0.21))
+            await run.wait()
 
-        run = exp.run(lambda: log_metric(0.21))
-        await run.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 2
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 2
+            time.sleep(1)
 
-        time.sleep(1)
-
-        task = exp.run(lambda: log_metric(0.18))
-        await task.wait()
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 3
-
-        exp.done()
+            task = exp.run(lambda: log_metric(0.18))
+            await task.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 3
 
 
 @pytest.mark.asyncio
