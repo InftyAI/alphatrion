@@ -6,114 +6,107 @@
 </p>
 
 <h3 align="center">
-Open, modular framework to build GenAI applications.
+Open, modular framework to build and optimize GenAI applications
 </h3>
 
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
 [![Latest Release](https://img.shields.io/github/v/release/inftyai/alphatrion?include_prereleases)](https://github.com/inftyai/alphatrion/releases/latest)
 
-**AlphaTrion** is an open-source framework to help build GenAI applications, including experiment tracking, adaptive model routing, prompt optimization, performance evaluation and so on. The name comes after the oldest and wisest Transformer - AlphaTrion.
+**AlphaTrion** is an open-source framework for building and optimizing GenAI applications. Track experiments, monitor performance, analyze model usage, and manage artifacts—all through an intuitive dashboard. Named after the oldest and wisest Transformer.
 
-*Still under active development.*
+*Currently in active development.*
 
-## Concepts
+## Features
 
-- **Team**: A Team is the highest-level organizational unit in AlphaTrion. It represents a group of users collaborating on experiments.
-- **Experiment**: An Experiment is a logic-level abstraction for organizing and managing a series of related runs. It allows users to group runs that share a common purpose or configuration. Experiments can be organized using labels.
-- **Run**: A Run is a real execution instance of an experiment. It represents the actual execution of the code with the specified configuration and hyperparameters defined in the experiment.
+- **🔬 Experiment Tracking** - Organize and manage ML experiments with hierarchical teams, experiments, and runs
+- **📊 Performance Monitoring** - Track metrics, visualize trends, and monitor experiment status in real-time
+- **🔍 Distributed Tracing** - Automatic OpenTelemetry integration for LLM calls with detailed span analysis
+- **💰 Token Usage Analytics** - Monitor daily token consumption across input/output with historical trends
+- **🤖 Model Distribution** - Analyze request patterns and usage across different AI models
+- **📦 Artifact Management** - Store and version execution results, checkpoints, and model outputs
+- **🎯 Interactive Dashboard** - Modern web UI for exploring experiments, metrics, and traces
+- **🔌 Easy Integration** - Simple Python API with async/await support
+
+## Core Concepts
+
+- **Team** - Top-level organizational unit for user collaboration
+- **Experiment** - Logical grouping of runs with shared purpose, organized by labels
+- **Run** - Individual execution instance with configuration and metrics
 
 ## Quick Start
 
-### Install from PyPI
+### 1. Installation
 
 ```bash
+# From PyPI
 pip install alphatrion
+
+# Or from source
+git clone https://github.com/inftyai/alphatrion.git && cd alphatrion
+source start.sh
 ```
 
-### Install from Source
-
-* Git clone the repository
-* Run `source start.sh` to activate the virtual environment.
-
-
-### Initialize the Environment
-
-Run the following command for setup:
+### 2. Setup Infrastructure
 
 ```bash
-cp .env.example .env & make up
-```
-You can login to pgAdmin at `http://localhost:8081` to see the Postgres database with following credentials. Remember to register the server first.
+# Start PostgreSQL, ClickHouse, and Registry
+cp .env.example .env
+make up
 
-```shell
-Email:       alphatrion@inftyai.com
-Password:    alphatr1on
-ServerName:  alphatrion
-HostName:    postgres
-ServerPWD:   alphatr1on
+# Initialize your team and user
+alphatrion init  # Use -h for custom options
 ```
 
-You can also visit the Docker Registry UI at `http://localhost:80` to see the local registry where the built images are stored.
+Save the generated user ID—you'll need it to track experiments.
 
-Next, init the environment with a user and team:
+**Optional Tools:**
+- pgAdmin: `http://localhost:8081` (alphatrion@inftyai.com / alphatr1on)
+- Registry UI: `http://localhost:80`
 
-```bash
-alphatrion init  # see -h for options to specify username, email and team name
-```
-
-You will see the generated user ID in the console. Use this ID to initialize the AlphaTrion environment in your code later.
-
-### Run a Simple Experiment
-
-Below is a simple example with two approaches demonstrating how to create an experiment and log performance metrics.
+### 3. Track Your First Experiment
 
 ```python
 import alphatrion as alpha
 from alphatrion import experiment
 
-# Use the user ID generated from the `alphatrion init` command.
-alpha.init(user_id=<user_id>)
+# Initialize with your user ID
+alpha.init(user_id="<your_user_id>")
 
-async def your_task():
-  # Run your code here then log metrics.
-  await alpha.log_metrics({"accuracy": 0.95})
+async def my_task():
+    # Your ML code here
+    await alpha.log_metrics({"accuracy": 0.95, "loss": 0.12})
 
 async with experiment.CraftExperiment.start(name="my_experiment") as exp:
-  task = exp.run(your_task) # use lambda or partial if you need to pass arguments to your_task
-  await task.wait()
+    task = exp.run(my_task)
+    await task.wait()
 ```
 
-### View Dashboard
-
-![dashboard](./site/images/dashboard.png)
-
-The dashboard provides a web interface to explore experiments, runs, and metrics through an intuitive UI.
-
-#### Launch Dashboard
+### 4. Launch Dashboard
 
 ```bash
-# Start the backend server (in one terminal)
+# Start backend server (terminal 1)
 alphatrion server
 
-# Launch the dashboard (in another terminal)
+# Launch dashboard (terminal 2)
 alphatrion dashboard
 ```
 
-The dashboard will automatically open in your browser at `http://127.0.0.1:5173`.
+Access the dashboard at `http://127.0.0.1:5173` to explore experiments, visualize metrics, and analyze traces.
 
-**Options:**
-- `--port <PORT>`: Run on a custom port (default: 5173)
+![dashboard](./site/images/dashboard.png)
 
-**Documentation:**
-- [Dashboard Setup Guide](./docs/dashboard/setup.md) - Complete setup and troubleshooting guide
-- [Dashboard CLI Guide](./docs/dashboard/dashboard-cli.md) - Using the dashboard CLI command
-- [Dashboard Architecture](./docs/dashboard/dashboard-architecture.md) - Technical architecture and deployment patterns
+### 5. View Traces
 
-### Tracing
-
-AlphaTrion automatically captures tracing data for all runs, including spans for each run and associated metadata. You can query this data to analyze model performance, latency, and token usage.
+AlphaTrion automatically captures distributed tracing data for all LLM calls, including latency, token usage, and span relationships.
 
 ![tracing](./site/images/trace.png)
+
+### 6. Other APIs
+
+- **log_params**: Track hyperparameters and configuration settings
+- **log_metrics**: Record performance metrics and visualize trends
+- **log_artifacts**: Store and manage files, checkpoints, and model outputs
+
 
 ### Cleanup
 
@@ -121,8 +114,13 @@ AlphaTrion automatically captures tracing data for all runs, including spans for
 make down
 ```
 
+## Documentation
+
+- **Dashboard**: [Setup Guide](./docs/dashboard/setup.md) | [CLI Reference](./docs/dashboard/dashboard-cli.md) | [Architecture](./docs/dashboard/dashboard-architecture.md)
+- **Development**: [Contributing Guide](./docs/dev/development.md)
+
 ## Contributing
 
-We welcome contributions! Please refer to [developer.md](./docs/dev/development.md) for more information on how to set up your development environment and contribute to the project.
+We welcome contributions! Check out our [development guide](./docs/dev/development.md) to get started.
 
 [![Star History Chart](https://api.star-history.com/svg?repos=inftyai/alphatrion&type=Date)](https://www.star-history.com/#inftyai/alphatrion&Date)
