@@ -256,7 +256,7 @@ async def test_log_metrics_with_save_on_min():
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
 
-        exp = experiment.CraftExperiment.start(
+        with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
@@ -267,43 +267,41 @@ async def test_log_metrics_with_save_on_min():
                 monitor_metric="accuracy",
                 monitor_mode=experiment.MonitorMode.MIN,
             ),
-        )
+        ) as exp:
 
-        file1 = "file1.txt"
-        with open(file1, "w") as f:
-            f.write("This is file1.")
+            file1 = "file1.txt"
+            with open(file1, "w") as f:
+                f.write("This is file1.")
 
-        run = exp.run(lambda: log_metric(0.30))
-        await run.wait()
+            run = exp.run(lambda: log_metric(0.30))
+            await run.wait()
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
 
-        # To avoid the same timestamp hash, we wait for 1 second
-        time.sleep(1)
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
 
-        run = exp.run(lambda: log_metric(0.58))
-        await run.wait()
+            run = exp.run(lambda: log_metric(0.58))
+            await run.wait()
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 1
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 1
 
-        time.sleep(1)
+            time.sleep(1)
 
-        run = exp.run(lambda: log_metric(0.21))
-        await run.wait()
+            run = exp.run(lambda: log_metric(0.21))
+            await run.wait()
 
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 2
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 2
 
-        time.sleep(1)
+            time.sleep(1)
 
-        task = exp.run(lambda: log_metric(0.18))
-        await task.wait()
-        versions = exp._runtime._artifact.list_versions("ckpt")
-        assert len(versions) == 3
-
-        exp.done()
+            task = exp.run(lambda: log_metric(0.18))
+            await task.wait()
+            versions = exp._runtime._artifact.list_versions("ckpt")
+            assert len(versions) == 3
 
 
 @pytest.mark.asyncio
