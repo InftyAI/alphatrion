@@ -281,6 +281,8 @@ export function RunDetailPage() {
         isLoading={loadingArtifact}
         error={artifactError}
         title="Artifact Content"
+        hideLineCount={true}
+        hideCloseButton={true}
       />
     </div>
   );
