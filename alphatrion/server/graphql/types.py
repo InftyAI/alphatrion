@@ -69,12 +69,6 @@ class Team:
             end_time=end_time,
         )
 
-    # @strawberry.field
-    # def labels(self) -> list["Label"]:
-    #     from .resolvers import GraphQLResolvers
-
-    #     return GraphQLResolvers.list_labels_by_team_id(team_id=self.id)
-
 
 @strawberry.type
 class User:
