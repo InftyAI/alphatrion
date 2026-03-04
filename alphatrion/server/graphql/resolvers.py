@@ -271,7 +271,9 @@ class GraphQLResolvers:
         return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
-    def aggregate_model_distributions(team_id: strawberry.ID) -> list[ModelDistribution]:
+    def aggregate_model_distributions(
+        team_id: strawberry.ID,
+    ) -> list[ModelDistribution]:
         from alphatrion import envs
 
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
@@ -280,7 +282,8 @@ class GraphQLResolvers:
         trace_store = runtime.storage_runtime().tracestore
         result = trace_store.get_model_distributions_by_team_id(team_id=team_id)
         return [
-            ModelDistribution(model=item["model"], count=item["count"]) for item in result
+            ModelDistribution(model=item["model"], count=item["count"])
+            for item in result
         ]
 
     @staticmethod

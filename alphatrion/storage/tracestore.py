@@ -365,7 +365,9 @@ class TraceStore:
                 logger.error(f"Failed to get daily token usage: {e}")
                 return []
 
-    def get_model_distributions_by_team_id(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+    def get_model_distributions_by_team_id(
+        self, team_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         """Get model distribution (count of requests per model) for a specific team.
 
         Args:
