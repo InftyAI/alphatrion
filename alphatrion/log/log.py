@@ -196,3 +196,23 @@ async def log_result(
                 }
             },
         )
+
+# log_dataset will store sometime in the artifacts als record in the database.
+async def log_dataset(
+    name: str,
+    paths: str | list[str],
+    version: str | None = None,
+):
+    path = await log_artifact(
+        paths=paths,
+        repo_name="dataset",
+        version=version,
+    )
+
+    runtime = global_runtime()
+    runtime.metadb.create_dataset(
+        name=name,
+        team_id=runtime._team_id,
+        path=path,
+        version=version,
+    )

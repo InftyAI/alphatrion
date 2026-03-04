@@ -199,6 +199,8 @@ class Experiment(ABC):
             current_exp_id.reset(self._token)
             self._runtime.current_experiment = None
 
+        self._cleanup_files()
+
     def _start(
         self,
         name: str,
@@ -366,13 +368,8 @@ class Experiment(ABC):
     def is_done(self) -> bool:
         return self._context.cancelled()
 
-    # done function should be called manually as a pair of start
-    # FIXME: watch for system signals to cancel the Experiment gracefully,
-    # or it could lead to experiment not being marked as completed.
-    # TODO: Should we distinguish done and cancel?
     def done(self):
         self._cancel()
-        self._cleanup()
 
     def done_with_err(self):
         self._end_status = "Err"
@@ -462,7 +459,7 @@ class Experiment(ABC):
     ) -> "Experiment":
         raise NotImplementedError
 
-    def _cleanup(self):
+    def _cleanup_files(self):
         # remove the whole folder once the experiment is done.
         if (
             os.path.exists(team_path())
