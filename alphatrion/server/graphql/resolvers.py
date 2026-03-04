@@ -24,6 +24,7 @@ from .types import (
     GraphQLStatusEnum,
     Label,
     Metric,
+    ModelDistribution,
     RemoveUserFromTeamInput,
     Run,
     Span,
@@ -263,11 +264,27 @@ class GraphQLResolvers:
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
         trace_store = runtime.storage_runtime().tracestore
-        result = trace_store.get_llm_spans_by_team_id(team_id=team_id)
-        # get_llm_spans_by_team_id returns a list with one dict
+        result = trace_store.get_llm_tokens_by_team_id(team_id=team_id)
+        # get_llm_tokens_by_team_id returns a list with one dict
         if result and len(result) > 0:
             return result[0]
         return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def aggregate_model_distributions(
+        team_id: strawberry.ID,
+    ) -> list[ModelDistribution]:
+        from alphatrion import envs
+
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return []
+
+        trace_store = runtime.storage_runtime().tracestore
+        result = trace_store.get_model_distributions_by_team_id(team_id=team_id)
+        return [
+            ModelDistribution(model=item["model"], count=item["count"])
+            for item in result
+        ]
 
     @staticmethod
     def list_exps_by_timeframe(

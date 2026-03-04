@@ -95,7 +95,7 @@ AlphaTrion requires an external PostgreSQL database. Configure the connection de
 | `postgresql.username` | PostgreSQL username | `alphatrion` |
 | `postgresql.password` | PostgreSQL password | `""` |
 | `postgresql.existingSecret` | Existing secret for PostgreSQL password (recommended) | `""` |
-| `postgresql.initTables` | Automatically initialize database tables | `false` |
+| `postgresql.initTables` | Automatically initialize database tables | `true` |
 
 ### Ingress Configuration
 

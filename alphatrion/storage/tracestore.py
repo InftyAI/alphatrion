@@ -331,7 +331,7 @@ class TraceStore:
                 logger.error(f"Failed to get spans by exp_id: {e}")
                 return []
 
-    def get_llm_spans_by_team_id(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
+    def get_llm_tokens_by_team_id(self, team_id: uuid.UUID) -> list[dict[str, Any]]:
         """Get all LLM spans for a specific team_id.
 
         Args:
@@ -363,6 +363,46 @@ class TraceStore:
                 ]
             except Exception as e:
                 logger.error(f"Failed to get daily token usage: {e}")
+                return []
+
+    def get_model_distributions_by_team_id(
+        self, team_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
+        """Get model distribution (count of requests per model) for a specific team.
+
+        Args:
+            team_id: The team ID to filter by
+
+        Returns:
+            List of dicts with keys: model, count
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    coalesce(
+                        SpanAttributes['gen_ai.request.model'],
+                        SpanAttributes['gen_ai.response.model'],
+                        'unknown'
+                    ) as model,
+                    COUNT(*) as count
+                FROM {self.database}.otel_spans
+                WHERE TeamId = '{team_id}'
+                  AND SemanticKind = 'llm'
+                GROUP BY model
+                ORDER BY count DESC
+                """
+
+                result = self.client.query(query)
+                return [
+                    {
+                        "model": row["model"],
+                        "count": int(row["count"]),
+                    }
+                    for row in result.named_results()
+                ]
+            except Exception as e:
+                logger.error(f"Failed to get model distributions: {e}")
                 return []
 
     def get_daily_token_usage(

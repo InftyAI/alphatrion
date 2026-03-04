@@ -14,6 +14,12 @@ class TokenStats:
 
 
 @strawberry.type
+class ModelDistribution:
+    model: str
+    count: int
+
+
+@strawberry.type
 class Team:
     id: strawberry.ID
     name: str | None
@@ -44,6 +50,12 @@ class Team:
             input_tokens=token_data["input_tokens"],
             output_tokens=token_data["output_tokens"],
         )
+
+    @strawberry.field
+    def model_distributions(self) -> list["ModelDistribution"]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.aggregate_model_distributions(team_id=self.id)
 
     @strawberry.field
     def exps_by_timeframe(

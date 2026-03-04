@@ -3,6 +3,7 @@ import { useTeamContext } from '../../context/team-context';
 import { useTeam } from '../../hooks/use-teams';
 import { useTeamExperiments } from '../../hooks/use-team-experiments';
 import { useDailyTokenUsage } from '../../hooks/use-token-usage';
+import { useModelDistributions } from '../../hooks/use-model-distributions';
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
 import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
+import { ModelDistributionChart } from '../../components/dashboard/model-distribution-chart';
 import { subDays, subMonths } from 'date-fns';
 import { FlaskConical, Play, Coins } from 'lucide-react';
 
@@ -40,6 +42,10 @@ export function DashboardPage() {
   const { data: dailyTokenUsage, isLoading: tokenUsageLoading } = useDailyTokenUsage(
     selectedTeamId || '',
     days
+  );
+
+  const { data: modelDistributions, isLoading: modelDistributionsLoading } = useModelDistributions(
+    selectedTeamId || ''
   );
 
   // Filter experiments based on selected time range
@@ -160,16 +166,17 @@ export function DashboardPage() {
           </div>
         </div>
 
+        {/* First Row: Experiments Charts */}
         <div className="grid gap-3 md:grid-cols-2">
           {/* Status Distribution Pie Chart */}
           <Card>
             <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-56 w-full" />
+                <Skeleton className="h-72 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsStatusChart experiments={filteredExperiments} />
               ) : (
-                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}
@@ -180,11 +187,11 @@ export function DashboardPage() {
           <Card>
             <CardContent className="p-4">
               {experimentsLoading ? (
-                <Skeleton className="h-56 w-full" />
+                <Skeleton className="h-72 w-full" />
               ) : filteredExperiments && filteredExperiments.length > 0 ? (
                 <ExperimentsTimelineChart experiments={filteredExperiments} timeRange={timeRange} />
               ) : (
-                <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
                   No experiments data available for this time range
                 </div>
               )}
@@ -192,20 +199,38 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Token Usage Chart */}
-        <Card>
-          <CardContent className="p-4">
-            {tokenUsageLoading ? (
-              <Skeleton className="h-80 w-full" />
-            ) : dailyTokenUsage ? (
-              <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
-            ) : (
-              <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
-                No token usage data available for this time range
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Second Row: Model Distribution and Token Usage */}
+        <div className="grid gap-3 md:grid-cols-2">
+          {/* Model Distribution Pie Chart */}
+          <Card>
+            <CardContent className="p-4">
+              {modelDistributionsLoading ? (
+                <Skeleton className="h-72 w-full" />
+              ) : modelDistributions && modelDistributions.length > 0 ? (
+                <ModelDistributionChart data={modelDistributions} />
+              ) : (
+                <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
+                  No model distribution data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Token Usage Chart */}
+          <Card>
+            <CardContent className="p-4">
+              {tokenUsageLoading ? (
+                <Skeleton className="h-72 w-full" />
+              ) : dailyTokenUsage ? (
+                <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
+              ) : (
+                <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
+                  No token usage data available for this time range
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
