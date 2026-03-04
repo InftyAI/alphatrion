@@ -256,7 +256,7 @@ async def test_log_metrics_with_save_on_min():
     with tempfile.TemporaryDirectory() as tmpdir:
         os.chdir(tmpdir)
 
-        with experiment.CraftExperiment.start(
+        async with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
