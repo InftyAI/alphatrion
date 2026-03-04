@@ -10,6 +10,7 @@ from alphatrion.server.graphql.types import (
     CreateUserInput,
     DailyTokenUsage,
     Experiment,
+    ModelDistribution,
     RemoveUserFromTeamInput,
     Run,
     Span,

@@ -88,15 +88,15 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={260}>
-        <LineChart data={chartData} margin={{ left: 10, right: 15, top: 15, bottom: 50 }}>
+      <ResponsiveContainer width="100%" height={240}>
+        <LineChart data={chartData} margin={{ left: 10, right: 15, top: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
             tick={{ fontSize: 10 }}
             angle={-45}
             textAnchor="end"
-            height={70}
+            height={50}
           />
           <YAxis
             tick={{ fontSize: 10 }}
@@ -151,9 +151,11 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '10px' }}
+            wrapperStyle={{ fontSize: '11px', paddingTop: '2px' }}
             iconType="circle"
             iconSize={8}
+            verticalAlign="bottom"
+            height={25}
           />
           <Line
             type="monotone"

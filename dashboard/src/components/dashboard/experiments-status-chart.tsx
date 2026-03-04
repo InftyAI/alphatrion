@@ -49,34 +49,39 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
     );
   }
 
+  // Calculate total for percentages
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold">Experiments Distribution</h3>
-      <ResponsiveContainer width="100%" height={220}>
-        <PieChart margin={{ top: 20, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={240}>
+        <PieChart>
           <Pie
             data={chartData}
             dataKey="value"
             nameKey="name"
             cx="50%"
-            cy="48%"
-            outerRadius={58}
-            label={({ name, value }) => `${name}: ${value}`}
-            style={{ fontSize: '10px' }}
+            cy="50%"
+            outerRadius={75}
+            labelLine={false}
+            label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+            style={{ fontSize: '11px' }}
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
           <Tooltip
+            formatter={(value: number) => [value, 'Count']}
             contentStyle={{
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
-              fontSize: '10px',
+              fontSize: '11px',
             }}
           />
-          <Legend wrapperStyle={{ fontSize: '10px' }} />
+          <Legend wrapperStyle={{ fontSize: '11px' }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
