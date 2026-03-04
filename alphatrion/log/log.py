@@ -203,6 +203,7 @@ async def log_result(
             },
         )
 
+
 # log_records is used to log a list of records, which is similar to log_metrics
 # but for tracing the execution of the code.
 # async def log_records():
