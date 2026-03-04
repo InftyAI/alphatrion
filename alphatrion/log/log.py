@@ -197,6 +197,7 @@ async def log_result(
             },
         )
 
+
 # log_dataset will store sometime in the artifacts als record in the database.
 async def log_dataset(
     name: str,

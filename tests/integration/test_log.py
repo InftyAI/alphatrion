@@ -24,7 +24,6 @@ async def test_log_artifact():
     )
 
     async with experiment.CraftExperiment.start(name="first-exp") as exp:
-
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
 
@@ -90,7 +89,9 @@ async def test_log_params():
 
     assert current_exp_id.get() is None
 
-    async with experiment.CraftExperiment.start(name="second-exp", params={"param1": 0.1}) as exp:
+    async with experiment.CraftExperiment.start(
+        name="second-exp", params={"param1": 0.1}
+    ) as exp:
         assert current_exp_id.get() == exp.id
     assert current_exp_id.get() is None
 
@@ -183,7 +184,6 @@ async def test_log_metrics_with_save_on_max():
                 monitor_mode="max",
             ),
         ) as exp:
-
             with open(file, "w") as f:
                 f.write("This is file.\n")
 
@@ -268,7 +268,6 @@ async def test_log_metrics_with_save_on_min():
                 monitor_mode=experiment.MonitorMode.MIN,
             ),
         ) as exp:
-
             file1 = "file1.txt"
             with open(file1, "w") as f:
                 f.write("This is file1.")
