@@ -114,7 +114,9 @@ class Experiment(Base):
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=True)
+    user_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="User who created the experiment"
+    )
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(
@@ -171,7 +173,9 @@ class Run(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
-    user_id = Column(UUID(as_uuid=True), nullable=True)
+    user_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="User who created the run"
+    )
     meta = Column(
         MutableDict.as_mutable(JSON),
         nullable=True,
