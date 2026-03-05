@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { graphqlQuery, queries } from '../lib/graphql-client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { graphqlQuery, queries, mutations } from '../lib/graphql-client';
 import { shouldPoll } from '../lib/query-client';
 import type { Experiment } from '../types';
 
@@ -99,6 +99,50 @@ export function useExperimentsByIds(experimentIds: string[]) {
 
       const statuses = experiments.map(exp => exp.status);
       return shouldPoll(statuses);
+    },
+  });
+}
+
+/**
+ * Hook to delete a single experiment
+ */
+export function useDeleteExperiment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (experimentId: string) => {
+      const data = await graphqlQuery<{ deleteExperiment: boolean }>(
+        mutations.deleteExperiment,
+        { experimentId }
+      );
+      return data.deleteExperiment;
+    },
+    onSuccess: () => {
+      // Invalidate experiments queries to refetch the list
+      queryClient.invalidateQueries({ queryKey: ['experiments'] });
+      queryClient.invalidateQueries({ queryKey: ['experiment'] });
+    },
+  });
+}
+
+/**
+ * Hook to delete multiple experiments
+ */
+export function useDeleteExperiments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (experimentIds: string[]) => {
+      const data = await graphqlQuery<{ deleteExperiments: number }>(
+        mutations.deleteExperiments,
+        { experimentIds }
+      );
+      return data.deleteExperiments;
+    },
+    onSuccess: () => {
+      // Invalidate experiments queries to refetch the list
+      queryClient.invalidateQueries({ queryKey: ['experiments'] });
+      queryClient.invalidateQueries({ queryKey: ['experiment'] });
     },
   });
 }

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, Trash2 } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
-import { useExperiments } from '../../hooks/use-experiments';
+import { useExperiments, useDeleteExperiments } from '../../hooks/use-experiments';
 import { useTeam } from '../../hooks/use-teams';
 import {
   Card,
@@ -22,6 +22,16 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
 import { MultiSelectDropdown } from '../../components/ui/multi-select-dropdown';
 import { Pagination } from '../../components/ui/pagination';
+import { Checkbox } from '../../components/ui/checkbox';
+import { Button } from '../../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
 
@@ -75,6 +85,8 @@ export function ExperimentsPage() {
   const [labelFilters, setLabelFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedExperiments, setSelectedExperiments] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch team info for total count
   const { data: team } = useTeam(selectedTeamId || '', { enabled: !!selectedTeamId });
@@ -84,6 +96,9 @@ export function ExperimentsPage() {
     selectedTeamId || '',
     { page: currentPage, pageSize: PAGE_SIZE, enabled: !!selectedTeamId }
   );
+
+  // Delete mutation
+  const deleteExperiments = useDeleteExperiments();
 
   const totalExperiments = team?.totalExperiments || 0;
   const totalPages = Math.ceil(totalExperiments / PAGE_SIZE);
@@ -209,6 +224,49 @@ export function ExperimentsPage() {
     return filtered;
   }, [experiments, statusFilter, labelFilters, searchQuery]);
 
+  // Handle select all checkbox
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedExperiments(new Set(filteredExperiments.map(exp => exp.id)));
+    } else {
+      setSelectedExperiments(new Set());
+    }
+  };
+
+  // Handle individual checkbox
+  const handleSelectExperiment = (experimentId: string, checked: boolean) => {
+    const newSelected = new Set(selectedExperiments);
+    if (checked) {
+      newSelected.add(experimentId);
+    } else {
+      newSelected.delete(experimentId);
+    }
+    setSelectedExperiments(newSelected);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = () => {
+    if (selectedExperiments.size > 0) {
+      setShowDeleteDialog(true);
+    }
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteExperiments.mutateAsync(Array.from(selectedExperiments));
+      setSelectedExperiments(new Set());
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('Failed to delete experiments:', error);
+    }
+  };
+
+  // Check if all filtered experiments are selected
+  const isAllSelected = filteredExperiments.length > 0 &&
+    filteredExperiments.every(exp => selectedExperiments.has(exp.id));
+  const isSomeSelected = selectedExperiments.size > 0 && !isAllSelected;
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -270,6 +328,27 @@ export function ExperimentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
+                    <TableHead className="h-11 bg-muted/50">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={isAllSelected}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="Select all experiments"
+                        />
+                        {selectedExperiments.size > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleDeleteClick}
+                            disabled={deleteExperiments.isPending}
+                            className="h-7 px-2.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete {selectedExperiments.size} {selectedExperiments.size === 1 ? 'item' : 'items'}
+                          </Button>
+                        )}
+                      </div>
+                    </TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">ID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
@@ -283,6 +362,13 @@ export function ExperimentsPage() {
                       key={experiment.id}
                       className="hover:bg-accent/50 transition-colors border-b last:border-0"
                     >
+                      <TableCell className="py-3">
+                        <Checkbox
+                          checked={selectedExperiments.has(experiment.id)}
+                          onCheckedChange={(checked) => handleSelectExperiment(experiment.id, checked as boolean)}
+                          aria-label={`Select experiment ${experiment.id}`}
+                        />
+                      </TableCell>
                       <TableCell className="py-3 text-sm font-mono">
                         <Link
                           to={`/experiments/${experiment.id}`}
@@ -344,6 +430,49 @@ export function ExperimentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Delete Experiments
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground pt-2">
+              Are you sure you want to delete <span className="font-semibold text-foreground">{selectedExperiments.size}</span> experiment
+              {selectedExperiments.size > 1 ? 's' : ''}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deleteExperiments.isPending}
+              className="h-9"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteExperiments.isPending}
+              className="h-9 bg-red-600 hover:bg-red-700"
+            >
+              {deleteExperiments.isPending ? (
+                <>
+                  <span className="animate-pulse">Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -8,7 +8,7 @@ IMAGE_NAME ?= alphatrion
 IMAGE_REPO := $(IMAGE_REGISTRY)/$(IMAGE_NAME)
 GIT_TAG ?= $(shell git describe --tags --dirty --always)
 IMG ?= $(IMAGE_REPO):$(GIT_TAG)
-PLATFORMS ?= linux/arm64,linux/amd64
+PLATFORMS ?= linux/amd64
 
 POETRY := poetry
 RUFF := .venv/bin/ruff

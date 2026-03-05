@@ -547,6 +547,21 @@ export const queries = {
 
 };
 
+// GraphQL mutation templates
+export const mutations = {
+  deleteExperiment: `
+    mutation DeleteExperiment($experimentId: ID!) {
+      deleteExperiment(experimentId: $experimentId)
+    }
+  `,
+
+  deleteExperiments: `
+    mutation DeleteExperiments($experimentIds: [ID!]!) {
+      deleteExperiments(experimentIds: $experimentIds)
+    }
+  `,
+};
+
 // Import types for helper functions
 import type {
   Metric,
