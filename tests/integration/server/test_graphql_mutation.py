@@ -705,8 +705,12 @@ def test_delete_experiment_deletes_runs():
     )
 
     # Create some runs for this experiment
-    run_id_1 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=experiment_id)
-    run_id_2 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=experiment_id)
+    run_id_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=experiment_id
+    )
+    run_id_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=experiment_id
+    )
 
     # Verify runs exist
     run_1 = metadb.get_run(run_id=run_id_1)
@@ -752,14 +756,22 @@ def test_delete_experiments_batch_deletes_runs():
     exp_id_1 = metadb.create_experiment(
         team_id=team_id, user_id=user_id, name="Experiment 1 with Runs"
     )
-    run_1_1 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_1)
-    run_1_2 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_1)
+    run_1_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
+    run_1_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
 
     exp_id_2 = metadb.create_experiment(
         team_id=team_id, user_id=user_id, name="Experiment 2 with Runs"
     )
-    run_2_1 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_2)
-    run_2_2 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_2)
+    run_2_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
+    run_2_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
 
     # Verify all runs exist
     assert metadb.get_run(run_id=run_1_1) is not None
@@ -860,9 +872,15 @@ def test_delete_experiments_skips_running():
     metadb.update_experiment(experiment_id=exp_id_3, status=Status.FAILED)
 
     # Create runs for all experiments
-    run_id_1 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_1)
-    run_id_2 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_2)
-    run_id_3 = metadb.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id_3)
+    run_id_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
+    run_id_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
+    run_id_3 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_3
+    )
 
     # Verify all experiments exist
     assert metadb.get_experiment(experiment_id=exp_id_1) is not None

@@ -396,7 +396,9 @@ class SQLStore(MetaStore):
         return exp
 
     # Different team may have the same experiment name.
-    def get_exp_by_name(self, name: str, team_id: uuid.UUID, include_deleted: bool = False) -> Experiment | None:
+    def get_exp_by_name(
+        self, name: str, team_id: uuid.UUID, include_deleted: bool = False
+    ) -> Experiment | None:
         # make sure the team exists
         team = self.get_team(team_id)
         if team is None:
@@ -542,9 +544,12 @@ class SQLStore(MetaStore):
         )
 
         if exp and exp.status == Status.RUNNING:
-            raise ValueError("Cannot delete a running experiment. Please stop it first.")
+            raise ValueError(
+                "Cannot delete a running experiment. Please stop it first."
+            )
 
-        # Delete all runs associated with this experiment (regardless of experiment status)
+        # Delete all runs associated with this experiment
+        # (regardless of experiment status)
         session.query(Run).filter(Run.experiment_id == experiment_id).update(
             {Run.is_del: 1}, synchronize_session=False
         )
@@ -570,7 +575,11 @@ class SQLStore(MetaStore):
         # if experiment is running, skip deletion for that experiment
         filtered_exps = (
             session.query(Experiment.uuid)
-            .filter(Experiment.uuid.in_(experiment_ids), Experiment.is_del == 0, Experiment.status != Status.RUNNING)
+            .filter(
+                Experiment.uuid.in_(experiment_ids),
+                Experiment.is_del == 0,
+                Experiment.status != Status.RUNNING,
+            )
             .all()
         )
         filtered_exp_ids = [exp_id for (exp_id,) in filtered_exps]  # unpack tuples
