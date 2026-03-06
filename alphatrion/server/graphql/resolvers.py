@@ -692,3 +692,21 @@ class GraphQLMutations:
 
         # Remove user from team (deletes TeamMember entry)
         return metadb.remove_user_from_team(user_id=user_id, team_id=team_id)
+
+    @staticmethod
+    # TODO: We should have the team_id in the header for authz, and verify the
+    # team_id matches the experiment's team_id before allowing deletion.
+    def delete_experiment(experiment_id: strawberry.ID) -> bool:
+        metadb = runtime.storage_runtime().metadb
+        # Soft delete experiment by setting is_del flag
+        return metadb.delete_experiment(experiment_id=experiment_id)
+
+    @staticmethod
+    # TODO: We should have the team_id in the header for authz, and verify the
+    # team_id matches the experiment's team_id before allowing deletion.
+    def delete_experiments(experiment_ids: list[strawberry.ID]) -> int:
+        metadb = runtime.storage_runtime().metadb
+        # Convert strawberry IDs to UUIDs
+        uuids = [uuid.UUID(exp_id) for exp_id in experiment_ids]
+        # Soft delete experiments by setting is_del flag
+        return metadb.delete_experiments(experiment_ids=uuids)
