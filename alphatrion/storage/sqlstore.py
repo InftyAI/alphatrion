@@ -396,22 +396,20 @@ class SQLStore(MetaStore):
         return exp
 
     # Different team may have the same experiment name.
-    def get_exp_by_name(self, name: str, team_id: uuid.UUID) -> Experiment | None:
+    def get_exp_by_name(self, name: str, team_id: uuid.UUID, include_deleted: bool = False) -> Experiment | None:
         # make sure the team exists
         team = self.get_team(team_id)
         if team is None:
             return None
 
         session = self._session()
-        trial = (
-            session.query(Experiment)
-            .filter(
-                Experiment.name == name,
-                Experiment.team_id == team_id,
-                Experiment.is_del == 0,
-            )
-            .first()
+        query = session.query(Experiment).filter(
+            Experiment.name == name,
+            Experiment.team_id == team_id,
         )
+        if not include_deleted:
+            query = query.filter(Experiment.is_del == 0)
+        trial = query.first()
         session.close()
         return trial
 
@@ -531,6 +529,64 @@ class SQLStore(MetaStore):
         )
         session.close()
         return exps
+
+    # also delete runs
+    def delete_experiment(self, experiment_id: uuid.UUID) -> bool:
+        session = self._session()
+
+        # Try to delete the experiment
+        exp = (
+            session.query(Experiment)
+            .filter(Experiment.uuid == experiment_id, Experiment.is_del == 0)
+            .first()
+        )
+
+        if exp and exp.status == Status.RUNNING:
+            raise ValueError("Cannot delete a running experiment. Please stop it first.")
+
+        # Delete all runs associated with this experiment (regardless of experiment status)
+        session.query(Run).filter(Run.experiment_id == experiment_id).update(
+            {Run.is_del: 1}, synchronize_session=False
+        )
+        if exp:
+            exp.is_del = 1
+            session.commit()
+            session.close()
+            return True
+
+        # Even if experiment doesn't exist, commit the run deletions
+        session.commit()
+        session.close()
+        return False
+
+    def delete_experiments(self, experiment_ids: list[uuid.UUID]) -> int:
+        """
+        Batch delete experiments by setting is_del flag.
+        Also deletes all associated runs.
+        Returns the number of experiments successfully deleted.
+        """
+        session = self._session()
+        # Delete the experiments
+        # if experiment is running, skip deletion for that experiment
+        filtered_exps = (
+            session.query(Experiment.uuid)
+            .filter(Experiment.uuid.in_(experiment_ids), Experiment.is_del == 0, Experiment.status != Status.RUNNING)
+            .all()
+        )
+        filtered_exp_ids = [exp_id for (exp_id,) in filtered_exps]  # unpack tuples
+
+        deleted_count = (
+            session.query(Experiment)
+            .filter(Experiment.uuid.in_(filtered_exp_ids))
+            .update({Experiment.is_del: 1}, synchronize_session=False)
+        )
+        # Delete all runs associated with these experiments
+        session.query(Run).filter(Run.experiment_id.in_(filtered_exp_ids)).update(
+            {Run.is_del: 1}, synchronize_session=False
+        )
+        session.commit()
+        session.close()
+        return deleted_count
 
     # ---------- Run APIs ----------
 
