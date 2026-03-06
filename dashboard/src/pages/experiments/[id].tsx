@@ -366,7 +366,7 @@ export function ExperimentDetailPage() {
                       <TableRow className="hover:bg-transparent border-b">
                         <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
                         <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
+                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -385,7 +385,7 @@ export function ExperimentDetailPage() {
                               {run.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-3 text-sm text-muted-foreground text-right">
+                          <TableCell className="py-3 text-sm text-muted-foreground">
                             {formatDistanceToNow(new Date(run.createdAt), {
                               addSuffix: true,
                             })}

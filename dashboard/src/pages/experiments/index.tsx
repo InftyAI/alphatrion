@@ -356,7 +356,7 @@ export function ExperimentsPage() {
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -408,7 +408,7 @@ export function ExperimentsPage() {
                           {experiment.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-3 text-sm text-muted-foreground text-right">
+                      <TableCell className="py-3 text-sm text-muted-foreground">
                         {formatDistanceToNow(new Date(experiment.createdAt), {
                           addSuffix: true,
                         })}
