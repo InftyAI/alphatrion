@@ -545,7 +545,6 @@ class SQLStore(MetaStore):
         session.close()
         return exps
 
-    # also delete runs
     def delete_experiment(self, experiment_id: uuid.UUID) -> bool:
         session = self._session()
 
