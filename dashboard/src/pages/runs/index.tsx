@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
@@ -60,19 +60,15 @@ export function RunsPage() {
     { page: 0, pageSize: 1000, enabled: !!selectedTeamId }
   );
 
-  // Fetch runs from the first experiment (temporary solution)
-  // TODO: Add a backend query to fetch all runs for a team
-  const firstExperimentId = experiments?.[0]?.id || '';
-
+  // Fetch runs from all experiments
   const { data: runs, isLoading: runsLoading } = useRuns(
-    firstExperimentId,
-    { page: currentPage, pageSize: PAGE_SIZE, enabled: !!firstExperimentId }
+    experiments?.[0]?.id || '',
+    { page: 0, pageSize: 10000, enabled: !!experiments?.[0]?.id }
   );
 
-  const totalRuns = team?.totalRuns || 0;
-  const totalPages = Math.ceil(totalRuns / PAGE_SIZE);
+  const isLoading = experimentsLoading || runsLoading;
 
-  // Filter and sort runs
+  // Filter and sort runs (client-side with all data)
   const filteredRuns = useMemo(() => {
     if (!runs) return [];
 
@@ -99,7 +95,27 @@ export function RunsPage() {
     return filtered;
   }, [runs, statusFilter, searchQuery]);
 
-  const isLoading = experimentsLoading || runsLoading;
+  // Client-side pagination after filtering
+  const totalFilteredRuns = filteredRuns.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredRuns / PAGE_SIZE));
+  const startIndex = currentPage * PAGE_SIZE;
+  const paginatedRuns = filteredRuns.slice(startIndex, startIndex + PAGE_SIZE);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [statusFilter, searchQuery]);
+
+  // Debug pagination
+  useEffect(() => {
+    console.log('Pagination debug:', {
+      totalFilteredRuns,
+      totalPages,
+      currentPage,
+      paginatedRunsLength: paginatedRuns.length,
+      PAGE_SIZE
+    });
+  }, [totalFilteredRuns, totalPages, currentPage, paginatedRuns.length]);
 
   return (
     <div className="space-y-4">
@@ -142,7 +158,7 @@ export function RunsPage() {
             <div className="p-8">
               <Skeleton className="h-24 w-full" />
             </div>
-          ) : !filteredRuns || filteredRuns.length === 0 ? (
+          ) : !paginatedRuns || paginatedRuns.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
               {searchQuery.trim() ? 'No iterations match your search' : statusFilter !== 'ALL' ? `No ${statusFilter} iterations found` : 'No iterations found'}
             </div>
@@ -154,11 +170,11 @@ export function RunsPage() {
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Experiment ID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50 text-right">Created</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRuns.map((run) => (
+                  {paginatedRuns.map((run) => (
                     <TableRow
                       key={run.id}
                       className="hover:bg-accent/50 transition-colors border-b last:border-0"
@@ -184,7 +200,7 @@ export function RunsPage() {
                           {run.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="py-3 text-sm text-muted-foreground text-right">
+                      <TableCell className="py-3 text-sm text-muted-foreground">
                         {formatDistanceToNow(new Date(run.createdAt), {
                           addSuffix: true,
                         })}
@@ -197,12 +213,12 @@ export function RunsPage() {
           )}
 
           {/* Pagination */}
-          {filteredRuns && filteredRuns.length > 0 && (
+          {paginatedRuns && paginatedRuns.length > 0 && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               pageSize={PAGE_SIZE}
-              totalItems={totalRuns}
+              totalItems={totalFilteredRuns}
               onPageChange={setCurrentPage}
               itemName="iterations"
             />

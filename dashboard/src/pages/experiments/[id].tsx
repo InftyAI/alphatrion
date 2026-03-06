@@ -23,6 +23,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Pagination } from '../../components/ui/pagination';
 import { formatDistanceToNow } from 'date-fns';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import type { Status } from '../../types';
@@ -37,9 +38,12 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
   FAILED: 'destructive',
 };
 
+const RUNS_PAGE_SIZE = 20;
+
 export function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState('overview');
+  const [runsPage, setRunsPage] = useState(0);
 
   const { data: experiment, isLoading: experimentLoading, error: experimentError } = useExperiment(id!);
 
@@ -47,7 +51,7 @@ export function ExperimentDetailPage() {
   const { data: runDurations } = useRunDurations(id!);
 
   // Fetch all runs for the iterations table
-  const { data: runs, isLoading: runsLoading } = useRuns(id!, { pageSize: 1000 });
+  const { data: runs, isLoading: runsLoading } = useRuns(id!, { pageSize: 10000 });
 
   // Calculate run statistics for pie chart - optimized to single pass
   const runStatsData = useMemo(() => {
@@ -70,6 +74,15 @@ export function ExperimentDetailPage() {
 
     return stats.filter(s => s.value > 0);
   }, [runDurations]);
+
+  // Pagination for runs
+  const totalRuns = runs?.length || 0;
+  const totalRunsPages = Math.max(1, Math.ceil(totalRuns / RUNS_PAGE_SIZE));
+  const paginatedRuns = useMemo(() => {
+    if (!runs) return [];
+    const startIndex = runsPage * RUNS_PAGE_SIZE;
+    return runs.slice(startIndex, startIndex + RUNS_PAGE_SIZE);
+  }, [runs, runsPage]);
 
   // Prepare iteration duration histogram data
   const { iterationHistogramData, iterationStats } = useMemo(() => {
@@ -443,48 +456,62 @@ export function ExperimentDetailPage() {
                   No iterations found for this experiment
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent border-b">
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Duration</TableHead>
-                        <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {runs.map((run) => (
-                        <TableRow
-                          key={run.id}
-                          className="hover:bg-accent/50 transition-colors border-b last:border-0"
-                        >
-                          <TableCell className="py-3 text-sm font-mono">
-                            <Link
-                              to={`/runs/${run.id}`}
-                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                            >
-                              {run.id}
-                            </Link>
-                          </TableCell>
-                          <TableCell className="py-3">
-                            <Badge variant={STATUS_VARIANTS[run.status]}>
-                              {run.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-3 text-sm font-mono">
-                            {run.duration != null && run.duration > 0 ? formatDuration(run.duration) : '-'}
-                          </TableCell>
-                          <TableCell className="py-3 text-sm text-muted-foreground">
-                            {formatDistanceToNow(new Date(run.createdAt), {
-                              addSuffix: true,
-                            })}
-                          </TableCell>
+                <>
+                  <div className="overflow-hidden rounded-lg">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b">
+                          <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">UUID</TableHead>
+                          <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
+                          <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Duration</TableHead>
+                          <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedRuns.map((run) => (
+                          <TableRow
+                            key={run.id}
+                            className="hover:bg-accent/50 transition-colors border-b last:border-0"
+                          >
+                            <TableCell className="py-3 text-sm font-mono">
+                              <Link
+                                to={`/runs/${run.id}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+                              >
+                                {run.id}
+                              </Link>
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Badge variant={STATUS_VARIANTS[run.status]}>
+                                {run.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 text-sm font-mono">
+                              {run.duration != null && run.duration > 0 ? formatDuration(run.duration) : '-'}
+                            </TableCell>
+                            <TableCell className="py-3 text-sm text-muted-foreground">
+                              {formatDistanceToNow(new Date(run.createdAt), {
+                                addSuffix: true,
+                              })}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalRuns > 0 && (
+                    <Pagination
+                      currentPage={runsPage}
+                      totalPages={totalRunsPages}
+                      pageSize={RUNS_PAGE_SIZE}
+                      totalItems={totalRuns}
+                      onPageChange={setRunsPage}
+                      itemName="iterations"
+                    />
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
