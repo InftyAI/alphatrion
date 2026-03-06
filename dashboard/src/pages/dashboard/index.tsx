@@ -173,12 +173,8 @@ export function DashboardPage() {
             <CardContent className="p-4">
               {experimentsLoading ? (
                 <Skeleton className="h-72 w-full" />
-              ) : filteredExperiments && filteredExperiments.length > 0 ? (
-                <ExperimentsStatusChart experiments={filteredExperiments} />
               ) : (
-                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
-                  No experiments data available for this time range
-                </div>
+                <ExperimentsStatusChart experiments={filteredExperiments || []} />
               )}
             </CardContent>
           </Card>
@@ -188,12 +184,8 @@ export function DashboardPage() {
             <CardContent className="p-4">
               {experimentsLoading ? (
                 <Skeleton className="h-72 w-full" />
-              ) : filteredExperiments && filteredExperiments.length > 0 ? (
-                <ExperimentsTimelineChart experiments={filteredExperiments} timeRange={timeRange} />
               ) : (
-                <div className="flex h-72 items-center justify-center text-sm text-muted-foreground">
-                  No experiments data available for this time range
-                </div>
+                <ExperimentsTimelineChart experiments={filteredExperiments || []} timeRange={timeRange} />
               )}
             </CardContent>
           </Card>
@@ -206,12 +198,8 @@ export function DashboardPage() {
             <CardContent className="p-4">
               {modelDistributionsLoading ? (
                 <Skeleton className="h-72 w-full" />
-              ) : modelDistributions && modelDistributions.length > 0 ? (
-                <ModelDistributionChart data={modelDistributions} />
               ) : (
-                <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
-                  No model distribution data available
-                </div>
+                <ModelDistributionChart data={modelDistributions || []} />
               )}
             </CardContent>
           </Card>
