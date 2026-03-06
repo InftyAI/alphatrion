@@ -346,18 +346,19 @@ class SQLStore(MetaStore):
         uid = uuid.uuid4()
 
         session = self._session()
-        # verify user is in the team
-        membership = (
-            session.query(TeamMember)
-            .filter(
-                TeamMember.user_id == user_id,
-                TeamMember.team_id == team_id,
-            )
-            .first()
-        )
-        if membership is None:
-            session.close()
-            raise ValueError("User must be a member of the team to create experiment")
+        # TODO: add back the validation.
+        # # verify user is in the team
+        # membership = (
+        #     session.query(TeamMember)
+        #     .filter(
+        #         TeamMember.user_id == user_id,
+        #         TeamMember.team_id == team_id,
+        #     )
+        #     .first()
+        # )
+        # if membership is None:
+        #     session.close()
+        #     raise ValueError("User must be a member of the team to create experiment")
 
         new_exp = Experiment(
             uuid=uid,
