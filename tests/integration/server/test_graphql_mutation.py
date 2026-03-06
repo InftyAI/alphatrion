@@ -6,6 +6,7 @@ import uuid
 
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
+from alphatrion.storage.sql_models import Status
 
 
 def unique_username(base: str) -> str:
@@ -685,3 +686,275 @@ def test_delete_experiments_already_deleted():
     assert response.errors is None
     # Should return 0 since the experiment is already deleted
     assert response.data["deleteExperiments"] == 0
+
+
+def test_delete_experiment_deletes_runs():
+    """Test that deleting an experiment also deletes its runs"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create a team, user, and experiment
+    team_id = metadb.create_team(name="Run Delete Team")
+    user_id = metadb.create_user(
+        username=unique_username("runuser"),
+        email=unique_email("runuser"),
+        team_id=team_id,
+    )
+    experiment_id = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Experiment with Runs"
+    )
+
+    # Create some runs for this experiment
+    run_id_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=experiment_id
+    )
+    run_id_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=experiment_id
+    )
+
+    # Verify runs exist
+    run_1 = metadb.get_run(run_id=run_id_1)
+    run_2 = metadb.get_run(run_id=run_id_2)
+    assert run_1 is not None
+    assert run_2 is not None
+
+    # Delete experiment via mutation
+    mutation = f"""
+    mutation {{
+        deleteExperiment(experimentId: "{experiment_id}")
+    }}
+    """
+    response = schema.execute_sync(mutation, variable_values={})
+    assert response.errors is None
+    assert response.data["deleteExperiment"] is True
+
+    # Verify experiment is deleted
+    deleted_experiment = metadb.get_experiment(experiment_id=experiment_id)
+    assert deleted_experiment is None
+
+    # Verify runs are also deleted
+    deleted_run_1 = metadb.get_run(run_id=run_id_1)
+    deleted_run_2 = metadb.get_run(run_id=run_id_2)
+    assert deleted_run_1 is None
+    assert deleted_run_2 is None
+
+
+def test_delete_experiments_batch_deletes_runs():
+    """Test that batch deleting experiments also deletes their runs"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create a team and user
+    team_id = metadb.create_team(name="Batch Run Delete Team")
+    user_id = metadb.create_user(
+        username=unique_username("batchrunuser"),
+        email=unique_email("batchrunuser"),
+        team_id=team_id,
+    )
+
+    # Create multiple experiments with runs
+    exp_id_1 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Experiment 1 with Runs"
+    )
+    run_1_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
+    run_1_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
+
+    exp_id_2 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Experiment 2 with Runs"
+    )
+    run_2_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
+    run_2_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
+
+    # Verify all runs exist
+    assert metadb.get_run(run_id=run_1_1) is not None
+    assert metadb.get_run(run_id=run_1_2) is not None
+    assert metadb.get_run(run_id=run_2_1) is not None
+    assert metadb.get_run(run_id=run_2_2) is not None
+
+    # Batch delete experiments
+    mutation = f"""
+    mutation {{
+        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}"])
+    }}
+    """
+    response = schema.execute_sync(mutation, variable_values={})
+    assert response.errors is None
+    assert response.data["deleteExperiments"] == 2
+
+    # Verify experiments are deleted
+    assert metadb.get_experiment(experiment_id=exp_id_1) is None
+    assert metadb.get_experiment(experiment_id=exp_id_2) is None
+
+    # Verify all runs are also deleted
+    assert metadb.get_run(run_id=run_1_1) is None
+    assert metadb.get_run(run_id=run_1_2) is None
+    assert metadb.get_run(run_id=run_2_1) is None
+    assert metadb.get_run(run_id=run_2_2) is None
+
+
+def test_delete_running_experiment_fails():
+    """Test that deleting a running experiment raises an error"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create a team, user, and experiment
+    team_id = metadb.create_team(name="Running Experiment Team")
+    user_id = metadb.create_user(
+        username=unique_username("runninguser"),
+        email=unique_email("runninguser"),
+        team_id=team_id,
+    )
+    experiment_id = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Running Experiment"
+    )
+
+    # Set experiment status to RUNNING
+    metadb.update_experiment(experiment_id=experiment_id, status=Status.RUNNING)
+
+    # Verify experiment is running
+    exp = metadb.get_experiment(experiment_id=experiment_id)
+    assert exp is not None
+    assert exp.status == Status.RUNNING
+
+    # Try to delete running experiment via mutation
+    mutation = f"""
+    mutation {{
+        deleteExperiment(experimentId: "{experiment_id}")
+    }}
+    """
+    response = schema.execute_sync(mutation, variable_values={})
+
+    # Should return an error
+    assert response.errors is not None
+    assert "Cannot delete a running experiment" in str(response.errors[0])
+
+    # Verify experiment still exists
+    exp = metadb.get_experiment(experiment_id=experiment_id)
+    assert exp is not None
+    assert exp.status == Status.RUNNING
+
+
+def test_delete_experiments_skips_running():
+    """Test that batch delete skips running experiments"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create a team and user
+    team_id = metadb.create_team(name="Mixed Status Team")
+    user_id = metadb.create_user(
+        username=unique_username("mixeduser"),
+        email=unique_email("mixeduser"),
+        team_id=team_id,
+    )
+
+    # Create multiple experiments with different statuses
+    exp_id_1 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Completed Experiment"
+    )
+    metadb.update_experiment(experiment_id=exp_id_1, status=Status.COMPLETED)
+
+    exp_id_2 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Running Experiment"
+    )
+    metadb.update_experiment(experiment_id=exp_id_2, status=Status.RUNNING)
+
+    exp_id_3 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Failed Experiment"
+    )
+    metadb.update_experiment(experiment_id=exp_id_3, status=Status.FAILED)
+
+    # Create runs for all experiments
+    run_id_1 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_1
+    )
+    run_id_2 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_2
+    )
+    run_id_3 = metadb.create_run(
+        team_id=team_id, user_id=user_id, experiment_id=exp_id_3
+    )
+
+    # Verify all experiments exist
+    assert metadb.get_experiment(experiment_id=exp_id_1) is not None
+    assert metadb.get_experiment(experiment_id=exp_id_2) is not None
+    assert metadb.get_experiment(experiment_id=exp_id_3) is not None
+
+    # Try to batch delete all experiments
+    mutation = f"""
+    mutation {{
+        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}", "{exp_id_3}"])
+    }}
+    """
+    response = schema.execute_sync(mutation, variable_values={})
+    assert response.errors is None
+    # Should only delete 2 experiments (skipped the running one)
+    assert response.data["deleteExperiments"] == 2
+
+    # Verify running experiment still exists
+    exp_2 = metadb.get_experiment(experiment_id=exp_id_2)
+    assert exp_2 is not None
+    assert exp_2.status == Status.RUNNING
+
+    # Verify non-running experiments are deleted
+    assert metadb.get_experiment(experiment_id=exp_id_1) is None
+    assert metadb.get_experiment(experiment_id=exp_id_3) is None
+
+    # Verify runs of deleted experiments are also deleted
+    assert metadb.get_run(run_id=run_id_1) is None
+    assert metadb.get_run(run_id=run_id_3) is None
+
+    # Verify run of running experiment still exists
+    run_2 = metadb.get_run(run_id=run_id_2)
+    assert run_2 is not None
+
+
+def test_delete_experiments_all_running():
+    """Test that batch delete returns 0 when all experiments are running"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create a team and user
+    team_id = metadb.create_team(name="All Running Team")
+    user_id = metadb.create_user(
+        username=unique_username("allrunninguser"),
+        email=unique_email("allrunninguser"),
+        team_id=team_id,
+    )
+
+    # Create multiple running experiments
+    exp_id_1 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Running Experiment 1"
+    )
+    metadb.update_experiment(experiment_id=exp_id_1, status=Status.RUNNING)
+
+    exp_id_2 = metadb.create_experiment(
+        team_id=team_id, user_id=user_id, name="Running Experiment 2"
+    )
+    metadb.update_experiment(experiment_id=exp_id_2, status=Status.RUNNING)
+
+    # Try to batch delete all running experiments
+    mutation = f"""
+    mutation {{
+        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}"])
+    }}
+    """
+    response = schema.execute_sync(mutation, variable_values={})
+    assert response.errors is None
+    # Should delete 0 experiments (all are running)
+    assert response.data["deleteExperiments"] == 0
+
+    # Verify all experiments still exist
+    exp_1 = metadb.get_experiment(experiment_id=exp_id_1)
+    exp_2 = metadb.get_experiment(experiment_id=exp_id_2)
+    assert exp_1 is not None
+    assert exp_2 is not None
+    assert exp_1.status == Status.RUNNING
+    assert exp_2.status == Status.RUNNING
