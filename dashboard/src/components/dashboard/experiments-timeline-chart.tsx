@@ -75,7 +75,12 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
+      {chartData.length === 0 ? (
+        <div className="flex items-center justify-center h-[240px] text-sm text-muted-foreground">
+          No experiments data available for this time range
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={240}>
         <LineChart data={chartData} margin={{ left: 10, right: 15, top: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
@@ -138,6 +143,7 @@ export function ExperimentsTimelineChart({ experiments, timeRange }: Experiments
           />
         </LineChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 }

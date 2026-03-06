@@ -41,49 +41,52 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
       .sort((a, b) => b.value - a.value); // Sort by count descending
   }, [experiments]);
 
-  if (chartData.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        No data available
-      </div>
-    );
-  }
-
   // Calculate total for percentages
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold">Experiments Distribution</h3>
-      <ResponsiveContainer width="100%" height={240}>
-        <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={75}
-            labelLine={false}
-            label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
-            style={{ fontSize: '11px' }}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(value: number) => [value, 'Count']}
-            contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '6px',
-              fontSize: '11px',
-            }}
-          />
-          <Legend wrapperStyle={{ fontSize: '11px' }} />
-        </PieChart>
-      </ResponsiveContainer>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Experiments Distribution</h3>
+        <div className="text-xs text-muted-foreground">
+          Total: {total}
+        </div>
+      </div>
+      {chartData.length === 0 ? (
+        <div className="flex items-center justify-center h-[240px] text-sm text-muted-foreground">
+          No data available
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={240}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={75}
+              labelLine={false}
+              label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+              style={{ fontSize: '11px' }}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: number) => [value, 'Count']}
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '6px',
+                fontSize: '11px',
+              }}
+            />
+            <Legend wrapperStyle={{ fontSize: '11px' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
