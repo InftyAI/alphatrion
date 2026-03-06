@@ -3,10 +3,8 @@ import axios from 'axios';
 /**
  * GraphQL client for AlphaTrion backend
  *
- * The backend provides a read-only GraphQL API at /graphql
- * with queries for teams, experiments, runs, and metrics.
- *
- * No subscriptions or mutations are currently supported.
+ * The backend provides a GraphQL API at /graphql
+ * with queries and mutations for teams, experiments, runs, and metrics.
  */
 
 // Use relative URL to work with proxy in development
@@ -61,6 +59,17 @@ export async function graphqlQuery<T>(
     }
     throw error;
   }
+}
+
+/**
+ * Execute a GraphQL mutation
+ */
+export async function graphqlMutation<T>(
+  mutation: string,
+  variables?: Record<string, unknown>
+): Promise<T> {
+  // Mutations use the same endpoint and logic as queries
+  return graphqlQuery<T>(mutation, variables);
 }
 
 // GraphQL query templates
@@ -342,4 +351,19 @@ export const queries = {
     }
   `,
 
+};
+
+// GraphQL mutation templates
+export const mutations = {
+  deleteExperiment: `
+    mutation DeleteExperiment($experimentId: ID!) {
+      deleteExperiment(experimentId: $experimentId)
+    }
+  `,
+
+  deleteExperiments: `
+    mutation DeleteExperiments($experimentIds: [ID!]!) {
+      deleteExperiments(experimentIds: $experimentIds)
+    }
+  `,
 };

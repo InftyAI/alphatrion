@@ -126,5 +126,13 @@ class Mutation:
     def remove_user_from_team(self, input: RemoveUserFromTeamInput) -> bool:
         return GraphQLMutations.remove_user_from_team(input=input)
 
+    @strawberry.mutation
+    def delete_experiment(self, experiment_id: strawberry.ID) -> bool:
+        return GraphQLMutations.delete_experiment(experiment_id=experiment_id)
+
+    @strawberry.mutation
+    def delete_experiments(self, experiment_ids: list[strawberry.ID]) -> int:
+        return GraphQLMutations.delete_experiments(experiment_ids=experiment_ids)
+
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
