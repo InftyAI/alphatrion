@@ -37,7 +37,7 @@ async def test_craft_experiment():
     # Or the result below will always be right.
     await asyncio.sleep(1)
 
-    runs = runtime.metadb.list_runs_by_exp_id(exp_id=exp_id)
+    runs = runtime.metadb.list_runs_by_exp_id(experiment_id=exp_id)
     assert len(runs) == 5
     completed_runs = [run for run in runs if run.status == Status.COMPLETED]
     assert len(completed_runs) == 2

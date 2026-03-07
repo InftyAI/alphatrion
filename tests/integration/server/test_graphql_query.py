@@ -352,9 +352,9 @@ async def test_query_single_run():
     assert response.data["run"]["status"] == "COMPLETED"
     assert len(response.data["run"]["spans"]) > 0
     # Verify tokens are fetched from ClickHouse via GraphQL fields
-    assert response.data["run"]["aggregatedTokens"]["totalTokens"] is not None
-    assert response.data["run"]["aggregatedTokens"]["inputTokens"] is not None
-    assert response.data["run"]["aggregatedTokens"]["outputTokens"] is not None
+    assert int(response.data["run"]["aggregatedTokens"]["totalTokens"]) > 0
+    assert int(response.data["run"]["aggregatedTokens"]["inputTokens"]) > 0
+    assert int(response.data["run"]["aggregatedTokens"]["outputTokens"]) > 0
 
     # Verify tokens are NOT cached in meta anymore
     metadb = runtime.storage_runtime().metadb
@@ -453,3 +453,63 @@ def test_query_experiment_metrics():
     for metric in response.data["experiment"]["metrics"]:
         assert metric["teamId"] == str(team_id)
         assert metric["experimentId"] == str(exp_id)
+
+
+@pytest.mark.asyncio
+async def test_query_experiment_with_usage():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(team_id=team_id, user_id=user_id)
+
+    exp_id = None
+
+    async with CraftExperiment.start(
+        name="integration_test_experiment_resume",
+        description="Experiment for integration test resume",
+        meta={"experiment_case": "integration_test_resume"},
+    ) as exp:
+        exp_id = exp.id
+        # Although we called create_joke, but it will be cancelled
+        # before get the response from the ollama, the spans will be empty.
+        exp.run(create_joke)
+
+        exp._on_signal()  # Simulate sending a signal to trigger resume
+        await exp.wait()
+
+    query = f"""
+    query {{
+        experiment(id: "{exp_id}") {{
+            id
+            status
+            aggregatedTokens {{
+                totalTokens
+                inputTokens
+                outputTokens
+            }}
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+
+    assert response.errors is None
+    assert response.data["experiment"]["status"] == "CANCELLED"
+    assert response.data["experiment"]["aggregatedTokens"] is not None
+    assert response.data["experiment"]["aggregatedTokens"]["totalTokens"] is not None
+    assert response.data["experiment"]["aggregatedTokens"]["inputTokens"] is not None
+    assert response.data["experiment"]["aggregatedTokens"]["outputTokens"] is not None
+
+    exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.CANCELLED
+    assert exp_obj.usage is not None
+    assert "total_tokens" in exp_obj.usage
+    assert "input_tokens" in exp_obj.usage
+    assert "output_tokens" in exp_obj.usage
+
+    # resume the experiment
+    async with CraftExperiment.start(name="integration_test_experiment_resume") as exp:
+        exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
+        assert exp_obj.status == Status.RUNNING
+        assert exp_obj.usage is None
