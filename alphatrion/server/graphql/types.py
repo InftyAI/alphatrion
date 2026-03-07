@@ -125,10 +125,9 @@ class Experiment:
     params: JSON | None
     duration: float
     status: GraphQLStatusEnum
+    cost: JSON | None
     created_at: datetime
     updated_at: datetime
-
-    _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
     def labels(self) -> list[Label]:
@@ -163,9 +162,8 @@ class Run:
     meta: JSON | None
     duration: float
     status: GraphQLStatusEnum
+    cost: JSON | None
     created_at: datetime
-
-    _token_cache: strawberry.Private[dict[str, int] | None] = None
 
     @strawberry.field
     def metrics(self) -> list["Metric"]:

@@ -328,8 +328,8 @@ def test_add_user_to_team_with_invalid_user():
     assert "not found" in str(response.errors[0])
 
 
-def test_complete_workflow():
-    """Test complete workflow: create team, create user, add user to teams"""
+def test_user_workflow():
+    """Test user workflow: create team, create user, add user to teams"""
     runtime.init()
 
     username = unique_username("alice")
