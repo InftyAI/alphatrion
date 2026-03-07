@@ -658,7 +658,7 @@ class SQLStore(MetaStore):
 
     def list_runs_by_exp_id(
         self,
-        exp_id: uuid.UUID,
+        experiment_id: uuid.UUID,
         page: int = 0,
         page_size: int = 10,
         order_by: str = "created_at",
@@ -667,7 +667,7 @@ class SQLStore(MetaStore):
         session = self._session()
         runs = (
             session.query(Run)
-            .filter(Run.experiment_id == exp_id, Run.is_del == 0)
+            .filter(Run.experiment_id == experiment_id, Run.is_del == 0)
             .order_by(
                 getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
             )

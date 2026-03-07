@@ -11,7 +11,10 @@ from alphatrion.artifact import artifact
 from alphatrion.server.repo.gcs_repo import GCSRepoService, detect_language
 from alphatrion.server.repo.local_repo import LocalRepoService
 from alphatrion.storage import runtime
-from alphatrion.storage.sql_models import Status
+from alphatrion.storage.sql_models import (
+    FINISHED_STATUS,
+    Status,
+)
 
 from .types import (
     AddUserToTeamInput,
@@ -146,6 +149,7 @@ class GraphQLResolvers:
                 duration=e.duration,
                 status=GraphQLStatusEnum[Status(e.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(e.kind).name],
+                cost=e.cost,
                 created_at=e.created_at,
                 updated_at=e.updated_at,
             )
@@ -168,6 +172,7 @@ class GraphQLResolvers:
                 duration=exp.duration,
                 status=GraphQLStatusEnum[Status(exp.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
+                cost=exp.cost,
                 created_at=exp.created_at,
                 updated_at=exp.updated_at,
             )
@@ -183,7 +188,7 @@ class GraphQLResolvers:
     ) -> list[Run]:
         metadb = runtime.storage_runtime().metadb
         runs = metadb.list_runs_by_exp_id(
-            exp_id=uuid.UUID(experiment_id),
+            experiment_id=uuid.UUID(experiment_id),
             page=page,
             page_size=page_size,
             order_by=order_by,
@@ -198,6 +203,7 @@ class GraphQLResolvers:
                 meta=r.meta,
                 duration=r.duration,
                 status=GraphQLStatusEnum[Status(r.status).name],
+                cost=r.cost,
                 created_at=r.created_at,
             )
             for r in runs
@@ -216,6 +222,7 @@ class GraphQLResolvers:
                 meta=run.meta,
                 duration=run.duration,
                 status=GraphQLStatusEnum[Status(run.status).name],
+                cost=run.cost,
                 created_at=run.created_at,
             )
         return None
@@ -303,6 +310,7 @@ class GraphQLResolvers:
                 duration=e.duration,
                 status=GraphQLStatusEnum[Status(e.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(e.kind).name],
+                cost=e.cost,
                 created_at=e.created_at,
                 updated_at=e.updated_at,
             )
@@ -388,30 +396,22 @@ class GraphQLResolvers:
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
         try:
-            trace_store = runtime.storage_runtime().tracestore
-            spans = trace_store.get_llm_spans_by_run_id(run_id)
-            # Don't close - it's a shared singleton connection
-
-            total_tokens = 0
-            input_tokens = 0
-            output_tokens = 0
-
-            for span in spans:
-                span_attrs = span.get("SpanAttributes", {})
-
-                # Aggregate tokens from LLM spans
-                if "llm.usage.total_tokens" in span_attrs:
-                    total_tokens += int(span_attrs["llm.usage.total_tokens"])
-                if "gen_ai.usage.input_tokens" in span_attrs:
-                    input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
-                if "gen_ai.usage.output_tokens" in span_attrs:
-                    output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
-
-            return {
-                "total_tokens": total_tokens,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-            }
+            run = runtime.storage_runtime().metadb.get_run(run_id=run_id)
+            if run.status in FINISHED_STATUS:
+                if run.usage and "total_tokens" in run.usage:
+                    return {
+                        "total_tokens": run.usage.get("total_tokens", 0),
+                        "input_tokens": run.usage.get("input_tokens", 0),
+                        "output_tokens": run.usage.get("output_tokens", 0),
+                    }
+                else:
+                    usage = GraphQLResolvers.get_run_usage(run_id)
+                    runtime.storage_runtime().metadb.update_run(
+                        run_id=run_id, usage=usage
+                    )
+                    return usage
+            else:
+                return GraphQLResolvers.get_run_usage(run_id)
         except Exception as e:
             import logging
 
@@ -421,6 +421,33 @@ class GraphQLResolvers:
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
     @staticmethod
+    def get_run_usage(run_id: strawberry.ID) -> dict[str, int]:
+        trace_store = runtime.storage_runtime().tracestore
+        spans = trace_store.get_llm_spans_by_run_id(run_id)
+        # Don't close - it's a shared singleton connection
+
+        total_tokens = 0
+        input_tokens = 0
+        output_tokens = 0
+
+        for span in spans:
+            span_attrs = span.get("SpanAttributes", {})
+
+            # Aggregate tokens from LLM spans
+            if "llm.usage.total_tokens" in span_attrs:
+                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            if "gen_ai.usage.input_tokens" in span_attrs:
+                input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
+            if "gen_ai.usage.output_tokens" in span_attrs:
+                output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+
+        return {
+            "total_tokens": total_tokens,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
+
+    @staticmethod
     def aggregate_experiment_tokens(experiment_id: strawberry.ID) -> dict[str, int]:
         """Aggregate token usage from all spans in an experiment."""
 
@@ -428,31 +455,24 @@ class GraphQLResolvers:
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
         try:
-            trace_store = runtime.storage_runtime().tracestore
-            # Get all LLM spans for this experiment in a single query
-            spans = trace_store.get_llm_spans_by_exp_id(experiment_id)
-            # Don't close - it's a shared singleton connection
-
-            total_tokens = 0
-            input_tokens = 0
-            output_tokens = 0
-
-            for span in spans:
-                span_attrs = span.get("SpanAttributes", {})
-
-                # Aggregate tokens from LLM spans
-                if "llm.usage.total_tokens" in span_attrs:
-                    total_tokens += int(span_attrs["llm.usage.total_tokens"])
-                if "gen_ai.usage.input_tokens" in span_attrs:
-                    input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
-                if "gen_ai.usage.output_tokens" in span_attrs:
-                    output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
-
-            return {
-                "total_tokens": total_tokens,
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-            }
+            exp = runtime.storage_runtime().metadb.get_experiment(
+                experiment_id=experiment_id
+            )
+            if exp.status in FINISHED_STATUS:
+                if exp.usage and "total_tokens" in exp.usage:
+                    return {
+                        "total_tokens": exp.usage.get("total_tokens", 0),
+                        "input_tokens": exp.usage.get("input_tokens", 0),
+                        "output_tokens": exp.usage.get("output_tokens", 0),
+                    }
+                else:
+                    usage = GraphQLResolvers.get_experiment_usage(experiment_id)
+                    runtime.storage_runtime().metadb.update_experiment(
+                        experiment_id=experiment_id, usage=usage
+                    )
+                    return usage
+            else:
+                return GraphQLResolvers.get_experiment_usage(experiment_id)
         except Exception as e:
             import logging
 
@@ -460,6 +480,34 @@ class GraphQLResolvers:
                 f"Failed to aggregate tokens for experiment {experiment_id}: {e}"
             )
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def get_experiment_usage(experiment_id: strawberry.ID):
+        trace_store = runtime.storage_runtime().tracestore
+        # Get all LLM spans for this experiment in a single query
+        spans = trace_store.get_llm_spans_by_exp_id(experiment_id)
+        # Don't close - it's a shared singleton connection
+
+        total_tokens = 0
+        input_tokens = 0
+        output_tokens = 0
+
+        for span in spans:
+            span_attrs = span.get("SpanAttributes", {})
+
+            # Aggregate tokens from LLM spans
+            if "llm.usage.total_tokens" in span_attrs:
+                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            if "gen_ai.usage.input_tokens" in span_attrs:
+                input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
+            if "gen_ai.usage.output_tokens" in span_attrs:
+                output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+
+        return {
+            "total_tokens": total_tokens,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
 
     @staticmethod
     def list_spans(run_id: strawberry.ID) -> list[Span]:

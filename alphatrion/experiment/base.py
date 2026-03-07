@@ -217,10 +217,18 @@ class Experiment(ABC):
         # to avoid confusion.
         if exp_obj and exp_obj.status != Status.COMPLETED:
             self._id = exp_obj.uuid
-            # reset to running status.
+            usage = exp_obj.usage
+
+            # reset to running status, also need to reset the tokens.
+            if usage and "total_tokens" in usage:
+                # delete the tokens in the usage
+                usage.delete("total_tokens")
+                usage.delete("input_tokens")
+                usage.delete("output_tokens")
             self._runtime._metadb.update_experiment(
                 experiment_id=self._id,
                 status=Status.RUNNING,
+                usage=usage,
             )
         elif exp_obj and exp_obj.status == Status.COMPLETED:
             raise RuntimeError(
@@ -371,6 +379,8 @@ class Experiment(ABC):
     # or it could lead to experiment not being marked as completed.
     # TODO: Should we distinguish done and cancel?
     def done(self):
+        if self.is_done():
+            return
         self._cancel()
         self._cleanup()
 

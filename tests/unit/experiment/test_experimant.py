@@ -156,7 +156,7 @@ async def test_experiment_with_done_with_err():
 
 
 @pytest.mark.asyncio
-async def test_experiment_with_done_with_cancel():
+async def test_experiment_with_resume():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
@@ -317,7 +317,7 @@ async def test_experiment_with_signal():
 
     start_time = datetime.now()
     async with CraftExperiment.start(
-        name="first-experiment",
+        name="experiment-with-signal",
     ) as exp:
         exp.run(lambda: asyncio.sleep(5))
         exp.run(partial(fake_work, exp))
