@@ -296,9 +296,19 @@ export const queries = {
     }
   `,
 
+  listArtifactFiles: `
+    query ListArtifactFiles($team_id: ID!, $tag: String!, $repo_name: String!) {
+      artifactFiles(teamId: $team_id, tag: $tag, repoName: $repo_name) {
+        filename
+        size
+        contentType
+      }
+    }
+  `,
+
   getArtifactContent: `
-    query GetArtifactContent($team_id: ID!, $tag: String!, $repo_name: String!) {
-      artifactContent(teamId: $team_id, tag: $tag, repoName: $repo_name) {
+    query GetArtifactContent($team_id: ID!, $tag: String!, $repo_name: String!, $filename: String) {
+      artifactContent(teamId: $team_id, tag: $tag, repoName: $repo_name, filename: $filename) {
         filename
         content
         contentType
@@ -347,6 +357,60 @@ export const queries = {
         totalTokens
         inputTokens
         outputTokens
+      }
+    }
+  `,
+
+  listDatasets: `
+    query ListDatasets($teamId: ID!, $page: Int, $pageSize: Int) {
+      datasets(teamId: $teamId, page: $page, pageSize: $pageSize) {
+        id
+        name
+        description
+        path
+        meta
+        teamId
+        experimentId
+        runId
+        userId
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
+  getDataset: `
+    query GetDataset($id: ID!) {
+      dataset(id: $id) {
+        id
+        name
+        description
+        path
+        meta
+        teamId
+        experimentId
+        runId
+        userId
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
+  listDatasetsByExperiment: `
+    query ListDatasetsByExperiment($teamId: ID!, $experimentId: ID!, $page: Int, $pageSize: Int) {
+      datasetsByExperiment(teamId: $teamId, experimentId: $experimentId, page: $page, pageSize: $pageSize) {
+        id
+        name
+        description
+        path
+        meta
+        teamId
+        experimentId
+        runId
+        userId
+        createdAt
+        updatedAt
       }
     }
   `,

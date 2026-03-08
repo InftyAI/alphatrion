@@ -80,27 +80,27 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
   }, [chartData]);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Token Usage</h3>
-        <div className="text-xs text-muted-foreground">
+        <h3 className="text-xs font-semibold">Token Usage</h3>
+        <div className="text-[10px] text-muted-foreground">
           Total: {totalTokens.toLocaleString()} ({totalInputTokens.toLocaleString()}↓ {totalOutputTokens.toLocaleString()}↑)
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={chartData} margin={{ left: 10, right: 15, top: 10, bottom: 5 }}>
+      <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={chartData} margin={{ left: 5, right: 10, top: 5, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
           <XAxis
             dataKey="displayDate"
-            tick={{ fontSize: 10 }}
+            tick={{ fontSize: 9 }}
             angle={-45}
             textAnchor="end"
-            height={50}
+            height={40}
           />
           <YAxis
-            tick={{ fontSize: 10 }}
-            width={50}
+            tick={{ fontSize: 9 }}
+            width={35}
             tickFormatter={(value) =>
               value >= 1000000
                 ? `${(value / 1000000).toFixed(1)}M`
@@ -112,8 +112,8 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
               value: 'Tokens',
               angle: -90,
               position: 'insideLeft',
-              offset: -5,
-              style: { textAnchor: 'middle', fontSize: 11 }
+              offset: 0,
+              style: { textAnchor: 'middle', fontSize: 9 }
             }}
           />
           <Tooltip
@@ -151,11 +151,11 @@ export function DailyTokenUsageChart({ data, timeRange }: DailyTokenUsageChartPr
             }}
           />
           <Legend
-            wrapperStyle={{ fontSize: '11px', paddingTop: '2px' }}
+            wrapperStyle={{ fontSize: '10px', paddingTop: '2px' }}
             iconType="circle"
-            iconSize={8}
+            iconSize={6}
             verticalAlign="bottom"
-            height={25}
+            height={20}
           />
           <Line
             type="monotone"

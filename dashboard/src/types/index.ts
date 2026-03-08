@@ -90,6 +90,20 @@ export interface Metric {
   createdAt: string;
 }
 
+export interface Dataset {
+  id: string;
+  name: string;
+  description: string | null;
+  path: string;
+  meta: Record<string, unknown> | null;
+  teamId: string;
+  experimentId: string | null;
+  runId: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Grouped metrics for chart rendering
 export interface GroupedMetrics {
   [key: string]: Metric[];

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Database } from 'lucide-react';
 import { useRun } from '../../hooks/use-runs';
 import {
   Card,
@@ -9,6 +10,7 @@ import {
   CardTitle,
 } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { TraceTimeline } from '../../components/traces/trace-timeline';
@@ -26,6 +28,7 @@ const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'war
 
 export function RunDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   const { data: run, isLoading: runLoading, error: runError } = useRun(id!);
 
@@ -75,9 +78,20 @@ export function RunDetailPage() {
             {run.id}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[run.status]}>
-          {run.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/datasets?runId=${run.id}`)}
+            className="h-8 gap-2"
+          >
+            <Database className="h-3.5 w-3.5" />
+            Datasets
+          </Button>
+          <Badge variant={STATUS_VARIANTS[run.status]}>
+            {run.status}
+          </Badge>
+        </div>
       </div>
 
       {/* Tabs */}

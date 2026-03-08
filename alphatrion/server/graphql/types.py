@@ -208,6 +208,7 @@ class Dataset:
     id: strawberry.ID
     name: str
     description: str | None
+    path: str
     meta: JSON | None
     team_id: strawberry.ID
     experiment_id: strawberry.ID | None
@@ -252,7 +253,6 @@ class RemoveUserFromTeamInput:
     user_id: strawberry.ID
     team_id: strawberry.ID
 
-
 # Artifact types
 @strawberry.type
 class ArtifactRepository:
@@ -262,6 +262,13 @@ class ArtifactRepository:
 @strawberry.type
 class ArtifactTag:
     name: str
+
+
+@strawberry.type
+class ArtifactFile:
+    filename: str
+    size: int
+    content_type: str
 
 
 @strawberry.type

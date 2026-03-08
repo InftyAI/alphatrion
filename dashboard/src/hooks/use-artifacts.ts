@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   listRepositories,
   listTags,
+  listFiles,
   getArtifactContent,
 } from '../lib/artifact-client';
 
@@ -34,6 +35,25 @@ export function useTags(
 }
 
 /**
+ * Hook to fetch files in an artifact
+ */
+export function useArtifactFiles(
+  teamId: string,
+  tag: string,
+  repoName: string,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ['artifacts', 'files', teamId, tag, repoName],
+    queryFn: () => listFiles(teamId, tag, repoName),
+    enabled: Boolean(enabled && teamId && tag && repoName),
+    staleTime: Infinity, // Files list is immutable
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+/**
  * Hook to fetch artifact content with caching
  * Artifacts are immutable, so we cache them indefinitely
  */
@@ -41,11 +61,12 @@ export function useArtifactContent(
   teamId: string,
   tag: string,
   repoName: string,
+  filename?: string,
   enabled: boolean = true
 ) {
   return useQuery({
-    queryKey: ['artifacts', 'content', teamId, tag, repoName],
-    queryFn: () => getArtifactContent(teamId, tag, repoName),
+    queryKey: ['artifacts', 'content', teamId, tag, repoName, filename],
+    queryFn: () => getArtifactContent(teamId, tag, repoName, filename),
     enabled: Boolean(enabled && teamId && tag && repoName),
     // Artifacts are immutable - cache indefinitely
     staleTime: Infinity,
