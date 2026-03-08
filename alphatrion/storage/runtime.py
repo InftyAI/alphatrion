@@ -6,6 +6,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
+from alphatrion.artifact.artifact import Artifact
 from alphatrion.storage.sqlstore import SQLStore
 from alphatrion.storage.tracestore import TraceStore
 from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
@@ -54,6 +55,10 @@ class StorageRuntime:
             tracer_provider = trace.get_tracer_provider()
             tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
 
+        artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
+        if artifact_storage_enabled():
+            self._artifact = Artifact(insecure=artifact_insecure)
+
         self._inited = True
 
     @property
@@ -70,6 +75,10 @@ class StorageRuntime:
             if isinstance(tracer_provider, TracerProvider):
                 tracer_provider.force_flush(timeout_millis=5000)
 
+    @property
+    def artifact(self):
+        return self._artifact
+
 
 def init():
     """
@@ -85,3 +94,7 @@ def storage_runtime() -> StorageRuntime:
     if __STORAGE_RUNTIME__ is None:
         raise RuntimeError("StorageRuntime is not initialized. Call init() first.")
     return __STORAGE_RUNTIME__
+
+
+def artifact_storage_enabled() -> bool:
+    return os.getenv(envs.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"

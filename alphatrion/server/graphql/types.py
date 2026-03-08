@@ -253,6 +253,7 @@ class RemoveUserFromTeamInput:
     user_id: strawberry.ID
     team_id: strawberry.ID
 
+
 # Artifact types
 @strawberry.type
 class ArtifactRepository:

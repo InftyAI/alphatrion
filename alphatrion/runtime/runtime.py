@@ -3,7 +3,6 @@ import os
 import uuid
 
 from alphatrion import envs
-from alphatrion.artifact.artifact import Artifact
 from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sqlstore import SQLStore
 
@@ -58,6 +57,7 @@ class Runtime:
         storage_runtime.init()
         self._metadb = storage_runtime.storage_runtime().metadb
         self._tracestore = storage_runtime.storage_runtime().tracestore
+        self._artifact = storage_runtime.storage_runtime().artifact
 
         self._user_id = user_id
         self._team_id = team_id
@@ -74,17 +74,8 @@ class Runtime:
             self._team_id = teams[0].uuid
 
         self._root_path = os.getenv(envs.ROOT_PATH, os.path.expanduser("~/.alphatrion"))
-
-        artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
-
-        if self.artifact_storage_enabled():
-            self._artifact = Artifact(team_id=self._team_id, insecure=artifact_insecure)
-
         if not os.path.exists(self._root_path):
             os.makedirs(self._root_path, exist_ok=True)
-
-    def artifact_storage_enabled(self) -> bool:
-        return os.getenv(envs.ENABLE_ARTIFACT_STORAGE, "true").lower() == "true"
 
     @property
     def metadb(self) -> SQLStore:
@@ -93,6 +84,10 @@ class Runtime:
     @property
     def tracestore(self):
         return self._tracestore
+
+    @property
+    def artifact(self):
+        return self._artifact
 
     @property
     def user_id(self) -> uuid.UUID:

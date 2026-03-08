@@ -352,8 +352,10 @@ class GraphQLResolvers:
     ) -> list[ArtifactTag]:
         """List tags for a repository."""
 
-        arf = artifact.Artifact(team_id=team_id, insecure=True)
-        return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_name)]
+        arf = runtime.storage_runtime().artifact
+        return [
+            ArtifactTag(name=tag) for tag in arf.list_versions(f"{team_id}/{repo_name}")
+        ]
 
     @staticmethod
     async def list_artifact_files(
@@ -362,8 +364,8 @@ class GraphQLResolvers:
         """List files in an artifact without loading content."""
 
         try:
-            arf = artifact.Artifact(team_id=team_id, insecure=True)
-            file_paths = arf.pull(repo_name=repo_name, version=tag)
+            arf = runtime.storage_runtime().artifact
+            file_paths = arf.pull(repo_name=f"{team_id}/{repo_name}", version=tag)
 
             if not file_paths:
                 return []
@@ -405,11 +407,11 @@ class GraphQLResolvers:
         """Get artifact content from registry."""
         try:
             # Initialize artifact client
-            arf = artifact.Artifact(team_id=team_id, insecure=True)
+            arf = runtime.storage_runtime().artifact
 
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
-            file_paths = arf.pull(repo_name=repo_name, version=tag)
+            file_paths = arf.pull(repo_name=f"{team_id}/{repo_name}", version=tag)
 
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
@@ -875,4 +877,21 @@ class GraphQLMutations:
     @staticmethod
     def delete_dataset(dataset_id: strawberry.ID) -> bool:
         metadb = runtime.storage_runtime().metadb
+        artifact = runtime.storage_runtime().artifact
+        dataset = metadb.get_dataset(dataset_id=dataset_id)
+
+        # delete the artifact file as well
+        if dataset:
+            try:
+                repo_name, version = dataset.path.split(":", 1)
+                artifact.delete(repo_name=repo_name, versions=version)
+            except Exception as e:
+                print(f"Failed to delete artifact for dataset {dataset_id}: {e}")
+
         return metadb.delete_dataset(dataset_id=dataset_id)
+
+    @staticmethod
+    def delete_datasets(dataset_ids: list[strawberry.ID]) -> bool:
+        for id in dataset_ids:
+            GraphQLMutations.delete_dataset(dataset_id=id)
+        return True

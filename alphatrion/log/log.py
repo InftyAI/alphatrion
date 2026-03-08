@@ -10,9 +10,9 @@ from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
     checkpoint_path,
 )
+from alphatrion.storage import runtime as storage_runtime
 
 BEST_RESULT_PATH = "best_result_path"
-EXECUTION_RESULT = "execution_result"
 
 
 async def log_artifact(
@@ -45,7 +45,7 @@ async def log_artifact(
     if runtime is None:
         raise RuntimeError("Runtime is not initialized. Please call init() first.")
 
-    if not runtime.artifact_storage_enabled():
+    if not storage_runtime.artifact_storage_enabled():
         raise RuntimeError(
             "Artifact storage is not enabled in the runtime."
             "Set ENABLE_ARTIFACT_STORAGE=true in the environment variables."
@@ -59,7 +59,7 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, repo_name, paths, version
+        None, runtime._artifact.push, f"{runtime.team_id}/{repo_name}", paths, version
     )
 
 
