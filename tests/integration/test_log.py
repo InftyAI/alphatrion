@@ -485,7 +485,7 @@ async def test_log_metrics_with_min_target_meet():
 
 
 @pytest.mark.asyncio
-async def test_log_dataset():
+async def test_log_dataset_with_json():
     team_id = uuid.uuid4()
     alpha.init(
         team_id=team_id,
@@ -495,7 +495,7 @@ async def test_log_dataset():
     async def fake_worker():
         await alpha.log_dataset(
             name="test_dataset.json",
-            data={
+            data_or_path={
                 "example": "test",
                 "value": 123,
                 "flag": True,
@@ -527,3 +527,48 @@ async def test_log_dataset():
         assert datasets[0].run_id == run_obj.uuid
         assert datasets[0].path == f"{runtime.team_id}/dataset:{list_versions[0]}"
         assert int(datasets[0].meta["size"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_log_dataset_with_file():
+    team_id = uuid.uuid4()
+    alpha.init(
+        team_id=team_id,
+        user_id=uuid.uuid4(),
+    )
+
+    async def fake_worker():
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            file_path = "test_dataset.txt"
+            with open(file_path, "w") as f:
+                f.write("This is a test dataset file.")
+
+            await alpha.log_dataset(
+                name="test_dataset",
+                data_or_path=file_path,
+            )
+
+    async with experiment.CraftExperiment.start(
+        name="exp-log-dataset",
+    ) as exp:
+        await alpha.log_params({"temp": 0.5, "lr": 0.01})
+
+        run = exp.run(lambda: fake_worker())
+        await run.wait()
+
+        run_obj = run._get_obj()
+        assert run_obj is not None
+        runtime = exp._runtime
+
+        list_versions = runtime._artifact.list_versions("dataset")
+        assert len(list_versions) == 1
+        datasets = runtime._metadb.list_datasets(team_id=team_id, run_id=run_obj.uuid)
+        assert len(datasets) == 1
+        assert datasets[0].name == "test_dataset"
+        assert datasets[0].team_id == team_id
+        assert datasets[0].user_id == runtime._user_id
+        assert datasets[0].experiment_id == exp.id
+        assert datasets[0].run_id == run_obj.uuid
+        assert datasets[0].path == f"{runtime.team_id}/dataset:{list_versions[0]}"
+        assert datasets[0].meta is None
