@@ -8,12 +8,9 @@ from fastapi import logger
 
 from alphatrion import envs
 from alphatrion.artifact import artifact
-<<<<<<< HEAD
 from alphatrion.server.repo.gcs_repo import GCSRepoService, detect_language
 from alphatrion.server.repo.local_repo import LocalRepoService
-=======
 from alphatrion.server.graphql.types import ArtifactFile
->>>>>>> 521ed3e (update the graphql api for datasets)
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import (
     FINISHED_STATUS,
