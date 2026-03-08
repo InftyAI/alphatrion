@@ -227,6 +227,7 @@ class Query:
 
     dataset: Dataset | None = strawberry.field(resolver=GraphQLResolvers.get_dataset)
 
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
