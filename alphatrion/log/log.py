@@ -157,23 +157,22 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 
 async def log_dataset(
     name: str,
-    data: dict[str, Any],
+    data_or_path: dict[str, Any] | str | list[str],
 ):
     """
     Log dataset to the database and artifact registry.
 
     :param name: the name of the dataset.
-    :param data: the data to be logged, currently support dict only,
+    :param data_or_path: the data to be logged, currently support dict only,
                  will support more types in the future.
     """
     runtime = global_runtime()
 
-    if isinstance(data, dict):
+    if isinstance(data_or_path, dict):
         with tempfile.TemporaryDirectory() as tmpdir:
             os.chdir(tmpdir)
             with open(name, "w") as f:
-                f.write(json.dumps(data))
-
+                f.write(json.dumps(data_or_path))
             file_size = os.path.getsize(name)
 
             path = await log_artifact(
@@ -191,7 +190,21 @@ async def log_dataset(
                 meta={"size": file_size},
             )
             return
+    elif isinstance(data_or_path, (str, list)):
+        path = await log_artifact(
+            paths=data_or_path,
+            repo_name="dataset",
+        )
+        runtime.metadb.create_dataset(
+            name=name,
+            team_id=runtime.team_id,
+            user_id=runtime.user_id,
+            path=path,
+            experiment_id=current_exp_id.get(),
+            run_id=current_run_id.get(),
+        )
+        return
 
     raise NotImplementedError(
-        f"Logging dataset of type {type(data)} is not implemented yet."
+        f"Logging dataset of type {type(data_or_path)} is not implemented yet."
     )
