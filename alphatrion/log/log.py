@@ -1,15 +1,14 @@
 import asyncio
+import json
 import os
+import tempfile
 from collections.abc import Callable
 from typing import Any
 
 from alphatrion.runtime.contextvars import current_exp_id, current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import (
-    ExecutionKind,
-    build_run_execution,
     checkpoint_path,
-    snapshot_path,
 )
 
 BEST_RESULT_PATH = "best_result_path"
@@ -151,79 +150,48 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     return is_best_metric
 
 
-# log_result is used to log the result of a run/experiment,
-# including both input and output, e.g. you want to save the code snippet.
-# It will be stored in the object storage as a JSON file if object storage
-# is enabled or locally otherwise.
-# NOTE: will be deprecated in the v0.3.0, use log_dataset instead.
-async def log_result(
-    output: dict[str, Any],
-    input: dict[str, Any] | None = None,
-    phase: str = "success",
-    kind: ExecutionKind = ExecutionKind.RUN,
-):
-    result = None
-
-    if kind == ExecutionKind.RUN:
-        result = build_run_execution(output=output, input=input, phase=phase)
-    else:
-        raise NotImplementedError(
-            f"Logging record of kind {result.kind} is not implemented yet."
-        )
-
-    # Can I get the file size to store in the database?
-
-    path = snapshot_path()
-    if os.path.exists(path) is False:
-        os.makedirs(path, exist_ok=True)
-
-    # Will eventually be cleanup on Experiment done() if AUTO_CLEANUP is enabled.
-    # Considering the record file is small, we just save it locally first.
-    # If this changes in the future, we should delete them after uploading.
-    with open(os.path.join(path, "result.json"), "w") as f:
-        f.write(result.model_dump_json())
-
-    file_size = os.path.getsize(os.path.join(path, "result.json"))
-    runtime = global_runtime()
-
-    # If not enabled, only save to local disk.
-    if runtime.artifact_storage_enabled():
-        path = await log_artifact(
-            paths=os.path.join(path, "result.json"),
-            repo_name="execution",
-        )
-        runtime.metadb.update_run(
-            run_id=current_run_id.get(),
-            meta={
-                EXECUTION_RESULT: {
-                    "path": path,
-                    "size": file_size,
-                    "file_name": "result.json",
-                }
-            },
-        )
-
-
 # log_records is used to log a list of records, which is similar to log_metrics
 # but for tracing the execution of the code.
 # async def log_records():
 
-# log_dataset will store sometime in the artifacts als record in the database.
-# async def log_dataset(
-#     name: str,
-#     paths: str | list[str],
-#     version: str | None = None,
-# ):
-#     path = await log_artifact(
-#         paths=paths,
-#         repo_name="dataset",
-#         version=version,
-#     )
 
-#     runtime = global_runtime()
-#     runtime.metadb.create_dataset(
-#         name=name,
-#         team_id=runtime._team_id,
-#         path=path,
-#         version=version,
-#     )
+async def log_dataset(
+    name: str,
+    data: dict[str, Any],
+):
+    """
+    Log dataset to the database and artifact registry.
+
+    :param name: the name of the dataset.
+    :param data: the data to be logged, currently support dict only,
+                 will support more types in the future.
+    """
+    runtime = global_runtime()
+
+    if isinstance(data, dict):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            with open(name, "w") as f:
+                f.write(json.dumps(data))
+
+            file_size = os.path.getsize(name)
+
+            path = await log_artifact(
+                paths=name,
+                repo_name="dataset",
+            )
+
+            runtime.metadb.create_dataset(
+                name=name,
+                team_id=runtime.team_id,
+                user_id=runtime.user_id,
+                path=path,
+                experiment_id=current_exp_id.get(),
+                run_id=current_run_id.get(),
+                meta={"size": file_size},
+            )
+            return
+
+    raise NotImplementedError(
+        f"Logging dataset of type {type(data)} is not implemented yet."
+    )

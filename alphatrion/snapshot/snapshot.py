@@ -1,8 +1,4 @@
-import enum
 from pathlib import Path
-from typing import Any
-
-from pydantic import BaseModel
 
 from alphatrion.runtime.contextvars import current_exp_id, current_run_id
 from alphatrion.runtime.runtime import global_runtime
@@ -29,67 +25,6 @@ from alphatrion.runtime.runtime import global_runtime
         │           └── run_7990bcf3-f864-4442-ae35-00dd8329f7c5
         └── project_5cb62b0b-83d3-49fa-956e-cd51df3e7891
 """
-
-
-class ExecutionKind(enum.Enum):
-    RUN = "run"
-    # CUSTOM_EXECUTION_DEFINITION = "crd"
-
-
-# time information is recorded in the metadata database,
-# we can not get the endtime in the run.
-class Metadata(BaseModel):
-    id: str
-
-
-class Spec(BaseModel):
-    parameters: dict[str, Any]
-
-
-class Status(BaseModel):
-    input: dict[str, Any] | None = None
-    output: dict[str, Any]
-    phase: str
-
-
-class ExecutionResult(BaseModel):
-    schema_version: str
-    kind: ExecutionKind
-    metadata: Metadata
-    spec: Spec
-    status: Status
-
-
-def build_run_execution(
-    output: dict[str, Any], input: dict[str, Any] | None = None, phase: str = "success"
-) -> ExecutionResult:
-    run_id = current_run_id.get()
-    run_obj = global_runtime().metadb.get_run(run_id=run_id)
-    if run_obj is None:
-        raise RuntimeError(f"Run {run_id} not found in the database.")
-
-    exp_obj = global_runtime().metadb.get_experiment(
-        experiment_id=run_obj.experiment_id
-    )
-    if exp_obj is None:
-        raise RuntimeError(
-            f"Experiment {run_obj.experiment_id} not found in the database."
-        )
-
-    result = ExecutionResult(
-        schema_version="1.0",
-        kind=ExecutionKind.RUN,
-        metadata=Metadata(
-            id=str(run_id),
-        ),
-        spec=Spec(parameters=exp_obj.params or {}),
-        status=Status(
-            input=input or {},
-            output=output,
-            phase=phase,
-        ),
-    )
-    return result
 
 
 def snapshot_path() -> str:

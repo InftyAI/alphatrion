@@ -203,6 +203,20 @@ class Metric:
     created_at: datetime
 
 
+@strawberry.type
+class Dataset:
+    id: strawberry.ID
+    name: str
+    description: str | None
+    meta: JSON | None
+    team_id: strawberry.ID
+    experiment_id: strawberry.ID | None
+    run_id: strawberry.ID | None
+    user_id: strawberry.ID
+    created_at: datetime
+    updated_at: datetime
+
+
 # Input types for mutations
 @strawberry.input
 class CreateUserInput:
