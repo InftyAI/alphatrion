@@ -146,14 +146,14 @@ export function DatasetsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Datasets</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Browse and manage datasets
           </p>
         </div>
 
         {/* Search Bar */}
         <div className="relative w-80">
-          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search datasets..."
             value={searchQuery}
@@ -161,7 +161,7 @@ export function DatasetsPage() {
               setSearchQuery(e.target.value);
               setCurrentPage(0);
             }}
-            className="pl-8 h-9 text-[13px] font-medium focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
+            className="pl-8 h-9 text-sm focus:bg-blue-50 focus:border-blue-300 focus-visible:ring-0"
           />
         </div>
       </div>
@@ -180,17 +180,17 @@ export function DatasetsPage() {
                 </div>
               ) : !datasets || datasets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <Database className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-xs font-medium">No datasets found</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <Database className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium">No datasets found</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Create your first dataset to get started
                   </p>
                 </div>
               ) : filteredDatasets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <Search className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                  <p className="text-xs font-medium">No matching datasets</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                  <p className="text-sm font-medium">No matching datasets</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Try adjusting your search query
                   </p>
                 </div>
@@ -213,10 +213,10 @@ export function DatasetsPage() {
                       >
                         <TableCell className="py-2">
                           <div className="flex items-center gap-2">
-                            <Database className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                            <Database className="h-4 w-4 text-blue-500 flex-shrink-0" />
                             <div className="min-w-0">
-                              <p className="text-[13px] font-medium truncate">{dataset.name}</p>
-                              <p className="text-[10px] text-muted-foreground">
+                              <p className="text-sm font-medium truncate">{dataset.name}</p>
+                              <p className="text-xs text-muted-foreground">
                                 {formatDistanceToNow(new Date(dataset.createdAt), {
                                   addSuffix: true,
                                 })}
@@ -225,7 +225,7 @@ export function DatasetsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="py-2">
-                          <p className="text-[13px] text-muted-foreground line-clamp-1">
+                          <p className="text-sm text-muted-foreground line-clamp-1">
                             {dataset.description || '-'}
                           </p>
                         </TableCell>
@@ -233,30 +233,30 @@ export function DatasetsPage() {
                           {dataset.experimentId ? (
                             <Link
                               to={`/experiments/${dataset.experimentId}`}
-                              className="inline-flex items-center gap-1 text-[13px] text-blue-600 hover:text-blue-700 hover:underline"
+                              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 hover:underline"
                             >
                               <span className="font-mono truncate max-w-[100px]">
                                 {dataset.experimentId.slice(0, 8)}
                               </span>
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                             </Link>
                           ) : (
-                            <span className="text-[13px] text-muted-foreground">-</span>
+                            <span className="text-sm text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell className="py-2">
                           {dataset.runId ? (
                             <Link
                               to={`/runs/${dataset.runId}`}
-                              className="inline-flex items-center gap-1 text-[13px] text-green-600 hover:text-green-700 hover:underline"
+                              className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700 hover:underline"
                             >
                               <span className="font-mono truncate max-w-[100px]">
                                 {dataset.runId.slice(0, 8)}
                               </span>
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                             </Link>
                           ) : (
-                            <span className="text-[13px] text-muted-foreground">-</span>
+                            <span className="text-sm text-muted-foreground">-</span>
                           )}
                         </TableCell>
                         <TableCell className="py-2 text-right">
@@ -295,13 +295,13 @@ export function DatasetsPage() {
           <div className="col-span-4">
             <Card className="h-full flex flex-col">
               {/* Dataset Header */}
-              <div className="p-2 border-b bg-muted/30">
+              <div className="p-3 border-b bg-muted/30">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <Database className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+                    <Database className="h-4 w-4 text-blue-500 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold truncate">{selectedDataset.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-sm font-semibold truncate">{selectedDataset.name}</p>
+                      <p className="text-xs text-muted-foreground">
                         {files?.length || 0} {files?.length === 1 ? 'file' : 'files'}
                       </p>
                     </div>
@@ -313,9 +313,9 @@ export function DatasetsPage() {
                       setSelectedDataset(null);
                       setSelectedFile('');
                     }}
-                    className="h-6 w-6 p-0"
+                    className="h-7 w-7 p-0"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
@@ -325,14 +325,14 @@ export function DatasetsPage() {
                 {filesLoading ? (
                   <div className="p-2 space-y-1">
                     {[...Array(10)].map((_, i) => (
-                      <Skeleton key={i} className="h-9 w-full" />
+                      <Skeleton key={i} className="h-10 w-full" />
                     ))}
                   </div>
                 ) : !files || files.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FileText className="h-8 w-8 text-muted-foreground/30 mb-2" />
-                    <p className="text-xs font-medium">No files found</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                    <FileText className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                    <p className="text-sm font-medium">No files found</p>
+                    <p className="text-xs text-muted-foreground mt-1">
                       This dataset is empty
                     </p>
                   </div>
@@ -342,16 +342,16 @@ export function DatasetsPage() {
                       <button
                         key={file.filename}
                         onClick={() => handleSelectFile(file.filename)}
-                        className="w-full flex items-center gap-2 px-2 py-1.5 hover:bg-accent transition-colors group text-left"
+                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-accent transition-colors group text-left"
                       >
-                        <FileText className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 group-hover:text-blue-600" />
+                        <FileText className="h-4 w-4 text-blue-500 flex-shrink-0 group-hover:text-blue-600" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{file.filename}</p>
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-sm font-medium truncate">{file.filename}</p>
+                          <p className="text-xs text-muted-foreground">
                             {formatFileSize(file.size)} • {file.contentType}
                           </p>
                         </div>
-                        <Eye className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                        <Eye className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                       </button>
                     ))}
                   </div>
