@@ -25,6 +25,9 @@ publish: build
 .PHONY: up
 up:
 	docker compose -f ./docker-compose.yaml up -d
+
+.PHONY: migrate
+migrate:
 	alembic upgrade head
 
 .PHONY: down

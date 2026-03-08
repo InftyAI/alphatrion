@@ -262,26 +262,26 @@ export function DatasetsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40px] h-9">
+                      <TableHead className="w-[32%] h-9">
                         <div className="flex items-center gap-2">
                           <Checkbox
                             checked={allSelected}
                             onChange={handleSelectAll}
                             aria-label="Select all datasets"
                           />
-                          {selectedDatasets.size > 0 && (
-                            <button
-                              onClick={handleDeleteClick}
-                              disabled={deleteDatasetsMutation.isPending}
-                              className="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                              title={`Delete ${selectedDatasets.size} ${selectedDatasets.size === 1 ? 'dataset' : 'datasets'}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                          <button
+                            onClick={handleDeleteClick}
+                            disabled={deleteDatasetsMutation.isPending || selectedDatasets.size === 0}
+                            className={`inline-flex items-center justify-center h-6 w-6 rounded hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50 ${
+                              selectedDatasets.size === 0 ? 'invisible pointer-events-none' : ''
+                            }`}
+                            title={selectedDatasets.size > 0 ? `Delete ${selectedDatasets.size} ${selectedDatasets.size === 1 ? 'dataset' : 'datasets'}` : ''}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                          <span>Name</span>
                         </div>
                       </TableHead>
-                      <TableHead className="w-[30%] h-9">Name</TableHead>
                       <TableHead className="w-[22%] h-9">Description</TableHead>
                       <TableHead className="w-[13%] h-9">Experiment</TableHead>
                       <TableHead className="w-[13%] h-9">Run</TableHead>
@@ -295,14 +295,13 @@ export function DatasetsPage() {
                         className={selectedDataset?.id === dataset.id ? 'bg-accent/50' : ''}
                       >
                         <TableCell className="py-2">
-                          <Checkbox
-                            checked={selectedDatasets.has(dataset.id)}
-                            onChange={() => handleSelectDataset(dataset.id)}
-                            aria-label={`Select dataset ${dataset.name}`}
-                          />
-                        </TableCell>
-                        <TableCell className="py-2">
                           <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={selectedDatasets.has(dataset.id)}
+                              onChange={() => handleSelectDataset(dataset.id)}
+                              aria-label={`Select dataset ${dataset.name}`}
+                            />
+                            <div className="w-6"></div>
                             <Database className="h-4 w-4 text-blue-500 flex-shrink-0" />
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{dataset.name}</p>

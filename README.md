@@ -53,11 +53,14 @@ source start.sh
 cp .env.example .env
 make up
 
+# Wait for services to be ready, then run migrations
+make migrate
+
 # Initialize your team and user
 alphatrion init  # Use -h for custom options
 ```
 
-Save the generated user ID—you'll need it to track experiments.
+Save the generated user ID — you'll need it to track experiments.
 
 **Optional Tools:**
 - pgAdmin: `http://localhost:8081` (alphatrion@inftyai.com / alphatr1on)

@@ -340,19 +340,19 @@ export function ExperimentsPage() {
                           onChange={handleSelectAll}
                           aria-label="Select all experiments"
                         />
-                        {selectedExperiments.size > 0 && (
-                          <button
-                            onClick={handleDeleteClick}
-                            disabled={deleteExperimentsMutation.isPending}
-                            className="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                            title={`Delete ${selectedExperiments.size} ${selectedExperiments.size === 1 ? 'experiment' : 'experiments'}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
+                        <button
+                          onClick={handleDeleteClick}
+                          disabled={deleteExperimentsMutation.isPending || selectedExperiments.size === 0}
+                          className={`inline-flex items-center justify-center h-6 w-6 rounded hover:bg-destructive/10 text-destructive transition-colors disabled:opacity-50 ${
+                            selectedExperiments.size === 0 ? 'invisible pointer-events-none' : ''
+                          }`}
+                          title={selectedExperiments.size > 0 ? `Delete ${selectedExperiments.size} ${selectedExperiments.size === 1 ? 'experiment' : 'experiments'}` : ''}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                        <span>ID</span>
                       </div>
                     </TableHead>
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">ID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
@@ -366,19 +366,20 @@ export function ExperimentsPage() {
                       className="hover:bg-accent/50 transition-colors border-b last:border-0"
                     >
                       <TableCell className="py-3">
-                        <Checkbox
-                          checked={selectedExperiments.has(experiment.id)}
-                          onChange={() => handleSelectExperiment(experiment.id)}
-                          aria-label={`Select experiment ${experiment.name}`}
-                        />
-                      </TableCell>
-                      <TableCell className="py-3 text-sm font-mono">
-                        <Link
-                          to={`/experiments/${experiment.id}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                        >
-                          {experiment.id}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedExperiments.has(experiment.id)}
+                            onChange={() => handleSelectExperiment(experiment.id)}
+                            aria-label={`Select experiment ${experiment.name}`}
+                          />
+                          <div className="w-6"></div>
+                          <Link
+                            to={`/experiments/${experiment.id}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors text-sm font-mono"
+                          >
+                            {experiment.id}
+                          </Link>
+                        </div>
                       </TableCell>
                       <TableCell className="py-3 text-sm font-medium text-foreground">
                         {experiment.name}
