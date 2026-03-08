@@ -7,7 +7,11 @@ from sqlalchemy.orm import sessionmaker
 from alphatrion.storage.metastore import MetaStore
 from alphatrion.storage.sql_models import (
     Base,
+<<<<<<< HEAD
     ContentSnapshot,
+=======
+    Dataset,
+>>>>>>> d3b00e6 (Add log_dataset to APIs)
     Experiment,
     ExperimentLabel,
     Metric,
@@ -927,3 +931,107 @@ class SQLStore(MetaStore):
                 .all()
             )
             return [k[0] for k in keys]
+
+    # ---------- Dataset APIs ----------
+
+    def create_dataset(
+        self,
+        name: str,
+        team_id: uuid.UUID,
+        user_id: uuid.UUID,
+        path: str,
+        experiment_id: uuid.UUID | None = None,
+        run_id: uuid.UUID | None = None,
+        description: str | None = None,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        session = self._session()
+        new_dataset = Dataset(
+            name=name,
+            team_id=team_id,
+            user_id=user_id,
+            path=path,
+            description=description,
+            meta=meta,
+            experiment_id=experiment_id,
+            run_id=run_id,
+        )
+        session.add(new_dataset)
+        session.commit()
+        dataset_id = new_dataset.uuid
+        session.close()
+        return dataset_id
+
+    def get_dataset(self, dataset_id: uuid.UUID) -> Dataset | None:
+        session = self._session()
+        dataset = (
+            session.query(Dataset)
+            .filter(Dataset.uuid == dataset_id, Dataset.is_del == 0)
+            .first()
+        )
+        session.close()
+        return dataset
+
+    def list_datasets(
+        self,
+        team_id: uuid.UUID,
+        experiment_id: uuid.UUID | None = None,
+        run_id: uuid.UUID | None = None,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Dataset]:
+        session = self._session()
+        query = session.query(Dataset).filter(
+            Dataset.team_id == team_id, Dataset.is_del == 0
+        )
+        if experiment_id is not None:
+            query = query.filter(Dataset.experiment_id == experiment_id)
+        if run_id is not None:
+            query = query.filter(Dataset.run_id == run_id)
+        datasets = (
+            query.order_by(
+                getattr(Dataset, order_by).desc()
+                if order_desc
+                else getattr(Dataset, order_by)
+            )
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return datasets
+
+    def update_dataset(self, dataset_id: uuid.UUID, **kwargs) -> None:
+        session = self._session()
+        dataset = (
+            session.query(Dataset)
+            .filter(Dataset.uuid == dataset_id, Dataset.is_del == 0)
+            .first()
+        )
+        if dataset:
+            for key, value in kwargs.items():
+                if key == "meta" and isinstance(value, dict):
+                    if dataset.meta is None:
+                        dataset.meta = {}
+                    dataset.meta.update(value)
+                else:
+                    setattr(dataset, key, value)
+            session.commit()
+        session.close()
+
+    def delete_dataset(self, dataset_id: uuid.UUID) -> bool:
+        session = self._session()
+        dataset = (
+            session.query(Dataset)
+            .filter(Dataset.uuid == dataset_id, Dataset.is_del == 0)
+            .first()
+        )
+        if dataset:
+            dataset.is_del = 1
+            session.commit()
+            session.close()
+            return True
+        session.close()
+        return False

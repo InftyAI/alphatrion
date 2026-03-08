@@ -26,6 +26,7 @@ from .types import (
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
+    Dataset,
     Experiment,
     ExperimentFitnessSummary,
     GraphQLExperimentType,
@@ -933,6 +934,88 @@ class GraphQLResolvers:
         ]
 
 
+    def list_datasets(
+        team_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Dataset]:
+        metadb = runtime.storage_runtime().metadb
+        datasets = metadb.list_datasets_by_team_id(
+            team_id=uuid.UUID(team_id),
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+        return [
+            Dataset(
+                id=d.uuid,
+                name=d.name,
+                description=d.description,
+                meta=d.meta,
+                team_id=d.team_id,
+                experiment_id=d.experiment_id,
+                run_id=d.run_id,
+                user_id=d.user_id,
+                created_at=d.created_at,
+                updated_at=d.updated_at,
+            )
+            for d in datasets
+        ]
+
+    @staticmethod
+    def get_dataset(id: strawberry.ID) -> Dataset | None:
+        metadb = runtime.storage_runtime().metadb
+        dataset = metadb.get_dataset(dataset_id=uuid.UUID(id))
+        if dataset:
+            return Dataset(
+                id=dataset.uuid,
+                name=dataset.name,
+                description=dataset.description,
+                meta=dataset.meta,
+                team_id=dataset.team_id,
+                experiment_id=dataset.experiment_id,
+                run_id=dataset.run_id,
+                user_id=dataset.user_id,
+                created_at=dataset.created_at,
+                updated_at=dataset.updated_at,
+            )
+        return None
+
+    def list_datasets_by_experiment(
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Dataset]:
+        metadb = runtime.storage_runtime().metadb
+        datasets = metadb.list_datasets_by_exp_id(
+            exp_id=uuid.UUID(experiment_id),
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+        return [
+            Dataset(
+                id=d.uuid,
+                name=d.name,
+                description=d.description,
+                meta=d.meta,
+                team_id=d.team_id,
+                experiment_id=d.experiment_id,
+                run_id=d.run_id,
+                user_id=d.user_id,
+                created_at=d.created_at,
+                updated_at=d.updated_at,
+            )
+            for d in datasets
+        ]
+
+
 class GraphQLMutations:
     @staticmethod
     def create_user(input: CreateUserInput) -> User:
@@ -1059,3 +1142,8 @@ class GraphQLMutations:
         uuids = [uuid.UUID(exp_id) for exp_id in experiment_ids]
         # Soft delete experiments by setting is_del flag
         return metadb.delete_experiments(experiment_ids=uuids)
+
+    @staticmethod
+    def delete_dataset(dataset_id: strawberry.ID) -> bool:
+        metadb = runtime.storage_runtime().metadb
+        return metadb.delete_dataset(dataset_id=dataset_id)

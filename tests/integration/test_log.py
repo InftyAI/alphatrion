@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import tempfile
 import time
@@ -12,7 +11,6 @@ import alphatrion as alpha
 from alphatrion import experiment
 from alphatrion.log.log import BEST_RESULT_PATH
 from alphatrion.runtime.contextvars import current_exp_id
-from alphatrion.snapshot import snapshot
 from alphatrion.storage.sql_models import Status
 
 
@@ -487,34 +485,27 @@ async def test_log_metrics_with_min_target_meet():
 
 
 @pytest.mark.asyncio
-async def test_log_result():
+async def test_log_dataset():
+    team_id = uuid.uuid4()
     alpha.init(
-        team_id=uuid.uuid4(),
+        team_id=team_id,
         user_id=uuid.uuid4(),
     )
 
     async def fake_worker():
-        path = snapshot.snapshot_path()
-        if not os.path.exists(path):
-            os.makedirs(path, exist_ok=True)
-        os.chdir(path)
-
-        await alpha.log_result(
-            output={
+        await alpha.log_dataset(
+            name="test_dataset.json",
+            data={
                 "example": "test",
                 "value": 123,
                 "flag": True,
                 "list": [1, 2, 3],
                 "dict": {"a": 1, "b": 2},
             },
-            input={
-                "input_example": "input_test",
-                "input_value": 456,
-            },
         )
 
     async with experiment.CraftExperiment.start(
-        name="exp-log-execution",
+        name="exp-log-dataset",
     ) as exp:
         await alpha.log_params({"temp": 0.5, "lr": 0.01})
 
@@ -523,40 +514,16 @@ async def test_log_result():
 
         run_obj = run._get_obj()
         assert run_obj is not None
-        assert run_obj.status == Status.COMPLETED
         runtime = exp._runtime
 
-        list_versions = runtime._artifact.list_versions("execution")
+        list_versions = runtime._artifact.list_versions("dataset")
         assert len(list_versions) == 1
-        assert (
-            run_obj.meta["execution_result"]["path"]
-            == f"{runtime.team_id}/execution:" + list_versions[0]
-        )
-        assert run_obj.meta["execution_result"]["size"] > 0
-        assert run_obj.meta["execution_result"]["file_name"] == "result.json"
-        artifact_path = run_obj.meta["execution_result"]["path"]
-        assert artifact_path == f"{runtime.team_id}/execution:" + list_versions[0]
-
-        # We can also pull the artifact and check the content if needed.
-        content_paths = runtime._artifact.pull(
-            repo_name="execution",
-            version=list_versions[0],
-        )
-        assert content_paths is not None
-        assert len(content_paths) == 1
-
-        content = content_paths[0]
-        assert os.path.exists(content)
-        with open(content) as f:
-            data = json.load(f)
-            assert data["status"]["output"]["example"] == "test"
-            assert data["status"]["output"]["value"] == 123
-            assert data["status"]["output"]["flag"] is True
-            assert data["status"]["output"]["list"] == [1, 2, 3]
-            assert data["status"]["output"]["dict"] == {"a": 1, "b": 2}
-            assert data["status"]["input"]["input_example"] == "input_test"
-            assert data["status"]["input"]["input_value"] == 456
-            assert data["status"]["phase"] == "success"
-
-        # cleanup local artifact file
-        os.remove(content)
+        datasets = runtime._metadb.list_datasets(team_id=team_id, run_id=run_obj.uuid)
+        assert len(datasets) == 1
+        assert datasets[0].name == "test_dataset.json"
+        assert datasets[0].team_id == team_id
+        assert datasets[0].user_id == runtime._user_id
+        assert datasets[0].experiment_id == exp.id
+        assert datasets[0].run_id == run_obj.uuid
+        assert datasets[0].path == f"{runtime.team_id}/dataset:{list_versions[0]}"
+        assert int(datasets[0].meta["size"]) > 0

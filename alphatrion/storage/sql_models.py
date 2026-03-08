@@ -375,3 +375,29 @@ class ImageBuildCache(Base):
     )
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     is_valid = Column(Integer, default=1, comment="1 for valid, 0 for invalidated")
+class Dataset(Base):
+    __tablename__ = "datasets"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the dataset",
+    )
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=True)
+    run_id = Column(UUID(as_uuid=True), nullable=True)
+    user_id = Column(
+        UUID(as_uuid=True), nullable=False, comment="User who created the dataset"
+    )
+    path = Column(String, nullable=False, comment="Storage path for the dataset")
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")

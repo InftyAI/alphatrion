@@ -11,6 +11,7 @@ from alphatrion.server.graphql.types import (
     CreateTeamInput,
     CreateUserInput,
     DailyTokenUsage,
+    Dataset,
     Experiment,
     ExperimentFitnessSummary,
     Metric,
@@ -189,6 +190,43 @@ class Query:
             experiment_id=str(experiment_id), key=key, max_points=max_points
         )
 
+    # Dataset queries
+    @strawberry.field
+    def datasets(
+        self,
+        team_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Dataset]:
+        return GraphQLResolvers.list_datasets(
+            team_id=team_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+
+    dataset: Dataset | None = strawberry.field(resolver=GraphQLResolvers.get_dataset)
+
+    @strawberry.field
+    def datasets_by_experiment(
+        self,
+        experiment_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Dataset]:
+        return GraphQLResolvers.list_datasets_by_experiment(
+            experiment_id=experiment_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+
 
 @strawberry.type
 class Mutation:
@@ -219,6 +257,10 @@ class Mutation:
     @strawberry.mutation
     def delete_experiments(self, experiment_ids: list[strawberry.ID]) -> int:
         return GraphQLMutations.delete_experiments(experiment_ids=experiment_ids)
+
+    @strawberry.mutation
+    def delete_dataset(self, dataset_id: strawberry.ID) -> bool:
+        return GraphQLMutations.delete_dataset(dataset_id=dataset_id)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
