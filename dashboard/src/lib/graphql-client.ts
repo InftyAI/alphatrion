@@ -430,4 +430,16 @@ export const mutations = {
       deleteExperiments(experimentIds: $experimentIds)
     }
   `,
+
+  deleteDataset: `
+    mutation DeleteDataset($datasetId: ID!) {
+      deleteDataset(datasetId: $datasetId)
+    }
+  `,
+
+  deleteDatasets: `
+    mutation DeleteDatasets($datasetIds: [ID!]!) {
+      deleteDatasets(datasetIds: $datasetIds)
+    }
+  `,
 };

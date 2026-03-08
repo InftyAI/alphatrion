@@ -284,12 +284,11 @@ client = OpenAI(
     api_key="",
 )
 
-
 @tracing.workflow()
 async def create_joke():
     completion = client.chat.completions.create(
         model="smollm:135m",
-        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry"}],
+        messages=[{"role": "user", "content": "Tell me a joke about opentelemetry, as short as possible."}],
     )
     print(completion.choices[0].message.content)
     await asyncio.sleep(0.1)  # Simulate some work

@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Database, Search, Eye, ExternalLink, FileText, X } from 'lucide-react';
+import { Database, Search, Eye, ExternalLink, FileText, X, Trash2 } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useDatasets } from '../../hooks/use-datasets';
+import { useDeleteDatasets } from '../../hooks/use-dataset-mutations';
 import { useArtifactFiles, useArtifactContent } from '../../hooks/use-artifacts';
 import {
   Card,
@@ -19,9 +20,18 @@ import {
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Pagination } from '../../components/ui/pagination';
 import { ArtifactViewer } from '../../components/artifact-viewer';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
 import { formatDistanceToNow } from 'date-fns';
 import type { Dataset } from '../../types';
 
@@ -35,6 +45,10 @@ export function DatasetsPage() {
   const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const [selectedDatasets, setSelectedDatasets] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const deleteDatasetsMutation = useDeleteDatasets();
 
   // Handle URL search parameters
   useEffect(() => {
@@ -126,6 +140,59 @@ export function DatasetsPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Check if all filtered datasets are selected
+  const allSelected = filteredDatasets.length > 0 &&
+    filteredDatasets.every(dataset => selectedDatasets.has(dataset.id));
+
+  // Toggle select all
+  const handleSelectAll = () => {
+    if (allSelected) {
+      setSelectedDatasets(new Set());
+    } else {
+      setSelectedDatasets(new Set(filteredDatasets.map(dataset => dataset.id)));
+    }
+  };
+
+  // Toggle individual dataset selection
+  const handleSelectDataset = (datasetId: string) => {
+    const newSelected = new Set(selectedDatasets);
+    if (newSelected.has(datasetId)) {
+      newSelected.delete(datasetId);
+    } else {
+      newSelected.add(datasetId);
+    }
+    setSelectedDatasets(newSelected);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteClick = () => {
+    if (selectedDatasets.size === 0) return;
+    setShowDeleteDialog(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+
+    if (selectedDatasets.size === 0) return;
+
+    try {
+      const result = await deleteDatasetsMutation.mutateAsync(Array.from(selectedDatasets));
+      console.log(`Successfully deleted ${result} datasets`);
+      setSelectedDatasets(new Set());
+      setShowDeleteDialog(false);
+      // Clear selected dataset view if it was deleted
+      if (selectedDataset && selectedDatasets.has(selectedDataset.id)) {
+        setSelectedDataset(null);
+        setSelectedFile('');
+      }
+    } catch (error) {
+      console.error('Failed to delete datasets:', error);
+      alert('Failed to delete datasets. Please try again.');
+    }
+  };
+
   if (!selectedTeamId) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -179,15 +246,12 @@ export function DatasetsPage() {
                   ))}
                 </div>
               ) : !datasets || datasets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
+                <div className="flex flex-col items-center justify-center h-full">
                   <Database className="h-10 w-10 text-muted-foreground/30 mb-3" />
                   <p className="text-sm font-medium">No datasets found</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Create your first dataset to get started
-                  </p>
                 </div>
               ) : filteredDatasets.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
+                <div className="flex flex-col items-center justify-center h-full">
                   <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
                   <p className="text-sm font-medium">No matching datasets</p>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -198,10 +262,29 @@ export function DatasetsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[35%] h-9">Name</TableHead>
-                      <TableHead className="w-[25%] h-9">Description</TableHead>
-                      <TableHead className="w-[15%] h-9">Experiment</TableHead>
-                      <TableHead className="w-[15%] h-9">Run</TableHead>
+                      <TableHead className="w-[40px] h-9">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={allSelected}
+                            onChange={handleSelectAll}
+                            aria-label="Select all datasets"
+                          />
+                          {selectedDatasets.size > 0 && (
+                            <button
+                              onClick={handleDeleteClick}
+                              disabled={deleteDatasetsMutation.isPending}
+                              className="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                              title={`Delete ${selectedDatasets.size} ${selectedDatasets.size === 1 ? 'dataset' : 'datasets'}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-[30%] h-9">Name</TableHead>
+                      <TableHead className="w-[22%] h-9">Description</TableHead>
+                      <TableHead className="w-[13%] h-9">Experiment</TableHead>
+                      <TableHead className="w-[13%] h-9">Run</TableHead>
                       <TableHead className="w-[10%] h-9 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -211,6 +294,13 @@ export function DatasetsPage() {
                         key={dataset.id}
                         className={selectedDataset?.id === dataset.id ? 'bg-accent/50' : ''}
                       >
+                        <TableCell className="py-2">
+                          <Checkbox
+                            checked={selectedDatasets.has(dataset.id)}
+                            onChange={() => handleSelectDataset(dataset.id)}
+                            aria-label={`Select dataset ${dataset.name}`}
+                          />
+                        </TableCell>
                         <TableCell className="py-2">
                           <div className="flex items-center gap-2">
                             <Database className="h-4 w-4 text-blue-500 flex-shrink-0" />
@@ -373,6 +463,45 @@ export function DatasetsPage() {
         hideLineCount={true}
         hideCloseButton={true}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="pointer-events-auto sm:max-w-[440px]">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Delete {selectedDatasets.size === 1 ? 'Dataset' : 'Datasets'}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              You are about to delete <span className="font-medium text-foreground">{selectedDatasets.size}</span> {selectedDatasets.size === 1 ? 'dataset' : 'datasets'}.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowDeleteDialog(false);
+              }}
+              disabled={deleteDatasetsMutation.isPending}
+              className="h-9"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleteDatasetsMutation.isPending}
+              className="h-9"
+            >
+              {deleteDatasetsMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
