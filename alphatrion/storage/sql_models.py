@@ -375,6 +375,8 @@ class ImageBuildCache(Base):
     )
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     is_valid = Column(Integer, default=1, comment="1 for valid, 0 for invalidated")
+
+
 class Dataset(Base):
     __tablename__ = "datasets"
 
