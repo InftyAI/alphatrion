@@ -45,19 +45,19 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Experiments Distribution</h3>
-        <div className="text-xs text-muted-foreground">
+        <h3 className="text-xs font-semibold">Experiments Distribution</h3>
+        <div className="text-[10px] text-muted-foreground">
           Total: {total}
         </div>
       </div>
       {chartData.length === 0 ? (
-        <div className="flex items-center justify-center h-[240px] text-sm text-muted-foreground">
+        <div className="flex items-center justify-center h-[200px] text-xs text-muted-foreground">
           No data available
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie
               data={chartData}
@@ -65,10 +65,10 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
               nameKey="name"
               cx="50%"
               cy="50%"
-              outerRadius={75}
+              outerRadius={65}
               labelLine={false}
               label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
-              style={{ fontSize: '11px' }}
+              style={{ fontSize: '10px' }}
             >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -80,10 +80,10 @@ export function ExperimentsStatusChart({ experiments }: ExperimentsStatusChartPr
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '6px',
-                fontSize: '11px',
+                fontSize: '10px',
               }}
             />
-            <Legend wrapperStyle={{ fontSize: '11px' }} />
+            <Legend wrapperStyle={{ fontSize: '10px' }} />
           </PieChart>
         </ResponsiveContainer>
       )}

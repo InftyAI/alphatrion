@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Search, Database } from 'lucide-react';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Dropdown } from '../../components/ui/dropdown';
@@ -52,6 +53,7 @@ const PAGE_SIZE = 10;
 
 export function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,9 +157,20 @@ export function ExperimentDetailPage() {
             {experiment.id}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[experiment.status]}>
-          {experiment.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate(`/datasets?experimentId=${experiment.id}`)}
+            className="h-8 gap-2"
+          >
+            <Database className="h-3.5 w-3.5" />
+            Datasets
+          </Button>
+          <Badge variant={STATUS_VARIANTS[experiment.status]}>
+            {experiment.status}
+          </Badge>
+        </div>
       </div>
 
       {/* Tabs */}

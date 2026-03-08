@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   FlaskConical,
   Package,
+  FolderTree,
   Github,
   User as UserIcon,
 } from 'lucide-react';
@@ -28,6 +29,11 @@ const navItems: NavItem[] = [
     title: 'Experiments',
     href: '/experiments',
     icon: FlaskConical,
+  },
+  {
+    title: 'Datasets',
+    href: '/datasets',
+    icon: FolderTree,
   },
   {
     title: 'Artifacts',

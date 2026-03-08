@@ -68,36 +68,36 @@ export function DashboardPage() {
 
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground">
           Overview of your team's experiments and activity
         </p>
       </div>
 
       {/* Overview Section */}
       <div>
-        <h2 className="text-base font-semibold text-foreground mb-2">Overview</h2>
+        <h2 className="text-sm font-semibold text-foreground mb-1.5">Overview</h2>
       </div>
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {/* Total Experiments */}
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">EXPERIMENTS</p>
-                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalExperiments || 0}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">EXPERIMENTS</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">{team?.totalExperiments || 0}</p>
                 </div>
                 <div className="p-1.5 bg-purple-100 rounded-lg">
                   <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
@@ -108,11 +108,11 @@ export function DashboardPage() {
 
           {/* Total Runs */}
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">RUNS</p>
-                  <p className="text-lg font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">RUNS</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
                   <Play className="h-3.5 w-3.5 text-green-600" />
@@ -123,13 +123,13 @@ export function DashboardPage() {
 
           {/* Total Tokens */}
           <Card>
-            <CardContent className="p-3">
+            <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-xs font-medium text-muted-foreground">TOKENS</p>
-                  <p className="text-lg font-bold tabular-nums text-foreground">
+                  <p className="text-[10px] font-medium text-muted-foreground">TOKENS</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">
                     {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
-                    <span className="text-muted-foreground text-xs ml-1 font-normal">
+                    <span className="text-muted-foreground text-[10px] ml-1 font-normal">
                       ({(team?.aggregatedTokens?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedTokens?.outputTokens || 0).toLocaleString()}↑)
                     </span>
                   </p>
@@ -144,10 +144,10 @@ export function DashboardPage() {
       )}
 
       {/* Experiments Charts */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {/* Time Range Selector */}
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">Activity</h2>
+          <h2 className="text-sm font-semibold text-foreground">Activity</h2>
           <div className="flex gap-1">
             {TIME_RANGE_OPTIONS.map((option) => (
               <Button
@@ -155,7 +155,7 @@ export function DashboardPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
-                className={`h-8 px-2.5 text-xs transition-colors ${timeRange === option.value
+                className={`h-7 px-2 text-[11px] transition-colors ${timeRange === option.value
                     ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
                     : 'bg-white hover:bg-gray-50'
                   }`}
@@ -167,12 +167,12 @@ export function DashboardPage() {
         </div>
 
         {/* First Row: Experiments Charts */}
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2 md:grid-cols-2">
           {/* Status Distribution Pie Chart */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {experimentsLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-60 w-full" />
               ) : (
                 <ExperimentsStatusChart experiments={filteredExperiments || []} />
               )}
@@ -181,9 +181,9 @@ export function DashboardPage() {
 
           {/* Timeline Chart */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {experimentsLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-60 w-full" />
               ) : (
                 <ExperimentsTimelineChart experiments={filteredExperiments || []} timeRange={timeRange} />
               )}
@@ -192,12 +192,12 @@ export function DashboardPage() {
         </div>
 
         {/* Second Row: Model Distribution and Token Usage */}
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2 md:grid-cols-2">
           {/* Model Distribution Pie Chart */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {modelDistributionsLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-60 w-full" />
               ) : (
                 <ModelDistributionChart data={modelDistributions || []} />
               )}
@@ -206,13 +206,13 @@ export function DashboardPage() {
 
           {/* Token Usage Chart */}
           <Card>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               {tokenUsageLoading ? (
-                <Skeleton className="h-72 w-full" />
+                <Skeleton className="h-60 w-full" />
               ) : dailyTokenUsage ? (
                 <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
               ) : (
-                <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
+                <div className="flex items-center justify-center h-60 text-xs text-muted-foreground">
                   No token usage data available for this time range
                 </div>
               )}

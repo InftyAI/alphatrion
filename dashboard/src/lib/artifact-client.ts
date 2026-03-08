@@ -37,12 +37,34 @@ export async function listTags(
 }
 
 /**
+ * List files in an artifact
+ */
+export async function listFiles(
+  teamId: string,
+  tag: string,
+  repoName: string
+): Promise<Array<{ filename: string; size: number; contentType: string }>> {
+  try {
+    const data = await graphqlQuery<{
+      artifactFiles: Array<{ filename: string; size: number; contentType: string }>
+    }>(
+      queries.listArtifactFiles,
+      { team_id: teamId, tag, repo_name: repoName }
+    );
+    return data.artifactFiles;
+  } catch (error) {
+    throw new Error(`Failed to list files for artifact: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
  * Get artifact content
  */
 export async function getArtifactContent(
   teamId: string,
   tag: string,
-  repoName: string
+  repoName: string,
+  filename?: string
 ): Promise<{ filename: string; content: string; contentType: string }> {
   try {
     const data = await graphqlQuery<{
@@ -53,7 +75,7 @@ export async function getArtifactContent(
       }
     }>(
       queries.getArtifactContent,
-      { team_id: teamId, tag, repo_name: repoName }
+      { team_id: teamId, tag, repo_name: repoName, filename }
     );
     return data.artifactContent;
   } catch (error) {

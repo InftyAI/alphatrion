@@ -12,6 +12,7 @@ import { ExperimentDetailPage } from './pages/experiments/[id]';
 import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
+import { DatasetsPage } from './pages/datasets';
 import { ArtifactsPage } from './pages/artifacts';
 import type { Team } from './types';
 
@@ -141,6 +142,7 @@ function App() {
               <Route index element={<RunsPage />} />
               <Route path=":id" element={<RunDetailPage />} />
             </Route>
+            <Route path="datasets" element={<DatasetsPage />} />
             <Route path="artifacts" element={<ArtifactsPage />} />
           </Route>
         </Routes>
