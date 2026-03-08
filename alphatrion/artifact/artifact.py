@@ -9,8 +9,7 @@ SUCCESS_CODE = 201
 
 
 class Artifact:
-    def __init__(self, team_id: str, insecure: bool = False):
-        self._team_id = team_id
+    def __init__(self, insecure: bool = False):
         self._url = get_registry_url()
         self._client = oras.client.OrasClient(
             hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
@@ -50,7 +49,7 @@ class Artifact:
         if version is None:
             version = utiltime.now_2_hash()
 
-        path = f"{self._team_id}/{repo_name}:{version}"
+        path = f"{repo_name}:{version}"
         target = f"{self._url}/{path}"
 
         try:
@@ -61,7 +60,7 @@ class Artifact:
         return path
 
     def list_versions(self, repo_name: str) -> list[str]:
-        target = f"{self._url}/{self._team_id}/{repo_name}"
+        target = f"{self._url}/{repo_name}"
         try:
             tags = self._client.get_tags(target)
             return tags
@@ -91,7 +90,7 @@ class Artifact:
                            (defaults to ORAS temp directory)
         :return: list of absolute file paths that were downloaded
         """
-        path = f"{self._team_id}/{repo_name}:{version}"
+        path = f"{repo_name}:{version}"
         target = f"{self._url}/{path}"
 
         if output_dir:
@@ -115,7 +114,7 @@ class Artifact:
                 os.chdir(original_dir)
 
     def delete(self, repo_name: str, versions: str | list[str]):
-        target = f"{self._url}/{self._team_id}/{repo_name}"
+        target = f"{self._url}/{repo_name}"
 
         try:
             self._client.delete_tags(target, tags=versions)

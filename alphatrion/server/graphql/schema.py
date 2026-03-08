@@ -262,5 +262,9 @@ class Mutation:
     def delete_dataset(self, dataset_id: strawberry.ID) -> bool:
         return GraphQLMutations.delete_dataset(dataset_id=dataset_id)
 
+    @strawberry.mutation
+    def delete_datasets(self, dataset_ids: list[strawberry.ID]) -> bool:
+        return GraphQLMutations.delete_datasets(dataset_ids=dataset_ids)
+
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
