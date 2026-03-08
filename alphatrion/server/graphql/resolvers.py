@@ -8,8 +8,12 @@ from fastapi import logger
 
 from alphatrion import envs
 from alphatrion.artifact import artifact
+<<<<<<< HEAD
 from alphatrion.server.repo.gcs_repo import GCSRepoService, detect_language
 from alphatrion.server.repo.local_repo import LocalRepoService
+=======
+from alphatrion.server.graphql.types import ArtifactFile
+>>>>>>> 521ed3e (update the graphql api for datasets)
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import (
     FINISHED_STATUS,
@@ -347,8 +351,51 @@ class GraphQLResolvers:
         return [ArtifactTag(name=tag) for tag in arf.list_versions(repo_name)]
 
     @staticmethod
+    async def list_artifact_files(
+        team_id: str, tag: str, repo_name: str
+    ) -> list[ArtifactFile]:
+        """List files in an artifact without loading content."""
+
+        try:
+            arf = artifact.Artifact(team_id=team_id, insecure=True)
+            file_paths = arf.pull(repo_name=repo_name, version=tag)
+
+            if not file_paths:
+                return []
+
+            files = []
+            for file_path in file_paths:
+                filename = os.path.basename(file_path)
+                file_size = os.path.getsize(file_path)
+
+                # Determine content type based on file extension
+                if filename.endswith(".json"):
+                    content_type = "application/json"
+                elif (
+                    filename.endswith(".txt")
+                    or filename.endswith(".log")
+                    or filename.endswith((".py", ".js", ".ts", ".tsx", ".jsx"))
+                ):
+                    content_type = "text/plain"
+                else:
+                    content_type = "text/plain"
+
+                files.append(
+                    ArtifactFile(
+                        filename=filename, size=file_size, content_type=content_type
+                    )
+                )
+
+            return files
+        except Exception as e:
+            raise RuntimeError(f"Failed to list artifact files: {e}") from e
+
+    @staticmethod
     async def get_artifact_content(
-        team_id: str, tag: str, repo_name: str | None = None
+        team_id: str,
+        tag: str,
+        repo_name: str | None = None,
+        filename: str | None = None,
     ) -> ArtifactContent:
         """Get artifact content from registry."""
         try:
@@ -357,33 +404,44 @@ class GraphQLResolvers:
 
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
-            # Note: One potential issue is if we download too many large files,
-            # it may fill up disk space. For now we assume artifacts are
-            # reasonably sized and/or users will manage their registry storage.
             file_paths = arf.pull(repo_name=repo_name, version=tag)
 
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
 
-            # Read first file content (file_paths now contains absolute paths)
-            file_path = file_paths[0]
+            # Find the requested file or use first file
+            file_path = None
+            if filename:
+                for path in file_paths:
+                    if os.path.basename(path) == filename:
+                        file_path = path
+                        break
+                if not file_path:
+                    raise RuntimeError(f"File '{filename}' not found in artifact")
+            else:
+                file_path = file_paths[0]
+
+            # Read file content
             with open(file_path, encoding="utf-8") as f:
                 content = f.read()
 
             # Get filename from path
-            filename = os.path.basename(file_path)
+            actual_filename = os.path.basename(file_path)
 
             # Determine content type based on file extension
-            # TODO: for multiple files, this is not right.
-            if filename.endswith(".json"):
+            if actual_filename.endswith(".json"):
                 content_type = "application/json"
-            elif filename.endswith(".txt") or filename.endswith(".log"):
+            elif (
+                actual_filename.endswith(".txt")
+                or actual_filename.endswith(".log")
+                or actual_filename.endswith((".py", ".js", ".ts", ".tsx", ".jsx"))
+            ):
                 content_type = "text/plain"
             else:
                 content_type = "text/plain"
 
             return ArtifactContent(
-                filename=filename, content=content, content_type=content_type
+                filename=actual_filename, content=content, content_type=content_type
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
@@ -935,14 +993,18 @@ class GraphQLResolvers:
 
     def list_datasets(
         team_id: strawberry.ID,
+        experiment_id: strawberry.ID | None = None,
+        run_id: strawberry.ID | None = None,
         page: int = 0,
         page_size: int = 20,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Dataset]:
         metadb = runtime.storage_runtime().metadb
-        datasets = metadb.list_datasets_by_team_id(
-            team_id=uuid.UUID(team_id),
+        datasets = metadb.list_datasets(
+            team_id=team_id,
+            experiment_id=experiment_id,
+            run_id=run_id,
             page=page,
             page_size=page_size,
             order_by=order_by,
@@ -953,6 +1015,7 @@ class GraphQLResolvers:
                 id=d.uuid,
                 name=d.name,
                 description=d.description,
+                path=d.path,
                 meta=d.meta,
                 team_id=d.team_id,
                 experiment_id=d.experiment_id,
@@ -973,6 +1036,7 @@ class GraphQLResolvers:
                 id=dataset.uuid,
                 name=dataset.name,
                 description=dataset.description,
+                path=dataset.path,
                 meta=dataset.meta,
                 team_id=dataset.team_id,
                 experiment_id=dataset.experiment_id,
@@ -982,37 +1046,6 @@ class GraphQLResolvers:
                 updated_at=dataset.updated_at,
             )
         return None
-
-    def list_datasets_by_experiment(
-        experiment_id: strawberry.ID,
-        page: int = 0,
-        page_size: int = 20,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Dataset]:
-        metadb = runtime.storage_runtime().metadb
-        datasets = metadb.list_datasets_by_exp_id(
-            exp_id=uuid.UUID(experiment_id),
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
-        )
-        return [
-            Dataset(
-                id=d.uuid,
-                name=d.name,
-                description=d.description,
-                meta=d.meta,
-                team_id=d.team_id,
-                experiment_id=d.experiment_id,
-                run_id=d.run_id,
-                user_id=d.user_id,
-                created_at=d.created_at,
-                updated_at=d.updated_at,
-            )
-            for d in datasets
-        ]
 
 
 class GraphQLMutations:

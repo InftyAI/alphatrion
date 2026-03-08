@@ -4,6 +4,7 @@ from alphatrion.server.graphql.resolvers import GraphQLMutations, GraphQLResolve
 from alphatrion.server.graphql.types import (
     AddUserToTeamInput,
     ArtifactContent,
+    ArtifactFile,
     ArtifactRepository,
     ArtifactTag,
     ContentSnapshot,
@@ -102,13 +103,25 @@ class Query:
         return await GraphQLResolvers.list_artifact_tags(str(team_id), repo_name)
 
     @strawberry.field
+    async def artifact_files(
+        self,
+        team_id: strawberry.ID,
+        tag: str,
+        repo_name: str,
+    ) -> list[ArtifactFile]:
+        return await GraphQLResolvers.list_artifact_files(str(team_id), tag, repo_name)
+
+    @strawberry.field
     async def artifact_content(
         self,
         team_id: strawberry.ID,
         tag: str,
         repo_name: str,
+        filename: str | None = None,
     ) -> ArtifactContent:
-        return await GraphQLResolvers.get_artifact_content(str(team_id), tag, repo_name)
+        return await GraphQLResolvers.get_artifact_content(
+            str(team_id), tag, repo_name, filename
+        )
 
     @strawberry.field
     def content_snapshots(
@@ -195,6 +208,8 @@ class Query:
     def datasets(
         self,
         team_id: strawberry.ID,
+        experiment_id: strawberry.ID | None = None,
+        run_id: strawberry.ID | None = None,
         page: int = 0,
         page_size: int = 20,
         order_by: str = "created_at",
@@ -202,6 +217,8 @@ class Query:
     ) -> list[Dataset]:
         return GraphQLResolvers.list_datasets(
             team_id=team_id,
+            experiment_id=experiment_id,
+            run_id=run_id,
             page=page,
             page_size=page_size,
             order_by=order_by,
@@ -209,24 +226,6 @@ class Query:
         )
 
     dataset: Dataset | None = strawberry.field(resolver=GraphQLResolvers.get_dataset)
-
-    @strawberry.field
-    def datasets_by_experiment(
-        self,
-        experiment_id: strawberry.ID,
-        page: int = 0,
-        page_size: int = 20,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Dataset]:
-        return GraphQLResolvers.list_datasets_by_experiment(
-            experiment_id=experiment_id,
-            page=page,
-            page_size=page_size,
-            order_by=order_by,
-            order_desc=order_desc,
-        )
-
 
 @strawberry.type
 class Mutation:
