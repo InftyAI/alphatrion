@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, FlaskConical } from 'lucide-react';
 import { useTeamContext } from '../../context/team-context';
 import { useExperiments } from '../../hooks/use-experiments';
 import { useDeleteExperiments } from '../../hooks/use-experiment-mutations';
@@ -323,10 +323,24 @@ export function ExperimentsPage() {
               <Skeleton className="h-24 w-full" />
             </div>
           ) : !filteredExperiments || filteredExperiments.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-              {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
-                ? 'No experiments match your filters'
-                : 'No experiments found'}
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 ? (
+                  <Search className="h-8 w-8 text-muted-foreground/60" />
+                ) : (
+                  <FlaskConical className="h-8 w-8 text-muted-foreground/60" />
+                )}
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
+                  ? 'No experiments match your filters'
+                  : 'No experiments found'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
+                  ? 'Try adjusting your filters or search query'
+                  : 'Experiments will appear here once created'}
+              </p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-lg">
