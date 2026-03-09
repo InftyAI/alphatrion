@@ -76,7 +76,7 @@ from alphatrion import experiment
 alpha.init(user_id="<your_user_id>")
 
 async def my_task():
-    # Your ML code here
+    # Your code here
     await alpha.log_metrics({"accuracy": 0.95, "loss": 0.12})
 
 async with experiment.CraftExperiment.start(name="my_experiment") as exp:
