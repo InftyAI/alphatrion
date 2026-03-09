@@ -247,13 +247,18 @@ export function DatasetsPage() {
                 </div>
               ) : !datasets || datasets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
-                  <Database className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm font-medium">No datasets found</p>
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                    <Database className="h-8 w-8 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">No datasets found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Datasets will appear here once created</p>
                 </div>
               ) : filteredDatasets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
-                  <Search className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm font-medium">No matching datasets</p>
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                    <Search className="h-8 w-8 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">No matching datasets</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Try adjusting your search query
                   </p>
@@ -418,9 +423,11 @@ export function DatasetsPage() {
                     ))}
                   </div>
                 ) : !files || files.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <FileText className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                    <p className="text-sm font-medium">No files found</p>
+                  <div className="flex flex-col items-center justify-center h-full text-center">
+                    <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                      <FileText className="h-6 w-6 text-muted-foreground/60" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">No files found</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       This dataset is empty
                     </p>
