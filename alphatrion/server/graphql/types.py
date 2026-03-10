@@ -12,12 +12,23 @@ class TokenStats:
     input_tokens: int
     output_tokens: int
 
-
 @strawberry.type
 class ModelDistribution:
     model: str
     count: int
 
+@strawberry.type
+class DailyTokenUsage:
+    date: str
+    total_tokens: int
+    input_tokens: int
+    output_tokens: int
+
+@strawberry.type
+class TraceStats:
+    total_spans: int
+    success_spans: int
+    error_spans: int
 
 @strawberry.type
 class Team:
@@ -150,6 +161,17 @@ class Experiment:
             total_tokens=tokens["total_tokens"],
             input_tokens=tokens["input_tokens"],
             output_tokens=tokens["output_tokens"],
+        )
+
+    @strawberry.field
+    def trace_stats(self) -> TraceStats:
+        from .resolvers import GraphQLResolvers
+
+        stats = GraphQLResolvers.get_experiment_trace_stats(experiment_id=self.id)
+        return TraceStats(
+            total_spans=stats["total_spans"],
+            success_spans=stats["success_spans"],
+            error_spans=stats["error_spans"],
         )
 
 
@@ -316,11 +338,3 @@ class Span:
     resource_attributes: JSON
     events: list[TraceEvent]
     links: list[TraceLink]
-
-
-@strawberry.type
-class DailyTokenUsage:
-    date: str
-    total_tokens: int
-    input_tokens: int
-    output_tokens: int

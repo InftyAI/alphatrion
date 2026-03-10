@@ -448,6 +448,40 @@ class TraceStore:
                 logger.error(f"Failed to get daily token usage: {e}")
                 return []
 
+    def get_trace_stats_by_exp_id(self, exp_id: uuid.UUID) -> dict[str, int]:
+        """Get trace statistics (success/error counts) for a specific experiment_id.
+
+        Args:
+            exp_id: The experiment ID to filter by
+
+        Returns:
+            Dict with keys: total_spans, success_spans, error_spans
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    COUNT(*) as total_spans,
+                    countIf(StatusCode = 'OK' OR StatusCode = 'UNSET') as success_spans,
+                    countIf(StatusCode = 'ERROR') as error_spans
+                FROM {self.database}.otel_spans
+                WHERE ExperimentId = '{exp_id}'
+                """
+
+                result = self.client.query(query)
+                rows = list(result.named_results())
+                if rows and len(rows) > 0:
+                    row = rows[0]
+                    return {
+                        "total_spans": int(row["total_spans"]),
+                        "success_spans": int(row["success_spans"]),
+                        "error_spans": int(row["error_spans"]),
+                    }
+                return {"total_spans": 0, "success_spans": 0, "error_spans": 0}
+            except Exception as e:
+                logger.error(f"Failed to get trace stats by exp_id: {e}")
+                return {"total_spans": 0, "success_spans": 0, "error_spans": 0}
+
     def close(self) -> None:
         """Close the ClickHouse connection."""
         try:
