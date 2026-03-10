@@ -12,6 +12,7 @@ import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ParameterDiff } from '../../components/comparison/parameter-diff';
 import { MetricsOverlay } from '../../components/comparison/metrics-overlay';
+import { formatDuration } from '../../lib/format';
 import type { Status } from '../../types';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
@@ -88,7 +89,7 @@ export function ExperimentComparePage() {
                   <dt className="text-muted-foreground">Duration</dt>
                   <dd className="font-medium">
                     {experiment.duration > 0
-                      ? `${experiment.duration.toFixed(2)}s`
+                      ? formatDuration(experiment.duration)
                       : '-'}
                   </dd>
                 </div>

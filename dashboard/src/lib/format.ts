@@ -8,3 +8,38 @@ export function truncateId(id: string, prefixLen: number = 4, suffixLen: number 
   }
   return `${id.slice(0, prefixLen)}....${id.slice(-suffixLen)}`;
 }
+
+/**
+ * Format duration in seconds to human-readable format
+ * Example:
+ *   0.5 -> "500ms"
+ *   65 -> "1m 5s"
+ *   3665 -> "1h 1m 5s"
+ */
+export function formatDuration(seconds: number): string {
+  if (seconds === 0) {
+    return '0s';
+  }
+
+  if (seconds < 1) {
+    return `${Math.round(seconds * 1000)}ms`;
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  const parts: string[] = [];
+
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
+  if (secs > 0 || parts.length === 0) {
+    parts.push(`${secs}s`);
+  }
+
+  return parts.join(' ');
+}

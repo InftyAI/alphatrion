@@ -48,6 +48,12 @@ export interface Label {
   value: string;
 }
 
+export interface TraceStats {
+  totalSpans: number;
+  successSpans: number;
+  errorSpans: number;
+}
+
 export interface Experiment {
   id: string;
   teamId: string;
@@ -63,6 +69,7 @@ export interface Experiment {
   createdAt: string;
   updatedAt: string;
   aggregatedTokens: TokenStats;
+  traceStats?: TraceStats;
   metrics?: Metric[];
 }
 

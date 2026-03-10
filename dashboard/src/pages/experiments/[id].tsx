@@ -5,6 +5,9 @@ import { useExperiment } from '../../hooks/use-experiments';
 import { useRuns } from '../../hooks/use-runs';
 import { useGroupedMetrics } from '../../hooks/use-metrics';
 import { MetricsChart } from '../../components/metrics/metrics-chart';
+import { TraceErrorRateChart } from '../../components/experiments/trace-error-rate-chart';
+import { RunStatusChart } from '../../components/experiments/run-status-chart';
+import { formatDuration } from '../../lib/format';
 import {
   Card,
   CardContent,
@@ -28,7 +31,6 @@ import { Dropdown } from '../../components/ui/dropdown';
 import { Pagination } from '../../components/ui/pagination';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { Status } from '../../types';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
@@ -104,21 +106,6 @@ export function ExperimentDetailPage() {
     return filtered;
   }, [runs, searchQuery, statusFilter]);
 
-  // Calculate run statistics for pie chart
-  const runStatsData = useMemo(() => {
-    if (!allRuns || allRuns.length === 0) return [];
-
-    const stats = [
-      { name: 'COMPLETED', value: allRuns.filter(r => r.status === 'COMPLETED').length, color: '#22c55e' },
-      { name: 'RUNNING', value: allRuns.filter(r => r.status === 'RUNNING').length, color: '#3b82f6' },
-      { name: 'FAILED', value: allRuns.filter(r => r.status === 'FAILED').length, color: '#ef4444' },
-      { name: 'PENDING', value: allRuns.filter(r => r.status === 'PENDING').length, color: '#eab308' },
-      { name: 'CANCELLED', value: allRuns.filter(r => r.status === 'CANCELLED').length, color: '#6b7280' },
-      { name: 'UNKNOWN', value: allRuns.filter(r => r.status === 'UNKNOWN').length, color: '#a78bfa' },
-    ];
-
-    return stats.filter(s => s.value > 0);
-  }, [allRuns]);
 
   if (experimentLoading) {
     return (
@@ -146,14 +133,14 @@ export function ExperimentDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Experiment Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">
             {experiment.name}
           </h1>
-          <p className="mt-0.5 text-muted-foreground font-mono text-sm">
+          <p className="mt-0.5 text-muted-foreground font-mono text-xs">
             {experiment.id}
           </p>
         </div>
@@ -181,12 +168,12 @@ export function ExperimentDetailPage() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-2">
           {/* Experiment Details */}
           <Card>
-            <CardContent className="p-4">
-              <h3 className="text-base font-semibold mb-3">Details</h3>
-              <dl className="grid grid-cols-3 gap-3 text-sm">
+            <CardContent className="p-3">
+              <h3 className="text-sm font-semibold mb-2">Details</h3>
+              <dl className="grid grid-cols-3 gap-2 text-sm">
                 {experiment.description && (
                   <div>
                     <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Description</dt>
@@ -194,11 +181,9 @@ export function ExperimentDetailPage() {
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
-                  <dd className="mt-1.5 text-foreground text-sm">
-                    {experiment.duration > 0
-                      ? `${experiment.duration.toFixed(2)}s`
-                      : '-'}
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Runs</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">
+                    {allRuns?.length || 0}
                   </dd>
                 </div>
                 <div>
@@ -216,6 +201,14 @@ export function ExperimentDetailPage() {
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">
+                    {experiment.duration > 0
+                      ? formatDuration(experiment.duration)
+                      : '-'}
                   </dd>
                 </div>
                 <div>
@@ -238,9 +231,9 @@ export function ExperimentDetailPage() {
 
               {/* Metadata Section */}
               {experiment.meta && Object.keys(experiment.meta).length > 0 && (
-                <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-3">Metadata</h3>
-                  <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div className="mt-3 pt-3 border-t">
+                  <h3 className="text-sm font-semibold mb-2">Metadata</h3>
+                  <dl className="grid grid-cols-3 gap-2 text-sm">
                     {Object.entries(experiment.meta).map(([key, value]) => (
                       <div key={key} className="break-words">
                         <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
@@ -255,9 +248,9 @@ export function ExperimentDetailPage() {
 
               {/* Parameters Section */}
               {experiment.params && Object.keys(experiment.params).length > 0 && (
-                <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-3">Parameters</h3>
-                  <dl className="grid grid-cols-3 gap-3 text-sm">
+                <div className="mt-3 pt-3 border-t">
+                  <h3 className="text-sm font-semibold mb-2">Parameters</h3>
+                  <dl className="grid grid-cols-3 gap-2 text-sm">
                     {Object.entries(experiment.params).map(([key, value]) => (
                       <div key={key} className="break-words">
                         <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
@@ -269,42 +262,36 @@ export function ExperimentDetailPage() {
                   </dl>
                 </div>
               )}
-
-              {/* Run Statistics */}
-              {allRuns && allRuns.length > 0 && runStatsData.length > 0 && (
-                <div className="mt-5 pt-5 border-t">
-                  <h3 className="text-base font-semibold mb-6">Statistics ({allRuns.length} runs)</h3>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart margin={{ top: 20, bottom: 5 }}>
-                      <Pie
-                        data={runStatsData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="48%"
-                        outerRadius={48}
-                        label={({ name, value }) => `${name}: ${value}`}
-                        style={{ fontSize: '10px' }}
-                      >
-                        {runStatsData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          fontSize: '10px',
-                          backgroundColor: 'hsl(var(--card))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '6px',
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          {/* Run Statistics */}
+          {allRuns && allRuns.length > 0 && (
+            <Card>
+              <CardContent className="p-3">
+                <h3 className="text-sm font-semibold mb-3">Statistics</h3>
+                <div className="grid gap-4 grid-cols-2">
+                  {/* Run Status Chart */}
+                  <div>
+                    <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wide">Run Status Distribution</h4>
+                    <RunStatusChart runs={allRuns} />
+                  </div>
+
+                  {/* Trace Status Distribution Chart */}
+                  <div>
+                    <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wide">Trace STATUS DISTRIBUTION</h4>
+                    {experiment.traceStats && experiment.traceStats.totalSpans > 0 ? (
+                      <TraceErrorRateChart traceStats={experiment.traceStats} />
+                    ) : (
+                      <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">
+                        No trace data available
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Metrics Chart - All Runs */}
           {metricsLoading ? (
@@ -318,12 +305,12 @@ export function ExperimentDetailPage() {
             />
           ) : (
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm">Metrics</CardTitle>
                 <CardDescription className="text-xs">No metrics data available</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
                   {allRuns && allRuns.length > 0
                     ? 'No metrics logged yet'
                     : 'No runs in this experiment'}
@@ -335,7 +322,7 @@ export function ExperimentDetailPage() {
         </TabsContent>
 
         {/* Runs Tab */}
-        <TabsContent value="runs" className="space-y-4">
+        <TabsContent value="runs" className="space-y-2">
           <Card>
             <CardContent className="p-0">
               {/* Search Bar and Status Filter */}
@@ -361,15 +348,15 @@ export function ExperimentDetailPage() {
               </div>
 
               {runsLoading ? (
-                <div className="p-8">
-                  <Skeleton className="h-24 w-full" />
+                <div className="p-6">
+                  <Skeleton className="h-20 w-full" />
                 </div>
               ) : !runs || runs.length === 0 ? (
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
                   No runs found
                 </div>
               ) : filteredRuns.length === 0 ? (
-                <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
                   No runs match your search
                 </div>
               ) : (

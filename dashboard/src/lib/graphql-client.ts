@@ -194,6 +194,11 @@ export const queries = {
           inputTokens
           outputTokens
         }
+        traceStats {
+          totalSpans
+          successSpans
+          errorSpans
+        }
         metrics {
           id
           key

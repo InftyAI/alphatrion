@@ -267,8 +267,6 @@ class GraphQLResolvers:
 
     @staticmethod
     def aggregate_team_tokens(team_id: strawberry.ID) -> dict[str, int]:
-        from alphatrion import envs
-
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
@@ -283,8 +281,6 @@ class GraphQLResolvers:
     def aggregate_model_distributions(
         team_id: strawberry.ID,
     ) -> list[ModelDistribution]:
-        from alphatrion import envs
-
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return []
 
@@ -456,7 +452,6 @@ class GraphQLResolvers:
     @staticmethod
     def aggregate_run_tokens(run_id: strawberry.ID) -> dict[str, int]:
         """Aggregate token usage from all traces for a run."""
-        from alphatrion import envs
 
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
@@ -578,7 +573,6 @@ class GraphQLResolvers:
     @staticmethod
     def list_spans(run_id: strawberry.ID) -> list[Span]:
         """List all spans for a specific run."""
-        from alphatrion import envs
 
         # Check if tracing is enabled
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
@@ -661,7 +655,6 @@ class GraphQLResolvers:
         team_id: strawberry.ID, days: int = 7
     ) -> list[DailyTokenUsage]:
         """Get daily token usage from LLM calls for a team."""
-        from alphatrion import envs
 
         # Check if tracing is enabled
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
@@ -688,6 +681,28 @@ class GraphQLResolvers:
             # Log error and return empty list - don't fail the GraphQL query
             print(f"Failed to fetch daily token usage: {e}")
             return []
+
+    @staticmethod
+    def get_experiment_trace_stats(experiment_id: strawberry.ID) -> dict[str, int]:
+        """Get trace statistics (success/error counts) for an experiment."""
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_spans": 0, "success_spans": 0, "error_spans": 0}
+
+        try:
+            trace_store = runtime.storage_runtime().tracestore
+            stats = trace_store.get_trace_stats_by_exp_id(exp_id=experiment_id)
+            # Don't close - it's a shared singleton connection
+            return stats
+        except Exception as e:
+            # Log error and return zeros - don't fail the GraphQL query
+            import logging
+
+            logging.error(
+                f"Failed to get trace stats for experiment {experiment_id}: {e}"
+            )
+            return {"total_spans": 0, "success_spans": 0, "error_spans": 0}
 
     @staticmethod
     def list_datasets(
