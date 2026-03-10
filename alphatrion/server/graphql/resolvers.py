@@ -36,7 +36,6 @@ from .types import (
     Team,
     TraceEvent,
     TraceLink,
-    TraceStats,
     UpdateUserInput,
     User,
 )
@@ -268,7 +267,6 @@ class GraphQLResolvers:
 
     @staticmethod
     def aggregate_team_tokens(team_id: strawberry.ID) -> dict[str, int]:
-
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
 
@@ -283,7 +281,6 @@ class GraphQLResolvers:
     def aggregate_model_distributions(
         team_id: strawberry.ID,
     ) -> list[ModelDistribution]:
-
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return []
 
@@ -695,9 +692,7 @@ class GraphQLResolvers:
 
         try:
             trace_store = runtime.storage_runtime().tracestore
-            stats = trace_store.get_trace_stats_by_exp_id(
-                exp_id=experiment_id
-            )
+            stats = trace_store.get_trace_stats_by_exp_id(exp_id=experiment_id)
             # Don't close - it's a shared singleton connection
             return stats
         except Exception as e:

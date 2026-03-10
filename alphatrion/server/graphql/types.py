@@ -12,10 +12,12 @@ class TokenStats:
     input_tokens: int
     output_tokens: int
 
+
 @strawberry.type
 class ModelDistribution:
     model: str
     count: int
+
 
 @strawberry.type
 class DailyTokenUsage:
@@ -24,11 +26,13 @@ class DailyTokenUsage:
     input_tokens: int
     output_tokens: int
 
+
 @strawberry.type
 class TraceStats:
     total_spans: int
     success_spans: int
     error_spans: int
+
 
 @strawberry.type
 class Team:
