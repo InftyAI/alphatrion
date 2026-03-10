@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Database } from 'lucide-react';
 import { useRun } from '../../hooks/use-runs';
+import { formatDuration } from '../../lib/format';
 import {
   Card,
   CardContent,
@@ -67,14 +68,14 @@ export function RunDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {/* Run Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">
             Run Details
           </h1>
-          <p className="mt-1 text-muted-foreground font-mono text-sm">
+          <p className="mt-0.5 text-muted-foreground font-mono text-xs">
             {run.id}
           </p>
         </div>
@@ -102,14 +103,14 @@ export function RunDetailPage() {
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview" className="space-y-2">
           {/* Run Overview */}
           <Card>
-        <CardContent className="p-4">
-          <h3 className="text-base font-semibold mb-3">Overview</h3>
-          <dl className="grid grid-cols-3 gap-3 text-sm">
+        <CardContent className="p-3">
+          <h3 className="text-sm font-semibold mb-2">Overview</h3>
+          <dl className="grid grid-cols-3 gap-2 text-sm">
             <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tokens</dt>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">
                 {run.aggregatedTokens?.totalTokens !== undefined && run.aggregatedTokens.totalTokens > 0 ? (
                   <>
@@ -127,7 +128,7 @@ export function RunDetailPage() {
               <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
               <dd className="mt-1.5 text-foreground font-mono text-sm">
                 {run.duration !== undefined && run.duration > 0 ? (
-                  `${run.duration.toFixed(2)}s`
+                  formatDuration(run.duration)
                 ) : (
                   <span className="text-muted-foreground">-</span>
                 )}
@@ -146,9 +147,9 @@ export function RunDetailPage() {
 
           {/* Metadata */}
           {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
-            <div className="mt-5 pt-5 border-t">
-              <h3 className="text-base font-semibold mb-3">Metadata</h3>
-              <dl className="grid grid-cols-3 gap-3 text-sm">
+            <div className="mt-3 pt-3 border-t">
+              <h3 className="text-sm font-semibold mb-2">Metadata</h3>
+              <dl className="grid grid-cols-3 gap-2 text-sm">
                 {Object.entries(run.meta)
                   .filter(([key]) => key !== 'execution_result')
                   .map(([key, value]) => (
@@ -167,16 +168,16 @@ export function RunDetailPage() {
 
           {/* Metrics */}
           <Card>
-            <CardContent className="p-4">
-              <h3 className="text-base font-semibold mb-3">Metrics</h3>
+            <CardContent className="p-3">
+              <h3 className="text-sm font-semibold mb-2">Metrics</h3>
               {metricsLoading ? (
                 <Skeleton className="h-32 w-full" />
               ) : runMetrics.length === 0 ? (
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
                   No metrics logged for this run
                 </div>
               ) : (
-                <dl className="grid grid-cols-3 gap-3 text-sm">
+                <dl className="grid grid-cols-3 gap-2 text-sm">
                   {runMetrics.map((metric) => (
                     <div key={metric.id}>
                       <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{metric.key}</dt>
@@ -193,22 +194,22 @@ export function RunDetailPage() {
         <TabsContent value="traces">
           {tracesLoading ? (
             <Card>
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <Skeleton className="h-64 w-full" />
               </CardContent>
             </Card>
           ) : tracesError ? (
             <Card>
-              <CardContent className="p-4">
-                <div className="text-red-500">Error loading traces: {tracesError.message}</div>
+              <CardContent className="p-3">
+                <div className="text-red-500 text-xs">Error loading traces: {tracesError.message}</div>
               </CardContent>
             </Card>
           ) : traces && traces.length > 0 ? (
             <TraceTimeline spans={traces} />
           ) : (
             <Card>
-              <CardContent className="p-4">
-                <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+              <CardContent className="p-3">
+                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
                   No traces available for this run
                 </div>
               </CardContent>

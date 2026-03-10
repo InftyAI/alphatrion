@@ -21,72 +21,46 @@ export function TraceErrorRateChart({ traceStats }: TraceErrorRateChartProps) {
     return data;
   }, [traceStats]);
 
-  const successRate = useMemo(() => {
-    const { totalSpans, successSpans } = traceStats;
-    if (totalSpans === 0) return 0;
-    return ((successSpans / totalSpans) * 100).toFixed(1);
-  }, [traceStats]);
-
-  const errorRate = useMemo(() => {
-    const { totalSpans, errorSpans } = traceStats;
-    if (totalSpans === 0) return 0;
-    return ((errorSpans / totalSpans) * 100).toFixed(1);
-  }, [traceStats]);
+  // Calculate total for percentages
+  const total = traceStats.totalSpans;
 
   if (traceStats.totalSpans === 0 || chartData.length === 0) {
     return (
-      <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-48 items-center justify-center text-xs text-muted-foreground">
         No trace data available
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3 text-sm">
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Spans</dt>
-          <dd className="mt-1.5 text-foreground font-mono text-sm">{traceStats.totalSpans.toLocaleString()}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Success Rate</dt>
-          <dd className="mt-1.5 text-green-600 font-mono text-sm font-semibold">{successRate}%</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Error Rate</dt>
-          <dd className="mt-1.5 text-red-600 font-mono text-sm font-semibold">{errorRate}%</dd>
-        </div>
-      </div>
-
-      {/* Pie Chart */}
-      <ResponsiveContainer width="100%" height={180}>
-        <PieChart margin={{ top: 20, bottom: 5 }}>
-          <Pie
-            data={chartData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="48%"
-            outerRadius={48}
-            label={({ name, value }) => `${name}: ${value}`}
-            style={{ fontSize: '10px' }}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip
-            contentStyle={{
-              fontSize: '10px',
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '6px',
-            }}
-          />
-          <Legend wrapperStyle={{ fontSize: '10px' }} />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={200}>
+      <PieChart>
+        <Pie
+          data={chartData}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          outerRadius={70}
+          labelLine={false}
+          label={(entry) => `${((entry.value / total) * 100).toFixed(1)}%`}
+          style={{ fontSize: '10px' }}
+        >
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={(value: number) => [value, 'Spans']}
+          contentStyle={{
+            fontSize: '10px',
+            backgroundColor: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '6px',
+          }}
+        />
+        <Legend wrapperStyle={{ fontSize: '10px' }} />
+      </PieChart>
+    </ResponsiveContainer>
   );
 }

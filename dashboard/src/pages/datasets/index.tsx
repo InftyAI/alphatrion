@@ -62,10 +62,15 @@ export function DatasetsPage() {
     }
   }, [searchParams]);
 
-  const { data: datasets, isLoading } = useDatasets(
+  // Fetch one extra item to determine if there are more pages
+  const { data: datasetsRaw, isLoading } = useDatasets(
     selectedTeamId || '',
-    { page: currentPage, pageSize: PAGE_SIZE, enabled: !!selectedTeamId }
+    { page: currentPage, pageSize: PAGE_SIZE + 1, enabled: !!selectedTeamId }
   );
+
+  // Check if there are more pages and trim to PAGE_SIZE
+  const hasMorePages = datasetsRaw && datasetsRaw.length > PAGE_SIZE;
+  const datasets = datasetsRaw ? datasetsRaw.slice(0, PAGE_SIZE) : [];
 
   // Parse dataset path to extract repo name and tag
   const parseDatasetPath = (path: string) => {
@@ -126,12 +131,12 @@ export function DatasetsPage() {
     });
   }, [datasets, searchQuery]);
 
-  // Calculate total pages and items
-  const totalPages = datasets && datasets.length === PAGE_SIZE ? currentPage + 2 : currentPage + 1;
-  const totalItems = datasets
-    ? (datasets.length < PAGE_SIZE
-        ? currentPage * PAGE_SIZE + datasets.length
-        : (currentPage + 1) * PAGE_SIZE)
+  // Calculate total pages and items based on whether there are more pages
+  const totalPages = hasMorePages ? currentPage + 2 : currentPage + 1;
+  const totalItems = datasets.length > 0
+    ? (hasMorePages
+        ? (currentPage + 1) * PAGE_SIZE + 1  // At least one more item exists
+        : currentPage * PAGE_SIZE + datasets.length)  // Exact count on last page
     : 0;
 
   const formatFileSize = (bytes: number) => {
@@ -245,7 +250,7 @@ export function DatasetsPage() {
                     <Skeleton key={i} className="h-12 w-full" />
                   ))}
                 </div>
-              ) : !datasets || datasets.length === 0 ? (
+              ) : datasets.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                     <Database className="h-8 w-8 text-muted-foreground/60" />
@@ -371,7 +376,7 @@ export function DatasetsPage() {
             </CardContent>
 
             {/* Pagination */}
-            {datasets && datasets.length > 0 && totalPages > 1 && (
+            {datasets.length > 0 && (hasMorePages || currentPage > 0) && (
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
