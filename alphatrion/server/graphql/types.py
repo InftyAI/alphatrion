@@ -125,7 +125,7 @@ GraphQLExperimentTypeEnum = strawberry.enum(GraphQLExperimentType)
 @strawberry.type
 class Label:
     name: str
-    value: str
+    value: str | None
 
 
 @strawberry.type

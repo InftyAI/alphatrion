@@ -374,21 +374,27 @@ class SQLStore(MetaStore):
         session.add(new_exp)
 
         if labels:
-            # labels look like "label1:value1,label2:value2",
+            # labels look like "label1:value1,label2:value2,tag1,tag2"
+            # entries with ":" or "=" are key-value labels
+            # entries without a separator are tags (labels with no value)
             label_pairs = labels.rstrip().split(",")
             for pair in label_pairs:
-                if ":" in pair:
-                    label_name, label_value = pair.split(":", 1)
-                elif "=" in pair:
-                    label_name, label_value = pair.split("=", 1)
+                pair = pair.strip()
+                if not pair:
+                    continue
+
+                for sep in (":", "="):
+                    if sep in pair:
+                        label_name, label_value = map(str.strip, pair.split(sep, 1))
+                        break
                 else:
-                    continue  # skip invalid label
+                    label_name, label_value = pair, None
 
                 exp_label = ExperimentLabel(
                     team_id=team_id,
                     experiment_id=uid,
-                    label_name=label_name.strip(),
-                    label_value=label_value.strip(),
+                    label_name=label_name,
+                    label_value=label_value,
                 )
                 session.add(exp_label)
 

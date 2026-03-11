@@ -45,7 +45,7 @@ export interface User {
 
 export interface Label {
   name: string;
-  value: string;
+  value: string | null;
 }
 
 export interface TraceStats {
