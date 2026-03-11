@@ -1,3 +1,4 @@
+from alphatrion.log.load import load_dataset
 from alphatrion.log.log import log_artifact, log_dataset, log_metrics, log_params
 from alphatrion.runtime.runtime import init
 
@@ -7,4 +8,5 @@ __all__ = [
     "log_params",
     "log_metrics",
     "log_dataset",
+    "load_dataset",
 ]

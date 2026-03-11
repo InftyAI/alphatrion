@@ -10,6 +10,7 @@ import pytest
 from openai import OpenAI
 
 from alphatrion.experiment.craft_experiment import CraftExperiment
+from alphatrion.log.log import log_dataset
 from alphatrion.runtime.runtime import init
 from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
@@ -517,3 +518,44 @@ async def test_query_experiment_with_usage():
         exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
         assert exp_obj.status == Status.RUNNING
         assert exp_obj.usage is None
+
+
+@pytest.mark.asyncio
+async def test_query_datasets():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(team_id=team_id, user_id=user_id)
+
+    async with CraftExperiment.start(
+        name="Test Experiment for Datasets",
+        description="Experiment for testing dataset queries",
+    ):
+        dataset_id = await log_dataset(
+            name="test_dataset",
+            data_or_path={"foo": "bar"},
+        )
+
+    query = f"""
+    query {{
+        datasets(teamId: "{team_id}", page: 0, pageSize: 10) {{
+            id
+            name
+            path
+            meta
+            teamId
+            experimentId
+            runId
+            createdAt
+        }}
+    }}
+    """
+    response = schema.execute_sync(
+        query,
+        variable_values={},
+    )
+    assert response.errors is None
+    assert len(response.data["datasets"]) == 1
+    dataset = response.data["datasets"][0]
+    assert dataset["id"] == str(dataset_id)
+    assert dataset["name"] == "test_dataset"
+    assert dataset["path"] is not None

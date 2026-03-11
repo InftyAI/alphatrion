@@ -778,6 +778,7 @@ class SQLStore(MetaStore):
         team_id: uuid.UUID,
         experiment_id: uuid.UUID | None = None,
         run_id: uuid.UUID | None = None,
+        name: str | None = None,
         page: int = 0,
         page_size: int = 10,
         order_by: str = "created_at",
@@ -791,6 +792,9 @@ class SQLStore(MetaStore):
             query = query.filter(Dataset.experiment_id == experiment_id)
         if run_id is not None:
             query = query.filter(Dataset.run_id == run_id)
+        if name is not None:
+            query = query.filter(Dataset.name == name)
+
         datasets = (
             query.order_by(
                 getattr(Dataset, order_by).desc()

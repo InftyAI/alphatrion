@@ -260,6 +260,10 @@ class Experiment(ABC):
     def id(self) -> uuid.UUID:
         return self._id
 
+    @property
+    def config(self) -> ExperimentConfig:
+        return self._config
+
     def _construct_meta(self):
         self._meta = dict()
 
@@ -271,9 +275,6 @@ class Experiment(ABC):
             self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
         else:
             raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
-
-    def config(self) -> ExperimentConfig:
-        return self._config
 
     def should_checkpoint_on_best(
         self, metric_key: str, metric_value: float
