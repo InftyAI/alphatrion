@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import tempfile
+import uuid
 from collections.abc import Callable
 from typing import Any
 
@@ -136,8 +137,8 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
         path = await log_artifact(
             repo_name="ckpt",
             # If not provided, will use the default checkpoint path.
-            paths=exp.config().checkpoint.path or checkpoint_path(),
-            pre_save_hook=exp.config().checkpoint.pre_save_hook,
+            paths=exp.config.checkpoint.path or checkpoint_path(),
+            pre_save_hook=exp.config.checkpoint.pre_save_hook,
         )
         runtime.metadb.update_run(
             run_id=run_id,
@@ -158,13 +159,13 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 async def log_dataset(
     name: str,
     data_or_path: dict[str, Any] | str | list[str],
-):
+) -> uuid.UUID | None:
     """
     Log dataset to the database and artifact registry.
 
     :param name: the name of the dataset.
-    :param data_or_path: the data to be logged, currently support dict only,
-                 will support more types in the future.
+    :param data_or_path: the data to be logged, it can be a dict,
+                         a file path or a list of file paths.
     """
     runtime = global_runtime()
 
@@ -180,7 +181,7 @@ async def log_dataset(
                 repo_name="dataset",
             )
 
-            runtime.metadb.create_dataset(
+            id = runtime.metadb.create_dataset(
                 name=name,
                 team_id=runtime.team_id,
                 user_id=runtime.user_id,
@@ -189,13 +190,13 @@ async def log_dataset(
                 run_id=current_run_id.get(),
                 meta={"size": file_size},
             )
-            return
+            return id
     elif isinstance(data_or_path, (str, list)):
         path = await log_artifact(
             paths=data_or_path,
             repo_name="dataset",
         )
-        runtime.metadb.create_dataset(
+        id = runtime.metadb.create_dataset(
             name=name,
             team_id=runtime.team_id,
             user_id=runtime.user_id,
@@ -203,7 +204,7 @@ async def log_dataset(
             experiment_id=current_exp_id.get(),
             run_id=current_run_id.get(),
         )
-        return
+        return id
 
     raise NotImplementedError(
         f"Logging dataset of type {type(data_or_path)} is not implemented yet."

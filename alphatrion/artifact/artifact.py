@@ -92,6 +92,7 @@ class Artifact:
         """
         path = f"{repo_name}:{version}"
         target = f"{self._url}/{path}"
+        original_dir = None
 
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
@@ -100,7 +101,9 @@ class Artifact:
 
         try:
             # ORAS client returns list of filenames
-            filenames = self._client.pull(target)
+            # If output_dir specified, we've already chdir'd into it, so use "."
+            # Otherwise, ORAS will use its default temp directory
+            filenames = self._client.pull(target, outdir="." if output_dir else None)
 
             # Get current directory (where files were downloaded)
             download_dir = os.getcwd()

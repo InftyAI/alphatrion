@@ -324,6 +324,7 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
+    # TODO: isolated by team_id for multi-tenancy.
     async def list_artifact_repositories() -> list[ArtifactRepository]:
         """List all repositories in the ORAS registry."""
 
@@ -709,6 +710,7 @@ class GraphQLResolvers:
         team_id: strawberry.ID,
         experiment_id: strawberry.ID | None = None,
         run_id: strawberry.ID | None = None,
+        name: str | None = None,
         page: int = 0,
         page_size: int = 20,
         order_by: str = "created_at",
@@ -719,6 +721,7 @@ class GraphQLResolvers:
             team_id=team_id,
             experiment_id=experiment_id,
             run_id=run_id,
+            name=name,
             page=page,
             page_size=page_size,
             order_by=order_by,
