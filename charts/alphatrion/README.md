@@ -13,7 +13,7 @@ This Helm chart deploys AlphaTrion, an open-source framework for GenAI applicati
 Install the chart with your PostgreSQL configuration:
 
 ```bash
-helm install alphatrion ./helm-charts/alphatrion \
+helm install alphatrion ./charts/alphatrion \
   --set server.image.repository=alphatrion-server \
   --set server.image.tag=latest \
   --set dashboard.image.repository=alphatrion-dashboard \
@@ -135,7 +135,7 @@ AlphaTrion requires an external PostgreSQL database (version 12 or later). You m
 ### Using Password (Development)
 
 ```bash
-helm install alphatrion ./helm-charts/alphatrion \
+helm install alphatrion ./charts/alphatrion \
   --set postgresql.host=my-postgres.example.com \
   --set postgresql.password=mypassword
 ```
@@ -152,7 +152,7 @@ kubectl create secret generic alphatrion-postgres-credentials \
 Then install with the secret reference:
 
 ```bash
-helm install alphatrion ./helm-charts/alphatrion \
+helm install alphatrion ./charts/alphatrion \
   --set postgresql.host=my-postgres.example.com \
   --set postgresql.existingSecret=alphatrion-postgres-credentials
 ```
@@ -162,7 +162,7 @@ helm install alphatrion ./helm-charts/alphatrion \
 To expose AlphaTrion via Ingress:
 
 ```bash
-helm install alphatrion ./helm-charts/alphatrion \
+helm install alphatrion ./charts/alphatrion \
   --set ingress.enabled=true \
   --set ingress.hosts[0].host=alphatrion.example.com \
   --set ingress.tls[0].secretName=alphatrion-tls \
@@ -200,7 +200,7 @@ If you enabled ingress, visit the configured hostname (e.g., https://alphatrion.
 To upgrade the release:
 
 ```bash
-helm upgrade alphatrion ./helm-charts/alphatrion \
+helm upgrade alphatrion ./charts/alphatrion \
   -f custom-values.yaml
 ```
 
@@ -257,7 +257,7 @@ kubectl run postgresql-client --rm --tty -i --restart='Never' \
 For advanced configuration options, see the `values.yaml` file or run:
 
 ```bash
-helm show values ./helm-charts/alphatrion
+helm show values ./charts/alphatrion
 ```
 
 ## License

@@ -61,8 +61,8 @@ kubectl expose pod postgres --port=5432 --target-port=5432
 
 ```bash
 # Install with PostgreSQL connection
-helm install alphatrion ./helm-charts/alphatrion \
-  -f ./helm-charts/alphatrion/values-dev.yaml \
+helm install alphatrion ./charts/alphatrion \
+  -f ./charts/alphatrion/values-dev.yaml \
   --set postgresql.host=postgres \
   --set postgresql.password=alphatr1on
 ```
@@ -101,10 +101,10 @@ If you want to enable tracing support with ClickHouse, you have two options:
 
 ```bash
 # 1. Create gp3 storage class (AWS only)
-kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+kubectl apply -f ./charts/clickhouse/storageclass-gp3.yaml
 
 # 2. Deploy single-node ClickHouse
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-statefulset.yaml
 
 # 3. Verify
 kubectl get pods -n alphatrion -l app=clickhouse
@@ -117,13 +117,13 @@ For production workloads with automatic failover and data replication:
 
 ```bash
 # 1. Create gp3 storage class (AWS only)
-kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+kubectl apply -f ./charts/clickhouse/storageclass-gp3.yaml
 
 # 2. Deploy HA cluster (3 replicas + 3 keeper nodes)
-./helm-charts/clickhouse/deploy-ha.sh
+./charts/clickhouse/deploy-ha.sh
 
 # Or manually:
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-ha.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-ha.yaml
 ```
 
 See [HA Setup Guide](./clickhouse/HA-SETUP.md) for detailed instructions and migration guide.
@@ -131,8 +131,8 @@ See [HA Setup Guide](./clickhouse/HA-SETUP.md) for detailed instructions and mig
 ### Connect AlphaTrion to ClickHouse
 
 ```bash
-helm upgrade alphatrion ./helm-charts/alphatrion \
-  -f ./helm-charts/alphatrion/values-with-clickhouse.yaml
+helm upgrade alphatrion ./charts/alphatrion \
+  -f ./charts/alphatrion/values-with-clickhouse.yaml
 ```
 
 For more details, see the [ClickHouse deployment guide](./clickhouse/README.md).
@@ -175,7 +175,7 @@ psql -h localhost -U alphatrion -d alphatrion
 ### Upgrade Release
 
 ```bash
-helm upgrade alphatrion ./helm-charts/alphatrion -f ./helm-charts/alphatrion/values-dev.yaml
+helm upgrade alphatrion ./charts/alphatrion -f ./charts/alphatrion/values-dev.yaml
 ```
 
 ### Uninstall
@@ -205,7 +205,7 @@ For production, use `values-prod.yaml` and customize it:
 
 ```bash
 # Copy and customize production values
-cp helm-charts/alphatrion/values-prod.yaml my-prod-values.yaml
+cp charts/alphatrion/values-prod.yaml my-prod-values.yaml
 # Edit my-prod-values.yaml with your PostgreSQL host and other settings
 
 # Create secret for PostgreSQL password
@@ -213,7 +213,7 @@ kubectl create secret generic alphatrion-postgres-credentials \
   --from-literal=password=your-secure-password
 
 # Install
-helm install alphatrion ./helm-charts/alphatrion -f my-prod-values.yaml
+helm install alphatrion ./charts/alphatrion -f my-prod-values.yaml
 ```
 
 ## Troubleshooting
@@ -252,7 +252,7 @@ kubectl logs job/alphatrion-migration
 
 # If you need to re-run migrations
 kubectl delete job alphatrion-migration
-helm upgrade alphatrion ./helm-charts/alphatrion
+helm upgrade alphatrion ./charts/alphatrion
 ```
 
 ## Using AlphaTrion in Your Application
