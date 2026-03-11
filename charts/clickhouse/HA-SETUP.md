@@ -23,13 +23,13 @@ This guide shows how to deploy a highly available ClickHouse cluster with 3 repl
 ### 1. Create gp3 Storage Class (if not exists)
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+kubectl apply -f ./charts/clickhouse/storageclass-gp3.yaml
 ```
 
 ### 2. Deploy HA ClickHouse Cluster
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-ha.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-ha.yaml
 ```
 
 This will create:
@@ -264,11 +264,11 @@ kubectl exec -n alphatrion clickhouse-0 -- tar -czf /tmp/backup.tar.gz /var/lib/
 kubectl cp alphatrion/clickhouse-0:/tmp/backup.tar.gz ./clickhouse-backup.tar.gz
 
 # 3. Delete single-node deployment
-kubectl delete -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl delete -f ./charts/clickhouse/clickhouse-statefulset.yaml
 kubectl delete pvc -n alphatrion clickhouse-data-clickhouse-0
 
 # 4. Deploy HA cluster
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-ha.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-ha.yaml
 
 # 5. Wait for cluster to be ready
 kubectl wait --for=condition=ready pod -n alphatrion -l app=clickhouse --timeout=300s
@@ -285,7 +285,7 @@ kubectl exec -n alphatrion clickhouse-0 -- clickhouse-client --query="RESTORE DA
 # 1. Deploy HA cluster alongside existing single node (use different namespace temporarily)
 kubectl create namespace alphatrion-ha
 # Edit clickhouse-ha.yaml to use alphatrion-ha namespace
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-ha.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-ha.yaml
 
 # 2. Use clickhouse-copier or remote() function to copy data
 kubectl exec -n alphatrion-ha clickhouse-0 -- clickhouse-client --query="
@@ -296,7 +296,7 @@ SELECT * FROM remote('clickhouse-0.clickhouse.alphatrion.svc.cluster.local:9000'
 # Update service discovery or change host in values.yaml
 
 # 4. Delete old single-node deployment
-kubectl delete -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl delete -f ./charts/clickhouse/clickhouse-statefulset.yaml
 ```
 
 ## Troubleshooting

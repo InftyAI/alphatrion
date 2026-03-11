@@ -32,7 +32,7 @@ For HA setup, see **[High Availability Setup Guide](HA-SETUP.md)**.
 ### 1. Create gp3 Storage Class
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+kubectl apply -f ./charts/clickhouse/storageclass-gp3.yaml
 ```
 
 ### 2. Create Namespace (if not exists)
@@ -44,7 +44,7 @@ kubectl create namespace alphatrion
 ### 3. Deploy ClickHouse
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-statefulset.yaml
 ```
 
 ### 4. Verify Deployment
@@ -160,8 +160,8 @@ server:
 Or use the provided values file:
 
 ```bash
-helm upgrade alphatrion ./helm-charts/alphatrion \
-  -f ./helm-charts/alphatrion/values-with-clickhouse.yaml
+helm upgrade alphatrion ./charts/alphatrion \
+  -f ./charts/alphatrion/values-with-clickhouse.yaml
 ```
 
 ## Accessing ClickHouse
@@ -219,14 +219,14 @@ containers:
 Then apply the changes:
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl apply -f ./charts/clickhouse/clickhouse-statefulset.yaml
 ```
 
 ## Uninstallation
 
 ```bash
 # Delete the StatefulSet and Service
-kubectl delete -f ./helm-charts/clickhouse/clickhouse-statefulset.yaml
+kubectl delete -f ./charts/clickhouse/clickhouse-statefulset.yaml
 
 # Delete PVC if needed (⚠️ This deletes all data!)
 kubectl delete pvc -n alphatrion clickhouse-data-clickhouse-0
@@ -284,7 +284,7 @@ kubectl describe storageclass gp3
 If gp3 storage class doesn't exist, create it:
 
 ```bash
-kubectl apply -f ./helm-charts/clickhouse/storageclass-gp3.yaml
+kubectl apply -f ./charts/clickhouse/storageclass-gp3.yaml
 ```
 
 ### Connection issues

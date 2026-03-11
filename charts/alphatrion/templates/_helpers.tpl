@@ -148,7 +148,7 @@ PostgreSQL password secret name
 PostgreSQL password secret key
 */}}
 {{- define "alphatrion.postgresql.secretKey" -}}
-{{- "postgres-password" }}
+{{- .Values.postgresql.existingSecretKey | default "postgres-password" }}
 {{- end }}
 
 {{/*
@@ -167,6 +167,13 @@ ClickHouse secret name
 {{- else }}
 {{- include "alphatrion.server.fullname" . }}
 {{- end }}
+{{- end }}
+
+{{/*
+ClickHouse password secret key
+*/}}
+{{- define "alphatrion.clickhouse.secretKey" -}}
+{{- .Values.clickhouse.existingSecretKey | default "clickhouse-password" }}
 {{- end }}
 
 {{/*

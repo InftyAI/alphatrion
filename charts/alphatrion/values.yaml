@@ -94,8 +94,10 @@ postgresql:
   database: alphatrion
   username: alphatrion
   password: ""
-  # Use existing secret for password (key should be 'password')
+  # Use existing secret for password
   existingSecret: ""
+  # Key name in the existing secret (default: postgres-password)
+  existingSecretKey: "postgres-password"
   # Automatically initialize database tables on first run
   initTables: false
 
@@ -107,8 +109,10 @@ clickhouse:
   database: alphatrion_traces
   username: alphatrion
   password: "alphatrion"
-  # Use existing secret for password (key should be 'password')
+  # Use existing secret for password
   existingSecret: ""
+  # Key name in the existing secret (default: clickhouse-password)
+  existingSecretKey: "clickhouse-password"
   # Automatically initialize tables
   initTables: false
   # Enable batch operations for better performance
