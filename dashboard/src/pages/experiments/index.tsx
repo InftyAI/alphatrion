@@ -132,40 +132,21 @@ export function ExperimentsPage() {
       return [];
     }
 
-    // Collect labels by key, separating tags (null value) from key-value labels
+    // Collect labels by key
     const labelsByKey = new Map<string, Set<string>>();
-    const tagNames = new Set<string>();
 
     experiments.forEach(exp => {
       exp.labels?.forEach(label => {
-        if (label.value == null) {
-          tagNames.add(label.name);
-        } else {
-          if (!labelsByKey.has(label.name)) {
-            labelsByKey.set(label.name, new Set());
-          }
-          labelsByKey.get(label.name)!.add(label.value);
+        if (!labelsByKey.has(label.name)) {
+          labelsByKey.set(label.name, new Set());
         }
+        labelsByKey.get(label.name)!.add(label.value);
       });
     });
 
     // Build options grouped by key
     const options: { value: string; label: string; group: string }[] = [];
 
-    // Add tag options (labels with no value)
-    if (tagNames.size > 0) {
-      Array.from(tagNames)
-        .sort()
-        .forEach(tag => {
-          options.push({
-            value: `${tag}:`,
-            label: tag,
-            group: 'Tags'
-          });
-        });
-    }
-
-    // Add key-value label options
     Array.from(labelsByKey.entries())
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .forEach(([key, values]) => {
@@ -207,7 +188,7 @@ export function ExperimentsPage() {
           exp.id?.toLowerCase().includes(query) ||
           exp.labels?.some(label =>
             label.name.toLowerCase().includes(query) ||
-            label.value?.toLowerCase().includes(query)
+            label.value.toLowerCase().includes(query)
           )
       );
     }
@@ -227,11 +208,6 @@ export function ExperimentsPage() {
           if (labelValue === '*') {
             // "key:*" means any experiment with this key
             return exp.labels?.some(label => label.name === labelName);
-          } else if (labelValue === '') {
-            // "key:" means tag (label with no value)
-            return exp.labels?.some(label =>
-              label.name === labelName && label.value == null
-            );
           } else {
             // "key:value" means exact match
             return exp.labels?.some(label =>
@@ -427,14 +403,13 @@ export function ExperimentsPage() {
                           <div className="flex gap-1 flex-wrap">
                             {experiment.labels.map((label, idx) => {
                               const colors = labelKeyColorMap.get(label.name) || LABEL_COLORS[0];
-                              const isTag = !label.value;
                               return (
                                 <Badge
                                   key={idx}
                                   variant="outline"
-                                  className={`text-xs px-2 py-0.5 font-normal ${colors.bg} ${colors.text} ${colors.border} ${isTag ? 'rounded-full' : ''}`}
+                                  className={`text-xs px-2 py-0.5 font-normal ${colors.bg} ${colors.text} ${colors.border}`}
                                 >
-                                  {isTag ? label.name : `${label.name}: ${label.value}`}
+                                  {label.name}: {label.value}
                                 </Badge>
                               );
                             })}
