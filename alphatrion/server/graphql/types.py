@@ -151,6 +151,12 @@ class Experiment:
         return GraphQLResolvers.list_labels_by_exp_id(experiment_id=self.id)
 
     @strawberry.field
+    def tags(self) -> list[str]:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_tags_by_exp_id(experiment_id=self.id)
+
+    @strawberry.field
     def metrics(self) -> list["Metric"]:
         from .resolvers import GraphQLResolvers
 

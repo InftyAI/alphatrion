@@ -10,6 +10,7 @@ from alphatrion.storage.sql_models import (
     Dataset,
     Experiment,
     ExperimentLabel,
+    ExperimentTag,
     Metric,
     Run,
     Status,
@@ -340,6 +341,7 @@ class SQLStore(MetaStore):
         user_id: uuid.UUID,
         description: str | None = None,
         labels: str | None = None,
+        tags: list[str] | None = None,
         meta: dict | None = None,
         params: dict | None = None,
         status: Status = Status.PENDING,
@@ -391,6 +393,16 @@ class SQLStore(MetaStore):
                     label_value=label_value.strip(),
                 )
                 session.add(exp_label)
+
+        if tags:
+            for tag in tags:
+                if tag.strip():
+                    exp_tag = ExperimentTag(
+                        team_id=team_id,
+                        experiment_id=uid,
+                        tag=tag.strip(),
+                    )
+                    session.add(exp_tag)
 
         session.commit()
 
@@ -488,6 +500,49 @@ class SQLStore(MetaStore):
         if label_value is not None:
             query = query.filter(ExperimentLabel.label_value == label_value)
 
+        exps = (
+            query.order_by(
+                getattr(Experiment, order_by).desc()
+                if order_desc
+                else getattr(Experiment, order_by)
+            )
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return exps
+
+    def list_tags_by_exp_id(self, experiment_id: uuid.UUID) -> list[ExperimentTag]:
+        session = self._session()
+        tags = (
+            session.query(ExperimentTag)
+            .filter(ExperimentTag.experiment_id == experiment_id)
+            .order_by(ExperimentTag.created_at.asc())
+            .all()
+        )
+        session.close()
+        return tags
+
+    def list_exps_by_tag(
+        self,
+        team_id: uuid.UUID,
+        tag: str,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Experiment]:
+        session = self._session()
+        query = (
+            session.query(Experiment)
+            .join(ExperimentTag, ExperimentTag.experiment_id == Experiment.uuid)
+            .filter(
+                Experiment.team_id == team_id,
+                Experiment.is_del == 0,
+                ExperimentTag.tag == tag,
+            )
+        )
         exps = (
             query.order_by(
                 getattr(Experiment, order_by).desc()

@@ -73,6 +73,7 @@ class MetaStore(ABC):
         name: str,
         description: str | None = None,
         labels: str | None = None,
+        tags: list[str] | None = None,
         meta: dict | None = None,
         params: dict | None = None,
     ) -> int:

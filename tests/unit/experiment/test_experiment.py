@@ -370,3 +370,27 @@ async def test_experiment_with_labels():
         )
 
         assert len(exp_labels) == 1
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_labels():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(
+        team_id=team_id,
+        user_id=user_id,
+    )
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+        tags=["foo", "bar"],
+    ) as exp:
+        exp_obj = exp._get_obj()
+        assert exp_obj is not None
+
+        exp_tags = exp._runtime.metadb.list_exps_by_tag(
+            team_id=team_id,
+            tag="foo",
+        )
+
+        assert len(exp_tags) == 1

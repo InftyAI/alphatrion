@@ -102,6 +102,12 @@ class GraphQLResolvers:
         ]
 
     @staticmethod
+    def list_tags_by_exp_id(experiment_id: strawberry.ID) -> list[str]:
+        metadb = runtime.storage_runtime().metadb
+        tags = metadb.list_tags_by_exp_id(experiment_id=experiment_id)
+        return [t.tag for t in tags]
+
+    @staticmethod
     def list_experiments(
         team_id: strawberry.ID,
         page: int = 0,
@@ -110,9 +116,19 @@ class GraphQLResolvers:
         order_desc: bool = True,
         label_name: str | None = None,
         label_value: str | None = None,
+        tag: str | None = None,
     ) -> list[Experiment]:
         metadb = runtime.storage_runtime().metadb
-        if label_name:
+        if tag:
+            exps = metadb.list_exps_by_tag(
+                team_id=uuid.UUID(team_id),
+                tag=tag,
+                page=page,
+                page_size=page_size,
+                order_by=order_by,
+                order_desc=order_desc,
+            )
+        elif label_name:
             exps = metadb.list_exps_by_label(
                 team_id=uuid.UUID(team_id),
                 label_name=label_name,
