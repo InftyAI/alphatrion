@@ -206,6 +206,7 @@ class Experiment(ABC):
         name: str,
         description: str | None = None,
         labels: str | None = None,
+        tags: list[str] | None = None,
         meta: dict | None = None,
         params: dict | None = None,
     ):
@@ -244,6 +245,7 @@ class Experiment(ABC):
                 user_id=self._runtime._user_id,
                 description=description,
                 labels=labels,
+                tags=tags,
                 meta=meta,
                 params=params,
                 status=Status.RUNNING,

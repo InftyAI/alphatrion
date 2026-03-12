@@ -303,6 +303,27 @@ class ExperimentLabel(Base):
     )
 
 
+class ExperimentTag(Base):
+    __tablename__ = "experiment_tags"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    experiment_id = Column(UUID(as_uuid=True), nullable=False)
+    tag = Column(String, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+
+    __table_args__ = (
+        Index("idx_experiment_tag_lookup", "experiment_id", "tag"),
+        Index("idx_experiment_tag_team", "team_id", "tag"),
+    )
+
+
 class Dataset(Base):
     __tablename__ = "datasets"
 

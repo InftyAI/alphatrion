@@ -38,6 +38,7 @@ class Query:
         order_desc: bool = True,
         label_name: str | None = None,
         label_value: str | None = None,
+        tag: str | None = None,
     ) -> list[Experiment]:
         return GraphQLResolvers.list_experiments(
             team_id=team_id,
@@ -47,6 +48,7 @@ class Query:
             order_desc=order_desc,
             label_name=label_name,
             label_value=label_value,
+            tag=tag,
         )
 
     experiment: Experiment | None = strawberry.field(
