@@ -395,12 +395,12 @@ class SQLStore(MetaStore):
                 session.add(exp_label)
 
         if tags:
-            for tag in tags:
-                if tag.strip():
+            for tag in [t.strip() for t in tags]:
+                if tag:
                     exp_tag = ExperimentTag(
                         team_id=team_id,
                         experiment_id=uid,
-                        tag=tag.strip(),
+                        tag=tag,
                     )
                     session.add(exp_tag)
 
@@ -539,8 +539,8 @@ class SQLStore(MetaStore):
             .join(ExperimentTag, ExperimentTag.experiment_id == Experiment.uuid)
             .filter(
                 Experiment.team_id == team_id,
-                Experiment.is_del == 0,
                 ExperimentTag.tag == tag,
+                Experiment.is_del == 0,
             )
         )
         exps = (

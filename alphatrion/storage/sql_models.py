@@ -312,6 +312,11 @@ class ExperimentTag(Base):
     tag = Column(String, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     __table_args__ = (
         Index("idx_experiment_tag_lookup", "experiment_id", "tag"),
