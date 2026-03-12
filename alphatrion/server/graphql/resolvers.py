@@ -119,33 +119,16 @@ class GraphQLResolvers:
         tag: str | None = None,
     ) -> list[Experiment]:
         metadb = runtime.storage_runtime().metadb
-        if tag:
-            exps = metadb.list_exps_by_tag(
-                team_id=uuid.UUID(team_id),
-                tag=tag,
-                page=page,
-                page_size=page_size,
-                order_by=order_by,
-                order_desc=order_desc,
-            )
-        elif label_name:
-            exps = metadb.list_exps_by_label(
-                team_id=uuid.UUID(team_id),
-                label_name=label_name,
-                label_value=label_value,
-                page=page,
-                page_size=page_size,
-                order_by=order_by,
-                order_desc=order_desc,
-            )
-        else:
-            exps = metadb.list_exps_by_team_id(
-                team_id=uuid.UUID(team_id),
-                page=page,
-                page_size=page_size,
-                order_by=order_by,
-                order_desc=order_desc,
-            )
+        exps = metadb.list_experiments(
+            team_id=uuid.UUID(team_id),
+            label_name=label_name,
+            label_value=label_value,
+            tag=tag,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
 
         return [
             Experiment(
