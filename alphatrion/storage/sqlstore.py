@@ -442,19 +442,37 @@ class SQLStore(MetaStore):
         session.close()
         return trial
 
-    def list_exps_by_team_id(
+    def list_experiments(
         self,
         team_id: uuid.UUID,
+        label_name: str | None = None,
+        label_value: str | None = None,
+        tag: str | None = None,
         page: int = 0,
         page_size: int = 10,
         order_by: str = "created_at",
         order_desc: bool = True,
     ) -> list[Experiment]:
         session = self._session()
+        query = session.query(Experiment).filter(
+            Experiment.team_id == team_id,
+            Experiment.is_del == 0,
+        )
+
+        if label_name:
+            query = query.join(
+                ExperimentLabel, ExperimentLabel.experiment_id == Experiment.uuid
+            ).filter(ExperimentLabel.label_name == label_name)
+            if label_value is not None:
+                query = query.filter(ExperimentLabel.label_value == label_value)
+
+        if tag:
+            query = query.join(
+                ExperimentTag, ExperimentTag.experiment_id == Experiment.uuid
+            ).filter(ExperimentTag.tag == tag)
+
         exps = (
-            session.query(Experiment)
-            .filter(Experiment.team_id == team_id, Experiment.is_del == 0)
-            .order_by(
+            query.order_by(
                 getattr(Experiment, order_by).desc()
                 if order_desc
                 else getattr(Experiment, order_by)
@@ -477,42 +495,6 @@ class SQLStore(MetaStore):
         session.close()
         return labels
 
-    def list_exps_by_label(
-        self,
-        team_id: uuid.UUID,
-        label_name: str,
-        label_value: str | None = None,
-        page: int = 0,
-        page_size: int = 10,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Experiment]:
-        session = self._session()
-        query = (
-            session.query(Experiment)
-            .join(ExperimentLabel, ExperimentLabel.experiment_id == Experiment.uuid)
-            .filter(
-                Experiment.team_id == team_id,
-                Experiment.is_del == 0,
-                ExperimentLabel.label_name == label_name,
-            )
-        )
-        if label_value is not None:
-            query = query.filter(ExperimentLabel.label_value == label_value)
-
-        exps = (
-            query.order_by(
-                getattr(Experiment, order_by).desc()
-                if order_desc
-                else getattr(Experiment, order_by)
-            )
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-        session.close()
-        return exps
-
     def list_tags_by_exp_id(self, experiment_id: uuid.UUID) -> list[ExperimentTag]:
         session = self._session()
         tags = (
@@ -523,38 +505,6 @@ class SQLStore(MetaStore):
         )
         session.close()
         return tags
-
-    def list_exps_by_tag(
-        self,
-        team_id: uuid.UUID,
-        tag: str,
-        page: int = 0,
-        page_size: int = 10,
-        order_by: str = "created_at",
-        order_desc: bool = True,
-    ) -> list[Experiment]:
-        session = self._session()
-        query = (
-            session.query(Experiment)
-            .join(ExperimentTag, ExperimentTag.experiment_id == Experiment.uuid)
-            .filter(
-                Experiment.team_id == team_id,
-                ExperimentTag.tag == tag,
-                Experiment.is_del == 0,
-            )
-        )
-        exps = (
-            query.order_by(
-                getattr(Experiment, order_by).desc()
-                if order_desc
-                else getattr(Experiment, order_by)
-            )
-            .offset(page * page_size)
-            .limit(page_size)
-            .all()
-        )
-        session.close()
-        return exps
 
     def update_experiment(self, experiment_id: uuid.UUID, **kwargs) -> None:
         session = self._session()

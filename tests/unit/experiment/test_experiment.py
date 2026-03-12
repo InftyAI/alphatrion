@@ -363,7 +363,7 @@ async def test_experiment_with_labels():
         exp_obj = exp._get_obj()
         assert exp_obj is not None
 
-        exp_labels = exp._runtime.metadb.list_exps_by_label(
+        exp_labels = exp._runtime.metadb.list_experiments(
             team_id=team_id,
             label_name="foo",
             label_value="bar",
@@ -388,7 +388,7 @@ async def test_experiment_with_tags():
         exp_obj = exp._get_obj()
         assert exp_obj is not None
 
-        exp_tags = exp._runtime.metadb.list_exps_by_tag(
+        exp_tags = exp._runtime.metadb.list_experiments(
             team_id=team_id,
             tag="foo",
         )
