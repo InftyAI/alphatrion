@@ -64,6 +64,7 @@ export interface Experiment {
   meta: Record<string, unknown> | null;
   params: Record<string, unknown> | null;
   labels: Label[];
+  tags: string[];
   duration: number;
   status: Status;
   createdAt: string;

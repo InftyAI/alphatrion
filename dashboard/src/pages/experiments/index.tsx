@@ -78,12 +78,15 @@ const LABEL_COLORS = [
   { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
 ];
 
+const TAG_COLOR = { bg: 'bg-stone-100', text: 'text-stone-700', arrow: 'border-r-stone-100' };
+
 const PAGE_SIZE = 10;
 
 export function ExperimentsPage() {
   const { selectedTeamId } = useTeamContext();
   const [statusFilter, setStatusFilter] = useState<Status | 'ALL'>('ALL');
   const [labelFilters, setLabelFilters] = useState<string[]>([]);
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedExperiments, setSelectedExperiments] = useState<Set<string>>(new Set());
@@ -172,6 +175,22 @@ export function ExperimentsPage() {
     return options;
   }, [experiments]);
 
+  // Build tag options from all experiments
+  const tagOptions = useMemo(() => {
+    if (!experiments || experiments.length === 0) return [];
+
+    const uniqueTags = new Set<string>();
+    experiments.forEach(exp => {
+      exp.tags?.forEach(tag => uniqueTags.add(tag));
+    });
+
+    return Array.from(uniqueTags).sort().map(tag => ({
+      value: tag,
+      label: tag,
+      group: 'Tags',
+    }));
+  }, [experiments]);
+
   // Filter and sort experiments
   const filteredExperiments = useMemo(() => {
     if (!experiments) return [];
@@ -189,7 +208,8 @@ export function ExperimentsPage() {
           exp.labels?.some(label =>
             label.name.toLowerCase().includes(query) ||
             label.value.toLowerCase().includes(query)
-          )
+          ) ||
+          exp.tags?.some(tag => tag.toLowerCase().includes(query))
       );
     }
 
@@ -218,11 +238,18 @@ export function ExperimentsPage() {
       });
     }
 
+    // Apply tag filters (AND logic - experiment must have ALL selected tags)
+    if (tagFilters.length > 0) {
+      filtered = filtered.filter(exp =>
+        tagFilters.every(tag => exp.tags?.includes(tag))
+      );
+    }
+
     // Sort by creation time descending (newest first)
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return filtered;
-  }, [experiments, statusFilter, labelFilters, searchQuery]);
+  }, [experiments, statusFilter, labelFilters, tagFilters, searchQuery]);
 
   // Check if all filtered experiments are selected
   const allSelected = filteredExperiments.length > 0 &&
@@ -301,9 +328,20 @@ export function ExperimentsPage() {
             values={labelFilters}
             onChange={(values) => setLabelFilters(values)}
             options={labelOptions}
-            className="w-64"
+            className="w-48"
             placeholder="Filter by labels..."
           />
+
+          {/* Tag Filter */}
+          {tagOptions.length > 0 && (
+            <MultiSelectDropdown
+              values={tagFilters}
+              onChange={(values) => setTagFilters(values)}
+              options={tagOptions}
+              className="w-48"
+              placeholder="Filter by tags..."
+            />
+          )}
 
           {/* Status Filter */}
           <Dropdown
@@ -325,19 +363,19 @@ export function ExperimentsPage() {
           ) : !filteredExperiments || filteredExperiments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 ? (
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 || tagFilters.length > 0 ? (
                   <Search className="h-8 w-8 text-muted-foreground/60" />
                 ) : (
                   <FlaskConical className="h-8 w-8 text-muted-foreground/60" />
                 )}
               </div>
               <p className="text-sm font-medium text-foreground">
-                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 || tagFilters.length > 0
                   ? 'No experiments match your filters'
                   : 'No experiments found'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0
+                {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 || tagFilters.length > 0
                   ? 'Try adjusting your filters or search query'
                   : 'Experiments will appear here once created'}
               </p>
@@ -369,6 +407,7 @@ export function ExperimentsPage() {
                     </TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Name</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Labels</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Tags</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                   </TableRow>
@@ -413,6 +452,25 @@ export function ExperimentsPage() {
                                 </Badge>
                               );
                             })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-3 text-sm">
+                        {experiment.tags && experiment.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-x-1 gap-y-1">
+                            {experiment.tags.map((tag, idx) => (
+                              <span key={idx} className="inline-flex items-stretch">
+                                <span
+                                  className={`border-y-[10px] border-y-transparent border-r-[7px] ${TAG_COLOR.arrow}`}
+                                  style={{ width: 0 }}
+                                />
+                                <span className={`inline-flex items-center text-xs pl-1 pr-1.5 ${TAG_COLOR.bg} ${TAG_COLOR.text} rounded-r-sm font-medium`}>
+                                  {tag}
+                                </span>
+                              </span>
+                            ))}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>

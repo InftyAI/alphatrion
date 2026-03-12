@@ -148,8 +148,8 @@ export const queries = {
   `,
 
   listExperiments: `
-    query ListExperiments($teamId: ID!, $labelName: String, $labelValue: String, $page: Int, $pageSize: Int) {
-      experiments(teamId: $teamId, labelName: $labelName, labelValue: $labelValue, page: $page, pageSize: $pageSize) {
+    query ListExperiments($teamId: ID!, $labelName: String, $labelValue: String, $tag: String, $page: Int, $pageSize: Int) {
+      experiments(teamId: $teamId, labelName: $labelName, labelValue: $labelValue, tag: $tag, page: $page, pageSize: $pageSize) {
         id
         teamId
         userId
@@ -162,6 +162,7 @@ export const queries = {
           name
           value
         }
+        tags
         duration
         status
         createdAt
@@ -185,6 +186,7 @@ export const queries = {
           name
           value
         }
+        tags
         duration
         status
         createdAt
