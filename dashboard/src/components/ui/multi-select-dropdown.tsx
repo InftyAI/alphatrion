@@ -87,10 +87,10 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
             <span className="text-muted-foreground font-medium">{placeholder || "Select labels..."}</span>
           ) : (
             selectedOptions.map((option) => {
-              // For "Any" options, show the full label. For specific values, show key:value
-              const displayLabel = option.value.endsWith(':*')
-                ? option.label
-                : `${option.group}:${option.label}`;
+              // Show group:label for all options
+              const displayLabel = option.group
+                ? `${option.group}:${option.label}`
+                : option.label;
 
               return (
                 <Badge
@@ -122,34 +122,68 @@ export function MultiSelectDropdown({ values, onChange, options, className, plac
       {isOpen && (
         <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
           <div className="max-h-80 overflow-auto p-1">
-            {Object.entries(groupedOptions).map(([groupName, groupOptions]) => (
-              <div key={groupName}>
-                <div className="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {groupName}
-                </div>
-                {groupOptions.map((option) => (
+            {Object.entries(groupedOptions).map(([groupName, groupOptions]) => {
+              const groupValues = groupOptions.map(opt => opt.value);
+              const allGroupSelected = groupValues.every(val => values.includes(val));
+
+              const toggleGroupAll = () => {
+                if (allGroupSelected) {
+                  // Deselect all in this group
+                  onChange(values.filter(v => !groupValues.includes(v)));
+                } else {
+                  // Select all in this group
+                  const newValues = [...values];
+                  groupValues.forEach(v => {
+                    if (!newValues.includes(v)) {
+                      newValues.push(v);
+                    }
+                  });
+                  onChange(newValues);
+                }
+              };
+
+              return (
+                <div key={groupName}>
                   <button
-                    key={option.value}
                     type="button"
-                    onClick={() => toggleOption(option.value)}
-                    className={cn(
-                      "w-full rounded-sm px-2 py-1.5 pl-6 text-[13px] text-left cursor-pointer transition-colors flex items-center gap-2",
-                      "hover:bg-accent hover:text-accent-foreground"
-                    )}
+                    onClick={toggleGroupAll}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 hover:bg-accent/50 transition-colors rounded-sm"
+                    title={allGroupSelected ? 'Deselect all' : 'Select all'}
                   >
                     <input
                       type="checkbox"
-                      checked={values.includes(option.value)}
-                      onChange={() => {}}
+                      checked={allGroupSelected}
+                      readOnly
                       className="h-3.5 w-3.5 rounded border-gray-300"
                     />
-                    <span className={cn(values.includes(option.value) && "font-medium")}>
-                      {option.label}
-                    </span>
+                    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      {groupName}
+                    </div>
                   </button>
-                ))}
-              </div>
-            ))}
+                  {groupOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => toggleOption(option.value)}
+                      className={cn(
+                        "w-full rounded-sm px-2 py-1.5 pl-6 text-[13px] text-left cursor-pointer transition-colors flex items-center gap-2",
+                        "hover:bg-accent hover:text-accent-foreground"
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={values.includes(option.value)}
+                        onChange={() => {}}
+                        className="h-3.5 w-3.5 rounded border-gray-300"
+                      />
+                      <span className={cn(values.includes(option.value) && "font-medium")}>
+                        {option.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
