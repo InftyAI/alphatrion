@@ -153,13 +153,6 @@ export function ExperimentsPage() {
     Array.from(labelsByKey.entries())
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .forEach(([key, values]) => {
-        // Add "Any" option for this key
-        options.push({
-          value: `${key}:*`,
-          label: `(Any ${key})`,
-          group: key
-        });
-
         // Add specific value options
         Array.from(values)
           .sort()
@@ -224,16 +217,10 @@ export function ExperimentsPage() {
         // Check if experiment matches ALL selected label filters
         return labelFilters.every(filter => {
           const [labelName, labelValue] = filter.split(':', 2);
-
-          if (labelValue === '*') {
-            // "key:*" means any experiment with this key
-            return exp.labels?.some(label => label.name === labelName);
-          } else {
-            // "key:value" means exact match
-            return exp.labels?.some(label =>
-              label.name === labelName && label.value === labelValue
-            );
-          }
+          // "key:value" means exact match
+          return exp.labels?.some(label =>
+            label.name === labelName && label.value === labelValue
+          );
         });
       });
     }
