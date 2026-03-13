@@ -23,6 +23,7 @@ dependencies = [
     "httpx>=0.28.1",
     "clickhouse-connect>=0.7.0",
     "faker>=37.12",
+    "prometheus-client>=0.21.1",
 ]
 
 [dependency-groups]

@@ -84,7 +84,54 @@ services:
       replicas: 1
       restart_policy:
         condition: any
+  # prometheus-pushgateway:
+  #   container_name: prometheus-pushgateway
+  #   image: prom/pushgateway:latest
+  #   ports:
+  #     - "9091:9091"  # Push gateway HTTP interface
+  #   deploy:
+  #     replicas: 1
+  #     restart_policy:
+  #       condition: any
+  # prometheus:
+  #   container_name: prometheus
+  #   image: prom/prometheus:latest
+  #   ports:
+  #     - "9090:9090"  # Prometheus UI
+  #   volumes:
+  #     - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   depends_on:
+  #     - prometheus-pushgateway
+  #   deploy:
+  #     replicas: 1
+  #     restart_policy:
+  #       condition: any
+  # grafana:
+  #   container_name: grafana
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - "3000:3000"  # Grafana UI
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_INSTALL_PLUGINS=
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./config/grafana/provisioning:/etc/grafana/provisioning
+  #     - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+  #   depends_on:
+  #     - prometheus
+  #   deploy:
+  #     replicas: 1
+  #     restart_policy:
+  #       condition: any
 volumes:
   clickhouse_data:
+  # prometheus_data:
+  # grafana_data:
 #   pg_data:
 #   oras-data:
