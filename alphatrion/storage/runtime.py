@@ -10,6 +10,7 @@ from alphatrion.artifact.artifact import Artifact
 from alphatrion.storage.sqlstore import SQLStore
 from alphatrion.storage.tracestore import TraceStore
 from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
+from alphatrion.tracing.prometheus_span_processor import PrometheusSpanProcessor
 from alphatrion.tracing.span_processor import ContextAttributesSpanProcessor
 
 __STORAGE_RUNTIME__ = None
@@ -54,6 +55,19 @@ class StorageRuntime:
             # into all spans, including child spans created by instrumented libraries
             tracer_provider = trace.get_tracer_provider()
             tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
+
+            # Add Prometheus span processor if enabled
+            if os.getenv(envs.ENABLE_PROMETHEUS, "false").lower() == "true":
+                pushgateway_url = os.getenv(
+                    envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
+                )
+                job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
+
+                prometheus_processor = PrometheusSpanProcessor(
+                    pushgateway_url=pushgateway_url,
+                    job_name=job_name,
+                )
+                tracer_provider.add_span_processor(prometheus_processor)
 
         artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
         if artifact_storage_enabled():

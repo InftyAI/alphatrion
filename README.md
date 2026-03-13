@@ -65,6 +65,8 @@ Save the generated user ID — you'll need it to track experiments.
 **Optional Tools:**
 - pgAdmin: `http://localhost:8081` (alphatrion@inftyai.com / alphatr1on)
 - Registry UI: `http://localhost:80`
+- Grafana: `http://localhost:3000` (admin / admin) - LLM metrics dashboard
+- Prometheus: `http://localhost:9090` - Metrics explorer
 
 ### 3. Track Your First Experiment
 

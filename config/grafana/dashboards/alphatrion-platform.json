@@ -1,0 +1,194 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Total Platform Tokens",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "sum(alphatrion_llm_tokens_total{token_type=\"total\"})", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+    },
+    {
+      "title": "Total Platform Requests",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+      "targets": [{"expr": "sum(alphatrion_llm_requests_total)", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+      "targets": [{"expr": "sum(rate(alphatrion_llm_requests_total{status=\"ERROR\"}[5m])) / sum(rate(alphatrion_llm_requests_total[5m]))", "refId": "A"}],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.05}]}
+        }
+      },
+      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+    },
+    {
+      "title": "Errors by Type",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
+      "targets": [{"expr": "sum by (error_type) (alphatrion_llm_errors_total)", "legendFormat": "{{error_type}}", "refId": "A"}],
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "pieType": "pie"}
+    },
+    {
+      "title": "Active Experiments (Time Window)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 6},
+      "targets": [
+        {"expr": "count(sum by (experiment_id) (increase(alphatrion_llm_requests_total[5m])) > 0)", "legendFormat": "Active Experiments", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "fixed", "fixedColor": "blue"},
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line"
+          }
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "list", "placement": "bottom"}
+      },
+      "description": "Number of unique experiments with activity in the last 5 minutes. Drops to 0 when experiments finish."
+    },
+    {
+      "title": "Active Teams (Time Window)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 6},
+      "targets": [
+        {"expr": "count(sum by (team_id) (increase(alphatrion_llm_requests_total[5m])) > 0)", "legendFormat": "Active Teams", "refId": "A"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {"mode": "fixed", "fixedColor": "green"},
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "drawStyle": "line"
+          }
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "list", "placement": "bottom"}
+      },
+      "description": "Number of unique teams with activity in the last 5 minutes. Drops when teams stop running experiments."
+    },
+    {
+      "title": "Token Usage (Platform-wide, Cumulative)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "targets": [
+        {"expr": "sum(alphatrion_llm_tokens_total{token_type=\"total\"})", "legendFormat": "Total Tokens", "refId": "A"},
+        {"expr": "sum(alphatrion_llm_input_tokens_total)", "legendFormat": "Input Tokens", "refId": "B"},
+        {"expr": "sum(alphatrion_llm_output_tokens_total)", "legendFormat": "Output Tokens", "refId": "C"}
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "Total Tokens"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
+              {"id": "custom.lineWidth", "value": 3}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Input Tokens"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+            ]
+          },
+          {
+            "matcher": {"id": "byName", "options": "Output Tokens"},
+            "properties": [
+              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
+            ]
+          }
+        ]
+      },
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
+      "description": "Accumulated tokens across ALL teams and experiments. Total = Input + Output. Should keep growing as you run more experiments."
+    },
+    {
+      "title": "Requests by Model",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+      "targets": [{"expr": "sum by (model) (alphatrion_llm_requests_total)", "legendFormat": "{{model}}", "refId": "A"}],
+      "options": {"legend": {"displayMode": "table", "placement": "right", "values": ["value"]}, "pieType": "pie"}
+    },
+    {
+      "title": "Tokens by Model",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+      "targets": [{"expr": "sum by (model) (alphatrion_llm_tokens_total{token_type=\"total\"})", "legendFormat": "{{model}}", "refId": "A"}],
+      "options": {"legend": {"displayMode": "table", "placement": "right", "values": ["value"]}, "pieType": "pie"}
+    },
+    {
+      "title": "LLM Latency (P50, P95) by Model",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
+      "targets": [
+        {"expr": "histogram_quantile(0.95, sum by (model, le) (rate(alphatrion_llm_duration_seconds_bucket[5m])))", "legendFormat": "p95 - {{model}}", "refId": "A"},
+        {"expr": "histogram_quantile(0.50, sum by (model, le) (rate(alphatrion_llm_duration_seconds_bucket[5m])))", "legendFormat": "p50 - {{model}}", "refId": "B"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["alphatrion", "platform"],
+  "templating": {"list": []},
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AlphaTrion - Platform Dashboard",
+  "uid": "alphatrion-platform",
+  "version": 1
+}
