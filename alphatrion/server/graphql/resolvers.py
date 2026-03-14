@@ -265,6 +265,11 @@ class GraphQLResolvers:
         return metadb.count_runs(team_id=team_id)
 
     @staticmethod
+    def total_datasets(team_id: strawberry.ID) -> int:
+        metadb = runtime.storage_runtime().metadb
+        return metadb.count_datasets(team_id=team_id)
+
+    @staticmethod
     def aggregate_team_tokens(team_id: strawberry.ID) -> dict[str, int]:
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
             return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
