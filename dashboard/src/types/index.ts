@@ -30,6 +30,7 @@ export interface Team {
   updatedAt: string;
   totalExperiments: number;
   totalRuns: number;
+  totalDatasets: number;
   aggregatedTokens: TokenStats;
 }
 

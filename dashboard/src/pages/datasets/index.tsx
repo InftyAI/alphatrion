@@ -5,6 +5,7 @@ import { useTeamContext } from '../../context/team-context';
 import { useDatasets } from '../../hooks/use-datasets';
 import { useDeleteDatasets } from '../../hooks/use-dataset-mutations';
 import { useArtifactFiles, useArtifactContent } from '../../hooks/use-artifacts';
+import { useTeam } from '../../hooks/use-teams';
 import {
   Card,
   CardContent,
@@ -50,6 +51,9 @@ export function DatasetsPage() {
 
   const deleteDatasetsMutation = useDeleteDatasets();
 
+  // Fetch team info for total count
+  const { data: team } = useTeam(selectedTeamId || '', { enabled: !!selectedTeamId });
+
   // Handle URL search parameters
   useEffect(() => {
     const experimentId = searchParams.get('experimentId');
@@ -62,15 +66,14 @@ export function DatasetsPage() {
     }
   }, [searchParams]);
 
-  // Fetch one extra item to determine if there are more pages
-  const { data: datasetsRaw, isLoading } = useDatasets(
+  // Fetch datasets
+  const { data: datasets, isLoading } = useDatasets(
     selectedTeamId || '',
-    { page: currentPage, pageSize: PAGE_SIZE + 1, enabled: !!selectedTeamId }
+    { page: currentPage, pageSize: PAGE_SIZE, enabled: !!selectedTeamId }
   );
 
-  // Check if there are more pages and trim to PAGE_SIZE
-  const hasMorePages = datasetsRaw && datasetsRaw.length > PAGE_SIZE;
-  const datasets = datasetsRaw ? datasetsRaw.slice(0, PAGE_SIZE) : [];
+  const totalDatasets = team?.totalDatasets || 0;
+  const totalPages = Math.ceil(totalDatasets / PAGE_SIZE);
 
   // Parse dataset path to extract repo name and tag
   const parseDatasetPath = (path: string) => {
@@ -131,13 +134,9 @@ export function DatasetsPage() {
     });
   }, [datasets, searchQuery]);
 
-  // Calculate total pages and items based on whether there are more pages
-  const totalPages = hasMorePages ? currentPage + 2 : currentPage + 1;
-  const totalItems = datasets.length > 0
-    ? (hasMorePages
-        ? (currentPage + 1) * PAGE_SIZE + 1  // At least one more item exists
-        : currentPage * PAGE_SIZE + datasets.length)  // Exact count on last page
-    : 0;
+  // For pagination display
+  const startItem = currentPage * PAGE_SIZE + 1;
+  const endItem = Math.min(currentPage * PAGE_SIZE + (datasets?.length || 0), totalDatasets);
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -376,16 +375,14 @@ export function DatasetsPage() {
             </CardContent>
 
             {/* Pagination */}
-            {datasets.length > 0 && (hasMorePages || currentPage > 0) && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                pageSize={PAGE_SIZE}
-                totalItems={totalItems}
-                onPageChange={setCurrentPage}
-                itemName="datasets"
-              />
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={PAGE_SIZE}
+              totalItems={totalDatasets}
+              onPageChange={setCurrentPage}
+              itemName="datasets"
+            />
           </Card>
         </div>
 

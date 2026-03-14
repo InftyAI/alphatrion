@@ -778,6 +778,16 @@ class SQLStore(MetaStore):
         session.close()
         return dataset
 
+    def count_datasets(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Dataset)
+            .filter(Dataset.team_id == team_id, Dataset.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
     def list_datasets(
         self,
         team_id: uuid.UUID,

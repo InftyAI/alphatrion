@@ -112,6 +112,7 @@ export const queries = {
         updatedAt
         totalExperiments
         totalRuns
+        totalDatasets
         aggregatedTokens {
           totalTokens
           inputTokens
