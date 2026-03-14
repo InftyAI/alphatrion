@@ -530,16 +530,14 @@ export function ExperimentsPage() {
           )}
 
           {/* Pagination */}
-          {filteredExperiments && filteredExperiments.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={PAGE_SIZE}
-              totalItems={totalExperiments}
-              onPageChange={setCurrentPage}
-              itemName="experiments"
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={PAGE_SIZE}
+            totalItems={totalExperiments}
+            onPageChange={setCurrentPage}
+            itemName="experiments"
+          />
         </CardContent>
       </Card>
 

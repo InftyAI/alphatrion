@@ -197,16 +197,14 @@ export function RunsPage() {
           )}
 
           {/* Pagination */}
-          {filteredRuns && filteredRuns.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageSize={PAGE_SIZE}
-              totalItems={totalRuns}
-              onPageChange={setCurrentPage}
-              itemName="runs"
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={PAGE_SIZE}
+            totalItems={totalRuns}
+            onPageChange={setCurrentPage}
+            itemName="runs"
+          />
         </CardContent>
       </Card>
     </div>
