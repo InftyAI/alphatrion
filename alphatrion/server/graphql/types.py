@@ -56,6 +56,12 @@ class Team:
         return GraphQLResolvers.total_runs(team_id=self.id)
 
     @strawberry.field
+    def total_datasets(self) -> int:
+        from .resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.total_datasets(team_id=self.id)
+
+    @strawberry.field
     def aggregated_tokens(self) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
