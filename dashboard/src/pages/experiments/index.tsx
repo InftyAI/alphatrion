@@ -78,7 +78,29 @@ const LABEL_COLORS = [
   { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
 ];
 
-const TAG_COLOR = { bg: 'bg-stone-100', text: 'text-stone-700', arrow: 'border-r-stone-100' };
+// Tag color palette (same as labels)
+const TAG_COLORS = [
+  { bg: 'bg-blue-100', text: 'text-blue-700', arrow: 'border-r-blue-100' },
+  { bg: 'bg-green-100', text: 'text-green-700', arrow: 'border-r-green-100' },
+  { bg: 'bg-purple-100', text: 'text-purple-700', arrow: 'border-r-purple-100' },
+  { bg: 'bg-orange-100', text: 'text-orange-700', arrow: 'border-r-orange-100' },
+  { bg: 'bg-pink-100', text: 'text-pink-700', arrow: 'border-r-pink-100' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-700', arrow: 'border-r-cyan-100' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700', arrow: 'border-r-indigo-100' },
+  { bg: 'bg-teal-100', text: 'text-teal-700', arrow: 'border-r-teal-100' },
+  { bg: 'bg-amber-100', text: 'text-amber-700', arrow: 'border-r-amber-100' },
+  { bg: 'bg-rose-100', text: 'text-rose-700', arrow: 'border-r-rose-100' },
+  { bg: 'bg-violet-100', text: 'text-violet-700', arrow: 'border-r-violet-100' },
+  { bg: 'bg-lime-100', text: 'text-lime-700', arrow: 'border-r-lime-100' },
+  { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', arrow: 'border-r-fuchsia-100' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-700', arrow: 'border-r-emerald-100' },
+  { bg: 'bg-sky-100', text: 'text-sky-700', arrow: 'border-r-sky-100' },
+  { bg: 'bg-red-100', text: 'text-red-700', arrow: 'border-r-red-100' },
+  { bg: 'bg-yellow-100', text: 'text-yellow-700', arrow: 'border-r-yellow-100' },
+  { bg: 'bg-slate-100', text: 'text-slate-700', arrow: 'border-r-slate-100' },
+  { bg: 'bg-zinc-100', text: 'text-zinc-700', arrow: 'border-r-zinc-100' },
+  { bg: 'bg-stone-100', text: 'text-stone-700', arrow: 'border-r-stone-100' },
+];
 
 const PAGE_SIZE = 10;
 
@@ -124,6 +146,30 @@ export function ExperimentsPage() {
 
     sortedKeys.forEach((key, index) => {
       colorMap.set(key, LABEL_COLORS[index % LABEL_COLORS.length]);
+    });
+
+    return colorMap;
+  }, [experiments]);
+
+  // Create a stable color mapping for tags (offset by 10 to avoid label colors)
+  const tagColorMap = useMemo(() => {
+    if (!experiments || experiments.length === 0) {
+      return new Map<string, typeof TAG_COLORS[0]>();
+    }
+
+    const uniqueTags = new Set<string>();
+    experiments.forEach(exp => {
+      exp.tags?.forEach(tag => {
+        uniqueTags.add(tag);
+      });
+    });
+
+    const sortedTags = Array.from(uniqueTags).sort();
+    const colorMap = new Map<string, typeof TAG_COLORS[0]>();
+
+    // Offset by 10 so tags use different colors from labels
+    sortedTags.forEach((tag, index) => {
+      colorMap.set(tag, TAG_COLORS[(index + 10) % TAG_COLORS.length]);
     });
 
     return colorMap;
@@ -447,17 +493,20 @@ export function ExperimentsPage() {
                       <TableCell className="py-3 text-sm">
                         {experiment.tags && experiment.tags.length > 0 ? (
                           <div className="flex flex-wrap gap-x-1 gap-y-1">
-                            {experiment.tags.map((tag, idx) => (
-                              <span key={idx} className="inline-flex items-stretch">
-                                <span
-                                  className={`border-y-[10px] border-y-transparent border-r-[7px] ${TAG_COLOR.arrow}`}
-                                  style={{ width: 0 }}
-                                />
-                                <span className={`inline-flex items-center text-xs pl-1 pr-1.5 ${TAG_COLOR.bg} ${TAG_COLOR.text} rounded-r-sm font-medium`}>
-                                  {tag}
+                            {experiment.tags.map((tag, idx) => {
+                              const colors = tagColorMap.get(tag) || TAG_COLORS[0];
+                              return (
+                                <span key={idx} className="inline-flex items-stretch">
+                                  <span
+                                    className={`border-y-[10px] border-y-transparent border-r-[7px] ${colors.arrow}`}
+                                    style={{ width: 0 }}
+                                  />
+                                  <span className={`inline-flex items-center text-xs pl-1 pr-1.5 ${colors.bg} ${colors.text} rounded-r-sm font-medium`}>
+                                    {tag}
+                                  </span>
                                 </span>
-                              </span>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : (
                           <span className="text-muted-foreground">-</span>
