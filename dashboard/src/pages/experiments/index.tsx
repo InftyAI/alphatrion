@@ -333,7 +333,7 @@ export function ExperimentsPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -387,14 +387,14 @@ export function ExperimentsPage() {
       </div>
 
       {/* Experiments List */}
-      <Card className="border-0 shadow-sm">
-        <CardContent className="p-0">
+      <Card className="border-0 shadow-sm flex-1 flex flex-col">
+        <CardContent className="p-0 flex-1 overflow-auto">
           {isLoading ? (
             <div className="p-8">
               <Skeleton className="h-24 w-full" />
             </div>
           ) : !filteredExperiments || filteredExperiments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center h-full">
               <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
                 {searchQuery.trim() || statusFilter !== 'ALL' || labelFilters.length > 0 || tagFilters.length > 0 ? (
                   <Search className="h-8 w-8 text-muted-foreground/60" />
