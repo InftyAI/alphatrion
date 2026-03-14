@@ -272,7 +272,7 @@ export function DatasetsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[32%] h-9">
+                      <TableHead className="w-[28%] h-9">
                         <div className="flex items-center gap-2">
                           <Checkbox
                             checked={allSelected}
@@ -292,10 +292,11 @@ export function DatasetsPage() {
                           <span>Name</span>
                         </div>
                       </TableHead>
-                      <TableHead className="w-[22%] h-9">Description</TableHead>
-                      <TableHead className="w-[13%] h-9">Experiment</TableHead>
-                      <TableHead className="w-[13%] h-9">Run</TableHead>
-                      <TableHead className="w-[10%] h-9 text-right">Actions</TableHead>
+                      <TableHead className="w-[20%] h-9">Description</TableHead>
+                      <TableHead className="w-[12%] h-9">Experiment</TableHead>
+                      <TableHead className="w-[12%] h-9">Run</TableHead>
+                      <TableHead className="w-[14%] h-9">Created</TableHead>
+                      <TableHead className="w-[8%] h-9 text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -315,11 +316,6 @@ export function DatasetsPage() {
                             <Database className="h-4 w-4 text-blue-500 flex-shrink-0" />
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{dataset.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(dataset.createdAt), {
-                                  addSuffix: true,
-                                })}
-                              </p>
                             </div>
                           </div>
                         </TableCell>
@@ -357,6 +353,13 @@ export function DatasetsPage() {
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}
+                        </TableCell>
+                        <TableCell className="py-2">
+                          <p className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(dataset.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
                         </TableCell>
                         <TableCell className="py-2 text-right">
                           <Button
