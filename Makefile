@@ -13,6 +13,8 @@ PLATFORMS ?= linux/arm64,linux/amd64
 POETRY := poetry
 RUFF := .venv/bin/ruff
 PYTEST := .venv/bin/pytest
+ALEMBIC := .venv/bin/alembic
+PYTHON := .venv/bin/python
 
 .PHONY: build
 build: lint build-dashboard
@@ -26,9 +28,20 @@ publish: build
 up:
 	docker compose -f ./docker-compose.yaml up -d
 
+.PHONY: migrate-clickhouse
+migrate-clickhouse:
+	$(PYTHON) -m migrations.clickhouse.cli migrate
+
 .PHONY: migrate
 migrate:
-	alembic upgrade head
+	@if [ ! -f $(ALEMBIC) ]; then \
+		echo "Alembic not found, installing..."; \
+		$(POETRY) install alembic; \
+	fi
+	$(ALEMBIC) upgrade head
+
+.PHONY: migrate-all
+migrate-all: migrate migrate-clickhouse
 
 .PHONY: down
 down:
@@ -53,9 +66,15 @@ test-integration: lint
 	set -e; \
 	docker-compose -f ./docker-compose.yaml up -d; \
 	trap "docker-compose -f ./docker-compose.yaml down" EXIT; \
+	echo "Waiting for PostgreSQL..."; \
 	until docker exec postgres pg_isready -U alphatr1on; do sleep 1; done; \
+	echo "Waiting for ClickHouse..."; \
 	until docker exec clickhouse clickhouse-client --query "SELECT 1"; do sleep 1; done; \
+	echo "Waiting for Ollama..."; \
 	until curl -sf http://localhost:11434/api/tags | grep "smollm:135m" > /dev/null; do sleep 1; done; \
+	echo "Running migrations..."; \
+	make migrate-all; \
+	echo "Running integration tests..."; \
 	$(PYTEST) tests/integration --timeout=30; \
 	'
 .PHONY: test-all
@@ -63,11 +82,11 @@ test-all: test test-integration
 
 .PHONY: seed
 seed:
-	python hack/seed.py seed
+	$(PYTHON) hack/seed.py seed
 
 .PHONY: seed-cleanup
 seed-cleanup:
-	python hack/seed.py cleanup
+	$(PYTHON) hack/seed.py cleanup
 
 .PHONY: build-dashboard
 build-dashboard:

@@ -109,14 +109,22 @@ AlphaTrion requires an external PostgreSQL database. Configure the connection de
 
 ### ClickHouse Configuration (Optional)
 
+ClickHouse is used for storing OpenTelemetry traces. The connection and migrations are **independently configurable**.
+
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `clickhouse.enabled` | Enable ClickHouse integration | `false` |
+| `clickhouse.enabled` | Enable ClickHouse integration in server | `false` |
 | `clickhouse.host` | ClickHouse host | `""` |
 | `clickhouse.port` | ClickHouse port | `8123` |
-| `clickhouse.database` | ClickHouse database | `alphatrion_tracing` |
-| `clickhouse.username` | ClickHouse username | `default` |
+| `clickhouse.database` | ClickHouse database | `alphatrion_traces` |
+| `clickhouse.username` | ClickHouse username | `alphatrion` |
 | `clickhouse.password` | ClickHouse password | `""` |
+| `clickhouse.existingSecret` | Use existing secret for password | `""` |
+| `clickhouse.clusterName` | ClickHouse cluster name for HA setup | `""` |
+| `clickhouse.migrations.enabled` | Run schema migrations automatically | `false` |
+| `clickhouse.migrations.hookWeight` | Helm hook weight for migration job | `"5"` |
+
+**Note:** See [CLICKHOUSE_SETUP.md](./CLICKHOUSE_SETUP.md) for detailed setup guide.
 
 ### Docker Registry Configuration (Optional)
 
