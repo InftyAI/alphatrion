@@ -25,7 +25,6 @@ data:
   ALPHATRION_CLICKHOUSE_URL: {{ printf "http://%s:%d" .Values.clickhouse.host (int .Values.clickhouse.port) | quote }}
   ALPHATRION_CLICKHOUSE_DATABASE: {{ .Values.clickhouse.database | quote }}
   ALPHATRION_CLICKHOUSE_USERNAME: {{ .Values.clickhouse.username | quote }}
-  ALPHATRION_CLICKHOUSE_INIT_TABLES: {{ .Values.clickhouse.initTables | quote }}
   ALPHATRION_CLICKHOUSE_ENABLE_BATCH: {{ .Values.clickhouse.enableBatch | quote }}
   {{- end }}
 

@@ -103,6 +103,7 @@ postgresql:
 
 # ClickHouse configuration (optional - for tracing)
 clickhouse:
+  # Enable ClickHouse integration (used by server for connecting to ClickHouse)
   enabled: false
   host: "clickhouse.alphatrion.svc.cluster.local"
   port: 8123
@@ -113,14 +114,18 @@ clickhouse:
   existingSecret: ""
   # Key name in the existing secret (default: clickhouse-password)
   existingSecretKey: "clickhouse-password"
-  # Automatically initialize tables
-  initTables: false
   # Enable batch operations for better performance
   enableBatch: true
-  # Cluster name for HA ClickHouse (triggers migration job for ReplicatedMergeTree)
-  # Leave empty for single-node setup (manual table creation required)
-  # Migration job will create replicated tables across the cluster
+  # Cluster name for HA ClickHouse (enables ReplicatedMergeTree with ON CLUSTER)
+  # Leave empty for single-node MergeTree setup
   clusterName: ""
+
+  # Migration job configuration (independent from clickhouse.enabled)
+  migrations:
+    # Enable automatic schema migrations on helm install/upgrade
+    enabled: false
+    # Hook weight (runs after PostgreSQL migrations which are at "0")
+    hookWeight: "5"
 
 # Docker Registry configuration (optional - for artifact storage)
 registry:

@@ -19,7 +19,6 @@ class TraceStore:
         database: str,
         username: str,
         password: str,
-        init_tables: bool = False,
     ):
         """Initialize ClickHouse TraceStore.
 
@@ -52,71 +51,6 @@ class TraceStore:
             username=username,
             password=password,
         )
-
-        # Create database if it doesn't exist
-        self._create_database()
-
-        # Initialize tables if requested
-        if init_tables:
-            self._create_tables()
-
-    def _create_database(self) -> None:
-        """Create the database if it doesn't exist."""
-        try:
-            self.client.command(f"CREATE DATABASE IF NOT EXISTS {self.database}")
-            logger.info(f"Database {self.database} ready")
-        except Exception as e:
-            logger.error(f"Failed to create database: {e}")
-            raise
-
-    def _create_tables(self) -> None:
-        """Create the otel_spans table if it doesn't exist."""
-        create_table_sql = f"""
-        CREATE TABLE IF NOT EXISTS {self.database}.otel_spans (
-            Timestamp DateTime64(9) CODEC(Delta, ZSTD(1)),
-            TraceId String CODEC(ZSTD(1)),
-            SpanId String CODEC(ZSTD(1)),
-            ParentSpanId String CODEC(ZSTD(1)),
-            SpanName LowCardinality(String) CODEC(ZSTD(1)),
-            SpanKind LowCardinality(String) CODEC(ZSTD(1)),
-            SemanticKind LowCardinality(String) CODEC(ZSTD(1)),
-            ServiceName LowCardinality(String) CODEC(ZSTD(1)),
-            Duration UInt64 CODEC(ZSTD(1)),
-            StatusCode LowCardinality(String) CODEC(ZSTD(1)),
-            StatusMessage String CODEC(ZSTD(1)),
-            TeamId String CODEC(ZSTD(1)),
-            RunId String CODEC(ZSTD(1)),
-            ExperimentId String CODEC(ZSTD(1)),
-            SpanAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
-            ResourceAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
-            Events Nested(
-                Timestamp DateTime64(9),
-                Name LowCardinality(String),
-                Attributes Map(LowCardinality(String), String)
-            ) CODEC(ZSTD(1)),
-            Links Nested(
-                TraceId String,
-                SpanId String,
-                Attributes Map(LowCardinality(String), String)
-            ) CODEC(ZSTD(1)),
-            INDEX idx_trace_id TraceId TYPE bloom_filter(0.001) GRANULARITY 1,
-            INDEX idx_span_id SpanId TYPE bloom_filter(0.001) GRANULARITY 1,
-            INDEX idx_run_id RunId TYPE bloom_filter(0.001) GRANULARITY 1,
-            INDEX idx_team_id TeamId TYPE bloom_filter(0.001) GRANULARITY 1,
-            INDEX idx_semantic_kind SemanticKind TYPE set(0) GRANULARITY 1,
-            INDEX idx_attr_keys mapKeys(SpanAttributes) TYPE bloom_filter(0.01) GRANULARITY 1
-        ) ENGINE = MergeTree()
-        PARTITION BY toDate(Timestamp)
-        ORDER BY (ServiceName, toUnixTimestamp(Timestamp))
-        SETTINGS index_granularity = 8192
-        """
-
-        try:
-            self.client.command(create_table_sql)
-            logger.info(f"Table {self.database}.otel_spans ready")
-        except Exception as e:
-            logger.error(f"Failed to create table: {e}")
-            raise
 
     def insert_spans(self, spans: list[dict[str, Any]]) -> None:
         """Insert spans into ClickHouse.
