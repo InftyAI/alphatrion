@@ -19,16 +19,15 @@ __STORAGE_RUNTIME__ = None
 class StorageRuntime:
     _metadb = None
     _tracestore = None
+    _artifact = None
     _inited = False
 
     def __init__(self):
         if self._inited:
             return
 
-        db_url = os.getenv(envs.METADATA_DB_URL)
-
         self._metadb = SQLStore(
-            db_url,
+            os.getenv(envs.METADATA_DB_URL),
             init_tables=os.getenv(envs.METADATA_INIT_TABLES, "false").lower() == "true",
         )
 

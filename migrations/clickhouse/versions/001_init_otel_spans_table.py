@@ -1,7 +1,7 @@
-"""Create initial otel_spans table.
+"""Create complete otel_spans table with all columns and indexes.
 
 Revision: 001
-Created: 2026-03-15
+Created: 2026-03-21
 """
 import logging
 import os
@@ -14,7 +14,15 @@ logger = logging.getLogger(__name__)
 
 
 class InitOtelSpansTable(Migration):
-    """Create the base otel_spans table for OpenTelemetry traces.
+    """Create the complete otel_spans table with all columns and indexes.
+
+    Combines all migrations:
+    - Base table structure (001)
+    - SessionId column and indexes (002)
+    - AgentId and AgentType columns and indexes (003)
+    - UserId column and index (004)
+    - Secondary minmax indexes for efficient queries (005)
+    - OrgId column (empty for now, will be populated later)
 
     Supports both single-node (MergeTree) and cluster (ReplicatedMergeTree) setups.
     """
@@ -23,8 +31,8 @@ class InitOtelSpansTable(Migration):
     name = "init_otel_spans_table"
 
     def upgrade(self, client: clickhouse_connect.driver.Client, database: str) -> None:
-        """Create otel_spans table with full schema."""
-        logger.info("Creating otel_spans table")
+        """Create otel_spans table with complete schema."""
+        logger.info("Creating complete otel_spans table")
 
         # Check if cluster mode is enabled
         cluster_name = os.getenv("ALPHATRION_CLICKHOUSE_CLUSTER_NAME")
@@ -53,9 +61,14 @@ class InitOtelSpansTable(Migration):
             Duration UInt64 CODEC(ZSTD(1)),
             StatusCode LowCardinality(String) CODEC(ZSTD(1)),
             StatusMessage String CODEC(ZSTD(1)),
+            OrgId String DEFAULT '' CODEC(ZSTD(1)),
             TeamId String CODEC(ZSTD(1)),
+            UserId String CODEC(ZSTD(1)),
             RunId String CODEC(ZSTD(1)),
-            ExperimentId String CODEC(ZSTD(1)),
+            ExperimentId String DEFAULT '' CODEC(ZSTD(1)),
+            SessionId String DEFAULT '' CODEC(ZSTD(1)),
+            AgentId String DEFAULT '' CODEC(ZSTD(1)),
+            AgentType LowCardinality(String) DEFAULT '' CODEC(ZSTD(1)),
             SpanAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
             ResourceAttributes Map(LowCardinality(String), String) CODEC(ZSTD(1)),
             Events Nested(
@@ -70,18 +83,27 @@ class InitOtelSpansTable(Migration):
             ) CODEC(ZSTD(1)),
             INDEX idx_trace_id TraceId TYPE bloom_filter(0.001) GRANULARITY 1,
             INDEX idx_span_id SpanId TYPE bloom_filter(0.001) GRANULARITY 1,
-            INDEX idx_run_id RunId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_org_id OrgId TYPE bloom_filter(0.001) GRANULARITY 1,
             INDEX idx_team_id TeamId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_user_id UserId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_run_id_bloom RunId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_experiment_id_bloom ExperimentId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_session_id_bloom SessionId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_agent_id AgentId TYPE bloom_filter(0.001) GRANULARITY 1,
+            INDEX idx_agent_type AgentType TYPE set(0) GRANULARITY 1,
             INDEX idx_semantic_kind SemanticKind TYPE set(0) GRANULARITY 1,
-            INDEX idx_attr_keys mapKeys(SpanAttributes) TYPE bloom_filter(0.01) GRANULARITY 1
+            INDEX idx_attr_keys mapKeys(SpanAttributes) TYPE bloom_filter(0.01) GRANULARITY 1,
+            INDEX idx_session_id_minmax SessionId TYPE minmax GRANULARITY 4,
+            INDEX idx_experiment_id_minmax ExperimentId TYPE minmax GRANULARITY 4,
+            INDEX idx_run_id_minmax RunId TYPE minmax GRANULARITY 4
         ) ENGINE = {engine}
         PARTITION BY toDate(Timestamp)
-        ORDER BY (ServiceName, toUnixTimestamp(Timestamp))
+        ORDER BY (TeamId, Timestamp)
         SETTINGS index_granularity = 8192
         """
 
         client.command(create_table_sql)
-        logger.info(f"✓ Table {database}.otel_spans created")
+        logger.info(f"✓ Table {database}.otel_spans created with complete schema")
 
     def downgrade(self, client: clickhouse_connect.driver.Client, database: str) -> None:
         """Drop otel_spans table."""

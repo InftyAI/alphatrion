@@ -11,11 +11,13 @@ from alphatrion.server.graphql.types import ArtifactFile
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import (
     FINISHED_STATUS,
+    AgentType,
     Status,
 )
 
 from .types import (
     AddUserToTeamInput,
+    Agent,
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
@@ -24,6 +26,7 @@ from .types import (
     DailyTokenUsage,
     Dataset,
     Experiment,
+    GraphQLAgentTypeEnum,
     GraphQLExperimentType,
     GraphQLExperimentTypeEnum,
     GraphQLStatusEnum,
@@ -32,6 +35,7 @@ from .types import (
     ModelDistribution,
     RemoveUserFromTeamInput,
     Run,
+    Session,
     Span,
     Team,
     TraceEvent,
@@ -76,7 +80,7 @@ class GraphQLResolvers:
     @staticmethod
     def get_user(id: strawberry.ID) -> User | None:
         metadb = runtime.storage_runtime().metadb
-        user = metadb.get_user(user_id=uuid.UUID(id))
+        user = metadb.get_user(user_id=id)
         if user:
             return User(
                 id=user.uuid,
@@ -193,6 +197,7 @@ class GraphQLResolvers:
                 team_id=r.team_id,
                 user_id=r.user_id,
                 experiment_id=r.experiment_id,
+                session_id=r.session_id,
                 meta=r.meta,
                 status=GraphQLStatusEnum[Status(r.status).name],
                 duration=r.duration,
@@ -212,6 +217,7 @@ class GraphQLResolvers:
                 team_id=run.team_id,
                 user_id=run.user_id,
                 experiment_id=run.experiment_id,
+                session_id=run.session_id,
                 meta=run.meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 duration=run.duration,
@@ -219,6 +225,144 @@ class GraphQLResolvers:
                 created_at=run.created_at,
             )
         return None
+
+    # Agent resolvers
+    @staticmethod
+    def list_agents(
+        team_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+    ) -> list[Agent]:
+        from .types import Agent
+
+        metadb = runtime.storage_runtime().metadb
+        agents = metadb.list_agents_by_team_id(
+            team_id=uuid.UUID(team_id),
+            page=page,
+            page_size=page_size,
+        )
+
+        return [
+            Agent(
+                id=a.uuid,
+                team_id=a.team_id,
+                user_id=a.user_id,
+                name=a.name,
+                type=GraphQLAgentTypeEnum[AgentType(a.type).name],
+                description=a.description,
+                meta=a.meta,
+                created_at=a.created_at,
+                updated_at=a.updated_at,
+            )
+            for a in agents
+        ]
+
+    @staticmethod
+    def get_agent(id: strawberry.ID) -> Agent | None:
+        from .types import Agent
+
+        metadb = runtime.storage_runtime().metadb
+        agent = metadb.get_agent(agent_id=uuid.UUID(id))
+        if agent:
+            return Agent(
+                id=agent.uuid,
+                team_id=agent.team_id,
+                user_id=agent.user_id,
+                name=agent.name,
+                type=GraphQLAgentTypeEnum[AgentType(agent.type).name],
+                description=agent.description,
+                meta=agent.meta,
+                created_at=agent.created_at,
+                updated_at=agent.updated_at,
+            )
+        return None
+
+    @staticmethod
+    def get_session(session_id: strawberry.ID) -> "Session | None":
+        from .types import Session
+
+        metadb = runtime.storage_runtime().metadb
+        session = metadb.get_session(session_id=session_id)
+        if session:
+            return Session(
+                id=session.uuid,
+                agent_id=session.agent_id,
+                team_id=session.team_id,
+                user_id=session.user_id,
+                meta=session.meta,
+                created_at=session.created_at,
+                updated_at=session.updated_at,
+            )
+        return None
+
+    @staticmethod
+    def list_sessions_by_agent_id(
+        agent_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+    ) -> list["Session"]:
+        from .types import Session
+
+        metadb = runtime.storage_runtime().metadb
+        sessions = metadb.list_sessions_by_agent_id(
+            agent_id=agent_id,
+            page=page,
+            page_size=page_size,
+        )
+        return [
+            Session(
+                id=s.uuid,
+                agent_id=s.agent_id,
+                team_id=s.team_id,
+                user_id=s.user_id,
+                meta=s.meta,
+                created_at=s.created_at,
+                updated_at=s.updated_at,
+            )
+            for s in sessions
+        ]
+
+    @staticmethod
+    def list_runs_by_session_id(
+        session_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Run]:
+        metadb = runtime.storage_runtime().metadb
+        runs = metadb.list_runs_by_session_id(
+            session_id=session_id,
+            page=page,
+            page_size=page_size,
+            order_by=order_by,
+            order_desc=order_desc,
+        )
+        return [
+            Run(
+                id=r.uuid,
+                team_id=r.team_id,
+                user_id=r.user_id,
+                experiment_id=r.experiment_id,
+                session_id=r.session_id,
+                meta=r.meta,
+                status=GraphQLStatusEnum[Status(r.status).name],
+                duration=r.duration,
+                cost=r.cost,
+                created_at=r.created_at,
+            )
+            for r in runs
+        ]
+
+    @staticmethod
+    def total_agents(team_id: strawberry.ID) -> int:
+        metadb = runtime.storage_runtime().metadb
+        return metadb.count_agents(team_id=team_id)
+
+    @staticmethod
+    def total_sessions(team_id: strawberry.ID) -> int:
+        metadb = runtime.storage_runtime().metadb
+        return metadb.count_sessions(team_id=team_id)
 
     @staticmethod
     def list_exp_metrics(experiment_id: strawberry.ID) -> list[Metric]:
@@ -277,6 +421,30 @@ class GraphQLResolvers:
         trace_store = runtime.storage_runtime().tracestore
         result = trace_store.get_llm_tokens_by_team_id(team_id=team_id)
         # get_llm_tokens_by_team_id returns a list with one dict
+        if result and len(result) > 0:
+            return result[0]
+        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def aggregate_agent_tokens(agent_id: strawberry.ID) -> dict[str, int]:
+        """Aggregate token usage from all spans for an agent."""
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        trace_store = runtime.storage_runtime().tracestore
+        result = trace_store.get_llm_tokens_by_agent_id(agent_id=agent_id)
+        if result and len(result) > 0:
+            return result[0]
+        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+    @staticmethod
+    def aggregate_session_tokens(session_id: strawberry.ID) -> dict[str, int]:
+        """Aggregate token usage from all spans for a session."""
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
+        trace_store = runtime.storage_runtime().tracestore
+        result = trace_store.get_llm_tokens_by_session_id(session_id=session_id)
         if result and len(result) > 0:
             return result[0]
         return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
@@ -488,8 +656,16 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_run_usage(run_id: strawberry.ID) -> dict[str, int]:
+        # Get team_id from run metadata
+        metadb = runtime.storage_runtime().metadb
+        run = metadb.get_run(run_id=uuid.UUID(run_id))
+        if not run:
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
         trace_store = runtime.storage_runtime().tracestore
-        spans = trace_store.get_llm_spans_by_run_id(run_id)
+        spans = trace_store.get_llm_spans_by_run_id(
+            team_id=run.team_id, run_id=uuid.UUID(run_id)
+        )
         # Don't close - it's a shared singleton connection
 
         total_tokens = 0
@@ -549,9 +725,17 @@ class GraphQLResolvers:
 
     @staticmethod
     def get_experiment_usage(experiment_id: strawberry.ID):
+        # Get team_id from experiment metadata
+        metadb = runtime.storage_runtime().metadb
+        experiment = metadb.get_experiment(experiment_id=experiment_id)
+        if not experiment:
+            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+
         trace_store = runtime.storage_runtime().tracestore
         # Get all LLM spans for this experiment in a single query
-        spans = trace_store.get_llm_spans_by_exp_id(experiment_id)
+        spans = trace_store.get_llm_spans_by_exp_id(
+            team_id=experiment.team_id, experiment_id=experiment_id
+        )
         # Don't close - it's a shared singleton connection
 
         total_tokens = 0
@@ -576,7 +760,7 @@ class GraphQLResolvers:
         }
 
     @staticmethod
-    def list_spans(run_id: strawberry.ID) -> list[Span]:
+    def list_spans_by_run_id(run_id: strawberry.ID) -> list[Span]:
         """List all spans for a specific run."""
 
         # Check if tracing is enabled
@@ -584,10 +768,18 @@ class GraphQLResolvers:
             return []
 
         try:
+            # Get team_id from run metadata
+            metadb = runtime.storage_runtime().metadb
+            run = metadb.get_run(run_id=uuid.UUID(run_id))
+            if not run:
+                return []
+
             trace_store = runtime.storage_runtime().tracestore
 
             # Get traces from ClickHouse
-            raw_spans = trace_store.get_spans_by_run_id(uuid.UUID(run_id))
+            raw_spans = trace_store.get_spans_by_run_id(
+                team_id=run.team_id, run_id=uuid.UUID(run_id)
+            )
             # Don't close - it's a shared singleton connection
 
             # Convert to GraphQL Span objects
@@ -652,8 +844,88 @@ class GraphQLResolvers:
             print(f"Failed to fetch traces: {e}")
             return []
 
-    # Alias for list_spans
-    list_traces = list_spans
+    @staticmethod
+    def list_spans_by_session_id(session_id: strawberry.ID) -> list[Span]:
+        """List all spans for a specific session (agent runs)."""
+
+        # Check if tracing is enabled
+        if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
+            return []
+
+        try:
+            # Get team_id from session metadata
+            metadb = runtime.storage_runtime().metadb
+            session = metadb.get_session(session_id=uuid.UUID(session_id))
+            if not session:
+                return []
+
+            trace_store = runtime.storage_runtime().tracestore
+
+            # Get traces from ClickHouse for this session
+            raw_spans = trace_store.get_spans_by_session_id(
+                team_id=session.team_id, session_id=uuid.UUID(session_id)
+            )
+            # Don't close - it's a shared singleton connection
+
+            # Convert to GraphQL Span objects
+            spans = []
+            for t in raw_spans:
+                # Convert events from ClickHouse flat arrays
+                events = []
+                event_timestamps = t.get("EventTimestamps", [])
+                event_names = t.get("EventNames", [])
+                event_attrs = t.get("EventAttributes", [])
+                for i in range(len(event_timestamps)):
+                    events.append(
+                        TraceEvent(
+                            timestamp=event_timestamps[i],
+                            name=event_names[i] if i < len(event_names) else "",
+                            attributes=event_attrs[i] if i < len(event_attrs) else {},
+                        )
+                    )
+
+                # Convert links from ClickHouse flat arrays
+                links = []
+                link_trace_ids = t.get("LinkTraceIds", [])
+                link_span_ids = t.get("LinkSpanIds", [])
+                link_attrs = t.get("LinkAttributes", [])
+                for i in range(len(link_trace_ids)):
+                    links.append(
+                        TraceLink(
+                            trace_id=link_trace_ids[i],
+                            span_id=link_span_ids[i] if i < len(link_span_ids) else "",
+                            attributes=link_attrs[i] if i < len(link_attrs) else {},
+                        )
+                    )
+
+                spans.append(
+                    Span(
+                        timestamp=t["Timestamp"],
+                        trace_id=t["TraceId"],
+                        span_id=t["SpanId"],
+                        parent_span_id=t["ParentSpanId"],
+                        span_name=t["SpanName"],
+                        span_kind=t["SpanKind"],
+                        semantic_kind=t["SemanticKind"],
+                        service_name=t["ServiceName"],
+                        duration=t["Duration"],
+                        status_code=t["StatusCode"],
+                        status_message=t["StatusMessage"],
+                        team_id=t["TeamId"],
+                        run_id=t["RunId"],
+                        experiment_id=t["ExperimentId"],
+                        span_attributes=t["SpanAttributes"],
+                        resource_attributes=t["ResourceAttributes"],
+                        events=events,
+                        links=links,
+                    )
+                )
+
+            return spans
+        except Exception as e:
+            # Log error and return empty list - don't fail the GraphQL query
+            print(f"Failed to fetch traces for session: {e}")
+            return []
 
     @staticmethod
     def get_daily_token_usage(

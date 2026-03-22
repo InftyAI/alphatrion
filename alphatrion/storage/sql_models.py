@@ -109,6 +109,11 @@ class ExperimentType(enum.IntEnum):
     CRAFT_EXPERIMENT = 1
 
 
+class AgentType(enum.IntEnum):
+    CLAUDE = 1
+    CODEX = 2
+
+
 class Experiment(Base):
     __tablename__ = "experiments"
 
@@ -178,14 +183,76 @@ class Experiment(Base):
     )
 
 
+class Agent(Base):
+    __tablename__ = "agents"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), nullable=False, comment="User who created the agent"
+    )
+    name = Column(String, nullable=False)
+    type = Column(
+        Integer,
+        default=AgentType.CLAUDE,
+        nullable=False,
+        comment="Type of the agent, 1: CLAUDE",
+    )
+    description = Column(String, nullable=True)
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the agent (e.g. config)",
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
+class AgentSession(Base):
+    __tablename__ = "sessions"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(
+        UUID(as_uuid=True), nullable=False, comment="User who created the session"
+    )
+    agent_id = Column(
+        UUID(as_uuid=True), nullable=False, comment="Agent this session belongs to"
+    )
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the session (e.g. conversation context)",
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
 class Run(Base):
     __tablename__ = "runs"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     team_id = Column(UUID(as_uuid=True), nullable=False)
-    experiment_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(
-        UUID(as_uuid=True), nullable=True, comment="User who created the run"
+        UUID(as_uuid=True), nullable=False, comment="User who created the run"
+    )
+    experiment_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="Experiment this run belongs to"
+    )
+    session_id = Column(
+        UUID(as_uuid=True), nullable=True, comment="Session this run belongs to"
     )
     meta = Column(
         MutableDict.as_mutable(JSON),
@@ -225,6 +292,8 @@ class Run(Base):
         # For list_runs_by_exp_id() - line 592: (experiment_id, is_del) +
         # ORDER BY created_at
         Index("idx_run_experiment_active", "experiment_id", "is_del", "created_at"),
+        # For list_runs_by_session_id(): (session_id, is_del) + ORDER BY created_at
+        Index("idx_run_session_active", "session_id", "is_del", "created_at"),
         # For count_runs() - line 606: (team_id, is_del)
         Index("idx_run_team_active", "team_id", "is_del"),
     )

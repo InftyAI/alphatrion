@@ -3,6 +3,7 @@ import strawberry
 from alphatrion.server.graphql.resolvers import GraphQLMutations, GraphQLResolvers
 from alphatrion.server.graphql.types import (
     AddUserToTeamInput,
+    Agent,
     ArtifactContent,
     ArtifactFile,
     ArtifactRepository,
@@ -14,6 +15,7 @@ from alphatrion.server.graphql.types import (
     Experiment,
     RemoveUserFromTeamInput,
     Run,
+    Session,
     Span,
     Team,
     UpdateUserInput,
@@ -74,10 +76,33 @@ class Query:
 
     run: Run | None = strawberry.field(resolver=GraphQLResolvers.get_run)
 
-    # Trace queries
+    # Agent queries
     @strawberry.field
-    def traces(self, run_id: strawberry.ID) -> list[Span]:
-        return GraphQLResolvers.list_traces(run_id=run_id)
+    def agents(
+        self,
+        team_id: strawberry.ID,
+        page: int = 0,
+        page_size: int = 20,
+    ) -> list[Agent]:
+        return GraphQLResolvers.list_agents(
+            team_id=team_id,
+            page=page,
+            page_size=page_size,
+        )
+
+    agent: Agent | None = strawberry.field(resolver=GraphQLResolvers.get_agent)
+
+    # Session query
+    session: Session | None = strawberry.field(resolver=GraphQLResolvers.get_session)
+
+    # Span queries
+    @strawberry.field
+    def spans_by_run_id(self, run_id: strawberry.ID) -> list[Span]:
+        return GraphQLResolvers.list_spans_by_run_id(run_id=run_id)
+
+    @strawberry.field
+    def spans_by_session_id(self, session_id: strawberry.ID) -> list[Span]:
+        return GraphQLResolvers.list_spans_by_session_id(session_id=session_id)
 
     @strawberry.field
     def daily_token_usage(

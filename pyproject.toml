@@ -63,7 +63,10 @@ lint.select = [
     "PL",  # PyLint,
 ]
 lint.ignore = [
+    "E501",  # Line too long
     "PLR0913",  # Too many arguments in function definition
+    "PLR0912",  # Too many branches
+    "PLR0911",  # Too many return statements
     "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "PLR0915", # Too many statements in function
     "PLC0415", # `import` should be at the top-level of a file

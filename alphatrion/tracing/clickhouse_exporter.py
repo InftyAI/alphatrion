@@ -36,14 +36,24 @@ class ClickHouseSpanExporter(SpanExporter):
             return SpanExportResult.SUCCESS
 
         try:
-            # Filter spans to only include those with traceloop.workflow.name attribute
-            # Both workflow and task spans have this attribute set by traceloop SDK
-            # This filters out non-traceloop spans (database, HTTP, etc.)
-            filtered_spans = [
-                span
-                for span in spans
-                if span.attributes and "traceloop.workflow.name" in span.attributes
-            ]
+            # Filter spans based on context:
+            # - For agent runs (has session_id): save ALL spans
+            # - For experiments (no session_id): save only traceloop workflow/task spans
+            filtered_spans = []
+            for span in spans:
+                if not span.attributes:
+                    continue
+
+                # Check if this is an agent run (has session_id attribute)
+                session_id = span.attributes.get("session_id")
+                is_agent_run = session_id is not None and session_id != ""
+
+                if is_agent_run:
+                    # Agent run: save ALL spans (HTTP, DB, LLM, etc.)
+                    filtered_spans.append(span)
+                elif "traceloop.workflow.name" in span.attributes:
+                    # Experiment run: only save traceloop workflow/task spans
+                    filtered_spans.append(span)
 
             if not filtered_spans:
                 return SpanExportResult.SUCCESS
@@ -114,18 +124,16 @@ class ClickHouseSpanExporter(SpanExporter):
 
         # Extract core identifiers from span attributes
         team_id = span_attributes.get("team_id", "")
+        user_id = span_attributes.get("user_id", "")
         run_id = span_attributes.get("run_id", "")
         experiment_id = span_attributes.get("experiment_id", "")
+        session_id = span_attributes.get("session_id", "")
+        agent_id = span_attributes.get("agent_id", "")
+        agent_type = span_attributes.get("agent_type", "")
 
         # Determine semantic kind (application-level span type)
-        # Priority: LLM calls > Traceloop span kind > unknown
-        if "llm.usage.total_tokens" in span_attributes:
-            semantic_kind = "llm"
-        elif "traceloop.span.kind" in span_attributes:
-            # Values: "workflow", "task", "agent", "tool", "unknown"
-            semantic_kind = span_attributes["traceloop.span.kind"]
-        else:
-            semantic_kind = "unknown"
+        # Priority hierarchy for clear categorization
+        semantic_kind = determine_semantic_kind(span_attributes)
 
         # Convert events to nested structure
         event_timestamps = []
@@ -154,20 +162,17 @@ class ClickHouseSpanExporter(SpanExporter):
                 link_attributes.append(link_attrs)
 
         return {
+            # OTel Core (required)
             "Timestamp": timestamp,
             "TraceId": trace_id,
             "SpanId": span_id,
             "ParentSpanId": parent_span_id,
             "SpanName": span.name,
             "SpanKind": span_kind,
-            "SemanticKind": semantic_kind,
-            "ServiceName": service_name,
             "Duration": duration,
             "StatusCode": status_code,
+            # OTel Optional (recommended)
             "StatusMessage": status_message,
-            "TeamId": team_id,
-            "RunId": run_id,
-            "ExperimentId": experiment_id,
             "SpanAttributes": span_attributes,
             "ResourceAttributes": resource_attrs,
             "Events.Timestamp": event_timestamps,
@@ -176,6 +181,16 @@ class ClickHouseSpanExporter(SpanExporter):
             "Links.TraceId": link_trace_ids,
             "Links.SpanId": link_span_ids,
             "Links.Attributes": link_attributes,
+            # Custom Alphatrion fields
+            "SemanticKind": semantic_kind,
+            "ServiceName": service_name,
+            "TeamId": team_id,
+            "UserId": user_id,
+            "RunId": run_id,
+            "ExperimentId": experiment_id,
+            "SessionId": session_id,
+            "AgentId": agent_id,
+            "AgentType": agent_type,
         }
 
     def _nano_to_datetime(self, nanoseconds: int) -> datetime:
@@ -208,3 +223,66 @@ class ClickHouseSpanExporter(SpanExporter):
         """
         # No buffering in this implementation
         return True
+
+
+def determine_semantic_kind(
+    attributes: dict[str, str], content_blocks: list[dict] = None
+) -> str:
+    """Determine the semantic kind of a span.
+
+    Priority order:
+    1. Content type based (thinking, llm, tool) - if content_blocks provided
+    2. Tool calls (has tool attributes)
+    3. LLM calls (has token usage)
+    4. Database operations (has db attributes)
+    5. HTTP requests (has http attributes)
+    6. Traceloop semantic kinds (workflow, task, agent)
+    7. Unknown
+
+    Args:
+        attributes: Span attributes
+        content_blocks: Optional list of content blocks (for Claude agents)
+
+    Returns:
+        Semantic kind string
+    """
+    # Check content type first (Claude agents)
+    if content_blocks:
+        content_types = [b.get("type") for b in content_blocks if isinstance(b, dict)]
+        if "tool_use" in content_types:
+            return "tool"
+        elif "thinking" in content_types:
+            return "thinking"
+        elif "text" in content_types:
+            return "text-generation"
+        # Has content blocks but unknown type - fallback to llm
+        elif content_types:
+            return "llm"
+
+    # Check for tool calls (fallback)
+    if "tool.name" in attributes:
+        return "tool"
+
+    # Check for LLM calls (fallback)
+    if (
+        "llm.usage.total_tokens" in attributes
+        or "gen_ai.usage.output_tokens" in attributes
+    ):
+        return "llm"
+
+    # Check for Traceloop semantic kinds
+    if "traceloop.span.kind" in attributes:
+        traceloop_kind = attributes["traceloop.span.kind"]
+        if traceloop_kind in ("workflow", "task", "agent"):
+            return traceloop_kind
+
+    # Check for database operations
+    if "db.system" in attributes or "db.statement" in attributes:
+        return "database"
+
+    # Check for HTTP requests
+    if "http.method" in attributes or "http.url" in attributes:
+        return "http"
+
+    # Default to unknown
+    return "unknown"
