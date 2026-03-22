@@ -15,6 +15,10 @@ export enum ExperimentType {
   CRAFT_EXPERIMENT = 1,
 }
 
+export enum AgentType {
+  CLAUDE = 1,
+}
+
 export interface TokenStats {
   totalTokens: number;
   inputTokens: number;
@@ -31,6 +35,8 @@ export interface Team {
   totalExperiments: number;
   totalRuns: number;
   totalDatasets: number;
+  totalAgents: number;
+  totalSessions: number;
   aggregatedTokens: TokenStats;
 }
 
@@ -79,7 +85,8 @@ export interface Run {
   id: string;
   teamId: string;
   userId: string;
-  experimentId: string;
+  experimentId: string | null;
+  sessionId: string | null;
   meta: Record<string, unknown> | null;
   duration: number;
   status: Status;
@@ -97,6 +104,28 @@ export interface Metric {
   experimentId: string;
   runId: string;
   createdAt: string;
+}
+
+export interface Agent {
+  id: string;
+  teamId: string;
+  userId: string;
+  name: string;
+  type: AgentType;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Session {
+  id: string;
+  agentId: string;
+  teamId: string;
+  userId: string;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Dataset {

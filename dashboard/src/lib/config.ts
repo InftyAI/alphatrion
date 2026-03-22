@@ -1,7 +1,7 @@
 /**
  * Configuration fetching from dashboard backend
  *
- * The dashboard is started with --userid flag, which stores the user ID
+ * The dashboard is started with --user-id flag, which stores the user ID
  * in the backend. The frontend fetches this configuration on startup.
  */
 

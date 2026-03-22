@@ -3,7 +3,11 @@ import { ChevronRight } from 'lucide-react';
 import { TeamSwitcher } from './team-switcher';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRun } from '../../hooks/use-runs';
+import { useAgent } from '../../hooks/use-agents';
+import { graphqlQuery } from '../../lib/graphql-client';
 import { truncateId } from '../../lib/format';
+import { useQuery } from '@tanstack/react-query';
+import type { Session } from '../../types';
 
 interface BreadcrumbItem {
   label: string;
@@ -19,10 +23,36 @@ export function Header() {
   // Check if we're on a detail page (not a list page)
   const experimentId = paths[0] === 'experiments' && paths[1] && paths[1] !== 'compare' ? paths[1] : undefined;
   const runId = paths[0] === 'runs' && paths[1] ? paths[1] : undefined;
+  const agentId = paths[0] === 'agents' && paths[1] ? paths[1] : undefined;
+  const sessionId = paths[0] === 'sessions' && paths[1] ? paths[1] : undefined;
 
   // Only fetch if we have valid IDs (not empty strings)
   const { data: experiment } = useExperiment(experimentId || '', { enabled: !!experimentId });
   const { data: run } = useRun(runId || '', { enabled: !!runId });
+  const { data: agent } = useAgent(agentId || '', { enabled: !!agentId });
+
+  // Fetch session data
+  const { data: session } = useQuery<Session>({
+    queryKey: ['session', sessionId],
+    queryFn: async () => {
+      const data = await graphqlQuery<{ session: Session }>(
+        `query GetSession($sessionId: ID!) {
+          session(sessionId: $sessionId) {
+            id
+            agentId
+            teamId
+            userId
+            meta
+            createdAt
+            updatedAt
+          }
+        }`,
+        { sessionId: sessionId }
+      );
+      return data.session;
+    },
+    enabled: !!sessionId,
+  });
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -59,6 +89,33 @@ export function Header() {
         breadcrumbs.push({ label: truncateId(run.id), href: undefined });
       } else {
         breadcrumbs.push({ label: 'Runs', href: undefined });
+      }
+    } else if (paths[0] === 'agents') {
+      if (agentId && agent && paths[1]) {
+        breadcrumbs.push({ label: 'Agents', href: '/agents' });
+        breadcrumbs.push({ label: truncateId(agent.id), href: undefined });
+      } else {
+        breadcrumbs.push({ label: 'Agents', href: undefined });
+      }
+    } else if (paths[0] === 'sessions') {
+      if (sessionId) {
+        // Show hierarchy: Agents > agentId > Sessions > sessionId
+        breadcrumbs.push({ label: 'Agents', href: '/agents' });
+        if (session) {
+          breadcrumbs.push({
+            label: truncateId(session.agentId),
+            href: `/agents/${session.agentId}`
+          });
+          breadcrumbs.push({ label: 'Sessions', href: `/agents/${session.agentId}` });
+          breadcrumbs.push({ label: truncateId(session.id), href: undefined });
+        } else {
+          // Still loading - show with sessionId from URL
+          breadcrumbs.push({ label: '...', href: undefined });
+          breadcrumbs.push({ label: 'Sessions', href: undefined });
+          breadcrumbs.push({ label: truncateId(sessionId), href: undefined });
+        }
+      } else {
+        breadcrumbs.push({ label: 'Sessions', href: undefined });
       }
     } else {
       // Default handling for other routes

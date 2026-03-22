@@ -15,7 +15,7 @@ import { ExperimentsStatusChart } from '../../components/dashboard/experiments-s
 import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
 import { ModelDistributionChart } from '../../components/dashboard/model-distribution-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FlaskConical, Play, Coins } from 'lucide-react';
+import { FlaskConical, Coins, Bot, MessagesSquare } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -84,13 +84,14 @@ export function DashboardPage() {
 
       {/* Overview Metrics */}
       {teamLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
           <Skeleton className="h-14 w-full" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           {/* Total Experiments */}
           <Card>
             <CardContent className="p-2.5">
@@ -106,16 +107,31 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Total Runs */}
+          {/* Total Agents */}
           <Card>
             <CardContent className="p-2.5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-medium text-muted-foreground">RUNS</p>
-                  <p className="text-base font-bold tabular-nums text-foreground">{team?.totalRuns || 0}</p>
+                  <p className="text-[10px] font-medium text-muted-foreground">AGENTS</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">{team?.totalAgents || 0}</p>
+                </div>
+                <div className="p-1.5 bg-blue-100 rounded-lg">
+                  <Bot className="h-3.5 w-3.5 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Sessions */}
+          <Card>
+            <CardContent className="p-2.5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-medium text-muted-foreground">SESSIONS</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">{team?.totalSessions || 0}</p>
                 </div>
                 <div className="p-1.5 bg-green-100 rounded-lg">
-                  <Play className="h-3.5 w-3.5 text-green-600" />
+                  <MessagesSquare className="h-3.5 w-3.5 text-green-600" />
                 </div>
               </div>
             </CardContent>

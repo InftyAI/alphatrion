@@ -113,6 +113,8 @@ export const queries = {
         totalExperiments
         totalRuns
         totalDatasets
+        totalAgents
+        totalSessions
         aggregatedTokens {
           totalTokens
           inputTokens
@@ -324,10 +326,10 @@ export const queries = {
     }
   `,
 
-  // Trace queries
+  // Span queries
   listTraces: `
-    query ListTraces($runId: ID!) {
-      traces(runId: $runId) {
+    query ListSpans($runId: ID!) {
+      spansByRunId(runId: $runId) {
         timestamp
         traceId
         spanId
@@ -417,6 +419,95 @@ export const queries = {
         experimentId
         runId
         userId
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
+  listAgents: `
+    query ListAgents($teamId: ID!, $page: Int, $pageSize: Int) {
+      agents(teamId: $teamId, page: $page, pageSize: $pageSize) {
+        id
+        teamId
+        userId
+        name
+        type
+        description
+        meta
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
+  getAgent: `
+    query GetAgent($id: ID!) {
+      agent(id: $id) {
+        id
+        teamId
+        userId
+        name
+        type
+        description
+        meta
+        createdAt
+        updatedAt
+      }
+    }
+  `,
+
+  listAllSessions: `
+    query ListAllSessions($teamId: ID!, $page: Int, $pageSize: Int) {
+      team(id: $teamId) {
+        id
+        agents(page: 0, pageSize: 1000) {
+          id
+          sessions(page: $page, pageSize: $pageSize) {
+            id
+            agentId
+            teamId
+            userId
+            meta
+            createdAt
+            updatedAt
+          }
+        }
+      }
+    }
+  `,
+
+  listAllAgentRuns: `
+    query ListAllAgentRuns($teamId: ID!, $page: Int, $pageSize: Int) {
+      team(id: $teamId) {
+        id
+        agents(page: 0, pageSize: 1000) {
+          id
+          sessions(page: 0, pageSize: 1000) {
+            id
+            runs(page: $page, pageSize: $pageSize) {
+              id
+              teamId
+              userId
+              sessionId
+              status
+              duration
+              createdAt
+            }
+          }
+        }
+      }
+    }
+  `,
+
+  getSession: `
+    query GetSession($sessionId: ID!) {
+      session(sessionId: $sessionId) {
+        id
+        agentId
+        teamId
+        userId
+        meta
         createdAt
         updatedAt
       }

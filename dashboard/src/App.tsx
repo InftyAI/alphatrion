@@ -12,6 +12,9 @@ import { ExperimentDetailPage } from './pages/experiments/[id]';
 import { ExperimentComparePage } from './pages/experiments/compare';
 import { RunsPage } from './pages/runs';
 import { RunDetailPage } from './pages/runs/[id]';
+import { AgentsPage } from './pages/agents';
+import { AgentDetailPage } from './pages/agents/[id]';
+import { SessionDetailPage } from './pages/sessions/[id]';
 import { DatasetsPage } from './pages/datasets';
 import { ArtifactsPage } from './pages/artifacts';
 import type { Team } from './types';
@@ -116,7 +119,7 @@ function App() {
           <ul className="text-gray-500 text-sm text-left mt-2 space-y-1">
             <li>• The user ID exists in the database</li>
             <li>• The backend server is running</li>
-            <li>• The dashboard was started with correct --userid flag</li>
+            <li>• The dashboard was started with correct --user-id flag</li>
           </ul>
         </div>
       </div>
@@ -141,6 +144,13 @@ function App() {
             <Route path="runs">
               <Route index element={<RunsPage />} />
               <Route path=":id" element={<RunDetailPage />} />
+            </Route>
+            <Route path="agents">
+              <Route index element={<AgentsPage />} />
+              <Route path=":id" element={<AgentDetailPage />} />
+            </Route>
+            <Route path="sessions">
+              <Route path=":id" element={<SessionDetailPage />} />
             </Route>
             <Route path="datasets" element={<DatasetsPage />} />
             <Route path="artifacts" element={<ArtifactsPage />} />
