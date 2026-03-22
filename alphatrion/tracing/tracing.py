@@ -37,7 +37,7 @@ def workflow(
     Attributes (run_id, team_id, experiment_id) are automatically
     added to all spans by ContextAttributesSpanProcessor.
 
-    :param run_id: The run ID (unused, kept for compatibility)
+    :param run_id: The run ID (used as workflow name if provided)
     """
 
     def decorator(func):

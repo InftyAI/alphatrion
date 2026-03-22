@@ -2,8 +2,11 @@
 
 import argparse
 import os
+import shlex
+import subprocess
 import threading
 import time
+import uuid
 import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -60,13 +63,13 @@ def main():
         help="Backend server URL to proxy requests to (default: http://localhost:8000)",
     )
     dashboard.add_argument(
-        "--userid",
+        "--user-id",
         type=str,
         default=os.getenv(envs.DASHBOARD_USER_ID),
         help="User ID to scope the dashboard (required)",
     )
     dashboard.add_argument(
-        "--teamid",
+        "--team-id",
         type=str,
         default=None,
         help="Team ID to scope the dashboard (optional)",
@@ -78,7 +81,7 @@ def main():
         "init", help="Initialize AlphaTrion with a user and team"
     )
     init.add_argument(
-        "--username",
+        "--user-name",
         type=str,
         default=None,
         help="Username for the new user (auto-generated if not provided)",
@@ -90,12 +93,59 @@ def main():
         help="Email for the new user (auto-generated if not provided)",
     )
     init.add_argument(
-        "--teamname",
+        "--team-name",
         type=str,
         default="Default Team",
         help="Team name (default: Default Team)",
     )
     init.set_defaults(func=init_command)
+
+    # run command (with subcommands)
+    run = subparsers.add_parser("run", help="Run agent commands")
+    run_subparsers = run.add_subparsers(dest="run_command", required=True)
+
+    # run agent command
+    run_agent = run_subparsers.add_parser(
+        "agent",
+        help="Run an agent with automatic tracking",
+    )
+    run_agent.add_argument(
+        "agent_type",
+        type=str,
+        choices=["claude", "codex"],
+        help="Type of agent to run (e.g., claude, codex)",
+    )
+    run_agent.add_argument(
+        "--user-id",
+        type=str,
+        required=True,
+        help="User ID for this agent session",
+    )
+    run_agent.add_argument(
+        "--team-id",
+        type=str,
+        default=None,
+        help="Team ID for this agent session (optional, auto-detected from user's first team)",
+    )
+    run_agent.add_argument(
+        "--command",
+        type=str,
+        default=None,
+        help="Command to run (defaults to agent type, e.g., 'claude' for claude agent)",
+    )
+    run_agent.set_defaults(func=run_agent_command)
+
+    # claude-hook command (handles Claude Code hooks)
+    claude_hook = subparsers.add_parser(
+        "claude-hook", help="Handle Claude Code hooks (called by Claude Code)"
+    )
+    claude_hook.add_argument(
+        "action",
+        type=str,
+        choices=["session-start", "stop"],
+        help="Hook action: session-start (new session), stop (after response)",
+    )
+    claude_hook.set_defaults(func=handle_claude_hook)
 
     # version command
     version = subparsers.add_parser("version", help="Show the version of AlphaTrion")
@@ -115,14 +165,14 @@ def init_command(args):
 
     fake = Faker()
 
-    # Generate username if not provided
-    username = args.username if args.username else fake.name()
+    # Generate user name if not provided
+    user_name = args.user_name if args.user_name else fake.name()
     email = (
         args.email
         if args.email
-        else f"{username.lower().replace(' ', '.')}@inftyai.com"
+        else f"{user_name.lower().replace(' ', '.')}@inftyai.com"
     )
-    teamname = args.teamname
+    team_name = args.team_name
 
     try:
         metadb = runtime.storage_runtime().metadb
@@ -130,14 +180,15 @@ def init_command(args):
         console.print()
         # Create user
         console.print(
-            Text(f"👤 Creating user: {username} ({email})", style="bold cyan")
+            Text(f"👤 Creating user: {user_name} ({email})", style="bold cyan")
         )
-        user_id = metadb.create_user(username=username, email=email)
+        user_id = metadb.create_user(username=user_name, email=email)
 
         # Create team
-        console.print(Text(f"🏢 Creating team: {teamname}", style="bold cyan"))
-        team_id = metadb.create_team(name=teamname, description=f"Team for {username}")
-
+        console.print(Text(f"🏢 Creating team: {team_name}", style="bold cyan"))
+        team_id = metadb.create_team(
+            name=team_name, description=f"Team for {user_name}"
+        )
         # Add user to team
         metadb.add_user_to_team(user_id=user_id, team_id=team_id)
 
@@ -157,7 +208,7 @@ def init_command(args):
             )
         )
         console.print(
-            Text(f"   alphatrion dashboard --userid {user_id}", style="magenta")
+            Text(f"   alphatrion dashboard --user-id {user_id}", style="magenta")
         )
         console.print()
         console.print(
@@ -178,6 +229,173 @@ def init_command(args):
     except Exception as e:
         console.print(Text(f"❌ Error during initialization: {e}", style="bold red"))
         raise
+
+
+def run_agent_command(args):
+    """Run agent with automatic tracking."""
+    from alphatrion.storage.sql_models import AgentType
+
+    # Initialize runtime first
+    runtime.init()
+
+    try:
+        metadb = runtime.storage_runtime().metadb
+
+        user_id = args.user_id
+        team_id = args.team_id
+
+        # If no team_id provided, get user's first team
+        if not team_id:
+            user_teams = metadb.get_team_members_by_user_id(user_id=uuid.UUID(user_id))
+            if not user_teams:
+                console.print(
+                    Text(
+                        "❌ No teams found for user. Please specify --team-id",
+                        style="bold red",
+                    )
+                )
+                return
+            team_id = str(user_teams[0].team_id)
+            console.print(Text(f"📋 Using team: {team_id}", style="dim"))
+
+        # Map agent type string to enum
+        agent_type_map = {
+            "claude": AgentType.CLAUDE,
+            # "codex": AgentType.CODEX,  # Future: add more agent types here
+        }
+        agent_type = agent_type_map.get(args.agent_type.lower())
+
+        if not agent_type:
+            console.print(
+                Text(f"❌ Unknown agent type: {args.agent_type}", style="bold red")
+            )
+            return
+
+        # Agent name is always the same as agent type
+        agent_name = args.agent_type.lower()
+
+        # Determine command to run (defaults to agent type)
+        command = args.command if args.command else agent_name
+
+        # Check if agent with same name and type already exists
+        existing_agent = metadb.get_agent_by_type(
+            user_id=uuid.UUID(user_id),
+            agent_type=agent_type,
+        )
+
+        if existing_agent:
+            agent_id = existing_agent.uuid
+            console.print(
+                Text(f"🤖 Using existing agent: {agent_name}", style="bold cyan")
+            )
+            console.print(Text(f"   Agent ID: {agent_id}", style="dim"))
+        else:
+            console.print(
+                Text(f"🤖 Creating new agent: {agent_name}", style="bold cyan")
+            )
+            agent_id = metadb.create_agent(
+                name=agent_name,
+                type=agent_type,
+                team_id=uuid.UUID(team_id),
+                user_id=uuid.UUID(user_id),
+            )
+            console.print(Text(f"   Agent ID: {agent_id}", style="dim"))
+
+        console.print()
+        console.print(
+            Text(
+                "✅ Agent ready! Environment variables set for hooks.",
+                style="bold green",
+            )
+        )
+        console.print()
+        console.print(Text(f"   ALPHATRION_USER_ID={user_id}", style="dim"))
+        console.print(Text(f"   ALPHATRION_TEAM_ID={team_id}", style="dim"))
+        console.print(Text(f"   ALPHATRION_AGENT_ID={agent_id}", style="dim"))
+        console.print()
+        console.print(
+            Text("📋 Recommended Claude Code hooks configuration:", style="bold yellow")
+        )
+        console.print(Text("   Add this to ~/.claude/settings.json:", style="dim"))
+        console.print()
+
+        hooks_config = """{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "alphatrion claude-hook session-start",
+            "stdin": {
+              "session_id": "{{ session_id }}",
+              "transcript_path": "{{ transcript_path }}",
+              "source": "{{ source }}",
+              "model": "{{ model }}"
+            }
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "alphatrion claude-hook stop",
+            "stdin": {
+              "session_id": "{{ session_id }}",
+              "transcript_path": "{{ transcript_path }}"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}"""
+        console.print(Text(hooks_config, style="cyan"))
+        console.print()
+        console.print(Text(f"🚀 Launching {command}...", style="bold green"))
+        console.print(
+            Text("   (Hooks will automatically track your conversations)", style="dim")
+        )
+        console.print()
+
+        # Set environment variables for hooks to access (since they run in separate processes)
+        os.environ["ALPHATRION_USER_ID"] = user_id
+        os.environ["ALPHATRION_TEAM_ID"] = team_id
+        os.environ["ALPHATRION_AGENT_ID"] = str(agent_id)
+
+        # Launch command with environment variables inherited
+        try:
+            subprocess.run(shlex.split(command), check=False, env=os.environ.copy())
+        except FileNotFoundError:
+            console.print(
+                Text(
+                    f"❌ '{command}' command not found. Please install it first.",
+                    style="bold red",
+                )
+            )
+            return
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        finally:
+            console.print()
+            console.print(Text(f"⏹️  {command} session ended", style="bold yellow"))
+
+    except Exception as e:
+        console.print(Text(f"❌ Error starting agent session: {e}", style="bold red"))
+        raise
+
+
+def handle_claude_hook(args):
+    """Handle Claude Code hooks (SessionStart, Stop, SessionEnd)."""
+    from alphatrion.agents.claude import handle_hook
+
+    handle_hook(args.action)
 
 
 def run_server(args):
@@ -273,7 +491,7 @@ def start_dashboard(args):
     console.print(
         Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
     )
-    console.print(Text(f"👤 Dashboard scoped to user: {args.userid}", style="yellow"))
+    console.print(Text(f"👤 Dashboard scoped to user: {args.user_id}", style="yellow"))
     console.print()
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
@@ -283,7 +501,7 @@ def start_dashboard(args):
 
     app = FastAPI()
 
-    if not args.userid:
+    if not args.user_id:
         console.print(
             Text(
                 "❌ Error: User ID is required to launch the dashboard!",
@@ -292,7 +510,7 @@ def start_dashboard(args):
         )
         console.print(
             Text(
-                "Please provide a user ID using the --userid argument or set the ALPHATRION_DASHBOARD_USER_ID environment variable.",
+                "Please provide a user ID using the --user-id argument or set the ALPHATRION_DASHBOARD_USER_ID environment variable.",
                 style="yellow",
             )
         )
@@ -304,9 +522,9 @@ def start_dashboard(args):
         )
         return
     # Store user ID in app state
-    app.state.user_id = args.userid
-    if args.teamid:
-        app.state.team_id = args.teamid
+    app.state.user_id = args.user_id
+    if args.team_id:
+        app.state.team_id = args.team_id
 
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)

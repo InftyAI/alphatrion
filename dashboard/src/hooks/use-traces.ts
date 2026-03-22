@@ -2,12 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { graphqlQuery, queries } from '../lib/graphql-client';
 import type { Span } from '../types';
 
-interface ListTracesResponse {
-  traces: Span[];
+interface ListSpansResponse {
+  spansByRunId: Span[];
 }
 
 /**
- * Hook to fetch all traces/spans for a run
+ * Hook to fetch all spans for a run
  */
 export function useTraces(runId: string, options?: { enabled?: boolean }) {
   const { enabled = true } = options || {};
@@ -15,13 +15,13 @@ export function useTraces(runId: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['traces', runId],
     queryFn: async () => {
-      console.log('useTraces: Fetching traces for runId:', runId);
-      const data = await graphqlQuery<ListTracesResponse>(
+      console.log('useTraces: Fetching spans for runId:', runId);
+      const data = await graphqlQuery<ListSpansResponse>(
         queries.listTraces,
         { runId }
       );
       console.log('useTraces: Received data:', data);
-      return data.traces;
+      return data.spansByRunId;
     },
     enabled: enabled && !!runId,
     // Traces don't change after run completes, so cache for longer

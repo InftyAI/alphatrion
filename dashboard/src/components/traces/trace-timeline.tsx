@@ -330,6 +330,11 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     const maxTokens = attrs['gen_ai.request.max_tokens'];
     const topP = attrs['gen_ai.request.top_p'];
 
+    // Extract token usage
+    const inputTokens = parseInt(attrs['gen_ai.usage.input_tokens'] as string) || 0;
+    const outputTokens = parseInt(attrs['gen_ai.usage.output_tokens'] as string) || 0;
+    const totalTokens = parseInt(attrs['llm.usage.total_tokens'] as string) || 0;
+
     // Extract prompts
     const prompts: Array<{ role: string; content: string }> = [];
     let i = 0;
@@ -353,106 +358,158 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       i++;
     }
 
+    // Check if this is a simple span (no prompts/completions, just basic info)
+    const isSimpleSpan = prompts.length === 0 && completions.length === 0;
+
     return (
-      <Card className="mt-2 border-2">
-        <CardContent className="p-3">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-0.5 px-1.5 py-0.5 text-[11px]`}>
+      <Card className="mt-2 border-2 shadow-sm">
+        <CardContent className="p-2.5">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <Badge variant="outline" className={`${spanType.badgeColor} flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] flex-shrink-0`}>
                 {spanType.icon}
                 {spanType.label}
               </Badge>
-              <h4 className="font-semibold text-[13px]">{span.spanName}</h4>
+              <h4 className="font-semibold text-[12px] truncate">{span.spanName}</h4>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSelectedSpan(null)}
-              className="h-6 w-6 p-0 hover:bg-muted"
+              className="h-6 w-6 p-0 hover:bg-muted flex-shrink-0"
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
 
-          {/* Model Parameters */}
-          {model && (
-            <div className="mb-3">
-              <h5 className="text-[11px] font-semibold mb-1.5 text-foreground uppercase tracking-wide">Model Configuration</h5>
-              <div className="grid grid-cols-2 gap-1.5 text-[10px] border rounded-md p-2 bg-muted/30">
-                <div className="col-span-2">
-                  <span className="text-muted-foreground font-medium">Model:</span>
-                  <span className="ml-1.5 font-mono text-foreground">{model}</span>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-2 mb-2 text-[10px]">
+            <div className="bg-muted/30 rounded px-1.5 py-1">
+              <div className="text-muted-foreground font-medium">Duration</div>
+              <div className="font-mono text-foreground mt-0.5">{formatDuration(span.duration)}</div>
+            </div>
+            {totalTokens > 0 && (
+              <div className="bg-muted/30 rounded px-1.5 py-1">
+                <div className="text-muted-foreground font-medium">Tokens</div>
+                <div className="font-mono text-foreground mt-0.5">
+                  {totalTokens.toLocaleString()}
+                  {inputTokens > 0 && outputTokens > 0 && (
+                    <span className="text-muted-foreground text-[9px] ml-1">
+                      ({inputTokens}↓ {outputTokens}↑)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+            <div className="bg-muted/30 rounded px-1.5 py-1">
+              <div className="text-muted-foreground font-medium">Status</div>
+              <div className="font-mono text-foreground mt-0.5">{span.statusCode}</div>
+            </div>
+          </div>
+
+          {/* Model Configuration - only show if model parameters exist */}
+          {!isSimpleSpan && model && (
+            <div className="mb-2 pb-2 border-b">
+              <div className="flex flex-wrap gap-2 text-[10px]">
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground">Model:</span>
+                  <span className="font-mono text-foreground bg-muted/30 px-1.5 py-0.5 rounded">{model}</span>
                 </div>
                 {temperature !== undefined && (
-                  <div>
-                    <span className="text-muted-foreground font-medium">Temperature:</span>
-                    <span className="ml-1.5 font-mono text-foreground">{temperature}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">Temp:</span>
+                    <span className="font-mono text-foreground">{temperature}</span>
                   </div>
                 )}
                 {maxTokens && (
-                  <div>
-                    <span className="text-muted-foreground font-medium">Max Tokens:</span>
-                    <span className="ml-1.5 font-mono text-foreground">{maxTokens}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">Max:</span>
+                    <span className="font-mono text-foreground">{maxTokens}</span>
                   </div>
                 )}
                 {topP !== undefined && (
-                  <div>
-                    <span className="text-muted-foreground font-medium">Top P:</span>
-                    <span className="ml-1.5 font-mono text-foreground">{topP}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground">Top-p:</span>
+                    <span className="font-mono text-foreground">{topP}</span>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* Prompts */}
-          {prompts.length > 0 && (
-            <div className="mb-3">
-              <h5 className="text-[11px] font-semibold mb-1.5 text-foreground uppercase tracking-wide">Input</h5>
-              <div className="space-y-1.5">
-                {prompts.map((prompt, idx) => (
-                  <div key={idx} className="border rounded-md p-2 bg-muted/30">
-                    <div className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
-                      {prompt.role}
-                    </div>
-                    <div className="text-[11px] whitespace-pre-wrap leading-relaxed text-foreground">{prompt.content}</div>
-                  </div>
-                ))}
-              </div>
+          {/* Simple span message */}
+          {isSimpleSpan && (
+            <div className="text-[10px] text-muted-foreground text-center py-2 bg-muted/20 rounded">
+              No additional content available for this operation
             </div>
           )}
 
-          {/* Completions */}
-          {completions.length > 0 && (
-            <div className="mb-3">
-              <h5 className="text-[11px] font-semibold mb-1.5 text-foreground uppercase tracking-wide">Output</h5>
-              <div className="space-y-1.5">
-                {completions.map((completion, idx) => (
-                  <div key={idx} className="border rounded-md p-2 bg-muted/30">
-                    <div className="text-[10px] font-semibold text-muted-foreground mb-1 uppercase tracking-wide">
-                      {completion.role}
+          {/* Content - Prompts and Completions */}
+          {(prompts.length > 0 || completions.length > 0) && (
+            <div className="space-y-1.5">
+              {/* Prompts */}
+              {prompts.map((prompt, idx) => (
+                <div key={`prompt-${idx}`} className="border rounded p-1.5 bg-muted/20">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                      {prompt.role}
+                    </span>
+                    <span className="text-[8px] text-muted-foreground">Input</span>
+                  </div>
+                  <div className="text-[11px] whitespace-pre-wrap leading-relaxed text-foreground">{prompt.content}</div>
+                </div>
+              ))}
+
+              {/* Completions */}
+              {completions.map((completion, idx) => {
+                // Determine color based on role
+                let roleColor = 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400';
+                if (completion.role === 'thinking') {
+                  roleColor = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
+                } else if (completion.role === 'assistant') {
+                  roleColor = 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+                }
+
+                return (
+                  <div key={`completion-${idx}`} className="border rounded p-1.5 bg-muted/20">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className={`text-[8px] font-semibold uppercase tracking-wider px-1 py-0.5 rounded ${roleColor}`}>
+                        {completion.role}
+                      </span>
+                      <span className="text-[8px] text-muted-foreground">Output</span>
+                      {completion.finishReason && (
+                        <span className="text-[8px] text-muted-foreground ml-auto">· {completion.finishReason}</span>
+                      )}
                     </div>
                     <div className="text-[11px] whitespace-pre-wrap leading-relaxed text-foreground">{completion.content}</div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           )}
 
-          {/* Show all attributes (collapsible) */}
-          <details className="mt-2">
-            <summary className="text-[11px] font-semibold cursor-pointer hover:text-foreground text-muted-foreground py-0.5 uppercase tracking-wide">
-              All Attributes ({Object.keys(attrs).length})
-            </summary>
-            <div className="mt-1.5 text-[11px] space-y-0.5 bg-muted/30 rounded-md p-2 max-h-48 overflow-auto border">
-              {Object.entries(attrs).map(([key, value]) => (
-                <div key={key} className="grid grid-cols-3 gap-2 py-0.5">
-                  <span className="text-muted-foreground truncate font-medium text-[10px]" title={key}>{key}:</span>
-                  <span className="col-span-2 font-mono break-all text-[10px] text-foreground">{String(value)}</span>
-                </div>
-              ))}
-            </div>
-          </details>
+          {/* Show all attributes (collapsible) - only if there are interesting attributes */}
+          {Object.keys(attrs).length > 0 && (
+            <details className="mt-2 pt-2 border-t">
+              <summary className="text-[9px] font-semibold cursor-pointer hover:text-foreground text-muted-foreground py-0.5 uppercase tracking-wide flex items-center justify-between">
+                <span>All Attributes ({Object.keys(attrs).length})</span>
+                <span className="text-[8px] text-muted-foreground font-normal">Click to expand</span>
+              </summary>
+              <div className="mt-1.5 text-[9px] space-y-0.5 bg-muted/20 rounded p-1.5 max-h-40 overflow-auto border">
+                {Object.entries(attrs)
+                  .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+                  .map(([key, value]) => (
+                    <div key={key} className="flex gap-2 py-0.5 hover:bg-muted/30 rounded px-1">
+                      <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0" title={key}>
+                        {key}:
+                      </span>
+                      <span className="font-mono break-all text-foreground flex-1">{String(value)}</span>
+                    </div>
+                  ))}
+              </div>
+            </details>
+          )}
         </CardContent>
       </Card>
     );

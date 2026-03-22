@@ -6,6 +6,9 @@ from sqlalchemy.orm import sessionmaker
 
 from alphatrion.storage.metastore import MetaStore
 from alphatrion.storage.sql_models import (
+    Agent,
+    AgentSession,
+    AgentType,
     Base,
     Dataset,
     Experiment,
@@ -616,15 +619,205 @@ class SQLStore(MetaStore):
         session.close()
         return deleted_count
 
+    # ---------- Agent APIs ----------
+
+    def create_agent(
+        self,
+        name: str,
+        team_id: uuid.UUID,
+        user_id: uuid.UUID,
+        type: AgentType = AgentType.CLAUDE,
+        description: str | None = None,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        uid = uuid.uuid4()
+        session = self._session()
+
+        new_agent = Agent(
+            uuid=uid,
+            team_id=team_id,
+            user_id=user_id,
+            name=name,
+            type=type,
+            description=description,
+            meta=meta,
+        )
+        session.add(new_agent)
+        session.commit()
+
+        agent_id = new_agent.uuid
+        assert agent_id == uid
+        session.close()
+
+        return agent_id
+
+    def get_agent(self, agent_id: uuid.UUID) -> Agent | None:
+        session = self._session()
+        agent = (
+            session.query(Agent)
+            .filter(Agent.uuid == agent_id, Agent.is_del == 0)
+            .first()
+        )
+        session.close()
+        return agent
+
+    def get_agent_by_name(
+        self, name: str, team_id: uuid.UUID, include_deleted: bool = False
+    ) -> Agent | None:
+        session = self._session()
+        query = session.query(Agent).filter(
+            Agent.name == name,
+            Agent.team_id == team_id,
+        )
+        if not include_deleted:
+            query = query.filter(Agent.is_del == 0)
+
+        agent = query.first()
+        session.close()
+        return agent
+
+    def list_agents_by_team_id(
+        self,
+        team_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 10,
+    ) -> list[Agent]:
+        session = self._session()
+        agents = (
+            session.query(Agent)
+            .filter(Agent.team_id == team_id, Agent.is_del == 0)
+            .order_by(Agent.created_at.desc())
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return agents
+
+    def count_agents(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(Agent)
+            .filter(Agent.team_id == team_id, Agent.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
+    def count_sessions(self, team_id: uuid.UUID) -> int:
+        session = self._session()
+        count = (
+            session.query(AgentSession)
+            .filter(AgentSession.team_id == team_id, AgentSession.is_del == 0)
+            .count()
+        )
+        session.close()
+        return count
+
+    def get_agent_by_type(
+        self,
+        user_id: uuid.UUID,
+        agent_type: AgentType,
+    ) -> Agent | None:
+        session = self._session()
+        agent = (
+            session.query(Agent)
+            .filter(
+                Agent.user_id == user_id,
+                Agent.type == agent_type,
+                Agent.is_del == 0,
+            )
+            .first()
+        )
+        session.close()
+        return agent
+
+    # ---------- Session APIs ----------
+
+    def create_session(
+        self,
+        agent_id: uuid.UUID,
+        team_id: uuid.UUID,
+        user_id: uuid.UUID,
+        meta: dict | None = None,
+        status: Status = Status.PENDING,
+    ) -> uuid.UUID:
+        uid = uuid.uuid4()
+        session = self._session()
+
+        new_session = AgentSession(
+            uuid=uid,
+            agent_id=agent_id,
+            team_id=team_id,
+            user_id=user_id,
+            meta=meta,
+            status=status,
+        )
+        session.add(new_session)
+        session.commit()
+
+        session_id = new_session.uuid
+        assert session_id == uid
+        session.close()
+        return session_id
+
+    def get_session(self, session_id: uuid.UUID) -> AgentSession | None:
+        session = self._session()
+        result = (
+            session.query(AgentSession)
+            .filter(AgentSession.uuid == session_id, AgentSession.is_del == 0)
+            .first()
+        )
+        session.close()
+        return result
+
+    def list_sessions_by_agent_id(
+        self, agent_id: uuid.UUID, page: int = 0, page_size: int = 10
+    ) -> list[AgentSession]:
+        session = self._session()
+        sessions = (
+            session.query(AgentSession)
+            .filter(AgentSession.agent_id == agent_id, AgentSession.is_del == 0)
+            .order_by(AgentSession.created_at.desc())
+            .limit(page_size)
+            .offset(page * page_size)
+            .all()
+        )
+        session.close()
+        return sessions
+
+    def update_session(
+        self,
+        session_id: uuid.UUID,
+        **kwargs,
+    ) -> None:
+        session = self._session()
+        db_session = (
+            session.query(AgentSession).filter(AgentSession.uuid == session_id).first()
+        )
+        if db_session:
+            for key, value in kwargs.items():
+                if key == "meta" and isinstance(value, dict):
+                    if db_session.meta is None:
+                        db_session.meta = {}
+                    db_session.meta.update(value)
+                else:
+                    setattr(db_session, key, value)
+            session.commit()
+        session.close()
+
     # ---------- Run APIs ----------
 
     def create_run(
         self,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
-        experiment_id: uuid.UUID,
+        experiment_id: uuid.UUID | None = None,
+        session_id: uuid.UUID | None = None,
         meta: dict | None = None,
         status: Status = Status.PENDING,
+        duration: float | None = None,
+        usage: dict | None = None,
     ) -> uuid.UUID:
         session = self._session()
 
@@ -632,8 +825,11 @@ class SQLStore(MetaStore):
             team_id=team_id,
             user_id=user_id,
             experiment_id=experiment_id,
+            session_id=session_id,
             meta=meta,
             status=status,
+            duration=duration,
+            usage=usage,
         )
         session.add(new_run)
         session.commit()
@@ -674,6 +870,28 @@ class SQLStore(MetaStore):
         runs = (
             session.query(Run)
             .filter(Run.experiment_id == experiment_id, Run.is_del == 0)
+            .order_by(
+                getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
+            )
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return runs
+
+    def list_runs_by_session_id(
+        self,
+        session_id: uuid.UUID,
+        page: int = 0,
+        page_size: int = 10,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> list[Run]:
+        session = self._session()
+        runs = (
+            session.query(Run)
+            .filter(Run.session_id == session_id, Run.is_del == 0)
             .order_by(
                 getattr(Run, order_by).desc() if order_desc else getattr(Run, order_by)
             )

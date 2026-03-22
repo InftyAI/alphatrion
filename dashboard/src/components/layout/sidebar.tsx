@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FlaskConical,
+  Bot,
   Package,
   FolderTree,
   Github,
@@ -29,6 +30,11 @@ const navItems: NavItem[] = [
     title: 'Experiments',
     href: '/experiments',
     icon: FlaskConical,
+  },
+  {
+    title: 'Agents',
+    href: '/agents',
+    icon: Bot,
   },
   {
     title: 'Datasets',

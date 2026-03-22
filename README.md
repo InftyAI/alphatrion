@@ -121,8 +121,10 @@ make down
 
 ## Documentation
 
+- **Architecture**: [Diagrams](./docs/architecture/diagrams.md)
 - **Dashboard**: [Setup Guide](./docs/dashboard/setup.md) | [CLI Reference](./docs/dashboard/dashboard-cli.md) | [Architecture](./docs/dashboard/dashboard-architecture.md)
 - **Development**: [Contributing Guide](./docs/dev/development.md)
+- **Claude Code Integration**: [Hooks Setup](./docs/CLAUDE_CODE_HOOKS.md)
 
 ## Contributing
 

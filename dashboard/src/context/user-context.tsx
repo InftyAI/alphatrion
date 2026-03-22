@@ -4,7 +4,7 @@ import { createContext, useContext, ReactNode, useState } from 'react';
  * User context for storing current user information
  *
  * The user is loaded on app startup from the backend using the
- * userId provided via the --userid flag to the dashboard command.
+ * userId provided via the --user-id flag to the dashboard command.
  */
 
 export interface User {

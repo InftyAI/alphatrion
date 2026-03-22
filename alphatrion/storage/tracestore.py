@@ -80,8 +80,12 @@ class TraceStore:
                             span.get("StatusCode", ""),
                             span.get("StatusMessage", ""),
                             span.get("TeamId", ""),
+                            span.get("UserId", ""),
                             span.get("RunId", ""),
                             span.get("ExperimentId", ""),
+                            span.get("SessionId", ""),
+                            span.get("AgentId", ""),
+                            span.get("AgentType", ""),
                             span.get("SpanAttributes", {}),
                             span.get("ResourceAttributes", {}),
                             span.get("Events.Timestamp", []),
@@ -110,8 +114,12 @@ class TraceStore:
                         "StatusCode",
                         "StatusMessage",
                         "TeamId",
+                        "UserId",
                         "RunId",
                         "ExperimentId",
+                        "SessionId",
+                        "AgentId",
+                        "AgentType",
                         "SpanAttributes",
                         "ResourceAttributes",
                         "Events.Timestamp",
@@ -127,10 +135,13 @@ class TraceStore:
                 logger.error(f"Failed to insert spans: {e}")
                 # Don't raise - we don't want to crash the application if tracing fails
 
-    def get_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+    def get_spans_by_run_id(
+        self, team_id: uuid.UUID, run_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         """Get all spans for a specific run_id.
 
         Args:
+            team_id: The team ID for efficient index usage
             run_id: The run ID to filter by
 
         Returns:
@@ -152,8 +163,12 @@ class TraceStore:
                     StatusCode,
                     StatusMessage,
                     TeamId,
+                    UserId,
                     RunId,
                     ExperimentId,
+                    SessionId,
+                    AgentId,
+                    AgentType,
                     SpanAttributes,
                     ResourceAttributes,
                     Events.Timestamp as EventTimestamps,
@@ -163,7 +178,7 @@ class TraceStore:
                     Links.SpanId as LinkSpanIds,
                     Links.Attributes as LinkAttributes
                 FROM {self.database}.otel_spans
-                WHERE RunId = '{run_id}'
+                WHERE TeamId = '{team_id}' AND RunId = '{run_id}'
                 ORDER BY Timestamp ASC
                 """
 
@@ -173,10 +188,13 @@ class TraceStore:
                 logger.error(f"Failed to get spans by run_id: {e}")
                 return []
 
-    def get_llm_spans_by_run_id(self, run_id: uuid.UUID) -> list[dict[str, Any]]:
+    def get_llm_spans_by_run_id(
+        self, team_id: uuid.UUID, run_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         """Get all LLM spans for a specific run_id.
 
         Args:
+            team_id: The team ID for efficient index usage
             run_id: The run ID to filter by
 
         Returns:
@@ -198,8 +216,12 @@ class TraceStore:
                     StatusCode,
                     StatusMessage,
                     TeamId,
+                    UserId,
                     RunId,
                     ExperimentId,
+                    SessionId,
+                    AgentId,
+                    AgentType,
                     SpanAttributes,
                     ResourceAttributes,
                     Events.Timestamp as EventTimestamps,
@@ -209,7 +231,7 @@ class TraceStore:
                     Links.SpanId as LinkSpanIds,
                     Links.Attributes as LinkAttributes
                 FROM {self.database}.otel_spans
-                WHERE RunId = '{run_id}' AND SemanticKind = 'llm'
+                WHERE TeamId = '{team_id}' AND RunId = '{run_id}'
                 ORDER BY Timestamp ASC
                 """
 
@@ -219,10 +241,66 @@ class TraceStore:
                 logger.error(f"Failed to get traces by run_id: {e}")
                 return []
 
-    def get_llm_spans_by_exp_id(self, exp_id: uuid.UUID) -> list[dict[str, Any]]:
+    def get_spans_by_session_id(
+        self, team_id: uuid.UUID, session_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
+        """Get all spans for a specific session_id (agent runs).
+
+        Args:
+            team_id: The team ID for efficient index usage
+            session_id: The session ID to filter by
+
+        Returns:
+            List of span dictionaries from ClickHouse
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    Timestamp,
+                    TraceId,
+                    SpanId,
+                    ParentSpanId,
+                    SpanName,
+                    SpanKind,
+                    SemanticKind,
+                    ServiceName,
+                    Duration,
+                    StatusCode,
+                    StatusMessage,
+                    TeamId,
+                    UserId,
+                    RunId,
+                    ExperimentId,
+                    SessionId,
+                    AgentId,
+                    AgentType,
+                    SpanAttributes,
+                    ResourceAttributes,
+                    Events.Timestamp as EventTimestamps,
+                    Events.Name as EventNames,
+                    Events.Attributes as EventAttributes,
+                    Links.TraceId as LinkTraceIds,
+                    Links.SpanId as LinkSpanIds,
+                    Links.Attributes as LinkAttributes
+                FROM {self.database}.otel_spans
+                WHERE TeamId = '{team_id}' AND SessionId = '{session_id}'
+                ORDER BY Timestamp ASC
+                """
+
+                result = self.client.query(query)
+                return list(result.named_results())
+            except Exception as e:
+                logger.error(f"Failed to get spans by session_id: {e}")
+                return []
+
+    def get_llm_spans_by_exp_id(
+        self, team_id: uuid.UUID, experiment_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
         """Get all LLM spans for a specific experiment_id.
 
         Args:
+            team_id: The team ID for efficient index usage
             exp_id: The experiment ID to filter by
 
         Returns:
@@ -244,8 +322,12 @@ class TraceStore:
                     StatusCode,
                     StatusMessage,
                     TeamId,
+                    UserId,
                     RunId,
                     ExperimentId,
+                    SessionId,
+                    AgentId,
+                    AgentType,
                     SpanAttributes,
                     ResourceAttributes,
                     Events.Timestamp as EventTimestamps,
@@ -255,7 +337,7 @@ class TraceStore:
                     Links.SpanId as LinkSpanIds,
                     Links.Attributes as LinkAttributes
                 FROM {self.database}.otel_spans
-                WHERE ExperimentId = '{exp_id}' AND SemanticKind = 'llm'
+                WHERE TeamId = '{team_id}' AND ExperimentId = '{experiment_id}'
                 ORDER BY Timestamp ASC
                 """
 
@@ -282,7 +364,6 @@ class TraceStore:
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
                 FROM {self.database}.otel_spans
                 WHERE TeamId = '{team_id}'
-                  AND SemanticKind = 'llm'
                 """
 
                 result = self.client.query(query)
@@ -297,6 +378,111 @@ class TraceStore:
                 ]
             except Exception as e:
                 logger.error(f"Failed to get daily token usage: {e}")
+                return []
+
+    def get_llm_tokens_by_agent_id(self, agent_id: uuid.UUID) -> list[dict[str, Any]]:
+        """Get aggregated LLM token usage for a specific agent.
+
+        Args:
+            agent_id: The agent ID to filter by
+        Returns:
+            List with one dict containing total_tokens, input_tokens, output_tokens
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                FROM {self.database}.otel_spans
+                WHERE AgentId = '{agent_id}'
+                """
+
+                result = self.client.query(query)
+                return [
+                    {
+                        "total_tokens": int(row["total_tokens"]),
+                        "input_tokens": int(row["input_tokens"]),
+                        "output_tokens": int(row["output_tokens"]),
+                    }
+                    for row in result.named_results()
+                ]
+            except Exception as e:
+                logger.error(f"Failed to get agent token usage: {e}")
+                return []
+
+    def get_llm_tokens_by_session_id(
+        self, session_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
+        """Get aggregated LLM token usage for a specific session.
+
+        Args:
+            session_id: The session ID to filter by
+        Returns:
+            List with one dict containing total_tokens, input_tokens, output_tokens
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                FROM {self.database}.otel_spans
+                WHERE SessionId = '{session_id}'
+                """
+
+                result = self.client.query(query)
+                return [
+                    {
+                        "total_tokens": int(row["total_tokens"]),
+                        "input_tokens": int(row["input_tokens"]),
+                        "output_tokens": int(row["output_tokens"]),
+                    }
+                    for row in result.named_results()
+                ]
+            except Exception as e:
+                logger.error(f"Failed to get session token usage: {e}")
+                return []
+
+    def get_token_distribution_by_semantic_kind(
+        self, team_id: uuid.UUID
+    ) -> list[dict[str, Any]]:
+        """Get token usage distribution grouped by semantic kind.
+
+        Args:
+            team_id: The team ID to filter by
+
+        Returns:
+            List of dicts with keys: semantic_kind, total_tokens, input_tokens, output_tokens
+        """
+        with self._lock:
+            try:
+                query = f"""
+                SELECT
+                    SemanticKind as semantic_kind,
+                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                FROM {self.database}.otel_spans
+                WHERE TeamId = '{team_id}'
+                GROUP BY SemanticKind
+                ORDER BY total_tokens DESC
+                """
+
+                result = self.client.query(query)
+                return [
+                    {
+                        "semantic_kind": row["semantic_kind"],
+                        "total_tokens": int(row["total_tokens"]),
+                        "input_tokens": int(row["input_tokens"]),
+                        "output_tokens": int(row["output_tokens"]),
+                    }
+                    for row in result.named_results()
+                ]
+            except Exception as e:
+                logger.error(f"Failed to get token distribution: {e}")
                 return []
 
     def get_model_distributions_by_team_id(
@@ -322,7 +508,7 @@ class TraceStore:
                     COUNT(*) as count
                 FROM {self.database}.otel_spans
                 WHERE TeamId = '{team_id}'
-                  AND SemanticKind = 'llm'
+                    AND SemanticKind IN ('llm', 'thinking', 'text-generation', 'tool')
                 GROUP BY model
                 ORDER BY count DESC
                 """
@@ -362,7 +548,6 @@ class TraceStore:
                 FROM {self.database}.otel_spans
                 WHERE TeamId = '{team_id}'
                   AND Timestamp >= now() - INTERVAL {days} DAY
-                  AND SemanticKind = 'llm'
                 GROUP BY date
                 ORDER BY date ASC
                 """

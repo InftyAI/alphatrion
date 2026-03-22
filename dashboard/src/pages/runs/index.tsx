@@ -24,6 +24,7 @@ import { Dropdown } from '../../components/ui/dropdown';
 import { Pagination } from '../../components/ui/pagination';
 import { formatDistanceToNow } from 'date-fns';
 import type { Status } from '../../types';
+import { formatDuration } from '../../lib/format';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
   UNKNOWN: 'unknown',
@@ -108,7 +109,7 @@ export function RunsPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Runs</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse and monitor individual runs
+            Monitor execution runs with token usage and performance metrics
           </p>
         </div>
 
@@ -151,46 +152,79 @@ export function RunsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">ID</TableHead>
-                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Experiment ID</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Run ID</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Status</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Tokens</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Duration</TableHead>
+                    <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Experiment</TableHead>
                     <TableHead className="h-11 text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-muted/50">Created</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredRuns.map((run) => (
-                    <TableRow
-                      key={run.id}
-                      className="hover:bg-accent/50 transition-colors border-b last:border-0"
-                    >
-                      <TableCell className="py-3 text-sm font-mono">
-                        <Link
-                          to={`/runs/${run.id}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                        >
-                          {run.id}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="py-3 text-sm font-mono">
-                        <Link
-                          to={`/experiments/${run.experimentId}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
-                        >
-                          {run.experimentId}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <Badge variant={STATUS_VARIANTS[run.status]}>
-                          {run.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-3 text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(run.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredRuns.map((run) => {
+                    const totalTokens = run.aggregatedTokens?.totalTokens || 0;
+                    const inputTokens = run.aggregatedTokens?.inputTokens || 0;
+                    const outputTokens = run.aggregatedTokens?.outputTokens || 0;
+
+                    return (
+                      <TableRow
+                        key={run.id}
+                        className="hover:bg-accent/50 transition-colors border-b last:border-0"
+                      >
+                        <TableCell className="py-3 text-sm font-mono">
+                          <Link
+                            to={`/runs/${run.id}`}
+                            className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+                            title={run.id}
+                          >
+                            {run.id.substring(0, 8)}...
+                          </Link>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge variant={STATUS_VARIANTS[run.status]}>
+                            {run.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3 text-sm font-mono">
+                          {totalTokens > 0 ? (
+                            <div className="flex flex-col">
+                              <span className="font-semibold">{totalTokens.toLocaleString()}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {inputTokens.toLocaleString()}↓ {outputTokens.toLocaleString()}↑
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-sm font-mono">
+                          {run.duration > 0 ? (
+                            formatDuration(run.duration)
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-sm font-mono">
+                          {run.experimentId ? (
+                            <Link
+                              to={`/experiments/${run.experimentId}`}
+                              className="text-blue-600 hover:text-blue-800 hover:underline font-medium transition-colors"
+                              title={run.experimentId}
+                            >
+                              {run.experimentId.substring(0, 8)}...
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-sm text-muted-foreground">
+                          {formatDistanceToNow(new Date(run.createdAt), {
+                            addSuffix: true,
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
