@@ -19,6 +19,7 @@ async def test_save_and_load_dataset():
     alpha.init(
         team_id=team_id,
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     # Use tempfile to avoid working directory issues

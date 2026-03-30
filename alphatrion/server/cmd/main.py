@@ -98,6 +98,12 @@ def main():
         default="Default Team",
         help="Team name (default: Default Team)",
     )
+    init.add_argument(
+        "--org-name",
+        type=str,
+        default=None,
+        help="Organization name (auto-generated if not provided)",
+    )
     init.set_defaults(func=init_command)
 
     # run command (with subcommands)
@@ -173,21 +179,25 @@ def init_command(args):
         else f"{user_name.lower().replace(' ', '.')}@inftyai.com"
     )
     team_name = args.team_name
+    org_name = args.org_name if args.org_name else fake.company()
 
     try:
         metadb = runtime.storage_runtime().metadb
 
         console.print()
+        # Create organization
+        console.print(Text(f"🏢 Creating organization: {org_name}", style="bold cyan"))
+        org_id = metadb.create_organization(name=org_name)
         # Create user
         console.print(
             Text(f"👤 Creating user: {user_name} ({email})", style="bold cyan")
         )
-        user_id = metadb.create_user(username=user_name, email=email)
+        user_id = metadb.create_user(name=user_name, email=email, org_id=org_id)
 
         # Create team
         console.print(Text(f"🏢 Creating team: {team_name}", style="bold cyan"))
         team_id = metadb.create_team(
-            name=team_name, description=f"Team for {user_name}"
+            name=team_name, description=f"Team for {user_name}", org_id=org_id
         )
         # Add user to team
         metadb.add_user_to_team(user_id=user_id, team_id=team_id)
@@ -195,10 +205,12 @@ def init_command(args):
         console.print()
         console.print(Text("✅ Initialization successful!", style="bold green"))
         console.print()
-        console.print(Text("📋 Your user ID:", style="bold yellow"))
-        console.print(Text(f"   {user_id}", style="bold cyan"))
+        console.print(Text("📋 Your organization ID:", style="bold yellow"))
+        console.print(Text(f"   {org_id}", style="bold cyan"))
         console.print(Text("   Your team ID:", style="bold yellow"))
         console.print(Text(f"   {team_id}", style="bold cyan"))
+        console.print(Text("   Your user ID:", style="bold yellow"))
+        console.print(Text(f"   {user_id}", style="bold cyan"))
         console.print()
         console.print(
             Text(
@@ -296,6 +308,7 @@ def run_agent_command(args):
             agent_id = metadb.create_agent(
                 name=agent_name,
                 type=agent_type,
+                org_id=metadb.get_user(uuid.UUID(user_id)).org_id,
                 team_id=uuid.UUID(team_id),
                 user_id=uuid.UUID(user_id),
             )
@@ -529,12 +542,34 @@ def start_dashboard(args):
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
 
-    # Endpoint to get current user ID (for frontend)
+    # Endpoint to get current user ID and org ID (for frontend)
     @app.get("/api/config")
     async def get_config():
+        import contextlib
+        import uuid
+
+        from alphatrion.storage import runtime as storage_runtime
+
+        # Initialize storage if not already done
+        with contextlib.suppress(Exception):
+            storage_runtime.init()
+
         config = {"userId": app.state.user_id}
+
+        # Look up user's org_id
+        try:
+            metadb = storage_runtime.storage_runtime().metadb
+            user = metadb.get_user(user_id=uuid.UUID(app.state.user_id))
+            if user:
+                config["orgId"] = str(user.org_id)
+        except Exception as e:
+            console.print(
+                Text(f"Warning: Could not fetch user org_id: {e}", style="yellow")
+            )
+
         if hasattr(app.state, "team_id"):
             config["teamId"] = app.state.team_id
+
         return config
 
     # Proxy /graphql requests to backend (MUST be before catch-all route)

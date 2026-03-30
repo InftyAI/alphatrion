@@ -123,6 +123,7 @@ class ClickHouseSpanExporter(SpanExporter):
             span_attributes = {k: str(v) for k, v in span.attributes.items()}
 
         # Extract core identifiers from span attributes
+        org_id = span_attributes.get("org_id", "")
         team_id = span_attributes.get("team_id", "")
         user_id = span_attributes.get("user_id", "")
         run_id = span_attributes.get("run_id", "")
@@ -184,6 +185,7 @@ class ClickHouseSpanExporter(SpanExporter):
             # Custom Alphatrion fields
             "SemanticKind": semantic_kind,
             "ServiceName": service_name,
+            "OrgId": org_id,
             "TeamId": team_id,
             "UserId": user_id,
             "RunId": run_id,

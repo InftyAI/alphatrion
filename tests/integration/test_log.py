@@ -19,6 +19,7 @@ async def test_log_artifact():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async with experiment.CraftExperiment.start(name="first-exp") as exp:
@@ -81,6 +82,7 @@ async def test_log_params():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async with experiment.CraftExperiment.start(
@@ -113,6 +115,7 @@ async def test_log_metrics():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def log_metric(metrics: dict):
@@ -163,7 +166,8 @@ async def test_log_metrics():
 async def test_log_metrics_with_save_on_max():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    alpha.init(team_id=team_id, user_id=user_id)
+    org_id = uuid.uuid4()
+    alpha.init(team_id=team_id, user_id=user_id, org_id=org_id)
 
     async def log_metric(value: float):
         await alpha.log_metrics({"accuracy": value})
@@ -260,6 +264,7 @@ async def test_log_metrics_with_save_on_min():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def log_metric(value: float):
@@ -328,6 +333,7 @@ async def test_log_metrics_with_early_stopping():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(value: float):
@@ -370,6 +376,7 @@ async def test_log_metrics_with_early_stopping_never_triggered():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(value: float):
@@ -406,6 +413,7 @@ async def test_log_metrics_with_max_run_number():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(value: float):
@@ -435,6 +443,7 @@ async def test_log_metrics_with_max_target_meet():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(value: float):
@@ -470,6 +479,7 @@ async def test_log_metrics_with_min_target_meet():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(value: float):
@@ -507,6 +517,7 @@ async def test_log_dataset_with_json():
     alpha.init(
         team_id=team_id,
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_worker():
@@ -552,6 +563,7 @@ async def test_log_dataset_with_file():
     alpha.init(
         team_id=team_id,
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_worker():

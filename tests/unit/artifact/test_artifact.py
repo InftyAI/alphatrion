@@ -10,7 +10,7 @@ from alphatrion.runtime.runtime import global_runtime, init
 
 @pytest.fixture
 def artifact():
-    init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
+    init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), org_id=uuid.uuid4())
     artifact = global_runtime()._artifact
     yield artifact
 

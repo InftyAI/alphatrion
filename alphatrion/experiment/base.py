@@ -224,10 +224,8 @@ class Experiment(ABC):
 
             # reset to running status, also need to reset the tokens.
             if usage and "total_tokens" in usage:
-                # delete the tokens in the usage
-                usage.delete("total_tokens")
-                usage.delete("input_tokens")
-                usage.delete("output_tokens")
+                # delete the tokens in the usage - set to None instead of empty dict
+                usage = None
             self._runtime._metadb.update_experiment(
                 experiment_id=self._id,
                 status=Status.RUNNING,
@@ -241,6 +239,7 @@ class Experiment(ABC):
         else:
             self._id = self._runtime._metadb.create_experiment(
                 name=name,
+                org_id=self._runtime._org_id,
                 team_id=self._runtime._team_id,
                 user_id=self._runtime._user_id,
                 description=description,
@@ -261,6 +260,10 @@ class Experiment(ABC):
     @property
     def id(self) -> uuid.UUID:
         return self._id
+
+    @property
+    def team_id(self) -> uuid.UUID:
+        return self._runtime.team_id
 
     @property
     def config(self) -> ExperimentConfig:

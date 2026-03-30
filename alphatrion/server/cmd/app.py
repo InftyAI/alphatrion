@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 
+from alphatrion.server.graphql.context import get_context
 from alphatrion.server.graphql.schema import schema
 
 # Configure logging
@@ -99,8 +100,8 @@ async def log_graphql_requests(request: Request, call_next):
     return response
 
 
-# Create GraphQL router
-graphql_app = GraphQLRouter(schema)
+# Create GraphQL router with context
+graphql_app = GraphQLRouter(schema, context_getter=get_context)
 
 # Mount /graphql endpoint
 app.include_router(graphql_app, prefix="/graphql")

@@ -13,9 +13,6 @@ data:
   ALPHATRION_ROOT_PATH: {{ .Values.server.env.rootPath | quote }}
   {{- end }}
 
-  # Auto cleanup configuration
-  ALPHATRION_AUTO_CLEANUP: {{ .Values.server.env.autoCleanup | quote }}
-
   # Database configuration
   ALPHATRION_METADATA_INIT_TABLES: {{ .Values.postgresql.initTables | quote }}
 

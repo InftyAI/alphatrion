@@ -60,7 +60,7 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
             },
         ]
 
-        init(team_id=uuid.uuid4(), user_id=uuid.uuid4())
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), org_id=uuid.uuid4())
 
         for case in test_cases:
             with self.subTest(name=case["name"]):
@@ -101,7 +101,8 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
 async def test_snapshot_path():
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    init(team_id=team_id, user_id=user_id)
+    org_id = uuid.uuid4()
+    init(team_id=team_id, user_id=user_id, org_id=org_id)
 
     async with CraftExperiment.start(name=faker.Faker().word()) as exp:
         assert checkpoint_path() == (
@@ -119,6 +120,7 @@ async def test_experiment_with_done():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     exp_id = None
@@ -136,6 +138,7 @@ async def test_experiment_with_done_with_err():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     exp_id = None
@@ -160,6 +163,7 @@ async def test_experiment_with_resume():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     exp_id = None
@@ -194,6 +198,7 @@ async def test_experiment_with_wait():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work():
@@ -221,6 +226,7 @@ async def test_create_experiment_with_run():
     init(
         team_id=team_id,
         user_id=user_id,
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(exp_id: uuid.UUID):
@@ -254,6 +260,7 @@ async def test_create_experiment_with_run_cancelled():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(timeout: int):
@@ -291,6 +298,7 @@ async def test_create_experiment_with_max_execution_seconds():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async with CraftExperiment.start(
@@ -309,6 +317,7 @@ async def test_experiment_with_signal():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work(exp: CraftExperiment):
@@ -334,6 +343,7 @@ async def test_experiment_with_result_return():
     init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     async def fake_work():
@@ -354,6 +364,7 @@ async def test_experiment_with_labels():
     init(
         team_id=team_id,
         user_id=user_id,
+        org_id=uuid.uuid4(),
     )
 
     async with CraftExperiment.start(
@@ -379,6 +390,7 @@ async def test_experiment_with_tags():
     init(
         team_id=team_id,
         user_id=user_id,
+        org_id=uuid.uuid4(),
     )
 
     async with CraftExperiment.start(

@@ -1,4 +1,5 @@
 # ruff: noqa: PLW0603
+import logging
 import os
 
 from opentelemetry import trace
@@ -33,40 +34,51 @@ class StorageRuntime:
 
         # Disable tracing by default now
         if os.getenv(envs.ENABLE_TRACING, "false").lower() == "true":
-            self._tracestore = TraceStore(
-                host=os.getenv(envs.CLICKHOUSE_URL, "localhost:8123"),
-                database=os.getenv(envs.CLICKHOUSE_DATABASE, "alphatrion_traces"),
-                username=os.getenv(envs.CLICKHOUSE_USERNAME, "alphatrion"),
-                password=os.getenv(envs.CLICKHOUSE_PASSWORD, "alphatr1on"),
-            )
-
-            enable_batch = (
-                os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
-            )
-            Traceloop.init(
-                app_name="alphatrion",
-                exporter=ClickHouseSpanExporter(self.tracestore),
-                disable_batch=not enable_batch,
-                telemetry_enabled=False,
-            )
-
-            # Add custom span processor to inject context attributes (run_id, etc.)
-            # into all spans, including child spans created by instrumented libraries
-            tracer_provider = trace.get_tracer_provider()
-            tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
-
-            # Add Prometheus span processor if enabled
-            if os.getenv(envs.ENABLE_PROMETHEUS, "false").lower() == "true":
-                pushgateway_url = os.getenv(
-                    envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
+            try:
+                self._tracestore = TraceStore(
+                    host=os.getenv(envs.CLICKHOUSE_URL, "localhost:8123"),
+                    database=os.getenv(envs.CLICKHOUSE_DATABASE, "alphatrion_traces"),
+                    username=os.getenv(envs.CLICKHOUSE_USERNAME, "alphatrion"),
+                    password=os.getenv(envs.CLICKHOUSE_PASSWORD, "alphatr1on"),
                 )
-                job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
-
-                prometheus_processor = PrometheusSpanProcessor(
-                    pushgateway_url=pushgateway_url,
-                    job_name=job_name,
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    f"Failed to initialize ClickHouse TraceStore: {e}. "
+                    "Tracing will be disabled. To enable tracing, ensure ClickHouse is running "
+                    "or set ALPHATRION_ENABLE_TRACING=false to suppress this warning."
                 )
-                tracer_provider.add_span_processor(prometheus_processor)
+                self._tracestore = None
+
+            # Only initialize tracing components if TraceStore was successfully created
+            if self._tracestore is not None:
+                enable_batch = (
+                    os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
+                )
+                Traceloop.init(
+                    app_name="alphatrion",
+                    exporter=ClickHouseSpanExporter(self.tracestore),
+                    disable_batch=not enable_batch,
+                    telemetry_enabled=False,
+                )
+
+                # Add custom span processor to inject context attributes (run_id, etc.)
+                # into all spans, including child spans created by instrumented libraries
+                tracer_provider = trace.get_tracer_provider()
+                tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
+
+                # Add Prometheus span processor if enabled
+                if os.getenv(envs.ENABLE_PROMETHEUS, "false").lower() == "true":
+                    pushgateway_url = os.getenv(
+                        envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
+                    )
+                    job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
+
+                    prometheus_processor = PrometheusSpanProcessor(
+                        pushgateway_url=pushgateway_url,
+                        job_name=job_name,
+                    )
+                    tracer_provider.add_span_processor(prometheus_processor)
 
         artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
         if artifact_storage_enabled():

@@ -64,7 +64,7 @@ def generate_team() -> Team:
 def generate_user() -> User:
     return User(
         uuid=uuid.uuid4(),
-        username=fake.user_name(),
+        name=fake.user_name(),
         email=fake.email(),
         meta=make_json_serializable(
             fake.pydict(nb_elements=3, variable_nb_elements=True)

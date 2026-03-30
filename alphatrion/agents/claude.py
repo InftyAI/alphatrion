@@ -245,6 +245,8 @@ def handle_stop():
         if not user_id and session:
             user_id = str(session.user_id)
 
+        user = metadb.get_user(user_id=uuid.UUID(user_id))
+
         if not team_id and session:
             team_id = str(session.team_id)
 
@@ -286,6 +288,7 @@ def handle_stop():
                 agent_id = metadb.create_agent(
                     name="claude",
                     type=AgentType.CLAUDE,
+                    org_id=user.org_id,
                     team_id=uuid.UUID(team_id),
                     user_id=uuid.UUID(user_id),
                 )
@@ -299,6 +302,7 @@ def handle_stop():
             db_session = metadb._session()
             session = AgentSession(
                 uuid=session_uuid,
+                org_id=user.org_id,
                 agent_id=agent_id,
                 team_id=uuid.UUID(team_id),
                 user_id=uuid.UUID(user_id),
@@ -589,6 +593,7 @@ def process_transcript_incremental(
             # Create run with aggregated tokens
             run_id = metadb.create_run(
                 session_id=uuid.UUID(session_id),
+                org_id=session.org_id,
                 team_id=session.team_id,
                 user_id=session.user_id,
                 status=run_status,
