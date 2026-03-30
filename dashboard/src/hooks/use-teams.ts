@@ -22,8 +22,7 @@ export function useTeams(page = 0, pageSize = 100) {
     queryKey: ['teams', currentUser.id, page, pageSize],
     queryFn: async () => {
       const data = await graphqlQuery<ListTeamsResponse>(
-        queries.listTeams,
-        { userId: currentUser.id }
+        queries.listTeams
       );
       return data.teams;
     },

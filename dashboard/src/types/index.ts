@@ -27,6 +27,7 @@ export interface TokenStats {
 
 export interface Team {
   id: string;
+  orgId: string;
   name: string | null;
   description: string | null;
   meta: Record<string, unknown> | null;
@@ -40,9 +41,19 @@ export interface Team {
   aggregatedTokens: TokenStats;
 }
 
+export interface Organization {
+  id: string;
+  name: string;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
-  username: string;
+  orgId: string;
+  name: string;
   email: string;
   teamId: string;
   meta: Record<string, unknown> | null;

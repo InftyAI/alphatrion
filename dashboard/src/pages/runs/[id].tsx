@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Database } from 'lucide-react';
 import { useRun } from '../../hooks/use-runs';
@@ -16,7 +16,6 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { TraceTimeline } from '../../components/traces/trace-timeline';
 import { formatDistanceToNow } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import type { Status } from '../../types';
 
 const STATUS_VARIANTS: Record<Status, 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'unknown' | 'info'> = {
@@ -42,37 +41,6 @@ export function RunDetailPage() {
   const metricsLoading = runLoading;
   const tracesLoading = runLoading;
   const tracesError = runError;
-
-  // Token distribution by semantic kind
-  const tokenDistributionData = useMemo(() => {
-    const tokensByKind: Record<string, { input: number; output: number; total: number }> = {};
-
-    // Aggregate tokens by semantic kind
-    for (const span of traces) {
-      const kind = span.semanticKind || 'unknown';
-      const attrs = span.spanAttributes || {};
-      const inputTokens = parseInt(attrs['gen_ai.usage.input_tokens'] as string) || 0;
-      const outputTokens = parseInt(attrs['gen_ai.usage.output_tokens'] as string) || 0;
-
-      if (!tokensByKind[kind]) {
-        tokensByKind[kind] = { input: 0, output: 0, total: 0 };
-      }
-
-      tokensByKind[kind].input += inputTokens;
-      tokensByKind[kind].output += outputTokens;
-      tokensByKind[kind].total += inputTokens + outputTokens;
-    }
-
-    return Object.entries(tokensByKind)
-      .filter(([_, tokens]) => tokens.total > 0)
-      .map(([kind, tokens]) => ({
-        name: kind.charAt(0).toUpperCase() + kind.slice(1).replace('-', ' '),
-        inputTokens: tokens.input,
-        outputTokens: tokens.output,
-        totalTokens: tokens.total,
-      }))
-      .sort((a, b) => b.totalTokens - a.totalTokens);
-  }, [traces]);
 
   if (runLoading) {
     return (
@@ -221,34 +189,6 @@ export function RunDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Token Distribution by Operation Type */}
-          {tokenDistributionData.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Token Distribution by Operation</CardTitle>
-                <CardDescription className="text-xs">Input vs Output tokens across operation types</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={tokenDistributionData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" tick={{ fontSize: 11 }} />
-                    <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={90} />
-                    <Tooltip
-                      contentStyle={{ fontSize: '11px', backgroundColor: '#fafafa', border: '1px solid #d1d5db' }}
-                      formatter={(value: number) => value.toLocaleString()}
-                    />
-                    <Legend
-                      wrapperStyle={{ fontSize: '11px' }}
-                      iconType="circle"
-                    />
-                    <Bar dataKey="inputTokens" stackId="a" fill="#0ea5e9" name="Input" />
-                    <Bar dataKey="outputTokens" stackId="a" fill="#8b5cf6" name="Output" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         {/* Traces Tab */}

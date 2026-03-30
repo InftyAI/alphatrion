@@ -330,11 +330,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     const maxTokens = attrs['gen_ai.request.max_tokens'];
     const topP = attrs['gen_ai.request.top_p'];
 
-    // Extract token usage
-    const inputTokens = parseInt(attrs['gen_ai.usage.input_tokens'] as string) || 0;
-    const outputTokens = parseInt(attrs['gen_ai.usage.output_tokens'] as string) || 0;
-    const totalTokens = parseInt(attrs['llm.usage.total_tokens'] as string) || 0;
-
     // Extract prompts
     const prompts: Array<{ role: string; content: string }> = [];
     let i = 0;
@@ -383,30 +378,39 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </Button>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2 mb-2 text-[10px]">
-            <div className="bg-muted/30 rounded px-1.5 py-1">
-              <div className="text-muted-foreground font-medium">Duration</div>
-              <div className="font-mono text-foreground mt-0.5">{formatDuration(span.duration)}</div>
-            </div>
-            {totalTokens > 0 && (
-              <div className="bg-muted/30 rounded px-1.5 py-1">
-                <div className="text-muted-foreground font-medium">Tokens</div>
-                <div className="font-mono text-foreground mt-0.5">
-                  {totalTokens.toLocaleString()}
-                  {inputTokens > 0 && outputTokens > 0 && (
-                    <span className="text-muted-foreground text-[9px] ml-1">
-                      ({inputTokens}↓ {outputTokens}↑)
-                    </span>
-                  )}
-                </div>
+          {/* Span Attributes */}
+          {Object.keys(span.spanAttributes).length > 0 && (
+            <div className="mb-2">
+              <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
+                Span Attributes
               </div>
-            )}
-            <div className="bg-muted/30 rounded px-1.5 py-1">
-              <div className="text-muted-foreground font-medium">Status</div>
-              <div className="font-mono text-foreground mt-0.5">{span.statusCode}</div>
+              <div className="space-y-1">
+                {Object.entries(span.spanAttributes).map(([key, value]) => (
+                  <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
+                    <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
+                    <span className="font-mono text-foreground break-all">{value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Resource Attributes */}
+          {Object.keys(span.resourceAttributes).length > 0 && (
+            <div className="mb-2">
+              <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
+                Resource Attributes
+              </div>
+              <div className="space-y-1">
+                {Object.entries(span.resourceAttributes).map(([key, value]) => (
+                  <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
+                    <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
+                    <span className="font-mono text-foreground break-all">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Model Configuration - only show if model parameters exist */}
           {!isSimpleSpan && model && (
@@ -438,12 +442,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
           )}
 
-          {/* Simple span message */}
-          {isSimpleSpan && (
-            <div className="text-[10px] text-muted-foreground text-center py-2 bg-muted/20 rounded">
-              No additional content available for this operation
-            </div>
-          )}
 
           {/* Content - Prompts and Completions */}
           {(prompts.length > 0 || completions.length > 0) && (
@@ -489,27 +487,6 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
           )}
 
-          {/* Show all attributes (collapsible) - only if there are interesting attributes */}
-          {Object.keys(attrs).length > 0 && (
-            <details className="mt-2 pt-2 border-t">
-              <summary className="text-[9px] font-semibold cursor-pointer hover:text-foreground text-muted-foreground py-0.5 uppercase tracking-wide flex items-center justify-between">
-                <span>All Attributes ({Object.keys(attrs).length})</span>
-                <span className="text-[8px] text-muted-foreground font-normal">Click to expand</span>
-              </summary>
-              <div className="mt-1.5 text-[9px] space-y-0.5 bg-muted/20 rounded p-1.5 max-h-40 overflow-auto border">
-                {Object.entries(attrs)
-                  .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-                  .map(([key, value]) => (
-                    <div key={key} className="flex gap-2 py-0.5 hover:bg-muted/30 rounded px-1">
-                      <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0" title={key}>
-                        {key}:
-                      </span>
-                      <span className="font-mono break-all text-foreground flex-1">{String(value)}</span>
-                    </div>
-                  ))}
-              </div>
-            </details>
-          )}
         </CardContent>
       </Card>
     );
