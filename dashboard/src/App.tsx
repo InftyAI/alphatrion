@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { getUserId } from './lib/config';
-import { graphqlQuery, queries } from './lib/graphql-client';
 import { User, UserProvider } from './context/user-context';
 import { useTeamContext } from './context/team-context';
 import { Layout } from './components/layout/layout';
@@ -17,7 +15,25 @@ import { AgentDetailPage } from './pages/agents/[id]';
 import { SessionDetailPage } from './pages/sessions/[id]';
 import { DatasetsPage } from './pages/datasets';
 import { ArtifactsPage } from './pages/artifacts';
+import { LoginPage } from './pages/login';
 import type { Team } from './types';
+
+// Helper to decode JWT
+function decodeJWT(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -25,14 +41,54 @@ function App() {
   const [error, setError] = useState<Error | null>(null);
   const { selectedTeamId, setSelectedTeamId } = useTeamContext();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function initialize() {
       try {
-        // Step 1: Get userId and orgId from config
-        const config = await fetch('/api/config').then(res => res.json());
-        const userId = config.userId;
-        const orgId = config.orgId;
+        // Check for JWT token
+        const token = localStorage.getItem('alphatrion_token');
+        const storedUser = localStorage.getItem('alphatrion_user');
+
+        console.log('Initializing app...', {
+          hasToken: !!token,
+          hasUser: !!storedUser,
+          currentPath: window.location.pathname
+        });
+
+        if (!token || !storedUser) {
+          // No token, redirect to login (only if not already there)
+          console.log('No token or user, redirecting to login');
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Decode JWT to check expiration
+        const payload = decodeJWT(token);
+        const isExpired = !payload || payload.exp * 1000 < Date.now();
+        console.log('Token validation:', { isExpired, exp: payload?.exp });
+
+        if (isExpired) {
+          // Token expired, clear and redirect to login
+          console.log('Token expired, clearing and redirecting');
+          localStorage.removeItem('alphatrion_token');
+          localStorage.removeItem('alphatrion_user');
+          if (window.location.pathname !== '/login') {
+            navigate('/login');
+          }
+          setLoading(false);
+          return;
+        }
+
+        console.log('User authenticated, loading dashboard');
+
+        // Parse stored user info (already has teams from login response)
+        const user = JSON.parse(storedUser);
+        const userId = user.id;
+        const orgId = payload.org_id;
 
         // Check if user ID has changed from previous session
         const previousUserId = localStorage.getItem('alphatrion_user_id');
@@ -41,54 +97,32 @@ function App() {
           console.log('User ID changed, clearing cache');
           queryClient.clear();
         }
+
         // Store current user ID and org ID for GraphQL headers
         localStorage.setItem('alphatrion_user_id', userId);
-        if (orgId) {
-          localStorage.setItem('alphatrion_org_id', orgId);
-        }
+        localStorage.setItem('alphatrion_org_id', orgId);
 
-        // Step 2: Query user information
-        const data = await graphqlQuery<{ user: User }>(
-          queries.getUser,
-          { id: userId }
-        );
+        // Use stored user info (already complete from login)
+        setCurrentUser(user);
 
-        if (!data.user) {
-          throw new Error(`User with ID ${userId} not found`);
-        }
-
-        setCurrentUser(data.user);
-
-        // Step 3: Query user's teams and auto-select team
-        const teamsData = await graphqlQuery<{ teams: Team[] }>(
-          queries.listTeams
-        );
-
-        if (teamsData.teams && teamsData.teams.length > 0) {
-          // Check if this user has a saved team preference in localStorage
+        // Handle team selection
+        if (user.teams && user.teams.length > 0) {
+          // Check for saved team preference in localStorage
           const teamKey = `alphatrion_selected_team_${userId}`;
           const savedTeamId = localStorage.getItem(teamKey);
 
-          let selectedTeam: Team;
+          let selectedTeamId: string;
 
           if (savedTeamId) {
-            // Verify saved team still exists in user's teams
-            const savedTeam = teamsData.teams.find(t => t.id === savedTeamId);
-            if (savedTeam) {
-              selectedTeam = savedTeam;
-            } else {
-              // Saved team not found, use first team
-              selectedTeam = teamsData.teams[0];
-            }
+            const savedTeam = user.teams.find((t: any) => t.id === savedTeamId);
+            selectedTeamId = savedTeam ? savedTeamId : user.teams[0].id;
           } else {
             // No saved team, use first team
-            selectedTeam = teamsData.teams[0];
+            selectedTeamId = user.teams[0].id;
           }
 
-          // Store team_id for UI (org_id already set from config)
-          localStorage.setItem('alphatrion_team_id', selectedTeam.id);
-
-          setSelectedTeamId(selectedTeam.id, userId);
+          localStorage.setItem('alphatrion_team_id', selectedTeamId);
+          setSelectedTeamId(selectedTeamId, userId);
         }
       } catch (err) {
         console.error('Failed to initialize app:', err);
@@ -99,7 +133,7 @@ function App() {
     }
 
     initialize();
-  }, [setSelectedTeamId, queryClient]);
+  }, [setSelectedTeamId, queryClient, navigate]);
 
   if (loading) {
     return (
@@ -117,31 +151,28 @@ function App() {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center max-w-md">
           <h1 className="text-2xl font-bold text-red-600 mb-4">
-            Error Loading User
+            Error Initializing Dashboard
           </h1>
           <p className="text-gray-700 mb-2">{error.message}</p>
           <p className="text-gray-500 text-sm">
-            Please verify:
+            Please try:
           </p>
           <ul className="text-gray-500 text-sm text-left mt-2 space-y-1">
-            <li>• The user ID exists in the database</li>
-            <li>• The backend server is running</li>
-            <li>• The dashboard was started with correct --user-id flag</li>
+            <li>• Clear browser cache and localStorage</li>
+            <li>• Verify the backend server is running</li>
+            <li>• <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="text-blue-600 underline">Logout and login again</button></li>
           </ul>
         </div>
       </div>
     );
   }
 
-  if (!currentUser) {
-    return null;
-  }
-
   return (
     <div className="h-full">
-      <UserProvider user={currentUser}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        {currentUser ? (
+          <Route path="/" element={<UserProvider user={currentUser}><Layout /></UserProvider>}>
             <Route index element={<DashboardPage />} />
             <Route path="experiments">
               <Route index element={<ExperimentsPage />} />
@@ -162,8 +193,8 @@ function App() {
             <Route path="datasets" element={<DatasetsPage />} />
             <Route path="artifacts" element={<ArtifactsPage />} />
           </Route>
-        </Routes>
-      </UserProvider>
+        ) : null}
+      </Routes>
     </div>
   );
 }

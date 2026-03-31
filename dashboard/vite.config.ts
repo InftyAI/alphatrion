@@ -16,8 +16,8 @@ export default defineConfig(({ command }) => ({
     define: {
         __APP_VERSION__: JSON.stringify(version),
     },
-    // Disable public directory since we're managing static assets manually
-    publicDir: false,
+    // Public directory for runtime config
+    publicDir: "public",
     build: {
         outDir: "./static",
     },
@@ -31,18 +31,13 @@ export default defineConfig(({ command }) => ({
             usePolling: true,
         },
         proxy: {
-            // Proxy GraphQL requests to backend
-            "/graphql": {
+            // Proxy API requests to backend
+            "/api": {
                 target: "http://localhost:8000",
                 changeOrigin: true,
             },
-            // Proxy config requests to dashboard server
-            "/api/config": {
-                target: "http://localhost:5173",
-                changeOrigin: true,
-            },
-            // Proxy other API requests to backend
-            "/api": {
+            // Proxy GraphQL requests to backend
+            "/graphql": {
                 target: "http://localhost:8000",
                 changeOrigin: true,
             },

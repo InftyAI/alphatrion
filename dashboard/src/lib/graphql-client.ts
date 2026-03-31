@@ -7,8 +7,18 @@ import axios from 'axios';
  * with queries and mutations for teams, experiments, runs, and metrics.
  */
 
-// Use relative URL to work with proxy in development
-const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
+// Use runtime config (Kubernetes) > build-time env (Docker) > relative URL (local dev with proxy)
+const getApiBaseUrl = () => {
+  // @ts-ignore - window.ENV is injected at runtime by entrypoint.sh
+  if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
+    // @ts-ignore
+    return window.ENV.VITE_API_URL;
+  }
+  return import.meta.env.VITE_API_URL || '';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+const GRAPHQL_ENDPOINT = `${API_BASE_URL}/graphql`;
 
 export interface GraphQLResponse<T> {
   data?: T;
@@ -21,17 +31,24 @@ export interface GraphQLResponse<T> {
 
 /**
  * Get authentication headers from localStorage
- * These are set by the AuthProvider on app initialization
+ * Supports both JWT-based and direct header authentication
  */
 function getAuthHeaders(): Record<string, string> {
-  const orgId = localStorage.getItem('alphatrion_org_id');
-  const userId = localStorage.getItem('alphatrion_user_id');
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
-  // Add headers if available
+  // Try JWT token first
+  const token = localStorage.getItem('alphatrion_token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  }
+
+  // Fallback to direct headers for backwards compatibility
+  const orgId = localStorage.getItem('alphatrion_org_id');
+  const userId = localStorage.getItem('alphatrion_user_id');
+
   if (orgId) headers['x-org-id'] = orgId;
   if (userId) headers['x-user-id'] = userId;
 
