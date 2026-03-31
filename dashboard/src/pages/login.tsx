@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import logoImage from '../assets/logo.png';
 
 // Use runtime config (Kubernetes) > build-time env (Docker) > relative URL (local dev with proxy)
 const getApiBaseUrl = () => {
@@ -66,9 +67,16 @@ export function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
         <div>
-          <h2 className="text-center text-3xl font-bold text-gray-900">
-            AlphaTrion
-          </h2>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <img
+              src={logoImage}
+              alt="AlphaTrion Logo"
+              className="h-12 w-12"
+            />
+            <h2 className="text-3xl font-bold text-gray-900">
+              AlphaTrion
+            </h2>
+          </div>
           <p className="mt-2 text-center text-sm text-gray-600">
             Sign in to your account
           </p>
