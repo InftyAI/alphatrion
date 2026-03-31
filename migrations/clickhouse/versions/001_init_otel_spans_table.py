@@ -16,6 +16,12 @@ logger = logging.getLogger(__name__)
 class InitOtelSpansTable(Migration):
     """Create the complete otel_spans table with all columns and indexes.
        Supports both single-node (MergeTree) and cluster (ReplicatedMergeTree) setups.
+
+       Uses monthly partitioning (toYYYYMM) instead of daily because:
+       - Most queries scan time ranges (not specific days)
+       - Fewer partition files (12/year vs 365/year) = less overhead
+       - Better performance for team-level aggregations
+       - Still fast for specific day queries due to ORDER BY (OrgId, TeamId, Timestamp)
     """
 
     version = "001"
@@ -88,7 +94,7 @@ class InitOtelSpansTable(Migration):
             INDEX idx_experiment_id_minmax ExperimentId TYPE minmax GRANULARITY 4,
             INDEX idx_run_id_minmax RunId TYPE minmax GRANULARITY 4
         ) ENGINE = {engine}
-        PARTITION BY toDate(Timestamp)
+        PARTITION BY toYYYYMM(Timestamp)
         ORDER BY (OrgId, TeamId, Timestamp)
         SETTINGS index_granularity = 8192
         """
