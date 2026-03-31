@@ -20,6 +20,25 @@ export interface GraphQLResponse<T> {
 }
 
 /**
+ * Get authentication headers from localStorage
+ * These are set by the AuthProvider on app initialization
+ */
+function getAuthHeaders(): Record<string, string> {
+  const orgId = localStorage.getItem('alphatrion_org_id');
+  const userId = localStorage.getItem('alphatrion_user_id');
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  // Add headers if available
+  if (orgId) headers['x-org-id'] = orgId;
+  if (userId) headers['x-user-id'] = userId;
+
+  return headers;
+}
+
+/**
  * Execute a GraphQL query
  */
 export async function graphqlQuery<T>(
@@ -34,9 +53,7 @@ export async function graphqlQuery<T>(
         variables,
       },
       {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(),
       }
     );
 
@@ -75,9 +92,10 @@ export async function graphqlMutation<T>(
 // GraphQL query templates
 export const queries = {
   listTeams: `
-    query ListTeams($userId: ID!) {
-      teams(userId: $userId) {
+    query ListTeams {
+      teams {
         id
+        orgId
         name
         description
         meta
@@ -91,7 +109,8 @@ export const queries = {
     query GetUser($id: ID!) {
       user(id: $id) {
         id
-        username
+        orgId
+        name
         email
         avatarUrl
         meta
@@ -105,6 +124,7 @@ export const queries = {
     query GetTeam($id: ID!) {
       team(id: $id) {
         id
+        orgId
         name
         description
         meta
@@ -120,6 +140,19 @@ export const queries = {
           inputTokens
           outputTokens
         }
+      }
+    }
+  `,
+
+  getOrganization: `
+    query GetOrganization($id: ID!) {
+      organization(id: $id) {
+        id
+        name
+        description
+        meta
+        createdAt
+        updatedAt
       }
     }
   `,

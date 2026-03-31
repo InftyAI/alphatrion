@@ -9,7 +9,7 @@ import { createContext, useContext, ReactNode, useState } from 'react';
 
 export interface User {
   id: string;
-  username: string;
+  name: string;
   email: string;
   avatarUrl?: string;
   meta?: Record<string, unknown>;

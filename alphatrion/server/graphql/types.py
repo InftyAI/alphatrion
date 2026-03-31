@@ -4,6 +4,7 @@ from enum import Enum
 
 import strawberry
 from strawberry.scalars import JSON
+from strawberry.types import Info
 
 
 @strawberry.type
@@ -35,8 +36,19 @@ class TraceStats:
 
 
 @strawberry.type
+class Organization:
+    id: strawberry.ID
+    name: str
+    description: str | None
+    meta: JSON | None
+    created_at: datetime
+    updated_at: datetime
+
+
+@strawberry.type
 class Team:
     id: strawberry.ID
+    org_id: strawberry.ID
     name: str | None
     description: str | None
     meta: JSON | None
@@ -44,40 +56,40 @@ class Team:
     updated_at: datetime
 
     @strawberry.field
-    def total_experiments(self) -> int:
+    def total_experiments(self, info: Info) -> int:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.total_experiments(team_id=self.id)
+        return GraphQLResolvers.total_experiments(info=info, team_id=self.id)
 
     @strawberry.field
-    def total_runs(self) -> int:
+    def total_runs(self, info: Info) -> int:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.total_runs(team_id=self.id)
+        return GraphQLResolvers.total_runs(info=info, team_id=self.id)
 
     @strawberry.field
-    def total_datasets(self) -> int:
+    def total_datasets(self, info: Info) -> int:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.total_datasets(team_id=self.id)
+        return GraphQLResolvers.total_datasets(info=info, team_id=self.id)
 
     @strawberry.field
-    def total_agents(self) -> int:
+    def total_agents(self, info: Info) -> int:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.total_agents(team_id=self.id)
+        return GraphQLResolvers.total_agents(info=info, team_id=self.id)
 
     @strawberry.field
-    def total_sessions(self) -> int:
+    def total_sessions(self, info: Info) -> int:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.total_sessions(team_id=self.id)
+        return GraphQLResolvers.total_sessions(info=info, team_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self) -> TokenStats:
+    def aggregated_tokens(self, info: Info) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_team_tokens(team_id=self.id)
+        token_data = GraphQLResolvers.aggregate_team_tokens(info=info, team_id=self.id)
         return TokenStats(
             total_tokens=token_data["total_tokens"],
             input_tokens=token_data["input_tokens"],
@@ -85,18 +97,21 @@ class Team:
         )
 
     @strawberry.field
-    def model_distributions(self) -> list["ModelDistribution"]:
+    def model_distributions(self, info: Info) -> list["ModelDistribution"]:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.aggregate_model_distributions(team_id=self.id)
+        return GraphQLResolvers.aggregate_model_distributions(
+            info=info, team_id=self.id
+        )
 
     @strawberry.field
     def exps_by_timeframe(
-        self, start_time: datetime, end_time: datetime
+        self, info: Info, start_time: datetime, end_time: datetime
     ) -> list["Experiment"]:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_exps_by_timeframe(
+            info=info,
             team_id=self.id,
             start_time=start_time,
             end_time=end_time,
@@ -106,7 +121,8 @@ class Team:
 @strawberry.type
 class User:
     id: strawberry.ID
-    username: str
+    org_id: strawberry.ID
+    name: str
     email: str
     avatar_url: str | None
     meta: JSON | None
@@ -114,10 +130,10 @@ class User:
     updated_at: datetime
 
     @strawberry.field
-    def teams(self) -> list["Team"] | None:
+    def teams(self, info: Info) -> list[Team] | None:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_teams(user_id=self.id)
+        return GraphQLResolvers.list_teams(info=info, user_id=self.id)
 
 
 class GraphQLStatus(Enum):
@@ -156,6 +172,7 @@ class Label:
 @strawberry.type
 class Experiment:
     id: strawberry.ID
+    org_id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
     name: str
@@ -170,28 +187,30 @@ class Experiment:
     updated_at: datetime
 
     @strawberry.field
-    def labels(self) -> list[Label]:
+    def labels(self, info: Info) -> list[Label]:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_labels_by_exp_id(experiment_id=self.id)
+        return GraphQLResolvers.list_labels_by_exp_id(info=info, experiment_id=self.id)
 
     @strawberry.field
-    def tags(self) -> list[str]:
+    def tags(self, info: Info) -> list[str]:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_tags_by_exp_id(experiment_id=self.id)
+        return GraphQLResolvers.list_tags_by_exp_id(info=info, experiment_id=self.id)
 
     @strawberry.field
-    def metrics(self) -> list["Metric"]:
+    def metrics(self, info: Info) -> list["Metric"]:
         from .resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_exp_metrics(experiment_id=self.id)
+        return GraphQLResolvers.list_exp_metrics(info=info, experiment_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self) -> TokenStats:
+    def aggregated_tokens(self, info: Info) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
-        tokens = GraphQLResolvers.aggregate_experiment_tokens(experiment_id=self.id)
+        tokens = GraphQLResolvers.aggregate_experiment_tokens(
+            info=info, experiment_id=self.id
+        )
         return TokenStats(
             total_tokens=tokens["total_tokens"],
             input_tokens=tokens["input_tokens"],
@@ -199,10 +218,12 @@ class Experiment:
         )
 
     @strawberry.field
-    def trace_stats(self) -> TraceStats:
+    def trace_stats(self, info: Info) -> TraceStats:
         from .resolvers import GraphQLResolvers
 
-        stats = GraphQLResolvers.get_experiment_trace_stats(experiment_id=self.id)
+        stats = GraphQLResolvers.get_experiment_trace_stats(
+            info=info, experiment_id=self.id
+        )
         return TraceStats(
             total_spans=stats["total_spans"],
             success_spans=stats["success_spans"],
@@ -213,6 +234,7 @@ class Experiment:
 @strawberry.type
 class Agent:
     id: strawberry.ID
+    org_id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
     name: str
@@ -223,18 +245,22 @@ class Agent:
     updated_at: datetime
 
     @strawberry.field
-    def sessions(self, page: int = 0, page_size: int = 10) -> list["Session"]:
+    def sessions(
+        self, info: Info, page: int = 0, page_size: int = 10
+    ) -> list["Session"]:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_sessions_by_agent_id(
-            agent_id=self.id, page=page, page_size=page_size
+            info=info, agent_id=self.id, page=page, page_size=page_size
         )
 
     @strawberry.field
-    def aggregated_tokens(self) -> TokenStats:
+    def aggregated_tokens(self, info: Info) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_agent_tokens(agent_id=self.id)
+        token_data = GraphQLResolvers.aggregate_agent_tokens(
+            info=info, agent_id=self.id
+        )
         return TokenStats(
             total_tokens=token_data["total_tokens"],
             input_tokens=token_data["input_tokens"],
@@ -245,6 +271,7 @@ class Agent:
 @strawberry.type
 class Session:
     id: strawberry.ID
+    org_id: strawberry.ID
     agent_id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
@@ -253,18 +280,20 @@ class Session:
     updated_at: datetime
 
     @strawberry.field
-    def runs(self, page: int = 0, page_size: int = 10) -> list["Run"]:
+    def runs(self, info: Info, page: int = 0, page_size: int = 10) -> list["Run"]:
         from .resolvers import GraphQLResolvers
 
         return GraphQLResolvers.list_runs_by_session_id(
-            session_id=self.id, page=page, page_size=page_size
+            info=info, session_id=self.id, page=page, page_size=page_size
         )
 
     @strawberry.field
-    def aggregated_tokens(self) -> TokenStats:
+    def aggregated_tokens(self, info: Info) -> TokenStats:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_session_tokens(session_id=self.id)
+        token_data = GraphQLResolvers.aggregate_session_tokens(
+            info=info, session_id=self.id
+        )
         return TokenStats(
             total_tokens=token_data["total_tokens"],
             input_tokens=token_data["input_tokens"],
@@ -275,6 +304,7 @@ class Session:
 @strawberry.type
 class Run:
     id: strawberry.ID
+    org_id: strawberry.ID
     team_id: strawberry.ID
     user_id: strawberry.ID
     experiment_id: strawberry.ID | None
@@ -286,25 +316,25 @@ class Run:
     created_at: datetime
 
     @strawberry.field
-    def metrics(self) -> list["Metric"]:
+    def metrics(self, info: Info) -> list["Metric"]:
         """Get metrics for this run."""
         from alphatrion.server.graphql.resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_run_metrics(run_id=self.id)
+        return GraphQLResolvers.list_run_metrics(info=info, run_id=self.id)
 
     @strawberry.field
-    def spans(self) -> list["Span"]:
+    def spans(self, info: Info) -> list["Span"]:
         """Get spans for this run."""
         from alphatrion.server.graphql.resolvers import GraphQLResolvers
 
-        return GraphQLResolvers.list_spans_by_run_id(run_id=str(self.id))
+        return GraphQLResolvers.list_spans_by_run_id(info=info, run_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self) -> TokenStats:
+    def aggregated_tokens(self, info: Info) -> TokenStats:
         """Get aggregated token usage for this run."""
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_run_tokens(run_id=self.id)
+        token_data = GraphQLResolvers.aggregate_run_tokens(info=info, run_id=self.id)
         return TokenStats(
             total_tokens=token_data["total_tokens"],
             input_tokens=token_data["input_tokens"],
@@ -315,6 +345,7 @@ class Run:
 @strawberry.type
 class Metric:
     id: strawberry.ID
+    org_id: strawberry.ID
     key: str | None
     value: float | None
     team_id: strawberry.ID
@@ -326,6 +357,7 @@ class Metric:
 @strawberry.type
 class Dataset:
     id: strawberry.ID
+    org_id: strawberry.ID
     name: str
     description: str | None
     path: str
@@ -338,11 +370,19 @@ class Dataset:
     updated_at: datetime
 
 
-# Input types for mutations
+@strawberry.input
+class UpdateOrganizationInput:
+    id: strawberry.ID
+    name: str | None = None
+    description: str | None = None
+    meta: JSON | None = None
+
+
 @strawberry.input
 class CreateUserInput:
     id: strawberry.ID | None = None
-    username: str
+    org_id: strawberry.ID
+    name: str
     email: str
     avatar_url: str | None = None
     meta: JSON | None = None
@@ -351,6 +391,7 @@ class CreateUserInput:
 @strawberry.input
 class CreateTeamInput:
     id: strawberry.ID | None = None
+    org_id: strawberry.ID
     name: str
     description: str | None = None
     meta: JSON | None = None

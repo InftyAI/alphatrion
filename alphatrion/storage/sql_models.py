@@ -40,10 +40,32 @@ StatusMap = {
 FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED]
 
 
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    meta = Column(
+        MutableDict.as_mutable(JSON),
+        nullable=True,
+        comment="Additional metadata for the org",
+    )
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
+    is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
+
+
 class Team(Base):
     __tablename__ = "teams"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     meta = Column(
@@ -65,7 +87,8 @@ class User(Base):
     __tablename__ = "users"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String, nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
+    name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
     avatar_url = Column(String, nullable=True)
     meta = Column(
@@ -83,12 +106,24 @@ class User(Base):
     is_del = Column(Integer, default=0, comment="0 for not deleted, 1 for deleted")
 
 
+class MemberRole(enum.IntFlag):
+    MEMBER = 1 << 0
+    SUPER_ADMIN = 1 << 15
+
+
 class TeamMember(Base):
     __tablename__ = "team_members"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    role = Column(
+        Integer,
+        default=MemberRole.MEMBER,
+        nullable=False,
+        comment="Role of the member in the team",
+    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -118,6 +153,7 @@ class Experiment(Base):
     __tablename__ = "experiments"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(
         UUID(as_uuid=True), nullable=True, comment="User who created the experiment"
@@ -187,6 +223,7 @@ class Agent(Base):
     __tablename__ = "agents"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(
         UUID(as_uuid=True), nullable=False, comment="User who created the agent"
@@ -218,6 +255,7 @@ class AgentSession(Base):
     __tablename__ = "sessions"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(
         UUID(as_uuid=True), nullable=False, comment="User who created the session"
@@ -244,6 +282,7 @@ class Run(Base):
     __tablename__ = "runs"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     user_id = Column(
         UUID(as_uuid=True), nullable=False, comment="User who created the run"
@@ -328,6 +367,7 @@ class Metric(Base):
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     key = Column(String, nullable=False)
     value = Column(Float, nullable=False)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     run_id = Column(UUID(as_uuid=True), nullable=False)
@@ -349,6 +389,7 @@ class ExperimentLabel(Base):
     __tablename__ = "experiment_labels"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     label_name = Column(String, nullable=False)
@@ -376,6 +417,7 @@ class ExperimentTag(Base):
     __tablename__ = "experiment_tags"
 
     uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=False)
     tag = Column(String, nullable=False)
@@ -404,6 +446,7 @@ class Dataset(Base):
         nullable=True,
         comment="Additional metadata for the dataset",
     )
+    org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     team_id = Column(UUID(as_uuid=True), nullable=False)
     experiment_id = Column(UUID(as_uuid=True), nullable=True)
     run_id = Column(UUID(as_uuid=True), nullable=True)

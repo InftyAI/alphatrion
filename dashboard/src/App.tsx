@@ -29,8 +29,10 @@ function App() {
   useEffect(() => {
     async function initialize() {
       try {
-        // Step 1: Get userId from config
-        const userId = await getUserId();
+        // Step 1: Get userId and orgId from config
+        const config = await fetch('/api/config').then(res => res.json());
+        const userId = config.userId;
+        const orgId = config.orgId;
 
         // Check if user ID has changed from previous session
         const previousUserId = localStorage.getItem('alphatrion_user_id');
@@ -39,8 +41,11 @@ function App() {
           console.log('User ID changed, clearing cache');
           queryClient.clear();
         }
-        // Store current user ID for next session
+        // Store current user ID and org ID for GraphQL headers
         localStorage.setItem('alphatrion_user_id', userId);
+        if (orgId) {
+          localStorage.setItem('alphatrion_org_id', orgId);
+        }
 
         // Step 2: Query user information
         const data = await graphqlQuery<{ user: User }>(
@@ -56,8 +61,7 @@ function App() {
 
         // Step 3: Query user's teams and auto-select team
         const teamsData = await graphqlQuery<{ teams: Team[] }>(
-          queries.listTeams,
-          { userId }
+          queries.listTeams
         );
 
         if (teamsData.teams && teamsData.teams.length > 0) {
@@ -65,23 +69,26 @@ function App() {
           const teamKey = `alphatrion_selected_team_${userId}`;
           const savedTeamId = localStorage.getItem(teamKey);
 
-          let teamToSelect: string;
+          let selectedTeam: Team;
 
           if (savedTeamId) {
             // Verify saved team still exists in user's teams
             const savedTeam = teamsData.teams.find(t => t.id === savedTeamId);
             if (savedTeam) {
-              teamToSelect = savedTeamId;
+              selectedTeam = savedTeam;
             } else {
               // Saved team not found, use first team
-              teamToSelect = teamsData.teams[0].id;
+              selectedTeam = teamsData.teams[0];
             }
           } else {
             // No saved team, use first team
-            teamToSelect = teamsData.teams[0].id;
+            selectedTeam = teamsData.teams[0];
           }
 
-          setSelectedTeamId(teamToSelect, userId);
+          // Store team_id for UI (org_id already set from config)
+          localStorage.setItem('alphatrion_team_id', selectedTeam.id);
+
+          setSelectedTeamId(selectedTeam.id, userId);
         }
       } catch (err) {
         console.error('Failed to initialize app:', err);

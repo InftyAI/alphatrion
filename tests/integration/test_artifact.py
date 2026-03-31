@@ -15,6 +15,7 @@ def artifact():
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
     artifact = global_runtime()._artifact
 
@@ -25,6 +26,7 @@ def test_push_with_files(artifact):
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -51,6 +53,7 @@ def test_push_with_folder(artifact):
     alpha.init(
         team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:

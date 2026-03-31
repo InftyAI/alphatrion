@@ -13,9 +13,11 @@ def db():
 
 
 def test_create_experiment(db):
+    org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     exp_id = db.create_experiment(
+        org_id=org_id,
         team_id=team_id,
         user_id=user_id,
         name="test-exp",
@@ -30,9 +32,11 @@ def test_create_experiment(db):
 
 
 def test_update_experiment(db):
+    org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
     exp_id = db.create_experiment(
+        org_id=org_id,
         team_id=team_id,
         user_id=user_id,
         name="test_exp",
@@ -49,12 +53,17 @@ def test_update_experiment(db):
 
 
 def test_create_metric(db):
+    org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    exp_id = db.create_experiment(team_id=team_id, user_id=user_id, name="test-exp")
-    run_id = db.create_run(team_id=team_id, user_id=user_id, experiment_id=exp_id)
-    db.create_metric(team_id, exp_id, run_id, "accuracy", 0.95)
-    db.create_metric(team_id, exp_id, run_id, "loss", 0.1)
+    exp_id = db.create_experiment(
+        org_id=org_id, team_id=team_id, user_id=user_id, name="test-exp"
+    )
+    run_id = db.create_run(
+        org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=exp_id
+    )
+    db.create_metric(org_id, team_id, exp_id, run_id, "accuracy", 0.95)
+    db.create_metric(org_id, team_id, exp_id, run_id, "loss", 0.1)
 
     metrics = db.list_metrics_by_experiment_id(exp_id)
     assert len(metrics) == 2
@@ -65,10 +74,14 @@ def test_create_metric(db):
 
 
 def test_crud_run(db):
+    org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
-    exp_id = db.create_experiment(team_id=team_id, user_id=user_id, name="test-exp")
+    exp_id = db.create_experiment(
+        org_id=org_id, team_id=team_id, user_id=user_id, name="test-exp"
+    )
     run_id = db.create_run(
+        org_id=org_id,
         team_id=team_id,
         user_id=user_id,
         experiment_id=exp_id,
@@ -86,17 +99,19 @@ def test_crud_run(db):
 
 
 def test_create_user_with_team(db):
-    team_id = db.create_team(name="Test Team", description="A test team")
+    org_id = uuid.uuid4()
+    team_id = db.create_team(org_id=org_id, name="Test Team", description="A test team")
 
     user_id = db.create_user(
-        username="tester",
+        org_id=org_id,
+        name="tester",
         email="tester@example.com",
         team_id=team_id,
         meta={"role": "engineer", "level": "senior"},
     )
     user = db.get_user(user_id)
     assert user is not None
-    assert user.username == "tester"
+    assert user.name == "tester"
     assert user.email == "tester@example.com"
     assert user.meta == {"role": "engineer", "level": "senior"}
     teams = db.list_user_teams(user_id)
@@ -105,14 +120,16 @@ def test_create_user_with_team(db):
 
 
 def test_create_user_without_team(db):
+    org_id = uuid.uuid4()
     user_id = db.create_user(
-        username="tester",
+        org_id=org_id,
+        name="tester",
         email="tester@example.com",
         meta={"role": "engineer", "level": "senior"},
     )
     user = db.get_user(user_id)
     assert user is not None
-    assert user.username == "tester"
+    assert user.name == "tester"
     assert user.email == "tester@example.com"
     assert user.meta == {"role": "engineer", "level": "senior"}
     teams = db.list_user_teams(user_id)

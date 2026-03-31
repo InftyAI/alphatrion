@@ -114,7 +114,7 @@ export function Sidebar() {
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
-                alt={user.username}
+                alt={user.name}
                 className="h-7 w-7 rounded-full object-cover flex-shrink-0"
               />
             ) : (
@@ -155,7 +155,7 @@ export function Sidebar() {
                   {user.avatarUrl ? (
                     <img
                       src={user.avatarUrl}
-                      alt={user.username}
+                      alt={user.name}
                       className="h-12 w-12 rounded-full object-cover"
                     />
                   ) : (
@@ -164,7 +164,7 @@ export function Sidebar() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground break-words">{user.username}</p>
+                    <p className="text-sm font-semibold text-foreground break-words">{user.name}</p>
                     <p className="text-xs text-muted-foreground break-words">{user.email}</p>
                   </div>
                 </div>

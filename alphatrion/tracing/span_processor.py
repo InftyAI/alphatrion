@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContextAttributesSpanProcessor(SpanProcessor):
-    """SpanProcessor that adds run_id, team_id, experiment_id to all spans.
+    """SpanProcessor that adds run_id, org_id, team_id, user_id, experiment_id to all spans.
 
     This ensures all spans in the trace have these attributes, including
     child spans created by instrumented libraries (OpenAI, database drivers, etc.).
@@ -21,7 +21,7 @@ class ContextAttributesSpanProcessor(SpanProcessor):
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         """Called when a span is started.
 
-        Adds context attributes (run_id, team_id, experiment_id) to the span.
+        Adds context attributes (run_id, org_id, team_id, user_id, experiment_id) to the span.
 
         Args:
             span: The span that was just started
@@ -47,7 +47,9 @@ class ContextAttributesSpanProcessor(SpanProcessor):
             runtime = global_runtime()
 
             span.set_attribute("run_id", str(run_id))
+            span.set_attribute("org_id", str(runtime.org_id))
             span.set_attribute("team_id", str(runtime.team_id))
+            span.set_attribute("user_id", str(runtime.user_id))
 
             if exp_id:
                 span.set_attribute("experiment_id", str(exp_id))

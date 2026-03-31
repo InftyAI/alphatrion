@@ -12,16 +12,13 @@ from openai import OpenAI
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.log.log import log_dataset
 from alphatrion.runtime.runtime import init
-from alphatrion.server.graphql.schema import schema
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
 from alphatrion.tracing import tracing
 
 
-def test_query_single_team():
+def test_query_single_team(execute_graphql, test_org_id, test_user_id, test_team_id):
     runtime.init()
-    metadb = runtime.storage_runtime().metadb
-    id = metadb.create_team(name="Test Team", description="A team for testing")
 
     now = datetime.now()
     yesterday = now - timedelta(days=1)
@@ -29,7 +26,7 @@ def test_query_single_team():
 
     query = f"""
     query {{
-        team(id: "{id}") {{
+        team(id: "{test_team_id}") {{
             id
             name
             description
@@ -50,40 +47,44 @@ def test_query_single_team():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
-    assert response.data["team"]["id"] == str(id)
+    assert response.data["team"]["id"] == str(test_team_id)
     assert response.data["team"]["name"] == "Test Team"
     assert response.data["team"]["totalExperiments"] == 0
     assert response.data["team"]["totalRuns"] == 0
     assert len(response.data["team"]["expsByTimeframe"]) == 0
 
 
-def test_query_team_with_experiments():
-    user_id = uuid.uuid4()
+def test_query_team_with_experiments(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
     runtime.init()
     metadb = runtime.storage_runtime().metadb
-    team_id = metadb.create_team(name="Test Team", description="A team for testing")
 
     exp_id = metadb.create_experiment(
+        org_id=test_org_id,
         name="Test Experiment",
-        team_id=team_id,
-        user_id=user_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         status=Status.RUNNING,
         meta={},
     )
 
     _ = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         experiment_id=exp_id,
     )
     _ = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         experiment_id=exp_id,
     )
 
@@ -93,7 +94,7 @@ def test_query_team_with_experiments():
 
     query = f"""
     query {{
-        team(id: "{team_id}") {{
+        team(id: "{test_team_id}") {{
             id
             name
             description
@@ -108,9 +109,10 @@ def test_query_team_with_experiments():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert response.data["team"]["totalExperiments"] == 1
@@ -118,56 +120,69 @@ def test_query_team_with_experiments():
     assert len(response.data["team"]["expsByTimeframe"]) == 1
 
 
-def test_query_teams():
+def test_query_teams(execute_graphql, test_org_id, test_user_id):
     runtime.init()
 
     metadb = runtime.storage_runtime().metadb
     team1_id = metadb.create_team(
-        name="Test Team1", description="A team for testing", meta={"foo": "bar"}
+        org_id=test_org_id,
+        name="Test Team1",
+        description="A team for testing",
+        meta={"foo": "bar"},
     )
     team2_id = metadb.create_team(
-        name="Test Team2", description="Another team for testing", meta={"baz": 123}
+        org_id=test_org_id,
+        name="Test Team2",
+        description="Another team for testing",
+        meta={"baz": 123},
     )
     user_id = metadb.create_user(
-        username="tester",
-        email="example@inftyai.com",
+        org_id=test_org_id,
+        name="tester",
+        email=f"tester-{test_org_id}@inftyai.com",
         meta={"foo": "bar"},
         team_id=team1_id,
     )
     # Add user to team2 as well with a different way.
     metadb.add_user_to_team(user_id=user_id, team_id=team2_id)
 
-    query = f"""
-    query {{
-        teams(userId: "{user_id}") {{
+    query = """
+    query {
+        teams {
             id
             name
             description
             meta
             createdAt
             updatedAt
-        }}
-    }}
+        }
+    }
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=user_id,
     )
     assert response.errors is None
     assert len(response.data["teams"]) >= 2
 
 
-def test_query_user():
+def test_query_user(execute_graphql, test_org_id, test_user_id):
     runtime.init()
 
     metadb = runtime.storage_runtime().metadb
     team_id = metadb.create_team(
-        name="Test Team", description="A team for testing", meta={"foo": "bar"}
+        org_id=test_org_id,
+        name="Test Team",
+        description="A team for testing",
+        meta={"foo": "bar"},
     )
 
+    unique_email = f"tester-{test_org_id}@inftyai.com"
     user_id = metadb.create_user(
-        username="tester",
-        email="tester@inftyai.com",
+        org_id=test_org_id,
+        name="tester",
+        email=unique_email,
         meta={"foo": "bar"},
     )
 
@@ -178,7 +193,7 @@ def test_query_user():
     query {{
         user(id: "{user_id}") {{
             id
-            username
+            name
             email
             meta
             teams {{
@@ -190,28 +205,28 @@ def test_query_user():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=user_id,
     )
     assert response.errors is None
-    assert response.data["user"]["username"] == "tester"
-    assert response.data["user"]["email"] == "tester@inftyai.com"
+    assert response.data["user"]["name"] == "tester"
+    assert response.data["user"]["email"] == unique_email
     assert len(response.data["user"]["teams"]) == 1
     assert response.data["user"]["teams"][0]["id"] == str(team_id)
     assert response.data["user"]["meta"] == {"foo": "bar"}
 
 
-def test_query_single_exp():
+def test_query_single_exp(execute_graphql, test_org_id, test_user_id, test_team_id):
     runtime.init()
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
 
     exp_id = metadb.create_experiment(
+        org_id=test_org_id,
         name="Test Experiment",
-        team_id=team_id,
-        user_id=user_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         status=Status.RUNNING,
         meta={},
     )
@@ -231,34 +246,35 @@ def test_query_single_exp():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert "experiment" in response.data
     assert response.data["experiment"]["id"] == str(exp_id)
 
 
-def test_query_experiments():
+def test_query_experiments(execute_graphql, test_org_id, test_user_id, test_team_id):
     runtime.init()
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
     _ = metadb.create_experiment(
+        org_id=test_org_id,
         name="Test Experiment1",
-        team_id=team_id,
-        user_id=user_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
     )
     _ = metadb.create_experiment(
+        org_id=test_org_id,
         name="Test Experiment2",
-        team_id=team_id,
-        user_id=user_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
     )
 
     query = f"""
     query {{
-        experiments(teamId: "{team_id}", page: 0, pageSize: 10) {{
+        experiments(teamId: "{test_team_id}", page: 0, pageSize: 10) {{
             id
             teamId
             name
@@ -272,9 +288,10 @@ def test_query_experiments():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert len(response.data["experiments"]) == 2
@@ -302,10 +319,10 @@ async def create_joke():
 
 
 @pytest.mark.asyncio
-async def test_query_single_run():
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    init(team_id=team_id, user_id=user_id)
+async def test_query_single_run(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    init(team_id=test_team_id, user_id=test_user_id)
 
     # Verify tracing is actually enabled
     tracestore = runtime.storage_runtime().tracestore
@@ -326,8 +343,7 @@ async def test_query_single_run():
     # Give ClickHouse time to process the write
     await asyncio.sleep(1)
 
-    response = schema.execute_sync(
-        f"""
+    query = f"""
     query {{
         run(id: "{run_id}") {{
             id
@@ -347,13 +363,17 @@ async def test_query_single_run():
             }}
         }}
     }}
-    """,
-        variable_values={},
+    """
+
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
 
     assert response.errors is None
     assert response.data["run"]["id"] == str(run_id)
-    assert response.data["run"]["teamId"] == str(team_id)
+    assert response.data["run"]["teamId"] == str(test_team_id)
     assert response.data["run"]["experimentId"] == str(exp_id)
     assert response.data["run"]["status"] == "COMPLETED"
     assert len(response.data["run"]["spans"]) > 0
@@ -369,20 +389,26 @@ async def test_query_single_run():
     assert obj.meta is None
 
 
-def test_query_runs():
+def test_query_runs(execute_graphql, test_org_id, test_user_id, test_team_id):
     runtime.init()
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    exp_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
+    # Create experiment first
+    exp_id = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        name="Test Experiment",
+    )
     _ = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         experiment_id=exp_id,
     )
     _ = metadb.create_run(
-        team_id=team_id,
-        user_id=user_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         experiment_id=exp_id,
     )
 
@@ -398,36 +424,41 @@ def test_query_runs():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert len(response.data["runs"]) == 2
 
 
-def test_query_experiment_metrics():
+def test_query_experiment_metrics(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
     runtime.init()
-    team_id = uuid.uuid4()
     metadb = runtime.storage_runtime().metadb
 
     exp_id = metadb.create_experiment(
+        org_id=test_org_id,
         name="Test Experiment",
-        team_id=team_id,
-        user_id=uuid.uuid4(),
+        team_id=test_team_id,
+        user_id=test_user_id,
         status=Status.RUNNING,
         meta={},
     )
 
     _ = metadb.create_metric(
-        team_id=team_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
         experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
         value=0.95,
     )
     _ = metadb.create_metric(
-        team_id=team_id,
+        org_id=test_org_id,
+        team_id=test_team_id,
         experiment_id=exp_id,
         run_id=uuid.uuid4(),
         key="accuracy",
@@ -449,22 +480,23 @@ def test_query_experiment_metrics():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert len(response.data["experiment"]["metrics"]) == 2
     for metric in response.data["experiment"]["metrics"]:
-        assert metric["teamId"] == str(team_id)
+        assert metric["teamId"] == str(test_team_id)
         assert metric["experimentId"] == str(exp_id)
 
 
 @pytest.mark.asyncio
-async def test_query_experiment_with_usage():
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    init(team_id=team_id, user_id=user_id)
+async def test_query_experiment_with_usage(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    init(team_id=test_team_id, user_id=test_user_id)
 
     exp_id = None
 
@@ -494,9 +526,10 @@ async def test_query_experiment_with_usage():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
 
     assert response.errors is None
@@ -521,11 +554,10 @@ async def test_query_experiment_with_usage():
 
 
 @pytest.mark.asyncio
-async def test_query_datasets():
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    init(team_id=team_id, user_id=user_id)
+async def test_query_datasets(execute_graphql, test_org_id, test_user_id, test_team_id):
+    init(team_id=test_team_id, user_id=test_user_id)
 
+    dataset_id = None
     async with CraftExperiment.start(
         name="Test Experiment for Datasets",
         description="Experiment for testing dataset queries",
@@ -537,7 +569,7 @@ async def test_query_datasets():
 
     query = f"""
     query {{
-        datasets(teamId: "{team_id}", page: 0, pageSize: 10) {{
+        datasets(teamId: "{test_team_id}", page: 0, pageSize: 10) {{
             id
             name
             path
@@ -549,9 +581,10 @@ async def test_query_datasets():
         }}
     }}
     """
-    response = schema.execute_sync(
-        query,
-        variable_values={},
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
     )
     assert response.errors is None
     assert len(response.data["datasets"]) == 1

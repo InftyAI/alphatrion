@@ -7,6 +7,7 @@
 
 interface Config {
   userId: string;
+  orgId?: string;
 }
 
 /**

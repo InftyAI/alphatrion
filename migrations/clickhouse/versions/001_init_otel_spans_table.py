@@ -15,16 +15,7 @@ logger = logging.getLogger(__name__)
 
 class InitOtelSpansTable(Migration):
     """Create the complete otel_spans table with all columns and indexes.
-
-    Combines all migrations:
-    - Base table structure (001)
-    - SessionId column and indexes (002)
-    - AgentId and AgentType columns and indexes (003)
-    - UserId column and index (004)
-    - Secondary minmax indexes for efficient queries (005)
-    - OrgId column (empty for now, will be populated later)
-
-    Supports both single-node (MergeTree) and cluster (ReplicatedMergeTree) setups.
+       Supports both single-node (MergeTree) and cluster (ReplicatedMergeTree) setups.
     """
 
     version = "001"
@@ -61,7 +52,7 @@ class InitOtelSpansTable(Migration):
             Duration UInt64 CODEC(ZSTD(1)),
             StatusCode LowCardinality(String) CODEC(ZSTD(1)),
             StatusMessage String CODEC(ZSTD(1)),
-            OrgId String DEFAULT '' CODEC(ZSTD(1)),
+            OrgId String CODEC(ZSTD(1)),
             TeamId String CODEC(ZSTD(1)),
             UserId String CODEC(ZSTD(1)),
             RunId String CODEC(ZSTD(1)),
@@ -98,7 +89,7 @@ class InitOtelSpansTable(Migration):
             INDEX idx_run_id_minmax RunId TYPE minmax GRANULARITY 4
         ) ENGINE = {engine}
         PARTITION BY toDate(Timestamp)
-        ORDER BY (TeamId, Timestamp)
+        ORDER BY (OrgId, TeamId, Timestamp)
         SETTINGS index_granularity = 8192
         """
 

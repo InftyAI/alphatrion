@@ -4,6 +4,9 @@ import { TeamSwitcher } from './team-switcher';
 import { useExperiment } from '../../hooks/use-experiments';
 import { useRun } from '../../hooks/use-runs';
 import { useAgent } from '../../hooks/use-agents';
+import { useTeam } from '../../hooks/use-teams';
+import { useOrganization } from '../../hooks/use-organization';
+import { useTeamContext } from '../../context/team-context';
 import { graphqlQuery } from '../../lib/graphql-client';
 import { truncateId } from '../../lib/format';
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +19,11 @@ interface BreadcrumbItem {
 
 export function Header() {
   const location = useLocation();
+  const { selectedTeamId } = useTeamContext();
+
+  // Fetch current team and organization
+  const { data: currentTeam } = useTeam(selectedTeamId);
+  const { data: organization } = useOrganization(currentTeam?.orgId);
 
   // Fetch data based on current route - only fetch if we have valid IDs
   const paths = location.pathname.split('/').filter(Boolean);
@@ -164,8 +172,11 @@ export function Header() {
         })}
       </nav>
 
-      {/* Team Switcher */}
-      <TeamSwitcher />
+      {/* Organization and Team Switcher */}
+      <div className="flex items-center gap-3">
+        {/* Team Switcher with Organization */}
+        <TeamSwitcher organization={organization} />
+      </div>
     </header>
   );
 }

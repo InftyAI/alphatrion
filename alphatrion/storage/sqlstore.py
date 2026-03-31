@@ -14,7 +14,9 @@ from alphatrion.storage.sql_models import (
     Experiment,
     ExperimentLabel,
     ExperimentTag,
+    MemberRole,
     Metric,
+    Organization,
     Run,
     Status,
     Team,
@@ -33,6 +35,88 @@ class SQLStore(MetaStore):
             # Mostly used in tests.
             Base.metadata.create_all(self._engine)
 
+    # ---------- Organization APIs ----------
+
+    def create_organization(
+        self,
+        name: str,
+        uuid: uuid.UUID | None = None,
+        description: str | None = None,
+        meta: dict | None = None,
+    ) -> uuid.UUID:
+        session = self._session()
+        new_org = Organization(
+            name=name,
+            description=description,
+            meta=meta,
+        )
+        if uuid is not None:
+            new_org.uuid = uuid
+
+        session.add(new_org)
+        session.commit()
+        org_id = new_org.uuid
+        session.close()
+
+        return org_id
+
+    def get_organization(self, org_id: uuid.UUID) -> Organization | None:
+        session = self._session()
+        org = (
+            session.query(Organization)
+            .filter(Organization.uuid == org_id, Organization.is_del == 0)
+            .first()
+        )
+        session.close()
+        return org
+
+    def list_organizations(
+        self, page: int = 0, page_size: int = 10
+    ) -> list[Organization]:
+        session = self._session()
+        orgs = (
+            session.query(Organization)
+            .filter(Organization.is_del == 0)
+            .offset(page * page_size)
+            .limit(page_size)
+            .all()
+        )
+        session.close()
+        return orgs
+
+    def update_organization(self, org_id: uuid.UUID, **kwargs) -> None:
+        session = self._session()
+        org = (
+            session.query(Organization)
+            .filter(Organization.uuid == org_id, Organization.is_del == 0)
+            .first()
+        )
+        if org:
+            for key, value in kwargs.items():
+                if key == "meta" and isinstance(value, dict):
+                    if org.meta is None:
+                        org.meta = {}
+                    org.meta.update(value)
+                else:
+                    setattr(org, key, value)
+            session.commit()
+        session.close()
+
+    def delete_organization(self, org_id: uuid.UUID) -> bool:
+        session = self._session()
+        org = (
+            session.query(Organization)
+            .filter(Organization.uuid == org_id, Organization.is_del == 0)
+            .first()
+        )
+        if org:
+            org.is_del = 1
+            session.commit()
+            session.close()
+            return True
+        session.close()
+        return False
+
     # ---------- Team APIs ----------
 
     # If uuid is provided, we will use the provided uuid for the new team.
@@ -41,12 +125,14 @@ class SQLStore(MetaStore):
     def create_team(
         self,
         name: str,
+        org_id: uuid.UUID,
         uuid: uuid.UUID | None = None,
         description: str | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
         session = self._session()
         new_team = Team(
+            org_id=org_id,
             name=name,
             description=description,
             meta=meta,
@@ -71,6 +157,18 @@ class SQLStore(MetaStore):
 
     def list_user_teams(self, user_id: uuid.UUID) -> list[Team]:
         session = self._session()
+        user = self.get_user(user_id)
+
+        # If user is admin, return all teams in the organization.
+        if user and self.user_is_super_admin_in_org(user_id, user.org_id):
+            teams = (
+                session.query(Team)
+                .filter(Team.org_id == user.org_id, Team.is_del == 0)
+                .all()
+            )
+            session.close()
+            return teams
+
         teams = (
             session.query(Team)
             .join(TeamMember, TeamMember.team_id == Team.uuid)
@@ -90,15 +188,17 @@ class SQLStore(MetaStore):
     # the user id is already determined.
     def create_user(
         self,
-        username: str,
+        name: str,
         email: str,
+        org_id: uuid.UUID,
         uuid: uuid.UUID | None = None,
         avatar_url: str | None = None,
         team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
         user = User(
-            username=username,
+            org_id=org_id,
+            name=name,
             email=email,
             avatar_url=avatar_url,
             meta=meta,
@@ -125,6 +225,7 @@ class SQLStore(MetaStore):
                 session.flush()  # flush to get the new user's id
 
                 new_member = TeamMember(
+                    org_id=org_id,
                     user_id=user.uuid,
                     team_id=team_id,
                 )
@@ -199,9 +300,23 @@ class SQLStore(MetaStore):
         self,
         user_id: uuid.UUID,
         team_id: uuid.UUID,
+        role: MemberRole = MemberRole.MEMBER,
     ) -> bool:
         """Add a user to a team"""
         session = self._session()
+
+        # Validate user exists
+        user = self.get_user(user_id)
+        if not user:
+            session.close()
+            raise ValueError(f"User with id {user_id} not found")
+
+        # Validate team exists
+        team = self.get_team(team_id)
+        if not team:
+            session.close()
+            raise ValueError(f"Team with id {team_id} not found")
+
         # Check if membership already exists
         existing = (
             session.query(TeamMember)
@@ -216,8 +331,10 @@ class SQLStore(MetaStore):
             return False
 
         new_member = TeamMember(
+            org_id=user.org_id,
             user_id=user_id,
             team_id=team_id,
+            role=role,
         )
         session.add(new_member)
         session.commit()
@@ -340,6 +457,7 @@ class SQLStore(MetaStore):
     def create_experiment(
         self,
         name: str,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
         description: str | None = None,
@@ -368,6 +486,7 @@ class SQLStore(MetaStore):
 
         new_exp = Experiment(
             uuid=uid,
+            org_id=org_id,
             team_id=team_id,
             user_id=user_id,
             name=name,
@@ -390,6 +509,7 @@ class SQLStore(MetaStore):
                     continue  # skip invalid label
 
                 exp_label = ExperimentLabel(
+                    org_id=org_id,
                     team_id=team_id,
                     experiment_id=uid,
                     label_name=label_name.strip(),
@@ -401,6 +521,7 @@ class SQLStore(MetaStore):
             for tag in [t.strip() for t in tags]:
                 if tag:
                     exp_tag = ExperimentTag(
+                        org_id=org_id,
                         team_id=team_id,
                         experiment_id=uid,
                         tag=tag,
@@ -591,6 +712,7 @@ class SQLStore(MetaStore):
         Batch delete experiments by setting is_del flag.
         Also deletes all associated runs.
         Returns the number of experiments successfully deleted.
+        Caller must ensure user has permission to delete these experiments.
         """
         session = self._session()
         # Delete the experiments
@@ -624,6 +746,7 @@ class SQLStore(MetaStore):
     def create_agent(
         self,
         name: str,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
         type: AgentType = AgentType.CLAUDE,
@@ -635,6 +758,7 @@ class SQLStore(MetaStore):
 
         new_agent = Agent(
             uuid=uid,
+            org_id=org_id,
             team_id=team_id,
             user_id=user_id,
             name=name,
@@ -737,6 +861,7 @@ class SQLStore(MetaStore):
     def create_session(
         self,
         agent_id: uuid.UUID,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
         meta: dict | None = None,
@@ -747,6 +872,7 @@ class SQLStore(MetaStore):
 
         new_session = AgentSession(
             uuid=uid,
+            org_id=org_id,
             agent_id=agent_id,
             team_id=team_id,
             user_id=user_id,
@@ -810,6 +936,7 @@ class SQLStore(MetaStore):
 
     def create_run(
         self,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
         experiment_id: uuid.UUID | None = None,
@@ -822,6 +949,7 @@ class SQLStore(MetaStore):
         session = self._session()
 
         new_run = Run(
+            org_id=org_id,
             team_id=team_id,
             user_id=user_id,
             experiment_id=experiment_id,
@@ -914,6 +1042,7 @@ class SQLStore(MetaStore):
 
     def create_metric(
         self,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         experiment_id: uuid.UUID,
         run_id: uuid.UUID,
@@ -922,6 +1051,7 @@ class SQLStore(MetaStore):
     ) -> uuid.UUID:
         session = self._session()
         new_metric = Metric(
+            org_id=org_id,
             team_id=team_id,
             experiment_id=experiment_id,
             run_id=run_id,
@@ -961,6 +1091,7 @@ class SQLStore(MetaStore):
     def create_dataset(
         self,
         name: str,
+        org_id: uuid.UUID,
         team_id: uuid.UUID,
         user_id: uuid.UUID,
         path: str,
@@ -971,6 +1102,7 @@ class SQLStore(MetaStore):
     ) -> uuid.UUID:
         session = self._session()
         new_dataset = Dataset(
+            org_id=org_id,
             name=name,
             team_id=team_id,
             user_id=user_id,
@@ -1073,3 +1205,189 @@ class SQLStore(MetaStore):
             return True
         session.close()
         return False
+
+    # ---------- Permission APIs ----------
+
+    def user_is_super_admin_in_org(self, user_id: uuid.UUID, org_id: uuid.UUID) -> bool:
+        session = self._session()
+        admin_membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.user_id == user_id,
+                TeamMember.org_id == org_id,
+                TeamMember.role == MemberRole.SUPER_ADMIN,
+            )
+            .first()
+        )
+        session.close()
+        return admin_membership is not None
+
+    def team_is_accessible_to_user(
+        self, team_id: uuid.UUID, user_id: uuid.UUID, org_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+
+        if self.user_is_super_admin_in_org(user_id, org_id):
+            session.close()
+            return True
+
+        # Otherwise, check if user is a member of the specific team
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None
+
+    def org_is_accessible_to_user(self, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        session = self._session()
+        user = (
+            session.query(User)
+            .filter(User.uuid == user_id, User.org_id == org_id, User.is_del == 0)
+            .first()
+        )
+        session.close()
+        return user is not None
+
+    def experiment_is_accessible_to_user(
+        self, experiment_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+        exp = (
+            session.query(Experiment)
+            .filter(Experiment.uuid == experiment_id, Experiment.is_del == 0)
+            .first()
+        )
+        if exp is None:
+            session.close()
+            return False
+
+        if self.user_is_super_admin_in_org(user_id, exp.org_id):
+            session.close()
+            return True
+
+        # Check if user is in the team that the experiment belongs to
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == exp.team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None
+
+    def run_is_accessible_to_user(self, run_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        session = self._session()
+        run = session.query(Run).filter(Run.uuid == run_id, Run.is_del == 0).first()
+        if run is None:
+            session.close()
+            return False
+
+        if self.user_is_super_admin_in_org(user_id, run.org_id):
+            session.close()
+            return True
+
+        # Check if user is in the team that the experiment belongs to
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == run.team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None
+
+    def agent_is_accessible_to_user(
+        self, agent_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+        agent = (
+            session.query(Agent)
+            .filter(Agent.uuid == agent_id, Agent.is_del == 0)
+            .first()
+        )
+        if agent is None:
+            session.close()
+            return False
+
+        if self.user_is_super_admin_in_org(user_id, agent.org_id):
+            session.close()
+            return True
+
+        # Check if user is in the team that the agent belongs to
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == agent.team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None
+
+    def session_is_accessible_to_user(
+        self, session_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+        agent_session = (
+            session.query(AgentSession)
+            .filter(AgentSession.uuid == session_id, AgentSession.is_del == 0)
+            .first()
+        )
+        if agent_session is None:
+            session.close()
+            return False
+
+        if self.user_is_super_admin_in_org(user_id, agent_session.org_id):
+            session.close()
+            return True
+
+        # Check if user is in the team that the session belongs to
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == agent_session.team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None
+
+    def dataset_is_accessible_to_user(
+        self, dataset_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+        dst = (
+            session.query(Dataset)
+            .filter(Dataset.uuid == dataset_id, Agent.is_del == 0)
+            .first()
+        )
+        if dst is None:
+            session.close()
+            return False
+
+        if self.user_is_super_admin_in_org(user_id, dst.org_id):
+            session.close()
+            return True
+
+        # Check if user is in the team that the agent belongs to
+        membership = (
+            session.query(TeamMember)
+            .filter(
+                TeamMember.team_id == dst.team_id,
+                TeamMember.user_id == user_id,
+            )
+            .first()
+        )
+        session.close()
+        return membership is not None

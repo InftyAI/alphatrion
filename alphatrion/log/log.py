@@ -114,7 +114,8 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
         runtime._metadb.create_metric(
             key=key,
             value=value,
-            team_id=runtime._team_id,
+            org_id=runtime.org_id,
+            team_id=runtime.team_id,
             experiment_id=exp_id,
             run_id=run_id,
         )
@@ -183,6 +184,7 @@ async def log_dataset(
 
             id = runtime.metadb.create_dataset(
                 name=name,
+                org_id=runtime.org_id,
                 team_id=runtime.team_id,
                 user_id=runtime.user_id,
                 path=path,
@@ -198,6 +200,7 @@ async def log_dataset(
         )
         id = runtime.metadb.create_dataset(
             name=name,
+            org_id=runtime.org_id,
             team_id=runtime.team_id,
             user_id=runtime.user_id,
             path=path,

@@ -12,6 +12,7 @@ __RUNTIME__ = None
 def init(
     user_id: uuid.UUID,
     team_id: uuid.UUID | None = None,
+    org_id: uuid.UUID | None = None,
 ):
     """
     Initialize the AlphaTrion runtime environment.
@@ -20,13 +21,13 @@ def init(
         user_id: The user ID for the current user. You can generate a UUID
                  using `uuid.uuid4()`.
         team_id: The team ID for the current user. If not provided, will look
-                 for the first team
-                 associated with the user in the database.
+                 for the first team associated with the user in the database.
     """
     global __RUNTIME__
     __RUNTIME__ = Runtime(
         user_id=user_id,
         team_id=team_id,
+        org_id=org_id,
     )
 
 
@@ -42,6 +43,7 @@ class Runtime:
     __slots__ = (
         "_user_id",
         "_team_id",
+        "_org_id",
         "_metadb",
         "_tracestore",
         "_artifact",
@@ -53,6 +55,7 @@ class Runtime:
         self,
         user_id: uuid.UUID,
         team_id: uuid.UUID | None = None,
+        org_id: uuid.UUID | None = None,
     ):
         storage_runtime.init()
         self._metadb = storage_runtime.storage_runtime().metadb
@@ -61,6 +64,7 @@ class Runtime:
 
         self._user_id = user_id
         self._team_id = team_id
+        self._org_id = org_id
 
         if team_id is None:
             # If team_id is not provided, look for the first team associated with
@@ -72,6 +76,13 @@ class Runtime:
                     f"associated with at least one team in the database."
                 )
             self._team_id = teams[0].uuid
+
+        if org_id is None:
+            # Look up org_id from user or team
+            user = self._metadb.get_user(user_id)
+            if not user:
+                raise ValueError(f"User {user_id} not found in the database.")
+            self._org_id = user.org_id
 
         self._root_path = os.getenv(envs.ROOT_PATH, os.path.expanduser("~/.alphatrion"))
         if not os.path.exists(self._root_path):
@@ -96,6 +107,10 @@ class Runtime:
     @property
     def team_id(self) -> uuid.UUID:
         return self._team_id
+
+    @property
+    def org_id(self) -> uuid.UUID:
+        return self._org_id
 
     @property
     def root_path(self) -> str:
