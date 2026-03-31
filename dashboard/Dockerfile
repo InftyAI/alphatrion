@@ -6,20 +6,26 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM caddy:2-alpine
+FROM nginx:alpine
 
-# Create non-root user and set up directories
-RUN adduser -D -u 1000 -g 1000 caddy && \
-    mkdir -p /usr/share/caddy /config /data && \
-    chown -R caddy:caddy /usr/share/caddy /config /data
+# Copy built static files
+COPY --from=build /app/static/ /usr/share/nginx/html/
 
-# Copy index.html to root, assets to /static/assets
-COPY --from=build /app/static/index.html /usr/share/caddy/
-COPY --from=build /app/static/assets /usr/share/caddy/static/assets
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-COPY Caddyfile /etc/caddy/Caddyfile
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Switch to non-root user
-USER caddy
+# Create non-root user
+RUN adduser -D -u 1000 nginx-user && \
+    chown -R nginx-user:nginx-user /usr/share/nginx/html /var/cache/nginx /var/log/nginx && \
+    touch /var/run/nginx.pid && \
+    chown -R nginx-user:nginx-user /var/run/nginx.pid
+
+USER nginx-user
 
 EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]

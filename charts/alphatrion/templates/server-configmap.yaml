@@ -31,3 +31,6 @@ data:
   ALPHATRION_ARTIFACT_REGISTRY_URL: {{ .Values.registry.url | quote }}
   ALPHATRION_ARTIFACT_INSECURE: {{ .Values.registry.insecure | quote }}
   {{- end }}
+
+  # Authentication configuration
+  ALPHATRION_ENABLE_AUTH: {{ .Values.server.env.enableAuth | quote }}

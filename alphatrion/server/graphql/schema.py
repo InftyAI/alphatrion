@@ -137,7 +137,9 @@ class Query:
 
     # Artifact queries
     @strawberry.field
-    async def artifact_repos(self, info: Info[GraphQLContext, None]) -> list[ArtifactRepository]:
+    async def artifact_repos(
+        self, info: Info[GraphQLContext, None]
+    ) -> list[ArtifactRepository]:
         return await GraphQLResolvers.list_artifact_repositories(info)
 
     @strawberry.field
@@ -157,7 +159,9 @@ class Query:
         tag: str,
         repo_name: str,
     ) -> list[ArtifactFile]:
-        return await GraphQLResolvers.list_artifact_files(info, str(team_id), tag, repo_name)
+        return await GraphQLResolvers.list_artifact_files(
+            info, str(team_id), tag, repo_name
+        )
 
     @strawberry.field
     async def artifact_content(

@@ -27,6 +27,7 @@ class MetaStore(ABC):
         name: str,
         email: str,
         org_id: uuid.UUID,
+        password_hash: str | None = None,
         avatar_url: str | None = None,
         team_id: uuid.UUID | None = None,
         meta: dict | None = None,
@@ -35,6 +36,10 @@ class MetaStore(ABC):
 
     @abstractmethod
     def get_user(self, user_id: uuid.UUID) -> User | None:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
+    def get_user_by_email(self, email: str) -> User | None:
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
