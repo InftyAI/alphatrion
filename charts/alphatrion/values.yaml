@@ -34,6 +34,8 @@ server:
     enableArtifactStorage: false
     # Root path for API (useful if behind a reverse proxy)
     rootPath: ""
+    # Enable JWT authentication (true) or use direct headers (false)
+    enableAuth: false
 
   # Health check configuration
   livenessProbe:
@@ -70,6 +72,12 @@ dashboard:
   service:
     type: ClusterIP
     port: 80
+
+  env:
+    # Backend API URL - set this to the server service URL
+    # For internal cluster communication: http://alphatrion-server:8000
+    # For external access: https://api.example.com
+    apiUrl: ""
 
   # Health check configuration
   livenessProbe:

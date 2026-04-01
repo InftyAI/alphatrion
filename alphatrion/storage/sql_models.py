@@ -90,6 +90,7 @@ class User(Base):
     org_id = Column(UUID(as_uuid=True), nullable=False, comment="Organization ID")
     name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
+    password_hash = Column(String, nullable=False, comment="Bcrypt hashed password")
     avatar_url = Column(String, nullable=True)
     meta = Column(
         MutableDict.as_mutable(JSON),

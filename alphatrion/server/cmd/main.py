@@ -21,12 +21,13 @@ from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
 
-from alphatrion import envs
 from alphatrion.storage import runtime
 from alphatrion.utils import log
 
 load_dotenv()
 console = Console()
+
+character_length_at_least = 6
 
 try:
     __version__ = version("alphatrion")
@@ -62,18 +63,6 @@ def main():
         default="http://localhost:8000",
         help="Backend server URL to proxy requests to (default: http://localhost:8000)",
     )
-    dashboard.add_argument(
-        "--user-id",
-        type=str,
-        default=os.getenv(envs.DASHBOARD_USER_ID),
-        help="User ID to scope the dashboard (required)",
-    )
-    dashboard.add_argument(
-        "--team-id",
-        type=str,
-        default=None,
-        help="Team ID to scope the dashboard (optional)",
-    )
     dashboard.set_defaults(func=start_dashboard)
 
     # init command
@@ -84,25 +73,31 @@ def main():
         "--user-name",
         type=str,
         default=None,
-        help="Username for the new user (auto-generated if not provided)",
+        help="Username for the new user (will prompt if not provided)",
     )
     init.add_argument(
         "--email",
         type=str,
         default=None,
-        help="Email for the new user (auto-generated if not provided)",
+        help="Email for the new user (will prompt if not provided)",
+    )
+    init.add_argument(
+        "--password",
+        type=str,
+        default=None,
+        help="Password for the new user (will prompt if not provided)",
     )
     init.add_argument(
         "--team-name",
         type=str,
-        default="Default Team",
-        help="Team name (default: Default Team)",
+        default=None,
+        help="Team name (will prompt if not provided, defaults to 'Default Team')",
     )
     init.add_argument(
         "--org-name",
         type=str,
         default=None,
-        help="Organization name (auto-generated if not provided)",
+        help="Organization name (will prompt if not provided, auto-generated if empty)",
     )
     init.set_defaults(func=init_command)
 
@@ -166,20 +161,78 @@ def main():
 
 def init_command(args):
     """Initialize AlphaTrion with a user and team."""
+    import getpass
+
+    from alphatrion.server.auth import hash_password
+
     # Initialize the Server runtime to get access to metadb
     runtime.init()
 
     fake = Faker()
 
-    # Generate user name if not provided
-    user_name = args.user_name if args.user_name else fake.name()
-    email = (
-        args.email
-        if args.email
-        else f"{user_name.lower().replace(' ', '.')}@inftyai.com"
-    )
+    # Prompt for user info if not provided
+    user_name = args.user_name
+    if not user_name:
+        user_name = console.input(Text("👤 Enter user name: ", style="cyan"))
+        if not user_name:
+            user_name = fake.name()
+            console.print(Text(f"   Using generated name: {user_name}", style="dim"))
+
+    email = args.email
+    if not email:
+        email = console.input(Text("📧 Enter email address: ", style="cyan"))
+        if not email:
+            email = f"{user_name.lower().replace(' ', '.')}@inftyai.com"
+            console.print(Text(f"   Using generated email: {email}", style="dim"))
+
+    password = args.password
+    if not password:
+        console.print(Text("🔐 Enter password for the user:", style="cyan"))
+        password = getpass.getpass("   Password: ")
+        if not password:
+            console.print(
+                Text(
+                    "❌ Error: Password is required for authentication",
+                    style="bold red",
+                )
+            )
+            return
+        confirm = getpass.getpass("   Confirm password: ")
+        if password != confirm:
+            console.print(Text("❌ Error: Passwords do not match", style="bold red"))
+            return
+
+    if len(password) < character_length_at_least:
+        console.print(
+            Text(f"❌ Error: Password must be at least {character_length_at_least} characters", style="bold red")
+        )
+        return
+
+    org_name = args.org_name
+    if not org_name:
+        org_name = console.input(
+            Text(
+                "🏢 Enter organization name (press Enter to auto-generate): ",
+                style="cyan",
+            )
+        )
+        if not org_name:
+            org_name = fake.company()
+            console.print(
+                Text(f"   Using generated organization: {org_name}", style="dim")
+            )
+
     team_name = args.team_name
-    org_name = args.org_name if args.org_name else fake.company()
+    if not team_name:
+        team_name = console.input(
+            Text("👥 Enter team name (press Enter for 'Default Team'): ", style="cyan")
+        )
+        if not team_name:
+            team_name = "Default Team"
+            console.print(Text(f"   Using default team: {team_name}", style="dim"))
+
+    # Hash password
+    password_hash = hash_password(password)
 
     try:
         metadb = runtime.storage_runtime().metadb
@@ -188,11 +241,14 @@ def init_command(args):
         # Create organization
         console.print(Text(f"🏢 Creating organization: {org_name}", style="bold cyan"))
         org_id = metadb.create_organization(name=org_name)
-        # Create user
+
+        # Create user with password
         console.print(
             Text(f"👤 Creating user: {user_name} ({email})", style="bold cyan")
         )
-        user_id = metadb.create_user(name=user_name, email=email, org_id=org_id)
+        user_id = metadb.create_user(
+            name=user_name, email=email, org_id=org_id, password_hash=password_hash
+        )
 
         # Create team
         console.print(Text(f"🏢 Creating team: {team_name}", style="bold cyan"))
@@ -205,27 +261,28 @@ def init_command(args):
         console.print()
         console.print(Text("✅ Initialization successful!", style="bold green"))
         console.print()
-        console.print(Text("📋 Your organization ID:", style="bold yellow"))
-        console.print(Text(f"   {org_id}", style="bold cyan"))
-        console.print(Text("   Your team ID:", style="bold yellow"))
-        console.print(Text(f"   {team_id}", style="bold cyan"))
-        console.print(Text("   Your user ID:", style="bold yellow"))
-        console.print(Text(f"   {user_id}", style="bold cyan"))
+        console.print(Text("📋 Account Information:", style="bold yellow"))
+        console.print(Text(f"   Email: {email}", style="cyan"))
+        console.print(Text(f"   User ID: {user_id}", style="cyan"))
+        console.print(Text(f"   Organization ID: {org_id}", style="cyan"))
+        console.print(Text(f"   Team ID: {team_id}", style="cyan"))
+        console.print()
+        console.print(Text("🚀 Next steps:", style="bold yellow"))
+        console.print(Text("   1. Start the backend server:", style="dim"))
+        console.print(Text("      alphatrion server", style="white"))
+        console.print()
+        console.print(Text("   2. Start the dashboard:", style="dim"))
+        console.print(Text("      alphatrion dashboard", style="white"))
+        console.print()
+        console.print(
+            Text("   3. Visit http://localhost:5173 and login with:", style="dim")
+        )
+        console.print(Text(f"      Email: {email}", style="white"))
+        console.print(Text("      Password: <your password>", style="white"))
         console.print()
         console.print(
             Text(
-                "💡 Use this user ID to launch the dashboard, "
-                "or set the ALPHATRION_DASHBOARD_USER_ID environment variable",
-                style="dim",
-            )
-        )
-        console.print(
-            Text(f"   alphatrion dashboard --user-id {user_id}", style="magenta")
-        )
-        console.print()
-        console.print(
-            Text(
-                "🚀 Use this user ID and team ID to setup the experiment environment:",
+                "💡 To use in Python experiments:",
                 style="dim",
             )
         )
@@ -504,7 +561,6 @@ def start_dashboard(args):
     console.print(
         Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
     )
-    console.print(Text(f"👤 Dashboard scoped to user: {args.user_id}", style="yellow"))
     console.print()
     console.print(
         Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
@@ -514,63 +570,8 @@ def start_dashboard(args):
 
     app = FastAPI()
 
-    if not args.user_id:
-        console.print(
-            Text(
-                "❌ Error: User ID is required to launch the dashboard!",
-                style="bold red",
-            )
-        )
-        console.print(
-            Text(
-                "Please provide a user ID using the --user-id argument or set the ALPHATRION_DASHBOARD_USER_ID environment variable.",
-                style="yellow",
-            )
-        )
-        console.print(
-            Text(
-                "You can create a user and get their ID by running: alphatrion init",
-                style="cyan",
-            )
-        )
-        return
-    # Store user ID in app state
-    app.state.user_id = args.user_id
-    if args.team_id:
-        app.state.team_id = args.team_id
-
     # Create HTTP client for proxying requests to backend
     http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
-
-    # Endpoint to get current user ID and org ID (for frontend)
-    @app.get("/api/config")
-    async def get_config():
-        import contextlib
-        import uuid
-
-        from alphatrion.storage import runtime as storage_runtime
-
-        # Initialize storage if not already done
-        with contextlib.suppress(Exception):
-            storage_runtime.init()
-
-        config = {"userId": app.state.user_id}
-
-        # Look up user's org_id
-        try:
-            metadb = storage_runtime.storage_runtime().metadb
-            user = metadb.get_user(user_id=uuid.UUID(app.state.user_id))
-            if user:
-                config["orgId"] = str(user.org_id)
-        except Exception as e:
-            console.print(
-                Text(f"Warning: Could not fetch user org_id: {e}", style="yellow")
-            )
-
-        if hasattr(app.state, "team_id"):
-            config["teamId"] = app.state.team_id
-
-        return config
 
     # Proxy /graphql requests to backend (MUST be before catch-all route)
     @app.api_route("/graphql", methods=["GET", "POST"])

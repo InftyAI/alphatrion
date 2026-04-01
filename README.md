@@ -6,7 +6,7 @@
 </p>
 
 <h3 align="center">
-Open, modular framework to build and optimize GenAI applications
+⚒️ The observability platform for agentic systems.
 </h3>
 
 [![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
@@ -25,11 +25,15 @@ Open, modular framework to build and optimize GenAI applications
 - **🤖 Model Distribution** - Analyze request patterns and usage across different AI models
 - **📦 Artifact Management** - Store and version execution results, checkpoints, and model outputs
 - **🎯 Interactive Dashboard** - Modern web UI for exploring experiments, metrics, and traces
+- **🔐 Secure Authentication** - JWT-based authentication with user profiles and multi-team support
+- **👥 Multi-User Support** - Collaborative workspace with organization and team management
 - **🔌 Easy Integration** - Simple Python API with async/await support
 
 ## Core Concepts
 
-- **Team** - Top-level organizational unit for user collaboration
+- **Organization** - Top-level entity for grouping teams and users
+- **Team** - Collaborative workspace for organizing experiments and runs
+- **User** - Individual account with secure authentication and team memberships
 - **Experiment** - Logical grouping of runs with shared purpose, organized by labels
 - **Run** - Individual execution instance with configuration and metrics
 
@@ -56,11 +60,9 @@ make up
 # Wait for services to be ready, then run migrations
 make migrate
 
-# Initialize your team and user
-alphatrion init  # Use -h for custom options
+# Initialize your organization, team, and user account
+alphatrion init
 ```
-
-Save the generated user ID — you'll need it to track experiments.
 
 **Optional Tools:**
 - pgAdmin: `http://localhost:8081` (alphatrion@inftyai.com / alphatr1on)
@@ -96,7 +98,7 @@ alphatrion server
 alphatrion dashboard
 ```
 
-Access the dashboard at `http://127.0.0.1:5173` to explore experiments, visualize metrics, and analyze traces.
+Access the dashboard at `http://127.0.0.1:5173` and **log in with your email and password** to explore experiments, visualize metrics, and analyze traces.
 
 ![dashboard](./site/images/dashboard.png)
 
@@ -105,13 +107,6 @@ Access the dashboard at `http://127.0.0.1:5173` to explore experiments, visualiz
 AlphaTrion automatically captures distributed tracing data for all LLM calls, including latency, token usage, and span relationships.
 
 ![tracing](./site/images/trace.png)
-
-### 6. Other APIs
-
-- **log_params**: Track hyperparameters and configuration settings
-- **log_metrics**: Record performance metrics and visualize trends
-- **log_artifacts**: Store and manage files, checkpoints, and model outputs
-
 
 ### Cleanup
 

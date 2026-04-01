@@ -191,15 +191,23 @@ class SQLStore(MetaStore):
         name: str,
         email: str,
         org_id: uuid.UUID,
+        password_hash: str | None = None,
         uuid: uuid.UUID | None = None,
         avatar_url: str | None = None,
         team_id: uuid.UUID | None = None,
         meta: dict | None = None,
     ) -> uuid.UUID:
+        # If no password_hash provided, use default (user must change on first login)
+        if password_hash is None:
+            from alphatrion.server.auth import hash_password
+
+            password_hash = hash_password("changeme123")
+
         user = User(
             org_id=org_id,
             name=name,
             email=email,
+            password_hash=password_hash,
             avatar_url=avatar_url,
             meta=meta,
         )
@@ -245,6 +253,12 @@ class SQLStore(MetaStore):
         user = (
             session.query(User).filter(User.uuid == user_id, User.is_del == 0).first()
         )
+        session.close()
+        return user
+
+    def get_user_by_email(self, email: str) -> User | None:
+        session = self._session()
+        user = session.query(User).filter(User.email == email, User.is_del == 0).first()
         session.close()
         return user
 
