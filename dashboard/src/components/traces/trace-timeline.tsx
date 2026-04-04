@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronDown, ChevronRight, Clock, Zap, Database, Globe, Bot, X, GitBranch } from 'lucide-react';
 import type { Span } from '../../types';
 import { Card, CardContent } from '../ui/card';
@@ -26,28 +26,53 @@ const STATUS_COLORS: Record<string, string> = {
   'UNSET': 'bg-green-500', // Treat UNSET as successful (default behavior)
 };
 
-// Span type detection and styling
+// Span type styling - uses backend's semanticKind directly as label
 const getSpanType = (span: Span): { label: string; icon: JSX.Element; badgeColor: string } => {
-  const name = span.spanName.toLowerCase();
-  const kind = span.spanKind;
+  const semantic = span.semanticKind;
 
-  if (name.includes('openai') || name.includes('chat') || name.includes('completion')) {
-    return { label: 'LLM', icon: <Bot className="h-3 w-3" />, badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' };
-  }
-  if (kind === 'CLIENT' || name.includes('http') || name.includes('api')) {
-    return { label: 'API', icon: <Globe className="h-3 w-3" />, badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' };
-  }
-  if (name.includes('db') || name.includes('database') || name.includes('query')) {
-    return { label: 'DB', icon: <Database className="h-3 w-3" />, badgeColor: 'bg-cyan-100 text-cyan-700 border-cyan-200' };
-  }
-  if (span.spanAttributes?.['traceloop.span.kind'] === 'workflow') {
-    return { label: 'Workflow', icon: <GitBranch className="h-3 w-3" />, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' };
-  }
-  if (span.spanAttributes?.['traceloop.span.kind'] === 'task') {
-    return { label: 'Task', icon: <Zap className="h-3 w-3" />, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' };
+  // Map semantic kinds to icons and colors
+  let icon = <Clock className="h-3 w-3" />;
+  let badgeColor = 'bg-gray-100 text-gray-700 border-gray-200';
+
+  switch (semantic) {
+    case 'tool':
+      icon = <Zap className="h-3 w-3" />;
+      badgeColor = 'bg-lime-100 text-lime-700 border-lime-200';
+      break;
+    case 'reasoning':
+      icon = <Bot className="h-3 w-3" />;
+      badgeColor = 'bg-amber-100 text-amber-700 border-amber-200';
+      break;
+    case 'chat':
+      icon = <Bot className="h-3 w-3" />;
+      badgeColor = 'bg-sky-100 text-sky-700 border-sky-200';
+      break;
+    case 'db':
+      icon = <Database className="h-3 w-3" />;
+      badgeColor = 'bg-cyan-100 text-cyan-700 border-cyan-200';
+      break;
+    case 'workflow':
+      icon = <GitBranch className="h-3 w-3" />;
+      badgeColor = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      break;
+    case 'task':
+      icon = <Zap className="h-3 w-3" />;
+      badgeColor = 'bg-indigo-100 text-indigo-700 border-indigo-200';
+      break;
+    case 'agent':
+      icon = <Bot className="h-3 w-3" />;
+      badgeColor = 'bg-violet-100 text-violet-700 border-violet-200';
+      break;
+    case 'unknown':
+    default:
+      icon = <Clock className="h-3 w-3" />;
+      badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
   }
 
-  return { label: 'Span', icon: <Clock className="h-3 w-3" />, badgeColor: 'bg-gray-100 text-gray-700 border-gray-200' };
+  // Use semanticKind directly as label (capitalize)
+  const label = semantic.charAt(0).toUpperCase() + semantic.slice(1);
+
+  return { label, icon, badgeColor };
 };
 
 export function TraceTimeline({ spans }: TraceTimelineProps) {
@@ -56,6 +81,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
     return new Set(spans.filter(s => !s.parentSpanId || s.parentSpanId === '').map(s => s.spanId));
   });
   const [selectedSpan, setSelectedSpan] = useState<Span | null>(null);
+  const [showAllAttributes, setShowAllAttributes] = useState(false);
+
+  // Reset showAllAttributes when span changes
+  useEffect(() => {
+    setShowAllAttributes(false);
+  }, [selectedSpan]);
 
   const expandAll = () => {
     const allSpanIds = new Set(spans.map(s => s.spanId));
@@ -323,6 +354,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
   const renderSpanDetails = (span: Span) => {
     const spanType = getSpanType(span);
     const attrs = span.spanAttributes || {};
+    const semantic = span.semanticKind;
 
     // Extract model parameters
     const model = attrs['gen_ai.request.model'] || attrs['gen_ai.response.model'];
@@ -353,8 +385,12 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
       i++;
     }
 
-    // Check if this is a simple span (no prompts/completions, just basic info)
-    const isSimpleSpan = prompts.length === 0 && completions.length === 0;
+    const hasChatHistory = prompts.length > 0 || completions.length > 0;
+
+    // Extract function input/output for workflow and task spans
+    const functionInput = attrs['traceloop.entity.input'];
+    const functionOutput = attrs['traceloop.entity.output'];
+    const hasFunctionIO = functionInput || functionOutput;
 
     return (
       <Card className="mt-2 border-2 shadow-sm">
@@ -378,42 +414,8 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </Button>
           </div>
 
-          {/* Span Attributes */}
-          {Object.keys(span.spanAttributes).length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
-                Span Attributes
-              </div>
-              <div className="space-y-1">
-                {Object.entries(span.spanAttributes).map(([key, value]) => (
-                  <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
-                    <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
-                    <span className="font-mono text-foreground break-all">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Resource Attributes */}
-          {Object.keys(span.resourceAttributes).length > 0 && (
-            <div className="mb-2">
-              <div className="text-[10px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider">
-                Resource Attributes
-              </div>
-              <div className="space-y-1">
-                {Object.entries(span.resourceAttributes).map(([key, value]) => (
-                  <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
-                    <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
-                    <span className="font-mono text-foreground break-all">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Model Configuration - only show if model parameters exist */}
-          {!isSimpleSpan && model && (
+          {/* Model Configuration - show for chat/reasoning */}
+          {(semantic === 'chat' || semantic === 'reasoning') && model && (
             <div className="mb-2 pb-2 border-b">
               <div className="flex flex-wrap gap-2 text-[10px]">
                 <div className="flex items-center gap-1">
@@ -442,11 +444,32 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
             </div>
           )}
 
+          {/* Function Input/Output - show for workflow and task spans */}
+          {(semantic === 'workflow' || semantic === 'task') && hasFunctionIO && (
+            <div className="space-y-2 mb-3">
+              {functionInput && (
+                <div className="border rounded p-2 bg-muted/20">
+                  <div className="text-[9px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider flex items-center gap-1">
+                    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">Input</span>
+                  </div>
+                  <div className="text-[11px] font-mono whitespace-pre-wrap leading-relaxed text-foreground break-all">{functionInput}</div>
+                </div>
+              )}
+              {functionOutput && (
+                <div className="border rounded p-2 bg-muted/20">
+                  <div className="text-[9px] font-semibold text-muted-foreground mb-1.5 uppercase tracking-wider flex items-center gap-1">
+                    <span className="px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">Output</span>
+                  </div>
+                  <div className="text-[11px] font-mono whitespace-pre-wrap leading-relaxed text-foreground break-all">{functionOutput}</div>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Content - Prompts and Completions */}
-          {(prompts.length > 0 || completions.length > 0) && (
-            <div className="space-y-1.5">
-              {/* Prompts */}
+
+          {/* Chat History - for chat/reasoning spans */}
+          {(semantic === 'chat' || semantic === 'reasoning') && hasChatHistory && (
+            <div className="space-y-1.5 mb-3">
               {prompts.map((prompt, idx) => (
                 <div key={`prompt-${idx}`} className="border rounded p-1.5 bg-muted/20">
                   <div className="flex items-center gap-1.5 mb-1">
@@ -459,9 +482,7 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                 </div>
               ))}
 
-              {/* Completions */}
               {completions.map((completion, idx) => {
-                // Determine color based on role
                 let roleColor = 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400';
                 if (completion.role === 'thinking') {
                   roleColor = 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400';
@@ -484,6 +505,57 @@ export function TraceTimeline({ spans }: TraceTimelineProps) {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Show All Attributes Toggle */}
+          {(Object.keys(span.spanAttributes).length > 0 || Object.keys(span.resourceAttributes).length > 0) && (
+            <div className="border-t pt-2">
+              <button
+                onClick={() => setShowAllAttributes(!showAllAttributes)}
+                className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+              >
+                {showAllAttributes ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                <span className="font-semibold uppercase tracking-wider">All Attributes</span>
+              </button>
+
+              {showAllAttributes && (
+                <div className="mt-2 space-y-2">
+                  {/* Span Attributes */}
+                  {Object.keys(span.spanAttributes).length > 0 && (
+                    <div>
+                      <div className="text-[9px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+                        Span Attributes
+                      </div>
+                      <div className="space-y-1">
+                        {Object.entries(span.spanAttributes).map(([key, value]) => (
+                          <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
+                            <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
+                            <span className="font-mono text-foreground break-all">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Resource Attributes */}
+                  {Object.keys(span.resourceAttributes).length > 0 && (
+                    <div>
+                      <div className="text-[9px] font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+                        Resource Attributes
+                      </div>
+                      <div className="space-y-1">
+                        {Object.entries(span.resourceAttributes).map(([key, value]) => (
+                          <div key={key} className="flex gap-2 text-[10px] bg-muted/20 rounded px-2 py-1">
+                            <span className="text-muted-foreground font-medium min-w-[120px] flex-shrink-0">{key}:</span>
+                            <span className="font-mono text-foreground break-all">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

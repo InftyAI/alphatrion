@@ -206,7 +206,7 @@ export function SessionDetailPage() {
                 duration
                 status
                 createdAt
-                aggregatedTokens {
+                aggregatedUsage {
                   totalTokens
                   inputTokens
                   outputTokens
@@ -278,9 +278,9 @@ export function SessionDetailPage() {
 
   // Compute aggregate metrics
   const metrics = useMemo(() => {
-    const totalTokens = runs.reduce((sum, r) => sum + (r.aggregatedTokens?.totalTokens || 0), 0);
-    const inputTokens = runs.reduce((sum, r) => sum + (r.aggregatedTokens?.inputTokens || 0), 0);
-    const outputTokens = runs.reduce((sum, r) => sum + (r.aggregatedTokens?.outputTokens || 0), 0);
+    const totalTokens = runs.reduce((sum, r) => sum + (r.aggregatedUsage?.totalTokens || 0), 0);
+    const inputTokens = runs.reduce((sum, r) => sum + (r.aggregatedUsage?.inputTokens || 0), 0);
+    const outputTokens = runs.reduce((sum, r) => sum + (r.aggregatedUsage?.outputTokens || 0), 0);
     const totalDuration = runs.reduce((sum, r) => sum + (r.duration || 0), 0);
     const avgDuration = runs.length > 0 ? totalDuration / runs.length : 0;
     const completedRuns = runs.filter(r => r.status === 'COMPLETED').length;
@@ -309,9 +309,9 @@ export function SessionDetailPage() {
     return runs.map((run, idx) => ({
       index: idx + 1,
       name: `Run ${idx + 1}`,
-      inputTokens: run.aggregatedTokens?.inputTokens || 0,
-      outputTokens: run.aggregatedTokens?.outputTokens || 0,
-      totalTokens: run.aggregatedTokens?.totalTokens || 0,
+      inputTokens: run.aggregatedUsage?.inputTokens || 0,
+      outputTokens: run.aggregatedUsage?.outputTokens || 0,
+      totalTokens: run.aggregatedUsage?.totalTokens || 0,
     }));
   }, [runs]);
 
@@ -646,367 +646,364 @@ export function SessionDetailPage() {
               <div className="space-y-2">
                 {runSpans.slice(completionsPage * COMPLETIONS_PAGE_SIZE, (completionsPage + 1) * COMPLETIONS_PAGE_SIZE).map((runWithSpans, idx) => {
                   const actualIdx = completionsPage * COMPLETIONS_PAGE_SIZE + idx;
-                const isExpanded = selectedRunIdx === actualIdx;
+                  const isExpanded = selectedRunIdx === actualIdx;
 
-                // Extract user input from spans
-                // Sort spans by timestamp to get the first one
-                const sortedSpans = [...runWithSpans.spans].sort((a, b) => {
-                  const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-                  const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
-                  return timeA - timeB;
-                });
+                  // Extract user input from spans
+                  // Sort spans by timestamp to get the first one
+                  const sortedSpans = [...runWithSpans.spans].sort((a, b) => {
+                    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                    return timeA - timeB;
+                  });
 
-                // Try to find user input from the first span with content (skip processing spans)
-                let userInput = '';
-                for (const span of sortedSpans) {
-                  const attrs = span.spanAttributes || {};
+                  // Try to find user input from the first span with content (skip processing spans)
+                  let userInput = '';
+                  for (const span of sortedSpans) {
+                    const attrs = span.spanAttributes || {};
 
-                  // Try different attribute paths in order of likelihood
-                  const promptContent = attrs['gen_ai.prompt.0.content'] as string;
+                    // Try different attribute paths in order of likelihood
+                    const promptContent = attrs['gen_ai.prompt.0.content'] as string;
 
-                  if (promptContent && promptContent.trim()) {
-                    userInput = promptContent;
-                    break;
+                    if (promptContent && promptContent.trim()) {
+                      userInput = promptContent;
+                      break;
+                    }
+
+                    // Fallback to other possible locations
+                    if (!userInput) {
+                      userInput = attrs['llm.prompts.0.content'] as string ||
+                        attrs['input.value'] as string ||
+                        attrs['input'] as string || '';
+                    }
+
+                    if (userInput && userInput.trim()) break;
                   }
 
-                  // Fallback to other possible locations
-                  if (!userInput) {
-                    userInput = attrs['llm.prompts.0.content'] as string ||
-                               attrs['input.value'] as string ||
-                               attrs['input'] as string || '';
-                  }
+                  const displayInput = userInput.length > 100 ? userInput.substring(0, 100) + '...' : userInput;
 
-                  if (userInput && userInput.trim()) break;
-                }
+                  return (
+                    <Card
+                      key={runWithSpans.run.id}
+                      className={`cursor-pointer transition-all hover:shadow-md ${isExpanded ? 'ring-2 ring-primary' : ''
+                        }`}
+                      onClick={() => {
+                        setSelectedRunIdx(isExpanded ? null : actualIdx);
+                        setSelectedTimelineItemIdx(null); // Reset timeline item selection
+                      }}
+                    >
+                      <CardContent className="p-3">
+                        {/* Completion Header */}
+                        <div className="flex items-start gap-2">
+                          <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${runWithSpans.run.status === 'COMPLETED' ? 'bg-green-500' :
+                              runWithSpans.run.status === 'FAILED' ? 'bg-red-500' :
+                                'bg-yellow-500'
+                            }`} />
+                          <div className="flex-1 min-w-0">
+                            {/* User Input */}
+                            <div className="flex items-start gap-2 mb-1">
+                              {userInput ? (
+                                <p className="text-sm text-foreground line-clamp-2 flex-1">
+                                  {displayInput}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-muted-foreground italic flex-1">
+                                  [No user input]
+                                </p>
+                              )}
+                              <Badge variant={STATUS_VARIANTS[runWithSpans.run.status]} className="text-[10px] flex-shrink-0">
+                                {runWithSpans.run.status}
+                              </Badge>
+                            </div>
 
-                const displayInput = userInput.length > 100 ? userInput.substring(0, 100) + '...' : userInput;
-
-                return (
-                  <Card
-                    key={runWithSpans.run.id}
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      isExpanded ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => {
-                      setSelectedRunIdx(isExpanded ? null : actualIdx);
-                      setSelectedTimelineItemIdx(null); // Reset timeline item selection
-                    }}
-                  >
-                    <CardContent className="p-3">
-                      {/* Completion Header */}
-                      <div className="flex items-start gap-2">
-                        <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${
-                          runWithSpans.run.status === 'COMPLETED' ? 'bg-green-500' :
-                          runWithSpans.run.status === 'FAILED' ? 'bg-red-500' :
-                          'bg-yellow-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          {/* User Input */}
-                          <div className="flex items-start gap-2 mb-1">
-                            {userInput ? (
-                              <p className="text-sm text-foreground line-clamp-2 flex-1">
-                                {displayInput}
-                              </p>
-                            ) : (
-                              <p className="text-sm text-muted-foreground italic flex-1">
-                                [No user input]
-                              </p>
-                            )}
-                            <Badge variant={STATUS_VARIANTS[runWithSpans.run.status]} className="text-[10px] flex-shrink-0">
-                              {runWithSpans.run.status}
-                            </Badge>
-                          </div>
-
-                          {/* Metadata */}
-                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span>{formatDistanceToNow(new Date(runWithSpans.run.createdAt), { addSuffix: true })}</span>
-                            {runWithSpans.run.duration && (
-                              <>
-                                <span>•</span>
-                                <Clock className="h-3 w-3" />
-                                <span className="font-mono">{formatDuration(runWithSpans.run.duration)}</span>
-                              </>
-                            )}
-                            {runWithSpans.run.aggregatedTokens && runWithSpans.run.aggregatedTokens.totalTokens > 0 && (
-                              <>
-                                <span>•</span>
-                                <Zap className="h-3 w-3" />
-                                <span className="font-mono">{runWithSpans.run.aggregatedTokens.totalTokens.toLocaleString()} tokens</span>
-                              </>
-                            )}
-                            {runWithSpans.spans.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span>{runWithSpans.spans.length} span{runWithSpans.spans.length !== 1 ? 's' : ''}</span>
-                              </>
-                            )}
+                            {/* Metadata */}
+                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                              <span>{formatDistanceToNow(new Date(runWithSpans.run.createdAt), { addSuffix: true })}</span>
+                              {runWithSpans.run.duration && (
+                                <>
+                                  <span>•</span>
+                                  <Clock className="h-3 w-3" />
+                                  <span className="font-mono">{formatDuration(runWithSpans.run.duration)}</span>
+                                </>
+                              )}
+                              {runWithSpans.run.aggregatedUsage && runWithSpans.run.aggregatedUsage.totalTokens > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <Zap className="h-3 w-3" />
+                                  <span className="font-mono">{runWithSpans.run.aggregatedUsage.totalTokens.toLocaleString()} tokens</span>
+                                </>
+                              )}
+                              {runWithSpans.spans.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span>{runWithSpans.spans.length} span{runWithSpans.spans.length !== 1 ? 's' : ''}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Expanded Content */}
-                      {isExpanded && (
-                        <div className="mt-3 pt-3 border-t space-y-3">
+                        {/* Expanded Content */}
+                        {isExpanded && (
+                          <div className="mt-3 pt-3 border-t space-y-3">
 
-                          {/* Timeline */}
-                          <div>
-                          {(() => {
-                            // Build timeline from all spans
-                            const timeline = buildTimelineFromSpans(runWithSpans.spans, runWithSpans.run.duration || 0);
+                            {/* Timeline */}
+                            <div>
+                              {(() => {
+                                // Build timeline from all spans
+                                const timeline = buildTimelineFromSpans(runWithSpans.spans, runWithSpans.run.duration || 0);
 
-                            if (timeline.length === 0) {
-                              return (
-                                <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
-                                  No timeline data available
-                                </div>
-                              );
-                            }
-
-                            // Get actual time range from timeline items
-                            const timestamps = timeline.filter(t => t.timestamp && t.timestamp > 0).map(t => t.timestamp!);
-                            const minTimestamp = Math.min(...timestamps);
-                            const maxTimestamp = Math.max(...timestamps);
-
-                            // Calculate actual duration based on timestamps, with padding for last operation
-                            const lastItem = timeline[timeline.length - 1];
-                            const lastItemEnd = lastItem.timestamp && lastItem.duration
-                              ? lastItem.timestamp + (lastItem.duration * 1000)
-                              : maxTimestamp;
-                            const totalDurationMs = Math.max(lastItemEnd - minTimestamp, 1000); // At least 1 second
-
-                            return (
-                              <>
-                                {/* Timeline Header */}
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</h4>
-                                    <span className="text-[10px] text-muted-foreground font-mono">
-                                      {timeline.length - 1} operations • {formatDuration(totalDurationMs / 1000)}
-                                    </span>
-                                  </div>
-                                  {runWithSpans.run.aggregatedTokens && (
-                                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                      <Zap className="h-3 w-3" />
-                                      {runWithSpans.run.aggregatedTokens.inputTokens}↓ {runWithSpans.run.aggregatedTokens.outputTokens}↑
+                                if (timeline.length === 0) {
+                                  return (
+                                    <div className="flex h-24 items-center justify-center text-xs text-muted-foreground">
+                                      No timeline data available
                                     </div>
-                                  )}
-                                </div>
+                                  );
+                                }
 
-                                {/* Timeline Table */}
-                                <div className="border rounded overflow-hidden">
-                                  {/* Column Headers */}
-                                  <div className="flex items-center bg-muted/30 border-b text-[9px] text-muted-foreground uppercase tracking-wide h-6">
-                                    <div className="flex-shrink-0 flex items-center h-full" style={{ width: '140px', paddingLeft: '6px' }}>
-                                      Operation
-                                    </div>
-                                    <div className="flex-shrink-0 flex items-center h-full" style={{ width: '70px', paddingLeft: '6px' }}>
-                                      Duration
-                                    </div>
-                                    <div className="flex-1 flex items-center h-full" style={{ paddingLeft: '6px', paddingRight: '6px' }}>
-                                      Timeline
-                                    </div>
-                                  </div>
+                                // Get actual time range from timeline items
+                                const timestamps = timeline.filter(t => t.timestamp && t.timestamp > 0).map(t => t.timestamp!);
+                                const minTimestamp = Math.min(...timestamps);
+                                const maxTimestamp = Math.max(...timestamps);
 
-                                  {/* Timeline Rows */}
-                                  {timeline.map((item, idx) => {
-                                    const hasActualDuration = item.duration !== undefined && item.duration > 0;
-                                    const displayDuration = item.duration || 0;
+                                // Calculate actual duration based on timestamps, with padding for last operation
+                                const lastItem = timeline[timeline.length - 1];
+                                const lastItemEnd = lastItem.timestamp && lastItem.duration
+                                  ? lastItem.timestamp + (lastItem.duration * 1000)
+                                  : maxTimestamp;
+                                const totalDurationMs = Math.max(lastItemEnd - minTimestamp, 1000); // At least 1 second
 
-                                    // Position: bar STARTS at timestamp and extends for duration
-                                    const itemTimestamp = item.timestamp || minTimestamp;
-                                    const startOffsetMs = itemTimestamp - minTimestamp;
-                                    const leftPercent = (startOffsetMs / totalDurationMs) * 100;
-
-                                    // Bar width: how long the operation takes
-                                    const durationMs = displayDuration * 1000;
-                                    const widthPercent = (durationMs / totalDurationMs) * 100;
-
-                                    let badgeColor = '';
-                                    let barColor = '';
-                                    let icon = null;
-                                    let typeLabel = '';
-
-                                    if (item.type === 'user_input') {
-                                      badgeColor = 'bg-green-100 text-green-700 border-green-200';
-                                      barColor = 'bg-green-500';
-                                      icon = <User className="h-3 w-3" />;
-                                      typeLabel = 'User';
-                                    } else if (item.type === 'thinking') {
-                                      badgeColor = 'bg-purple-100 text-purple-700 border-purple-200';
-                                      barColor = 'bg-purple-500';
-                                      icon = <Brain className="h-3 w-3" />;
-                                      typeLabel = 'Think';
-                                    } else if (item.type === 'text') {
-                                      badgeColor = 'bg-gray-100 text-gray-700 border-gray-200';
-                                      barColor = 'bg-gray-500';
-                                      icon = <Bot className="h-3 w-3" />;
-                                      typeLabel = 'Text';
-                                    } else if (item.type === 'tool_use') {
-                                      if (item.isError) {
-                                        badgeColor = 'bg-red-100 text-red-700 border-red-200';
-                                        barColor = 'bg-red-500';
-                                      } else {
-                                        badgeColor = 'bg-blue-100 text-blue-700 border-blue-200';
-                                        barColor = 'bg-blue-500';
-                                      }
-                                      icon = <Wrench className="h-3 w-3" />;
-                                      typeLabel = 'Tool';
-                                    } else if (item.type === 'processing') {
-                                      badgeColor = 'bg-slate-100 text-slate-600 border-slate-200';
-                                      barColor = 'bg-slate-400';
-                                      icon = <Clock className="h-3 w-3" />;
-                                      typeLabel = 'Proc';
-                                    }
-
-                                    return (
-                                      <div key={idx}>
-                                        <div
-                                          className={`flex items-center border-b border-border hover:bg-muted/20 transition-colors h-8 cursor-pointer ${
-                                            selectedTimelineItemIdx === idx ? 'bg-accent' : ''
-                                          }`}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedTimelineItemIdx(selectedTimelineItemIdx === idx ? null : idx);
-                                          }}
-                                        >
-                                          {/* Operation Name */}
-                                          <div className="flex-shrink-0 flex items-center gap-1 h-full min-w-0" style={{ width: '140px', paddingLeft: '6px', paddingRight: '6px' }}>
-                                            <Badge variant="outline" className={`${badgeColor} flex items-center gap-0.5 px-1 py-0 text-[9px] font-medium flex-shrink-0 h-4`}>
-                                              {icon}
-                                              <span>{typeLabel}</span>
-                                            </Badge>
-                                            <span className="text-[11px] truncate text-foreground" title={item.name}>
-                                              {item.name}
-                                            </span>
-                                          </div>
-
-                                          {/* Duration */}
-                                          <div className="flex-shrink-0 flex items-center gap-1 text-foreground h-full" style={{ width: '70px', paddingLeft: '6px' }}>
-                                            <span className={`text-[10px] font-mono ${hasActualDuration ? '' : 'text-muted-foreground italic'}`}>
-                                              {hasActualDuration ? formatDuration(displayDuration) : <span className="text-muted-foreground/40">~0ms</span>}
-                                            </span>
-                                          </div>
-
-                                          {/* Timeline Bar */}
-                                          <div className="flex-1 relative h-full min-w-0 flex items-center" style={{ paddingLeft: '6px', paddingRight: '6px' }}>
-                                            {hasActualDuration && (
-                                              <div
-                                                className={`${barColor} absolute h-4 rounded flex items-center px-1 text-white text-[9px] font-medium`}
-                                                style={{
-                                                  left: `${Math.max(0, Math.min(99, leftPercent))}%`,
-                                                  width: `${Math.max(1, Math.min(100 - leftPercent, widthPercent))}%`,
-                                                }}
-                                                title={`${item.name}\nStart: +${(startOffsetMs / 1000).toFixed(2)}s\nDuration: ${formatDuration(displayDuration)}`}
-                                              >
-                                                <span className="truncate">{formatDuration(displayDuration)}</span>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-
-                                        {/* Details Panel */}
-                                        {selectedTimelineItemIdx === idx && item.type !== 'processing' && (
-                                          <div className="border-b border-border bg-muted/10 p-3">
-                                            {item.type === 'user_input' && item.content && (
-                                              <div>
-                                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">User Input</h5>
-                                                <div className="bg-background rounded border p-2.5">
-                                                  <pre className="text-xs text-foreground whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
-                                                    {item.content}
-                                                  </pre>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {item.type === 'thinking' && item.content && (
-                                              <div>
-                                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Thinking</h5>
-                                                <div className="bg-background rounded border p-2.5">
-                                                  <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
-                                                    {item.content}
-                                                  </pre>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {item.type === 'text' && item.content && (
-                                              <div>
-                                                <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Response</h5>
-                                                <div className="bg-background rounded border p-2.5">
-                                                  <pre className="text-xs text-foreground whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
-                                                    {item.content}
-                                                  </pre>
-                                                </div>
-                                              </div>
-                                            )}
-
-                                            {item.type === 'tool_use' && (
-                                              <div className="space-y-3">
-                                                {item.input && (
-                                                  <div>
-                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Input</h5>
-                                                    <div className="bg-background rounded border p-2.5">
-                                                      <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
-                                                        {(() => {
-                                                          try {
-                                                            return JSON.stringify(JSON.parse(item.input), null, 2);
-                                                          } catch {
-                                                            return item.input;
-                                                          }
-                                                        })()}
-                                                      </pre>
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                                {item.output && (
-                                                  <div>
-                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Output</h5>
-                                                    <div className="bg-background rounded border p-2.5">
-                                                      <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
-                                                        {item.output}
-                                                      </pre>
-                                                    </div>
-                                                  </div>
-                                                )}
-
-                                                {item.isError && (
-                                                  <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded p-2">
-                                                    <p className="text-xs text-red-700 dark:text-red-300 font-semibold">
-                                                      Tool execution failed
-                                                    </p>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
+                                return (
+                                  <>
+                                    {/* Timeline Header */}
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Timeline</h4>
+                                        <span className="text-[10px] text-muted-foreground font-mono">
+                                          {timeline.length - 1} operations • {formatDuration(totalDurationMs / 1000)}
+                                        </span>
                                       </div>
-                                    );
-                                  })}
-                                </div>
-                              </>
-                            );
-                          })()}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+                                      {runWithSpans.run.aggregatedUsage && (
+                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                          <Zap className="h-3 w-3" />
+                                          {runWithSpans.run.aggregatedUsage.inputTokens}↓ {runWithSpans.run.aggregatedUsage.outputTokens}↑
+                                        </div>
+                                      )}
+                                    </div>
 
-            {/* Pagination */}
-            <Pagination
-              currentPage={completionsPage}
-              totalPages={Math.max(1, Math.ceil(runSpans.length / COMPLETIONS_PAGE_SIZE))}
-              pageSize={COMPLETIONS_PAGE_SIZE}
-              totalItems={runSpans.length}
-              onPageChange={setCompletionsPage}
-              itemName="completions"
-            />
-          </>
+                                    {/* Timeline Table */}
+                                    <div className="border rounded overflow-hidden">
+                                      {/* Column Headers */}
+                                      <div className="flex items-center bg-muted/30 border-b text-[9px] text-muted-foreground uppercase tracking-wide h-6">
+                                        <div className="flex-shrink-0 flex items-center h-full" style={{ width: '140px', paddingLeft: '6px' }}>
+                                          Operation
+                                        </div>
+                                        <div className="flex-shrink-0 flex items-center h-full" style={{ width: '70px', paddingLeft: '6px' }}>
+                                          Duration
+                                        </div>
+                                        <div className="flex-1 flex items-center h-full" style={{ paddingLeft: '6px', paddingRight: '6px' }}>
+                                          Timeline
+                                        </div>
+                                      </div>
+
+                                      {/* Timeline Rows */}
+                                      {timeline.map((item, idx) => {
+                                        const hasActualDuration = item.duration !== undefined && item.duration > 0;
+                                        const displayDuration = item.duration || 0;
+
+                                        // Position: bar STARTS at timestamp and extends for duration
+                                        const itemTimestamp = item.timestamp || minTimestamp;
+                                        const startOffsetMs = itemTimestamp - minTimestamp;
+                                        const leftPercent = (startOffsetMs / totalDurationMs) * 100;
+
+                                        // Bar width: how long the operation takes
+                                        const durationMs = displayDuration * 1000;
+                                        const widthPercent = (durationMs / totalDurationMs) * 100;
+
+                                        let badgeColor = '';
+                                        let barColor = '';
+                                        let icon = null;
+                                        let typeLabel = '';
+
+                                        if (item.type === 'user_input') {
+                                          badgeColor = 'bg-green-100 text-green-700 border-green-200';
+                                          barColor = 'bg-green-500';
+                                          icon = <User className="h-3 w-3" />;
+                                          typeLabel = 'User';
+                                        } else if (item.type === 'thinking') {
+                                          badgeColor = 'bg-purple-100 text-purple-700 border-purple-200';
+                                          barColor = 'bg-purple-500';
+                                          icon = <Brain className="h-3 w-3" />;
+                                          typeLabel = 'Think';
+                                        } else if (item.type === 'text') {
+                                          badgeColor = 'bg-gray-100 text-gray-700 border-gray-200';
+                                          barColor = 'bg-gray-500';
+                                          icon = <Bot className="h-3 w-3" />;
+                                          typeLabel = 'Text';
+                                        } else if (item.type === 'tool_use') {
+                                          if (item.isError) {
+                                            badgeColor = 'bg-red-100 text-red-700 border-red-200';
+                                            barColor = 'bg-red-500';
+                                          } else {
+                                            badgeColor = 'bg-blue-100 text-blue-700 border-blue-200';
+                                            barColor = 'bg-blue-500';
+                                          }
+                                          icon = <Wrench className="h-3 w-3" />;
+                                          typeLabel = 'Tool';
+                                        } else if (item.type === 'processing') {
+                                          badgeColor = 'bg-slate-100 text-slate-600 border-slate-200';
+                                          barColor = 'bg-slate-400';
+                                          icon = <Clock className="h-3 w-3" />;
+                                          typeLabel = 'Proc';
+                                        }
+
+                                        return (
+                                          <div key={idx}>
+                                            <div
+                                              className={`flex items-center border-b border-border hover:bg-muted/20 transition-colors h-8 cursor-pointer ${selectedTimelineItemIdx === idx ? 'bg-accent' : ''
+                                                }`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedTimelineItemIdx(selectedTimelineItemIdx === idx ? null : idx);
+                                              }}
+                                            >
+                                              {/* Operation Name */}
+                                              <div className="flex-shrink-0 flex items-center gap-1 h-full min-w-0" style={{ width: '140px', paddingLeft: '6px', paddingRight: '6px' }}>
+                                                <Badge variant="outline" className={`${badgeColor} flex items-center gap-0.5 px-1 py-0 text-[9px] font-medium flex-shrink-0 h-4`}>
+                                                  {icon}
+                                                  <span>{typeLabel}</span>
+                                                </Badge>
+                                                <span className="text-[11px] truncate text-foreground" title={item.name}>
+                                                  {item.name}
+                                                </span>
+                                              </div>
+
+                                              {/* Duration */}
+                                              <div className="flex-shrink-0 flex items-center gap-1 text-foreground h-full" style={{ width: '70px', paddingLeft: '6px' }}>
+                                                <span className={`text-[10px] font-mono ${hasActualDuration ? '' : 'text-muted-foreground italic'}`}>
+                                                  {hasActualDuration ? formatDuration(displayDuration) : <span className="text-muted-foreground/40">~0ms</span>}
+                                                </span>
+                                              </div>
+
+                                              {/* Timeline Bar */}
+                                              <div className="flex-1 relative h-full min-w-0 flex items-center" style={{ paddingLeft: '6px', paddingRight: '6px' }}>
+                                                {hasActualDuration && (
+                                                  <div
+                                                    className={`${barColor} absolute h-4 rounded flex items-center px-1 text-white text-[9px] font-medium`}
+                                                    style={{
+                                                      left: `${Math.max(0, Math.min(99, leftPercent))}%`,
+                                                      width: `${Math.max(1, Math.min(100 - leftPercent, widthPercent))}%`,
+                                                    }}
+                                                    title={`${item.name}\nStart: +${(startOffsetMs / 1000).toFixed(2)}s\nDuration: ${formatDuration(displayDuration)}`}
+                                                  >
+                                                    <span className="truncate">{formatDuration(displayDuration)}</span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Details Panel */}
+                                            {selectedTimelineItemIdx === idx && item.type !== 'processing' && (
+                                              <div className="border-b border-border bg-muted/10 p-3">
+                                                {item.type === 'user_input' && item.content && (
+                                                  <div>
+                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">User Input</h5>
+                                                    <div className="bg-background rounded border p-2.5">
+                                                      <pre className="text-xs text-foreground whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                                                        {item.content}
+                                                      </pre>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {item.type === 'thinking' && item.content && (
+                                                  <div>
+                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Thinking</h5>
+                                                    <div className="bg-background rounded border p-2.5">
+                                                      <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                                                        {item.content}
+                                                      </pre>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {item.type === 'text' && item.content && (
+                                                  <div>
+                                                    <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Response</h5>
+                                                    <div className="bg-background rounded border p-2.5">
+                                                      <pre className="text-xs text-foreground whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                                                        {item.content}
+                                                      </pre>
+                                                    </div>
+                                                  </div>
+                                                )}
+
+                                                {item.type === 'tool_use' && (
+                                                  <div className="space-y-3">
+                                                    {item.input && (
+                                                      <div>
+                                                        <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Input</h5>
+                                                        <div className="bg-background rounded border p-2.5">
+                                                          <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
+                                                            {(() => {
+                                                              try {
+                                                                return JSON.stringify(JSON.parse(item.input), null, 2);
+                                                              } catch {
+                                                                return item.input;
+                                                              }
+                                                            })()}
+                                                          </pre>
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {item.output && (
+                                                      <div>
+                                                        <h5 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Output</h5>
+                                                        <div className="bg-background rounded border p-2.5">
+                                                          <pre className="text-xs text-foreground font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
+                                                            {item.output}
+                                                          </pre>
+                                                        </div>
+                                                      </div>
+                                                    )}
+
+                                                    {item.isError && (
+                                                      <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded p-2">
+                                                        <p className="text-xs text-red-700 dark:text-red-300 font-semibold">
+                                                          Tool execution failed
+                                                        </p>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={completionsPage}
+                totalPages={Math.max(1, Math.ceil(runSpans.length / COMPLETIONS_PAGE_SIZE))}
+                pageSize={COMPLETIONS_PAGE_SIZE}
+                totalItems={runSpans.length}
+                onPageChange={setCompletionsPage}
+                itemName="completions"
+              />
+            </>
           )}
         </TabsContent>
       </Tabs>

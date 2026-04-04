@@ -162,9 +162,9 @@ export function RunsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredRuns.map((run) => {
-                    const totalTokens = run.aggregatedTokens?.totalTokens || 0;
-                    const inputTokens = run.aggregatedTokens?.inputTokens || 0;
-                    const outputTokens = run.aggregatedTokens?.outputTokens || 0;
+                    const totalTokens = run.aggregatedUsage?.totalTokens || 0;
+                    const inputTokens = run.aggregatedUsage?.inputTokens || 0;
+                    const outputTokens = run.aggregatedUsage?.outputTokens || 0;
 
                     return (
                       <TableRow

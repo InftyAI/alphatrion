@@ -189,15 +189,25 @@ export function ExperimentDetailPage() {
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
                   <dd className="mt-1.5 text-foreground font-mono text-sm">
-                    {experiment.aggregatedTokens?.totalTokens !== undefined && experiment.aggregatedTokens.totalTokens > 0 ? (
+                    {experiment.aggregatedUsage?.totalTokens !== undefined && experiment.aggregatedUsage.totalTokens > 0 ? (
                       <>
-                        {Number(experiment.aggregatedTokens.totalTokens).toLocaleString()}
-                        {experiment.aggregatedTokens.inputTokens !== undefined && experiment.aggregatedTokens.outputTokens !== undefined && (
+                        {Number(experiment.aggregatedUsage.totalTokens).toLocaleString()}
+                        {experiment.aggregatedUsage.inputTokens !== undefined && experiment.aggregatedUsage.outputTokens !== undefined && (
                           <span className="text-muted-foreground text-xs ml-1">
-                            ({Number(experiment.aggregatedTokens.inputTokens).toLocaleString()}↓ {Number(experiment.aggregatedTokens.outputTokens).toLocaleString()}↑)
+                            ({Number(experiment.aggregatedUsage.inputTokens).toLocaleString()}↓ {Number(experiment.aggregatedUsage.outputTokens).toLocaleString()}↑)
                           </span>
                         )}
                       </>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Cost</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">
+                    {experiment.aggregatedUsage?.totalCost !== undefined && experiment.aggregatedUsage.totalCost > 0 ? (
+                      <>${experiment.aggregatedUsage.totalCost.toFixed(4)}</>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}

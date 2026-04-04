@@ -19,10 +19,13 @@ export enum AgentType {
   CLAUDE = 1,
 }
 
-export interface TokenStats {
+export interface AggregatedUsage {
   totalTokens: number;
   inputTokens: number;
   outputTokens: number;
+  cacheReadInputTokens: number;
+  cacheCreationInputTokens: number;
+  totalCost: number;
 }
 
 export interface Team {
@@ -38,7 +41,7 @@ export interface Team {
   totalDatasets: number;
   totalAgents: number;
   totalSessions: number;
-  aggregatedTokens: TokenStats;
+  aggregatedUsage: AggregatedUsage;
 }
 
 export interface Organization {
@@ -87,7 +90,7 @@ export interface Experiment {
   status: Status;
   createdAt: string;
   updatedAt: string;
-  aggregatedTokens: TokenStats;
+  aggregatedUsage: AggregatedUsage;
   traceStats?: TraceStats;
   metrics?: Metric[];
 }
@@ -102,7 +105,7 @@ export interface Run {
   duration: number;
   status: Status;
   createdAt: string;
-  aggregatedTokens: TokenStats;
+  aggregatedUsage: AggregatedUsage;
   metrics?: Metric[];
   spans?: Span[];
 }
