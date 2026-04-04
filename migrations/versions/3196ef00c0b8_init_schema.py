@@ -1,8 +1,8 @@
 """init schema
 
-Revision ID: 0d46a93a8733
+Revision ID: 3196ef00c0b8
 Revises: 
-Create Date: 2026-03-31 19:56:38.329974
+Create Date: 2026-04-02 00:22:25.946324
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0d46a93a8733'
+revision: str = '3196ef00c0b8'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -87,8 +87,6 @@ def upgrade() -> None:
     sa.Column('kind', sa.Integer(), nullable=False, comment='Type of the experiment'),
     sa.Column('duration', sa.Float(), nullable=True, comment='Duration of the experiment in seconds'),
     sa.Column('status', sa.Integer(), nullable=False, comment='Status of the experiment,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
-    sa.Column('usage', sa.JSON(), nullable=True, comment='The usage information, e.g. for LLM calls:             {total_tokens: int, input_tokens: int, output_tokens: int}'),
-    sa.Column('cost', sa.JSON(), nullable=True, comment='Cost of the experiment in dollars'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_del', sa.Integer(), nullable=True, comment='0 for not deleted, 1 for deleted'),
@@ -130,8 +128,6 @@ def upgrade() -> None:
     sa.Column('meta', sa.JSON(), nullable=True, comment='Additional metadata for the run'),
     sa.Column('duration', sa.Float(), nullable=True, comment='Duration of the run in seconds'),
     sa.Column('status', sa.Integer(), nullable=False, comment='Status of the run,             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED,             10: CANCELLED, 11: FAILED'),
-    sa.Column('usage', sa.JSON(), nullable=True, comment='The usage information, e.g. for LLM calls:             {total_tokens: int, input_tokens: int, output_tokens: int}'),
-    sa.Column('cost', sa.JSON(), nullable=True, comment='Cost of the run in dollars'),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_del', sa.Integer(), nullable=True, comment='0 for not deleted, 1 for deleted'),

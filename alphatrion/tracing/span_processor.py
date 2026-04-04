@@ -10,6 +10,13 @@ from alphatrion.runtime.contextvars import (
 
 logger = logging.getLogger(__name__)
 
+# Semantic kind enums:
+SEMANTIC_KIND_TOOL = "tool"
+SEMANTIC_KIND_REASONING = "reasoning"
+SEMANTIC_KIND_CHAT = "chat"
+SEMANTIC_KIND_DB = "db"
+SEMANTIC_KIND_UNKNOWN = "unknown"
+
 
 class ContextAttributesSpanProcessor(SpanProcessor):
     """SpanProcessor that adds run_id, org_id, team_id, user_id, experiment_id to all spans.
@@ -34,6 +41,9 @@ class ContextAttributesSpanProcessor(SpanProcessor):
 
             if run_id is None:
                 # No run context, skip setting attributes
+                logger.debug(
+                    "Span started with no run_id in context, skipping attribute injection"
+                )
                 return
 
             if exp_id is None:
@@ -50,9 +60,7 @@ class ContextAttributesSpanProcessor(SpanProcessor):
             span.set_attribute("org_id", str(runtime.org_id))
             span.set_attribute("team_id", str(runtime.team_id))
             span.set_attribute("user_id", str(runtime.user_id))
-
-            if exp_id:
-                span.set_attribute("experiment_id", str(exp_id))
+            span.set_attribute("experiment_id", str(exp_id))
 
         except (RuntimeError, AttributeError) as e:
             logger.debug(f"Could not set span attributes in processor: {e}")

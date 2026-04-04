@@ -8,10 +8,15 @@ from strawberry.types import Info
 
 
 @strawberry.type
-class TokenStats:
+class AggregatedUsage:
+    """Aggregated usage and cost information for tokens."""
+
     total_tokens: int
     input_tokens: int
     output_tokens: int
+    cache_read_input_tokens: int
+    cache_creation_input_tokens: int
+    total_cost: float
 
 
 @strawberry.type
@@ -21,11 +26,14 @@ class ModelDistribution:
 
 
 @strawberry.type
-class DailyTokenUsage:
+class DailyCostUsage:
     date: str
+    total_cost: float
     total_tokens: int
     input_tokens: int
     output_tokens: int
+    cache_read_input_tokens: int
+    cache_creation_input_tokens: int
 
 
 @strawberry.type
@@ -86,14 +94,17 @@ class Team:
         return GraphQLResolvers.total_sessions(info=info, team_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self, info: Info) -> TokenStats:
+    def aggregated_usage(self, info: Info) -> AggregatedUsage:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_team_tokens(info=info, team_id=self.id)
-        return TokenStats(
-            total_tokens=token_data["total_tokens"],
-            input_tokens=token_data["input_tokens"],
-            output_tokens=token_data["output_tokens"],
+        usage = GraphQLResolvers.aggregate_team_usage(info=info, team_id=self.id)
+        return AggregatedUsage(
+            total_tokens=usage["total_tokens"],
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_read_input_tokens=usage["cache_read_input_tokens"],
+            cache_creation_input_tokens=usage["cache_creation_input_tokens"],
+            total_cost=usage["total_cost"],
         )
 
     @strawberry.field
@@ -182,7 +193,6 @@ class Experiment:
     params: JSON | None
     duration: float
     status: GraphQLStatusEnum
-    cost: JSON | None
     created_at: datetime
     updated_at: datetime
 
@@ -205,16 +215,19 @@ class Experiment:
         return GraphQLResolvers.list_exp_metrics(info=info, experiment_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self, info: Info) -> TokenStats:
+    def aggregated_usage(self, info: Info) -> AggregatedUsage:
         from .resolvers import GraphQLResolvers
 
-        tokens = GraphQLResolvers.aggregate_experiment_tokens(
+        usage = GraphQLResolvers.aggregate_experiment_usage(
             info=info, experiment_id=self.id
         )
-        return TokenStats(
-            total_tokens=tokens["total_tokens"],
-            input_tokens=tokens["input_tokens"],
-            output_tokens=tokens["output_tokens"],
+        return AggregatedUsage(
+            total_tokens=usage["total_tokens"],
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_read_input_tokens=usage["cache_read_input_tokens"],
+            cache_creation_input_tokens=usage["cache_creation_input_tokens"],
+            total_cost=usage["total_cost"],
         )
 
     @strawberry.field
@@ -255,16 +268,17 @@ class Agent:
         )
 
     @strawberry.field
-    def aggregated_tokens(self, info: Info) -> TokenStats:
+    def aggregated_usage(self, info: Info) -> AggregatedUsage:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_agent_tokens(
-            info=info, agent_id=self.id
-        )
-        return TokenStats(
-            total_tokens=token_data["total_tokens"],
-            input_tokens=token_data["input_tokens"],
-            output_tokens=token_data["output_tokens"],
+        usage = GraphQLResolvers.aggregate_agent_usage(info=info, agent_id=self.id)
+        return AggregatedUsage(
+            total_tokens=usage["total_tokens"],
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_read_input_tokens=usage["cache_read_input_tokens"],
+            cache_creation_input_tokens=usage["cache_creation_input_tokens"],
+            total_cost=usage["total_cost"],
         )
 
 
@@ -288,16 +302,17 @@ class Session:
         )
 
     @strawberry.field
-    def aggregated_tokens(self, info: Info) -> TokenStats:
+    def aggregated_usage(self, info: Info) -> AggregatedUsage:
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_session_tokens(
-            info=info, session_id=self.id
-        )
-        return TokenStats(
-            total_tokens=token_data["total_tokens"],
-            input_tokens=token_data["input_tokens"],
-            output_tokens=token_data["output_tokens"],
+        usage = GraphQLResolvers.aggregate_session_usage(info=info, session_id=self.id)
+        return AggregatedUsage(
+            total_tokens=usage["total_tokens"],
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_read_input_tokens=usage["cache_read_input_tokens"],
+            cache_creation_input_tokens=usage["cache_creation_input_tokens"],
+            total_cost=usage["total_cost"],
         )
 
 
@@ -312,7 +327,6 @@ class Run:
     meta: JSON | None
     duration: float
     status: GraphQLStatusEnum
-    cost: JSON | None
     created_at: datetime
 
     @strawberry.field
@@ -330,15 +344,18 @@ class Run:
         return GraphQLResolvers.list_spans_by_run_id(info=info, run_id=self.id)
 
     @strawberry.field
-    def aggregated_tokens(self, info: Info) -> TokenStats:
+    def aggregated_usage(self, info: Info) -> AggregatedUsage:
         """Get aggregated token usage for this run."""
         from .resolvers import GraphQLResolvers
 
-        token_data = GraphQLResolvers.aggregate_run_tokens(info=info, run_id=self.id)
-        return TokenStats(
-            total_tokens=token_data["total_tokens"],
-            input_tokens=token_data["input_tokens"],
-            output_tokens=token_data["output_tokens"],
+        usage = GraphQLResolvers.aggregate_run_usage(info=info, run_id=self.id)
+        return AggregatedUsage(
+            total_tokens=usage["total_tokens"],
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_read_input_tokens=usage["cache_read_input_tokens"],
+            cache_creation_input_tokens=usage["cache_creation_input_tokens"],
+            total_cost=usage["total_cost"],
         )
 
 

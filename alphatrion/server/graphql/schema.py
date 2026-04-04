@@ -12,7 +12,7 @@ from alphatrion.server.graphql.types import (
     ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
-    DailyTokenUsage,
+    DailyCostUsage,
     Dataset,
     Experiment,
     Organization,
@@ -125,13 +125,13 @@ class Query:
         )
 
     @strawberry.field
-    def daily_token_usage(
+    def daily_cost_usage(
         self,
         team_id: strawberry.ID,
         days: int = 7,
         info: Info[GraphQLContext, None] = None,
-    ) -> list[DailyTokenUsage]:
-        return GraphQLResolvers.get_daily_token_usage(
+    ) -> list[DailyCostUsage]:
+        return GraphQLResolvers.get_daily_cost_usage(
             team_id=team_id, days=days, info=info
         )
 

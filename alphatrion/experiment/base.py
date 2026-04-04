@@ -220,16 +220,9 @@ class Experiment(ABC):
         # to avoid confusion.
         if exp_obj and exp_obj.status != Status.COMPLETED:
             self._id = exp_obj.uuid
-            usage = exp_obj.usage
-
-            # reset to running status, also need to reset the tokens.
-            if usage and "total_tokens" in usage:
-                # delete the tokens in the usage - set to None instead of empty dict
-                usage = None
             self._runtime._metadb.update_experiment(
                 experiment_id=self._id,
                 status=Status.RUNNING,
-                usage=usage,
             )
         elif exp_obj and exp_obj.status == Status.COMPLETED:
             raise RuntimeError(

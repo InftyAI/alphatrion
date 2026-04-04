@@ -8,6 +8,11 @@ from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 from opentelemetry.trace import StatusCode
 
 from alphatrion.storage.tracestore import TraceStore
+from alphatrion.tracing.span_processor import (
+    SEMANTIC_KIND_DB,
+    SEMANTIC_KIND_REASONING,
+    SEMANTIC_KIND_UNKNOWN,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +127,19 @@ class ClickHouseSpanExporter(SpanExporter):
         if span.attributes:
             span_attributes = {k: str(v) for k, v in span.attributes.items()}
 
+        # Calculate cost for LLM spans with token usage
+        # Store cost per span to enable model-level cost analytics
+        if "alphatrion.cost.total_tokens" in span_attributes:
+            try:
+                # Cost attributes are already enriched by CostEnrichmentProcessor
+                # Just ensure they exist in span_attributes for ClickHouse storage
+                # (they should already be present from the span)
+                pass
+
+            except Exception as e:
+                logger.warning(f"Failed to process LLM span {span.name}: {e}")
+                # Don't fail span export if processing fails
+
         # Extract core identifiers from span attributes
         org_id = span_attributes.get("org_id", "")
         team_id = span_attributes.get("team_id", "")
@@ -227,64 +245,33 @@ class ClickHouseSpanExporter(SpanExporter):
         return True
 
 
-def determine_semantic_kind(
-    attributes: dict[str, str], content_blocks: list[dict] = None
-) -> str:
+def determine_semantic_kind(attributes: dict[str, str]) -> str:
     """Determine the semantic kind of a span.
-
-    Priority order:
-    1. Content type based (thinking, llm, tool) - if content_blocks provided
-    2. Tool calls (has tool attributes)
-    3. LLM calls (has token usage)
-    4. Database operations (has db attributes)
-    5. HTTP requests (has http attributes)
-    6. Traceloop semantic kinds (workflow, task, agent)
-    7. Unknown
 
     Args:
         attributes: Span attributes
-        content_blocks: Optional list of content blocks (for Claude agents)
 
     Returns:
         Semantic kind string
     """
-    # Check content type first (Claude agents)
-    if content_blocks:
-        content_types = [b.get("type") for b in content_blocks if isinstance(b, dict)]
-        if "tool_use" in content_types:
-            return "tool"
-        elif "thinking" in content_types:
-            return "thinking"
-        elif "text" in content_types:
-            return "text-generation"
-        # Has content blocks but unknown type - fallback to llm
-        elif content_types:
-            return "llm"
 
-    # Check for tool calls (fallback)
-    if "tool.name" in attributes:
-        return "tool"
-
-    # Check for LLM calls (fallback)
     if (
-        "llm.usage.total_tokens" in attributes
-        or "gen_ai.usage.output_tokens" in attributes
+        "gen_ai.usage.reasoning_tokens" in attributes
+        and int(attributes["gen_ai.usage.reasoning_tokens"]) > 0
     ):
-        return "llm"
+        return SEMANTIC_KIND_REASONING
 
-    # Check for Traceloop semantic kinds
-    if "traceloop.span.kind" in attributes:
-        traceloop_kind = attributes["traceloop.span.kind"]
-        if traceloop_kind in ("workflow", "task", "agent"):
-            return traceloop_kind
+    if "llm.request.type" in attributes:
+        return attributes["llm.request.type"]
 
     # Check for database operations
     if "db.system" in attributes or "db.statement" in attributes:
-        return "database"
+        return SEMANTIC_KIND_DB
 
-    # Check for HTTP requests
-    if "http.method" in attributes or "http.url" in attributes:
-        return "http"
+    # One of workflow, task, agent, tool
+    if "traceloop.span.kind" in attributes:
+        traceloop_kind = attributes["traceloop.span.kind"]
+        return traceloop_kind
 
     # Default to unknown
-    return "unknown"
+    return SEMANTIC_KIND_UNKNOWN

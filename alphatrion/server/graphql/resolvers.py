@@ -12,7 +12,6 @@ from alphatrion.server.graphql.context import GraphQLContext
 from alphatrion.server.graphql.types import ArtifactFile
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import (
-    FINISHED_STATUS,
     AgentType,
     Status,
 )
@@ -25,7 +24,7 @@ from .types import (
     ArtifactTag,
     CreateTeamInput,
     CreateUserInput,
-    DailyTokenUsage,
+    DailyCostUsage,
     Dataset,
     Experiment,
     GraphQLAgentTypeEnum,
@@ -235,7 +234,6 @@ class GraphQLResolvers:
                 duration=e.duration,
                 status=GraphQLStatusEnum[Status(e.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(e.kind).name],
-                cost=e.cost,
                 created_at=e.created_at,
                 updated_at=e.updated_at,
             )
@@ -269,7 +267,6 @@ class GraphQLResolvers:
                 duration=exp.duration,
                 status=GraphQLStatusEnum[Status(exp.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
-                cost=exp.cost,
                 created_at=exp.created_at,
                 updated_at=exp.updated_at,
             )
@@ -311,7 +308,6 @@ class GraphQLResolvers:
                 meta=r.meta,
                 status=GraphQLStatusEnum[Status(r.status).name],
                 duration=r.duration,
-                cost=r.cost,
                 created_at=r.created_at,
             )
             for r in runs
@@ -336,7 +332,6 @@ class GraphQLResolvers:
                 meta=run.meta,
                 status=GraphQLStatusEnum[Status(run.status).name],
                 duration=run.duration,
-                cost=run.cost,
                 created_at=run.created_at,
             )
         return None
@@ -510,7 +505,6 @@ class GraphQLResolvers:
                 meta=r.meta,
                 status=GraphQLStatusEnum[Status(r.status).name],
                 duration=r.duration,
-                cost=r.cost,
                 created_at=r.created_at,
             )
             for r in runs
@@ -635,11 +629,18 @@ class GraphQLResolvers:
         return metadb.count_datasets(team_id=team_id)
 
     @staticmethod
-    def aggregate_team_tokens(
+    def aggregate_team_usage(
         info: Info[GraphQLContext, None], team_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+            return {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "total_cost": 0.0,
+            }
 
         org_id = uuid.UUID(info.context.org_id)
         user_id = uuid.UUID(info.context.user_id)
@@ -652,19 +653,32 @@ class GraphQLResolvers:
             )
 
         trace_store = runtime.storage_runtime().tracestore
-        result = trace_store.get_llm_tokens_by_team_id(org_id=org_id, team_id=team_id)
-        # get_llm_tokens_by_team_id returns a list with one dict
+        result = trace_store.get_llm_usage_by_team_id(org_id=org_id, team_id=team_id)
         if result and len(result) > 0:
             return result[0]
-        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+        return {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "total_cost": 0.0,
+        }
 
     @staticmethod
-    def aggregate_agent_tokens(
+    def aggregate_agent_usage(
         info: Info[GraphQLContext, None], agent_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         """Aggregate token usage from all spans for an agent."""
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+            return {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "total_cost": 0.0,
+            }
 
         ctx = info.context
         org_id = uuid.UUID(ctx.org_id)
@@ -677,20 +691,34 @@ class GraphQLResolvers:
             )
 
         trace_store = runtime.storage_runtime().tracestore
-        result = trace_store.get_llm_tokens_by_agent_id(
+        result = trace_store.get_llm_usage_by_agent_id(
             org_id=org_id, team_id=agent.team_id, agent_id=agent_id
         )
         if result and len(result) > 0:
             return result[0]
-        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+        return {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "total_cost": 0.0,
+        }
 
     @staticmethod
-    def aggregate_session_tokens(
+    def aggregate_session_usage(
         info: Info[GraphQLContext, None], session_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         """Aggregate token usage from all spans for a session."""
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+            return {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "total_cost": 0.0,
+            }
 
         ctx = info.context
         org_id = uuid.UUID(ctx.org_id)
@@ -705,12 +733,19 @@ class GraphQLResolvers:
             )
 
         trace_store = runtime.storage_runtime().tracestore
-        result = trace_store.get_llm_tokens_by_session_id(
+        result = trace_store.get_llm_usage_by_session_id(
             org_id=org_id, team_id=session.team_id, session_id=session.uuid
         )
         if result and len(result) > 0:
             return result[0]
-        return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+        return {
+            "total_tokens": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "total_cost": 0.0,
+        }
 
     @staticmethod
     def aggregate_model_distributions(
@@ -775,7 +810,6 @@ class GraphQLResolvers:
                 duration=e.duration,
                 status=GraphQLStatusEnum[Status(e.status).name],
                 kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(e.kind).name],
-                cost=e.cost,
                 created_at=e.created_at,
                 updated_at=e.updated_at,
             )
@@ -939,48 +973,32 @@ class GraphQLResolvers:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
 
     @staticmethod
-    def aggregate_run_tokens(
+    def aggregate_run_usage(
         info: Info[GraphQLContext, None], run_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         """Aggregate token usage from all traces for a run."""
 
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+            return {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "total_cost": 0.0,
+            }
 
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
         if not metadb.run_is_accessible_to_user(run_id=run_id, user_id=user_id):
             raise RuntimeError("Not allowed to access run that user does not belong to")
 
-        try:
-            run = runtime.storage_runtime().metadb.get_run(run_id=run_id)
-            if run.status in FINISHED_STATUS:
-                if run.usage and "total_tokens" in run.usage:
-                    return {
-                        "total_tokens": run.usage.get("total_tokens", 0),
-                        "input_tokens": run.usage.get("input_tokens", 0),
-                        "output_tokens": run.usage.get("output_tokens", 0),
-                    }
-                else:
-                    usage = GraphQLResolvers.get_run_usage(info, run_id)
-                    runtime.storage_runtime().metadb.update_run(
-                        run_id=run_id, usage=usage
-                    )
-                    return usage
-            else:
-                return GraphQLResolvers.get_run_usage(info, run_id)
-        except Exception as e:
-            import logging
-
-            logging.error(
-                f"Failed to aggregate tokens for run {run_id}: {e}", exc_info=True
-            )
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+        return GraphQLResolvers.get_run_usage(info, run_id)
 
     @staticmethod
     def get_run_usage(
         info: Info[GraphQLContext, None], run_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, float]:
         ctx = info.context
         org_id = uuid.UUID(ctx.org_id)
         run = runtime.storage_runtime().metadb.get_run(run_id=run_id)
@@ -994,6 +1012,9 @@ class GraphQLResolvers:
         total_tokens = 0
         input_tokens = 0
         output_tokens = 0
+        cache_read_input_tokens = 0
+        cache_creation_input_tokens = 0
+        total_cost = 0.0
 
         for span in spans:
             span_attrs = span.get("SpanAttributes", {})
@@ -1005,17 +1026,30 @@ class GraphQLResolvers:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
                 output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+            if "gen_ai.usage.cache_read_input_tokens" in span_attrs:
+                cache_read_input_tokens += int(
+                    span_attrs["gen_ai.usage.cache_read_input_tokens"]
+                )
+            if "gen_ai.usage.cache_creation_input_tokens" in span_attrs:
+                cache_creation_input_tokens += int(
+                    span_attrs["gen_ai.usage.cache_creation_input_tokens"]
+                )
+            if "alphatrion.cost.total_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.total_tokens"])
 
         return {
             "total_tokens": total_tokens,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cache_read_input_tokens": cache_read_input_tokens,
+            "cache_creation_input_tokens": cache_creation_input_tokens,
+            "total_cost": total_cost,
         }
 
     @staticmethod
-    def aggregate_experiment_tokens(
+    def aggregate_experiment_usage(
         info: Info[GraphQLContext, None], experiment_id: strawberry.ID
-    ) -> dict[str, int]:
+    ) -> dict[str, int | float]:
         """Aggregate token usage from all spans in an experiment."""
         org_id = info.context.org_id
         user_id = info.context.user_id
@@ -1029,41 +1063,24 @@ class GraphQLResolvers:
             )
 
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+            return {
+                "total_tokens": 0,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "total_cost": 0.0,
+            }
 
-        try:
-            exp = runtime.storage_runtime().metadb.get_experiment(
-                experiment_id=experiment_id
-            )
-            if exp.status in FINISHED_STATUS:
-                if exp.usage and "total_tokens" in exp.usage:
-                    return {
-                        "total_tokens": exp.usage.get("total_tokens", 0),
-                        "input_tokens": exp.usage.get("input_tokens", 0),
-                        "output_tokens": exp.usage.get("output_tokens", 0),
-                    }
-                else:
-                    usage = GraphQLResolvers.get_experiment_usage(
-                        org_id, exp.team_id, experiment_id
-                    )
-                    metadb.update_experiment(experiment_id=experiment_id, usage=usage)
-                    return usage
-            else:
-                return GraphQLResolvers.get_experiment_usage(
-                    org_id, exp.team_id, experiment_id
-                )
-        except Exception as e:
-            import logging
-
-            logging.error(
-                f"Failed to aggregate tokens for experiment {experiment_id}: {e}"
-            )
-            return {"total_tokens": 0, "input_tokens": 0, "output_tokens": 0}
+        exp = runtime.storage_runtime().metadb.get_experiment(
+            experiment_id=experiment_id
+        )
+        return GraphQLResolvers.get_experiment_usage(org_id, exp.team_id, experiment_id)
 
     @staticmethod
     def get_experiment_usage(
         org_id: strawberry.ID, team_id: strawberry.ID, experiment_id: strawberry.ID
-    ):
+    ) -> tuple[dict[str, int], dict[str, float]]:
         trace_store = runtime.storage_runtime().tracestore
         # Get all LLM spans for this experiment in a single query
         spans = trace_store.get_llm_spans_by_exp_id(
@@ -1074,6 +1091,9 @@ class GraphQLResolvers:
         total_tokens = 0
         input_tokens = 0
         output_tokens = 0
+        cache_read_input_tokens = 0
+        cache_creation_input_tokens = 0
+        total_cost = 0.0
 
         for span in spans:
             span_attrs = span.get("SpanAttributes", {})
@@ -1085,11 +1105,24 @@ class GraphQLResolvers:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
                 output_tokens += int(span_attrs["gen_ai.usage.output_tokens"])
+            if "gen_ai.usage.cache_read_input_tokens" in span_attrs:
+                cache_read_input_tokens += int(
+                    span_attrs["gen_ai.usage.cache_read_input_tokens"]
+                )
+            if "gen_ai.usage.cache_creation_input_tokens" in span_attrs:
+                cache_creation_input_tokens += int(
+                    span_attrs["gen_ai.usage.cache_creation_input_tokens"]
+                )
+            if "alphatrion.cost.total_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.total_tokens"])
 
         return {
             "total_tokens": total_tokens,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cache_read_input_tokens": cache_read_input_tokens,
+            "cache_creation_input_tokens": cache_creation_input_tokens,
+            "total_cost": total_cost,
         }
 
     @staticmethod
@@ -1265,10 +1298,10 @@ class GraphQLResolvers:
             return []
 
     @staticmethod
-    def get_daily_token_usage(
+    def get_daily_cost_usage(
         info: Info[GraphQLContext, None], team_id: strawberry.ID, days: int = 7
-    ) -> list[DailyTokenUsage]:
-        """Get daily token usage from LLM calls for a team."""
+    ) -> list[DailyCostUsage]:
+        """Get daily cost usage from LLM calls for a team."""
 
         # Check if tracing is enabled
         if os.getenv(envs.ENABLE_TRACING, "false").lower() != "true":
@@ -1285,24 +1318,29 @@ class GraphQLResolvers:
 
         try:
             trace_store = runtime.storage_runtime().tracestore
-            daily_usage = trace_store.get_daily_token_usage(
+            daily_cost = trace_store.get_daily_cost_usage(
                 org_id=org_id, team_id=team_id, days=days
             )
             # Don't close - it's a shared singleton connection
 
-            # Convert to GraphQL DailyTokenUsage objects
+            # Convert to GraphQL DailyCostUsage objects
             return [
-                DailyTokenUsage(
+                DailyCostUsage(
                     date=item["date"],
-                    total_tokens=item["total_tokens"],
-                    input_tokens=item["input_tokens"],
-                    output_tokens=item["output_tokens"],
+                    total_cost=item["total_cost"],
+                    total_tokens=item.get("total_tokens", 0),
+                    input_tokens=item.get("input_tokens", 0),
+                    output_tokens=item.get("output_tokens", 0),
+                    cache_read_input_tokens=item.get("cache_read_input_tokens", 0),
+                    cache_creation_input_tokens=item.get(
+                        "cache_creation_input_tokens", 0
+                    ),
                 )
-                for item in daily_usage
+                for item in daily_cost
             ]
         except Exception as e:
             # Log error and return empty list - don't fail the GraphQL query
-            print(f"Failed to fetch daily token usage: {e}")
+            print(f"Failed to fetch daily cost usage: {e}")
             return []
 
     @staticmethod

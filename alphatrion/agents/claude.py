@@ -12,7 +12,13 @@ from datetime import UTC, datetime
 
 from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import Status
-from alphatrion.tracing.clickhouse_exporter import determine_semantic_kind
+from alphatrion.tracing.span_processor import (
+    SEMANTIC_KIND_CHAT,
+    SEMANTIC_KIND_REASONING,
+    SEMANTIC_KIND_TOOL,
+    SEMANTIC_KIND_UNKNOWN,
+)
+from alphatrion.utils.pricing import calculate_cost
 
 
 def handle_hook(hook_type: str):
@@ -548,15 +554,6 @@ def process_transcript_incremental(
             # Turn is complete, create run and multiple LLM spans
             user_message = current_user_msg.get("message", {})
 
-            # Calculate total tokens and duration from all messages
-            total_input_tokens = 0
-            total_output_tokens = 0
-            for msg in current_assistant_messages:
-                msg_usage = msg.get("message", {}).get("usage", {})
-                total_input_tokens += msg_usage.get("input_tokens", 0)
-                total_output_tokens += msg_usage.get("output_tokens", 0)
-            total_tokens = total_input_tokens + total_output_tokens
-
             # Calculate duration from timestamps
             # (first user message to last assistant message)
             duration = calculate_duration(
@@ -598,11 +595,6 @@ def process_transcript_incremental(
                 user_id=session.user_id,
                 status=run_status,
                 duration=duration,
-                usage={
-                    "input_tokens": total_input_tokens,
-                    "output_tokens": total_output_tokens,
-                    "total_tokens": total_tokens,
-                },
             )
 
             # Prepare user content (original user message only)
@@ -1009,8 +1001,12 @@ def create_clickhouse_spans_for_turn(
                 msg_content = []
 
             msg_usage = message_data.get("usage", {})
-            msg_input_tokens = msg_usage.get("input_tokens", 0)
-            msg_output_tokens = msg_usage.get("output_tokens", 0)
+            input_tokens = msg_usage.get("input_tokens", 0)
+            output_tokens = msg_usage.get("output_tokens", 0)
+            cache_creation_input_tokens = msg_usage.get(
+                "cache_creation_input_tokens", 0
+            )
+            cache_read_input_tokens = msg_usage.get("cache_read_input_tokens", 0)
 
             # Determine content type
             tool_use_blocks = [
@@ -1083,13 +1079,17 @@ def create_clickhouse_spans_for_turn(
             span_id = str(uuid.uuid4()).replace("-", "")[:16]
 
             # Determine semantic kind
-            semantic_kind = determine_semantic_kind({}, msg_content)
+            semantic_kind = determine_semantic_kind(msg_content)
 
-            # Token assignment:
-            # Each message has actual token usage from Claude API
-            # Assign actual tokens to each span for accurate aggregation
-            input_tokens = msg_input_tokens
-            output_tokens = msg_output_tokens
+            # Calculate cost for this span
+            span_costs = calculate_cost(
+                provider="anthropic",
+                model=model,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cache_creation_input_tokens=cache_creation_input_tokens,
+                cache_read_input_tokens=cache_read_input_tokens,
+            )
 
             # Build span attributes
             span_attributes = {
@@ -1099,7 +1099,25 @@ def create_clickhouse_spans_for_turn(
                 "gen_ai.response.model": model,
                 "gen_ai.usage.input_tokens": str(input_tokens),
                 "gen_ai.usage.output_tokens": str(output_tokens),
-                "llm.usage.total_tokens": str(input_tokens + output_tokens),
+                "gen_ai.usage.cache_creation_input_tokens": str(
+                    cache_creation_input_tokens
+                ),
+                "gen_ai.usage.cache_read_input_tokens": str(cache_read_input_tokens),
+                "llm.usage.total_tokens": str(
+                    input_tokens
+                    + output_tokens
+                    + cache_creation_input_tokens
+                    + cache_read_input_tokens
+                ),
+                "alphatrion.cost.total_tokens": str(span_costs["total_cost"]),
+                "alphatrion.cost.input_tokens": str(span_costs["input_cost"]),
+                "alphatrion.cost.output_tokens": str(span_costs["output_cost"]),
+                "alphatrion.cost.cache_creation_input_tokens": str(
+                    span_costs["cache_creation_input_cost"]
+                ),
+                "alphatrion.cost.cache_read_input_tokens": str(
+                    span_costs["cache_read_input_cost"]
+                ),
             }
 
             # Add prompt to first span only (where the user input is sent)
@@ -1222,3 +1240,37 @@ def create_clickhouse_spans_for_turn(
         import logging
 
         logging.error(f"Failed to create ClickHouse spans: {e}", exc_info=True)
+
+
+def determine_semantic_kind(content_blocks: list) -> str:
+    """Determine semantic kind of a message based on content blocks.
+
+    - If contains tool_use block → "tool"
+    - Else if contains thinking block → "thinking"
+    - Else → "text"
+
+    Args:
+        content_blocks: List of content blocks in the message
+
+    Returns:
+        Semantic kind string
+    """
+    has_tool_use = any(
+        isinstance(b, dict) and b.get("type") == "tool_use" for b in content_blocks
+    )
+    if has_tool_use:
+        return SEMANTIC_KIND_TOOL
+
+    has_thinking = any(
+        isinstance(b, dict) and b.get("type") == "thinking" for b in content_blocks
+    )
+    if has_thinking:
+        return SEMANTIC_KIND_REASONING
+
+    has_text = any(
+        isinstance(b, dict) and b.get("type") == "text" for b in content_blocks
+    )
+    if has_text:
+        return SEMANTIC_KIND_CHAT
+
+    return SEMANTIC_KIND_UNKNOWN

@@ -12,67 +12,220 @@
       "title": "Total Platform Tokens",
       "type": "stat",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
-      "targets": [{"expr": "sum(alphatrion_llm_tokens_total{token_type=\"total\"})", "refId": "A"}],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"total\"})",
+          "refId": "A"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "color": {"mode": "thresholds"},
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      }
     },
     {
       "title": "Total Platform Requests",
       "type": "stat",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
-      "targets": [{"expr": "sum(alphatrion_llm_requests_total)", "refId": "A"}],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_requests_total)",
+          "refId": "A"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "color": {"mode": "thresholds"},
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]}
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      }
     },
     {
       "title": "Error Rate",
       "type": "stat",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
-      "targets": [{"expr": "sum(rate(alphatrion_llm_requests_total{status=\"ERROR\"}[5m])) / sum(rate(alphatrion_llm_requests_total[5m]))", "refId": "A"}],
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(llm_requests_total{status=\"ERROR\"}[5m])) / sum(rate(llm_requests_total[5m]))",
+          "refId": "A"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
-          "color": {"mode": "thresholds"},
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.05}]}
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.05
+              }
+            ]
+          }
         }
       },
-      "options": {"colorMode": "value", "graphMode": "area", "orientation": "auto"}
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      }
+    },
+    {
+      "title": "Total Platform Cost",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_cost_total{cost_type=\"total\"})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "orientation": "auto"
+      }
     },
     {
       "title": "Errors by Type",
       "type": "piechart",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 6, "x": 18, "y": 0},
-      "targets": [{"expr": "sum by (error_type) (alphatrion_llm_errors_total)", "legendFormat": "{{error_type}}", "refId": "A"}],
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "pieType": "pie"}
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "targets": [
+        {
+          "expr": "sum by (error_type) (llm_errors_total)",
+          "legendFormat": "{{error_type}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "pieType": "pie"
+      }
     },
     {
       "title": "Active Experiments (Time Window)",
       "type": "timeseries",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 6},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
       "targets": [
-        {"expr": "count(sum by (experiment_id) (increase(alphatrion_llm_requests_total[5m])) > 0)", "legendFormat": "Active Experiments", "refId": "A"}
+        {
+          "expr": "count(sum by (experiment_id) (increase(llm_requests_total[5m])) > 0)",
+          "legendFormat": "Active Experiments",
+          "refId": "A"
+        }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "color": {"mode": "fixed", "fixedColor": "blue"},
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 10,
@@ -81,7 +234,10 @@
         }
       },
       "options": {
-        "legend": {"displayMode": "list", "placement": "bottom"}
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       },
       "description": "Number of unique experiments with activity in the last 5 minutes. Drops to 0 when experiments finish."
     },
@@ -89,14 +245,26 @@
       "title": "Active Teams (Time Window)",
       "type": "timeseries",
       "datasource": "Prometheus",
-      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 6},
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
       "targets": [
-        {"expr": "count(sum by (team_id) (increase(alphatrion_llm_requests_total[5m])) > 0)", "legendFormat": "Active Teams", "refId": "A"}
+        {
+          "expr": "count(sum by (team_id) (increase(llm_requests_total[5m])) > 0)",
+          "legendFormat": "Active Teams",
+          "refId": "A"
+        }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "color": {"mode": "fixed", "fixedColor": "green"},
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 10,
@@ -105,7 +273,10 @@
         }
       },
       "options": {
-        "legend": {"displayMode": "list", "placement": "bottom"}
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
       },
       "description": "Number of unique teams with activity in the last 5 minutes. Drops when teams stop running experiments."
     },
@@ -113,11 +284,38 @@
       "title": "Token Usage (Platform-wide, Cumulative)",
       "type": "timeseries",
       "datasource": "Prometheus",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 0,
+        "y": 11
+      },
       "targets": [
-        {"expr": "sum(alphatrion_llm_tokens_total{token_type=\"total\"})", "legendFormat": "Total Tokens", "refId": "A"},
-        {"expr": "sum(alphatrion_llm_input_tokens_total)", "legendFormat": "Input Tokens", "refId": "B"},
-        {"expr": "sum(alphatrion_llm_output_tokens_total)", "legendFormat": "Output Tokens", "refId": "C"}
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"input\"})",
+          "legendFormat": "Input Tokens",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"output\"})",
+          "legendFormat": "Output Tokens",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"cache_read_input\"})",
+          "legendFormat": "Cache Read Input Tokens",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"cache_creation_input\"})",
+          "legendFormat": "Cache Creation Input Tokens",
+          "refId": "D"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"total\"})",
+          "legendFormat": "Total Tokens",
+          "refId": "E"
+        }
       ],
       "fieldConfig": {
         "defaults": {
@@ -128,64 +326,465 @@
         },
         "overrides": [
           {
-            "matcher": {"id": "byName", "options": "Total Tokens"},
+            "matcher": {
+              "id": "byName",
+              "options": "Input Tokens"
+            },
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}},
-              {"id": "custom.lineWidth", "value": 3}
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "Input Tokens"},
+            "matcher": {
+              "id": "byName",
+              "options": "Output Tokens"
+            },
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
             ]
           },
           {
-            "matcher": {"id": "byName", "options": "Output Tokens"},
+            "matcher": {
+              "id": "byName",
+              "options": "Cache Read Input Tokens"
+            },
             "properties": [
-              {"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cache Creation Input Tokens"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Tokens"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
             ]
           }
         ]
       },
-      "options": {"legend": {"displayMode": "list", "placement": "bottom"}},
-      "description": "Accumulated tokens across ALL teams and experiments. Total = Input + Output. Should keep growing as you run more experiments."
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "Accumulated tokens across ALL teams and experiments. Total = Input + Output + Cache tokens. Should keep growing as you run more experiments."
+    },
+    {
+      "title": "Cost Usage (Platform-wide, Cumulative)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 14,
+        "x": 0,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_cost_total{cost_type=\"total\"})",
+          "legendFormat": "Total Cost",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(llm_input_cost_total)",
+          "legendFormat": "Input Cost",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(llm_output_cost_total)",
+          "legendFormat": "Output Cost",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(llm_cache_read_cost_total)",
+          "legendFormat": "Cache Read Cost",
+          "refId": "D"
+        },
+        {
+          "expr": "sum(llm_cache_creation_cost_total)",
+          "legendFormat": "Cache Creation Cost",
+          "refId": "E"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Input Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Output Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cache Read Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cache Creation Cost"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      },
+      "description": "Accumulated costs in USD across ALL teams and experiments. Tracks input, output, and cache-related costs."
+    },
+    {
+      "title": "Token Breakdown by Type",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 11
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"input\"})",
+          "legendFormat": "Input",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"output\"})",
+          "legendFormat": "Output",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"cache_read_input\"})",
+          "legendFormat": "Cache Read Input",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(llm_tokens_total{token_type=\"cache_creation_input\"})",
+          "legendFormat": "Cache Creation Input",
+          "refId": "D"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie"
+      }
+    },
+    {
+      "title": "Cost Breakdown by Type",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 19
+      },
+      "targets": [
+        {
+          "expr": "sum(llm_input_cost_total)",
+          "legendFormat": "Input",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(llm_output_cost_total)",
+          "legendFormat": "Output",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(llm_cache_read_cost_total)",
+          "legendFormat": "Cache Read",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(llm_cache_creation_cost_total)",
+          "legendFormat": "Cache Creation",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie"
+      }
     },
     {
       "title": "Requests by Model",
       "type": "piechart",
       "datasource": "Prometheus",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
-      "targets": [{"expr": "sum by (model) (alphatrion_llm_requests_total)", "legendFormat": "{{model}}", "refId": "A"}],
-      "options": {"legend": {"displayMode": "table", "placement": "right", "values": ["value"]}, "pieType": "pie"}
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 27
+      },
+      "targets": [
+        {
+          "expr": "sum by (model) (llm_requests_total)",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie"
+      }
     },
     {
       "title": "Tokens by Model",
       "type": "piechart",
       "datasource": "Prometheus",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
-      "targets": [{"expr": "sum by (model) (alphatrion_llm_tokens_total{token_type=\"total\"})", "legendFormat": "{{model}}", "refId": "A"}],
-      "options": {"legend": {"displayMode": "table", "placement": "right", "values": ["value"]}, "pieType": "pie"}
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 27
+      },
+      "targets": [
+        {
+          "expr": "sum by (model) (llm_tokens_total{token_type=\"total\"})",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie"
+      }
+    },
+    {
+      "title": "Cost by Model",
+      "type": "piechart",
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 27
+      },
+      "targets": [
+        {
+          "expr": "sum by (model) (llm_cost_total{cost_type=\"total\"})",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value"
+          ]
+        },
+        "pieType": "pie"
+      }
     },
     {
       "title": "LLM Latency (P50, P95) by Model",
       "type": "timeseries",
       "datasource": "Prometheus",
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
       "targets": [
-        {"expr": "histogram_quantile(0.95, sum by (model, le) (rate(alphatrion_llm_duration_seconds_bucket[5m])))", "legendFormat": "p95 - {{model}}", "refId": "A"},
-        {"expr": "histogram_quantile(0.50, sum by (model, le) (rate(alphatrion_llm_duration_seconds_bucket[5m])))", "legendFormat": "p50 - {{model}}", "refId": "B"}
+        {
+          "expr": "histogram_quantile(0.95, sum by (model, le) (rate(llm_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 - {{model}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (model, le) (rate(llm_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50 - {{model}}",
+          "refId": "B"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "s"}},
-      "options": {"legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        }
+      }
     }
   ],
   "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["alphatrion", "platform"],
-  "templating": {"list": []},
-  "time": {"from": "now-24h", "to": "now"},
+  "tags": [
+    "alphatrion",
+    "platform"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
   "timepicker": {},
   "timezone": "browser",
   "title": "AlphaTrion - Platform Dashboard",
