@@ -109,8 +109,26 @@ async def log_graphql_requests(request: Request, call_next):
     return response
 
 
+# Wrapper to convert context auth errors to HTTP exceptions
+async def get_context_with_error_handling(request: Request):
+    """Wrap get_context to convert auth errors to proper HTTP status codes."""
+    try:
+        return await get_context(request)
+    except ValueError as e:
+        # Authentication/authorization errors from get_context
+        error_msg = str(e).lower()
+        if (
+            "authorization" in error_msg
+            or "token" in error_msg
+            or "missing" in error_msg
+        ):
+            raise HTTPException(status_code=401, detail=str(e))
+        # Other validation errors
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # Create GraphQL router with context
-graphql_app = GraphQLRouter(schema, context_getter=get_context)
+graphql_app = GraphQLRouter(schema, context_getter=get_context_with_error_handling)
 
 # Mount /graphql endpoint
 app.include_router(graphql_app, prefix="/graphql")

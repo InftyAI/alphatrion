@@ -357,16 +357,16 @@ class TraceStore:
                 logger.error(f"Failed to get spans by exp_id: {e}")
                 return []
 
-    def get_llm_tokens_by_team_id(
+    def get_llm_usage_by_team_id(
         self, org_id: uuid.UUID, team_id: uuid.UUID
     ) -> list[dict[str, Any]]:
-        """Get all LLM spans for a specific team_id.
+        """Get aggregated tokens and cost for a team.
 
         Args:
             org_id: The organization ID to filter by
             team_id: The team ID to filter by
         Returns:
-            List of LLM span dictionaries
+            List with one dict containing tokens and cost
         """
         with self._lock:
             try:
@@ -374,29 +374,36 @@ class TraceStore:
                 SELECT
                     SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
-                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
                 """
 
                 result = self.client.query(query)
-                # Convert date to string format and ensure integers
                 return [
                     {
                         "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
+                        "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
+                        "cache_creation_input_tokens": int(
+                            row["cache_creation_input_tokens"]
+                        ),
+                        "total_cost": float(row["total_cost"]),
                     }
                     for row in result.named_results()
                 ]
             except Exception as e:
-                logger.error(f"Failed to get daily token usage: {e}")
+                logger.error(f"Failed to get tokens and cost by team: {e}")
                 return []
 
-    def get_llm_tokens_by_agent_id(
+    def get_llm_usage_by_agent_id(
         self, org_id: uuid.UUID, team_id: uuid.UUID, agent_id: uuid.UUID
     ) -> list[dict[str, Any]]:
-        """Get aggregated LLM token usage for a specific agent.
+        """Get aggregated LLM token usage and cost for a specific agent.
 
         Args:
             org_id: The organization ID to filter by
@@ -411,7 +418,10 @@ class TraceStore:
                 SELECT
                     SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
-                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}' AND AgentId = '{agent_id}'
                 """
@@ -422,6 +432,11 @@ class TraceStore:
                         "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
+                        "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
+                        "cache_creation_input_tokens": int(
+                            row["cache_creation_input_tokens"]
+                        ),
+                        "total_cost": float(row["total_cost"]),
                     }
                     for row in result.named_results()
                 ]
@@ -429,10 +444,10 @@ class TraceStore:
                 logger.error(f"Failed to get agent token usage: {e}")
                 return []
 
-    def get_llm_tokens_by_session_id(
+    def get_llm_usage_by_session_id(
         self, org_id: uuid.UUID, team_id: uuid.UUID, session_id: uuid.UUID
     ) -> list[dict[str, Any]]:
-        """Get aggregated LLM token usage for a specific session.
+        """Get aggregated LLM token usage and cost for a specific session.
 
         Args:
             org_id: The organization ID to filter by
@@ -447,7 +462,10 @@ class TraceStore:
                 SELECT
                     SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
-                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}' AND SessionId = '{session_id}'
                 """
@@ -458,6 +476,11 @@ class TraceStore:
                         "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
+                        "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
+                        "cache_creation_input_tokens": int(
+                            row["cache_creation_input_tokens"]
+                        ),
+                        "total_cost": float(row["total_cost"]),
                     }
                     for row in result.named_results()
                 ]
@@ -484,7 +507,9 @@ class TraceStore:
                     SemanticKind as semantic_kind,
                     SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
-                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
                 GROUP BY SemanticKind
@@ -498,6 +523,10 @@ class TraceStore:
                         "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
+                        "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
+                        "cache_creation_input_tokens": int(
+                            row["cache_creation_input_tokens"]
+                        ),
                     }
                     for row in result.named_results()
                 ]
@@ -529,27 +558,28 @@ class TraceStore:
                     COUNT(*) as count
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
-                    AND SemanticKind IN ('llm', 'thinking', 'text-generation', 'tool')
                 GROUP BY model
                 ORDER BY count DESC
                 """
 
                 result = self.client.query(query)
+                # ignore empty models
                 return [
                     {
                         "model": row["model"],
                         "count": int(row["count"]),
                     }
                     for row in result.named_results()
+                    if row["model"] is not None and row["model"] != ""
                 ]
             except Exception as e:
                 logger.error(f"Failed to get model distributions: {e}")
                 return []
 
-    def get_daily_token_usage(
+    def get_daily_cost_usage(
         self, org_id: uuid.UUID, team_id: uuid.UUID, days: int = 30
     ) -> list[dict[str, Any]]:
-        """Get daily token usage from LLM calls for a team.
+        """Get daily cost and token usage from LLM calls for a team.
 
         Args:
             org_id: The organization ID to filter by
@@ -557,16 +587,23 @@ class TraceStore:
             days: Number of days to look back (default: 30)
 
         Returns:
-            List of dicts with keys: date, total_tokens, input_tokens, output_tokens
+            List of dicts with keys: date, total_cost, input_cost, output_cost, total_tokens, input_tokens, output_tokens
         """
         with self._lock:
             try:
                 query = f"""
                 SELECT
                     toDate(Timestamp) as date,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.input_tokens'])) as input_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.output_tokens'])) as output_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_creation_input_tokens'])) as cache_creation_input_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_read_input_tokens'])) as cache_read_input_cost,
                     SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
-                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
+                    SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
                   AND Timestamp >= now() - INTERVAL {days} DAY
@@ -575,18 +612,29 @@ class TraceStore:
                 """
 
                 result = self.client.query(query)
-                # Convert date to string format and ensure integers
+                # Convert date to string format
                 return [
                     {
                         "date": row["date"].strftime("%Y-%m-%d"),
+                        "total_cost": float(row["total_cost"]),
+                        "input_cost": float(row["input_cost"]),
+                        "output_cost": float(row["output_cost"]),
+                        "cache_creation_input_cost": float(
+                            row["cache_creation_input_cost"]
+                        ),
+                        "cache_read_input_cost": float(row["cache_read_input_cost"]),
                         "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
+                        "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
+                        "cache_creation_input_tokens": int(
+                            row["cache_creation_input_tokens"]
+                        ),
                     }
                     for row in result.named_results()
                 ]
             except Exception as e:
-                logger.error(f"Failed to get daily token usage: {e}")
+                logger.error(f"Failed to get daily cost usage: {e}")
                 return []
 
     def get_trace_stats_by_exp_id(

@@ -204,7 +204,10 @@ def init_command(args):
 
     if len(password) < character_length_at_least:
         console.print(
-            Text(f"❌ Error: Password must be at least {character_length_at_least} characters", style="bold red")
+            Text(
+                f"❌ Error: Password must be at least {character_length_at_least} characters",
+                style="bold red",
+            )
         )
         return
 

@@ -958,7 +958,6 @@ class SQLStore(MetaStore):
         meta: dict | None = None,
         status: Status = Status.PENDING,
         duration: float | None = None,
-        usage: dict | None = None,
     ) -> uuid.UUID:
         session = self._session()
 
@@ -971,7 +970,6 @@ class SQLStore(MetaStore):
             meta=meta,
             status=status,
             duration=duration,
-            usage=usage,
         )
         session.add(new_run)
         session.commit()
@@ -1241,6 +1239,7 @@ class SQLStore(MetaStore):
     ) -> bool:
         session = self._session()
 
+        # Check if user is super admin
         if self.user_is_super_admin_in_org(user_id, org_id):
             session.close()
             return True

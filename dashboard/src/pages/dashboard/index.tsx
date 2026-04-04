@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useTeamContext } from '../../context/team-context';
 import { useTeam } from '../../hooks/use-teams';
 import { useTeamExperiments } from '../../hooks/use-team-experiments';
-import { useDailyTokenUsage } from '../../hooks/use-token-usage';
+import { useDailyCostUsage } from '../../hooks/use-cost-usage';
 import { useModelDistributions } from '../../hooks/use-model-distributions';
 import {
   Card,
@@ -12,10 +12,10 @@ import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { ExperimentsTimelineChart } from '../../components/dashboard/experiments-timeline-chart';
 import { ExperimentsStatusChart } from '../../components/dashboard/experiments-status-chart';
-import { DailyTokenUsageChart } from '../../components/dashboard/daily-token-usage-chart';
+import { DailyCostUsageChart } from '../../components/dashboard/daily-cost-usage-chart';
 import { ModelDistributionChart } from '../../components/dashboard/model-distribution-chart';
 import { subDays, subMonths } from 'date-fns';
-import { FlaskConical, Coins, Bot, MessagesSquare } from 'lucide-react';
+import { FlaskConical, Coins, Bot, MessagesSquare, DollarSign } from 'lucide-react';
 
 type TimeRange = '7days' | '1month' | '3months';
 
@@ -39,7 +39,7 @@ export function DashboardPage() {
   // Get days for selected time range
   const days = TIME_RANGE_OPTIONS.find((opt) => opt.value === timeRange)?.days || 30;
 
-  const { data: dailyTokenUsage, isLoading: tokenUsageLoading } = useDailyTokenUsage(
+  const { data: dailyCostUsage, isLoading: costUsageLoading } = useDailyCostUsage(
     selectedTeamId || '',
     days
   );
@@ -144,14 +144,31 @@ export function DashboardPage() {
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-medium text-muted-foreground">TOKENS</p>
                   <p className="text-base font-bold tabular-nums text-foreground">
-                    {(team?.aggregatedTokens?.totalTokens || 0).toLocaleString()}
+                    {(team?.aggregatedUsage?.totalTokens || 0).toLocaleString()}
                     <span className="text-muted-foreground text-[10px] ml-1 font-normal">
-                      ({(team?.aggregatedTokens?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedTokens?.outputTokens || 0).toLocaleString()}↑)
+                      ({(team?.aggregatedUsage?.inputTokens || 0).toLocaleString()}↓ {(team?.aggregatedUsage?.outputTokens || 0).toLocaleString()}↑)
                     </span>
                   </p>
                 </div>
                 <div className="p-1.5 bg-orange-100 rounded-lg">
                   <Coins className="h-3.5 w-3.5 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Cost */}
+          <Card>
+            <CardContent className="p-2.5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-[10px] font-medium text-muted-foreground">COST</p>
+                  <p className="text-base font-bold tabular-nums text-foreground">
+                    ${(team?.aggregatedUsage?.totalCost || 0).toFixed(4)}
+                  </p>
+                </div>
+                <div className="p-1.5 bg-emerald-100 rounded-lg">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
@@ -172,8 +189,8 @@ export function DashboardPage() {
                 size="sm"
                 onClick={() => setTimeRange(option.value)}
                 className={`h-7 px-2 text-[11px] transition-colors ${timeRange === option.value
-                    ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
-                    : 'bg-white hover:bg-gray-50'
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+                  : 'bg-white hover:bg-gray-50'
                   }`}
               >
                 {option.label}
@@ -207,7 +224,7 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Second Row: Model Distribution and Token Usage */}
+        {/* Second Row: Model Distribution and Combined Cost/Token Usage */}
         <div className="grid gap-2 md:grid-cols-2">
           {/* Model Distribution Pie Chart */}
           <Card>
@@ -220,16 +237,16 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Token Usage Chart */}
+          {/* Combined Cost & Token Usage Chart */}
           <Card>
             <CardContent className="p-3">
-              {tokenUsageLoading ? (
+              {costUsageLoading ? (
                 <Skeleton className="h-60 w-full" />
-              ) : dailyTokenUsage ? (
-                <DailyTokenUsageChart data={dailyTokenUsage} timeRange={timeRange} />
+              ) : dailyCostUsage ? (
+                <DailyCostUsageChart data={dailyCostUsage} timeRange={timeRange} />
               ) : (
                 <div className="flex items-center justify-center h-60 text-xs text-muted-foreground">
-                  No token usage data available for this time range
+                  No usage data available for this time range
                 </div>
               )}
             </CardContent>

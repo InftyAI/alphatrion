@@ -20,6 +20,24 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 const GRAPHQL_ENDPOINT = `${API_BASE_URL}/graphql`;
 
+// Setup axios interceptor to handle auth errors globally
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Check for 401 Unauthorized or 403 Forbidden
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear stored auth data
+      localStorage.removeItem('alphatrion_token');
+      localStorage.removeItem('alphatrion_org_id');
+      localStorage.removeItem('alphatrion_user_id');
+
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface GraphQLResponse<T> {
   data?: T;
   errors?: Array<{
@@ -86,6 +104,7 @@ export async function graphqlQuery<T>(
 
     return response.data.data;
   } catch (error) {
+    // Auth errors are handled by axios interceptor
     if (axios.isAxiosError(error)) {
       throw new Error(
         `GraphQL request failed: ${error.message}`
@@ -152,10 +171,13 @@ export const queries = {
         totalDatasets
         totalAgents
         totalSessions
-        aggregatedTokens {
+        aggregatedUsage {
           totalTokens
           inputTokens
           outputTokens
+          cacheReadInputTokens
+          cacheCreationInputTokens
+          totalCost
         }
       }
     }
@@ -244,10 +266,13 @@ export const queries = {
         status
         createdAt
         updatedAt
-        aggregatedTokens {
+        aggregatedUsage {
           totalTokens
           inputTokens
           outputTokens
+          cacheReadInputTokens
+          cacheCreationInputTokens
+          totalCost
         }
         traceStats {
           totalSpans
@@ -293,10 +318,13 @@ export const queries = {
         duration
         status
         createdAt
-        aggregatedTokens {
+        aggregatedUsage {
           totalTokens
           inputTokens
           outputTokens
+          cacheReadInputTokens
+          cacheCreationInputTokens
+          totalCost
         }
         metrics {
           id
@@ -417,6 +445,20 @@ export const queries = {
         totalTokens
         inputTokens
         outputTokens
+      }
+    }
+  `,
+
+  getDailyCostUsage: `
+    query GetDailyCostUsage($teamId: ID!, $days: Int = 30) {
+      dailyCostUsage(teamId: $teamId, days: $days) {
+        date
+        totalCost
+        totalTokens
+        inputTokens
+        outputTokens
+        cacheReadInputTokens
+        cacheCreationInputTokens
       }
     }
   `,

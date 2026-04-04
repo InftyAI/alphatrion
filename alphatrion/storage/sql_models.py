@@ -188,17 +188,6 @@ class Experiment(Base):
             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
             10: CANCELLED, 11: FAILED",
     )
-    usage = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="The usage information, e.g. for LLM calls: \
-            {total_tokens: int, input_tokens: int, output_tokens: int}",
-    )
-    cost = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="Cost of the experiment in dollars",
-    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -307,17 +296,6 @@ class Run(Base):
         comment="Status of the run, \
             0: UNKNOWN, 1: PENDING, 2: RUNNING, 9: COMPLETED, \
             10: CANCELLED, 11: FAILED",
-    )
-    usage = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="The usage information, e.g. for LLM calls: \
-            {total_tokens: int, input_tokens: int, output_tokens: int}",
-    )
-    cost = Column(
-        MutableDict.as_mutable(JSON),
-        nullable=True,
-        comment="Cost of the run in dollars",
     )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

@@ -73,6 +73,7 @@ lint.ignore = [
     "SIM117", # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "PLR0915", # Too many statements in function
     "PLC0415", # `import` should be at the top-level of a file
+    "PLW0603", # Using the global statement
 ]
 exclude = ["venv", "migrations", "__pycache__"]
 

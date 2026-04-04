@@ -5,9 +5,23 @@ AlphaTrion supports automatic export of OpenTelemetry span metrics to Prometheus
 ## Overview
 
 When enabled, AlphaTrion automatically:
-- Extracts metrics from LLM spans (token counts, duration, model usage)
-- Pushes metrics to a Prometheus push gateway
-- Labels metrics with team_id, experiment_id, run_id, and model
+- Enriches spans with cost information from token usage (via `CostEnrichmentProcessor`)
+- Extracts metrics from LLM spans (token counts, cost, duration, model usage)
+- Pushes metrics to a Prometheus push gateway (via `PrometheusExporter`)
+- Labels metrics with team_id, experiment_id, and model
+
+## Architecture
+
+```
+Span Creation (OpenTelemetry)
+    ↓
+CostEnrichmentProcessor (enriches spans with costs)
+    ↓
+├─ BatchSpanProcessor → ClickHouseExporter
+└─ BatchSpanProcessor → PrometheusExporter
+```
+
+Costs are calculated once by `CostEnrichmentProcessor` and then read by both exporters, ensuring consistency across ClickHouse and Prometheus.
 
 ## Setup
 
@@ -66,27 +80,50 @@ async with experiment.CraftExperiment.start(name="my_experiment") as exp:
 
 ### LLM Token Metrics
 
-- **`alphatrion_llm_tokens_total`** - Total LLM tokens consumed
-  - Labels: `team_id`, `experiment_id`, `model`, `token_type` (input/output/total)
+- **`llm_tokens_total`** - Total LLM tokens consumed
+  - Labels: `team_id`, `experiment_id`, `model`, `token_type` (input/output/cache_read_input/cache_creation_input/total)
 
-- **`alphatrion_llm_input_tokens_total`** - Total input tokens
+- **`llm_input_tokens_total`** - Total input tokens
   - Labels: `team_id`, `experiment_id`, `model`
 
-- **`alphatrion_llm_output_tokens_total`** - Total output tokens
+- **`llm_output_tokens_total`** - Total output tokens
+  - Labels: `team_id`, `experiment_id`, `model`
+
+- **`llm_cache_read_input_tokens_total`** - Total cache read input tokens
+  - Labels: `team_id`, `experiment_id`, `model`
+
+- **`llm_cache_creation_input_tokens_total`** - Total cache creation input tokens
+  - Labels: `team_id`, `experiment_id`, `model`
+
+### LLM Cost Metrics (USD)
+
+- **`llm_cost_total`** - Total LLM cost in USD
+  - Labels: `team_id`, `experiment_id`, `model`, `cost_type` (total)
+
+- **`llm_input_cost_total`** - Total input token cost in USD
+  - Labels: `team_id`, `experiment_id`, `model`
+
+- **`llm_output_cost_total`** - Total output token cost in USD
+  - Labels: `team_id`, `experiment_id`, `model`
+
+- **`llm_cache_read_cost_total`** - Total cache read cost in USD
+  - Labels: `team_id`, `experiment_id`, `model`
+
+- **`llm_cache_creation_cost_total`** - Total cache creation cost in USD
   - Labels: `team_id`, `experiment_id`, `model`
 
 ### LLM Request Metrics
 
-- **`alphatrion_llm_requests_total`** - Total number of LLM requests
+- **`llm_requests_total`** - Total number of LLM requests
   - Labels: `team_id`, `experiment_id`, `model`, `status`
 
-- **`alphatrion_llm_duration_seconds`** - LLM request duration histogram
+- **`llm_request_duration_seconds`** - LLM request duration histogram
   - Labels: `team_id`, `experiment_id`, `model`
   - Buckets: 0.1s, 0.5s, 1s, 2s, 5s, 10s, 30s, 60s
 
 ### Error Tracking
 
-- **`alphatrion_llm_errors_total`** - Total LLM errors by type
+- **`llm_errors_total`** - Total LLM errors by type
   - Labels: `team_id`, `error_type`
   - Error types: `timeout`, `rate_limit`, `auth_error`, `invalid_request`, `connection_error`, `server_error`, `unknown`
 
@@ -115,22 +152,43 @@ curl http://localhost:9091/metrics
 
 Total tokens by model:
 ```promql
-sum by (model) (alphatrion_llm_tokens_total{token_type="total"})
+sum by (model) (llm_tokens_total{token_type="total"})
+```
+
+Total cost by model:
+```promql
+sum by (model) (llm_cost_total{cost_type="total"})
+```
+
+Input vs output cost:
+```promql
+sum(llm_input_cost_total)
+sum(llm_output_cost_total)
 ```
 
 Request rate per experiment:
 ```promql
-rate(alphatrion_llm_requests_total[5m])
+rate(llm_requests_total[5m])
 ```
 
 Average LLM duration by model:
 ```promql
-rate(alphatrion_llm_duration_seconds_sum[5m]) / rate(alphatrion_llm_duration_seconds_count[5m])
+rate(llm_duration_seconds_sum[5m]) / rate(llm_duration_seconds_count[5m])
 ```
 
 P95 LLM latency:
 ```promql
-histogram_quantile(0.95, alphatrion_llm_duration_seconds_bucket)
+histogram_quantile(0.95, llm_duration_seconds_bucket)
+```
+
+Cost per experiment:
+```promql
+sum by (experiment_id) (llm_cost_total{cost_type="total"})
+```
+
+Average cost per request:
+```promql
+sum(llm_cost_total{cost_type="total"}) / sum(llm_requests_total)
 ```
 
 ## Using Grafana
@@ -171,28 +229,46 @@ Create your own panels with queries like:
 
 ```promql
 # Token usage by experiment
-sum by (experiment_id) (alphatrion_llm_tokens_total{token_type="total"})
+sum by (experiment_id) (llm_tokens_total{token_type="total"})
+
+# Cost by experiment
+sum by (experiment_id) (llm_cost_total{cost_type="total"})
 
 # Request rate per team
-rate(alphatrion_llm_requests_total{team_id="YOUR_TEAM_ID"}[5m])
+rate(llm_requests_total{team_id="YOUR_TEAM_ID"}[5m])
 
 # Average latency
-rate(alphatrion_llm_duration_seconds_sum[5m]) / rate(alphatrion_llm_duration_seconds_count[5m])
+rate(llm_duration_seconds_sum[5m]) / rate(llm_duration_seconds_count[5m])
 
 # Success rate
-sum(rate(alphatrion_llm_requests_total{status="OK"}[5m])) / sum(rate(alphatrion_llm_requests_total[5m]))
+sum(rate(llm_requests_total{status="OK"}[5m])) / sum(rate(llm_requests_total[5m]))
 
 # Top 5 teams by token usage
-topk(5, sum by (team_id) (alphatrion_llm_tokens_total{token_type="total"}))
+topk(5, sum by (team_id) (llm_tokens_total{token_type="total"}))
+
+# Top 5 teams by cost
+topk(5, sum by (team_id) (llm_cost_total{cost_type="total"}))
+
+# Cost efficiency (cost per 1k tokens)
+sum(llm_cost_total{cost_type="total"}) / (sum(llm_tokens_total{token_type="total"}) / 1000)
 
 # Errors by team
-sum by (team_id) (alphatrion_llm_errors_total)
+sum by (team_id) (llm_errors_total)
 
 # Count unique experiments (derived metric)
-count(sum by (experiment_id) (alphatrion_llm_requests_total))
+count(sum by (experiment_id) (llm_requests_total))
 
 # Count unique teams (derived metric)
-count(sum by (team_id) (alphatrion_llm_requests_total))
+count(sum by (team_id) (llm_requests_total))
+
+# Cache cost
+sum(llm_cache_read_cost_total) + sum(llm_cache_creation_cost_total)
+
+# Percentage of cost from cache
+(
+  sum(llm_cache_read_cost_total) +
+  sum(llm_cache_creation_cost_total)
+) / sum(llm_cost_total{cost_type="total"}) * 100
 ```
 
 ## Production Considerations
@@ -207,16 +283,23 @@ ALPHATRION_PROMETHEUS_PUSHGATEWAY_URL=pushgateway.prod.example.com:9091
 
 ### Grouping Keys
 
-You can customize grouping keys by modifying `PrometheusSpanProcessor` initialization in your code:
+You can customize grouping keys by modifying `PrometheusExporter` initialization in your code:
 
 ```python
-from alphatrion.tracing.prometheus_span_processor import PrometheusSpanProcessor
+from alphatrion.tracing.prometheus_exporter import PrometheusExporter
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry import trace
 
-processor = PrometheusSpanProcessor(
+# Create exporter with custom grouping
+prometheus_exporter = PrometheusExporter(
     pushgateway_url="localhost:9091",
     job_name="my-app",
     grouping_key={"instance": "app-1", "environment": "production"}
 )
+
+# Add to tracer provider with batching
+tracer_provider = trace.get_tracer_provider()
+tracer_provider.add_span_processor(BatchSpanProcessor(prometheus_exporter))
 ```
 
 ### Label Cardinality
@@ -251,7 +334,7 @@ Labels like `run_id`, `span_kind`, and `semantic_kind` are intentionally exclude
 
 4. Check logs for errors:
    ```bash
-   # Look for "PrometheusSpanProcessor" in logs
+   # Look for "PrometheusExporter initialized" or "CostEnrichmentProcessor" in logs
    ```
 
 ### Push gateway connection errors

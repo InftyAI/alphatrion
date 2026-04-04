@@ -4,6 +4,7 @@ import os
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from traceloop.sdk import Traceloop
 
 from alphatrion import envs
@@ -11,7 +12,8 @@ from alphatrion.artifact.artifact import Artifact
 from alphatrion.storage.sqlstore import SQLStore
 from alphatrion.storage.tracestore import TraceStore
 from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
-from alphatrion.tracing.prometheus_span_processor import PrometheusSpanProcessor
+from alphatrion.tracing.cost_enrichment_processor import CostEnrichmentProcessor
+from alphatrion.tracing.prometheus_exporter import PrometheusExporter
 from alphatrion.tracing.span_processor import ContextAttributesSpanProcessor
 
 __STORAGE_RUNTIME__ = None
@@ -62,23 +64,31 @@ class StorageRuntime:
                     telemetry_enabled=False,
                 )
 
-                # Add custom span processor to inject context attributes (run_id, etc.)
-                # into all spans, including child spans created by instrumented libraries
+                # Add custom span processors
                 tracer_provider = trace.get_tracer_provider()
+
+                # 1. Context attributes processor - injects context (run_id, etc.) into all spans
                 tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
 
-                # Add Prometheus span processor if enabled
+                # 2. Cost enrichment processor - calculates costs from tokens and adds to span attributes
+                # This runs early so downstream processors/exporters can access cost data
+                tracer_provider.add_span_processor(CostEnrichmentProcessor())
+
+                # 3. Add Prometheus exporter if enabled
                 if os.getenv(envs.ENABLE_PROMETHEUS, "false").lower() == "true":
                     pushgateway_url = os.getenv(
                         envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
                     )
                     job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
 
-                    prometheus_processor = PrometheusSpanProcessor(
+                    prometheus_exporter = PrometheusExporter(
                         pushgateway_url=pushgateway_url,
                         job_name=job_name,
                     )
-                    tracer_provider.add_span_processor(prometheus_processor)
+                    # Use BatchSpanProcessor for better performance
+                    tracer_provider.add_span_processor(
+                        BatchSpanProcessor(prometheus_exporter)
+                    )
 
         artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
         if artifact_storage_enabled():

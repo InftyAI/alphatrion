@@ -1,10 +1,15 @@
 # ruff: noqa: PLW0603
+import logging
 import os
+import sys
 import uuid
 
 from alphatrion import envs
 from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sqlstore import SQLStore
+from alphatrion.utils.pricing import load_pricing_config
+
+logger = logging.getLogger(__name__)
 
 __RUNTIME__ = None
 
@@ -57,6 +62,15 @@ class Runtime:
         team_id: uuid.UUID | None = None,
         org_id: uuid.UUID | None = None,
     ):
+        # Load pricing config at startup - exit if it fails
+        try:
+            load_pricing_config()
+            logger.info("Successfully loaded model pricing configuration")
+        except Exception as e:
+            logger.error(f"Failed to load pricing configuration: {e}")
+            logger.error("Application cannot start without valid pricing configuration")
+            sys.exit(1)
+
         storage_runtime.init()
         self._metadb = storage_runtime.storage_runtime().metadb
         self._tracestore = storage_runtime.storage_runtime().tracestore

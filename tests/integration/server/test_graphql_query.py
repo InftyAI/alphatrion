@@ -35,7 +35,7 @@ def test_query_single_team(execute_graphql, test_org_id, test_user_id, test_team
             updatedAt
             totalExperiments
             totalRuns
-            aggregatedTokens {{
+            aggregatedUsage {{
                 totalTokens
                 inputTokens
                 outputTokens
@@ -352,7 +352,7 @@ async def test_query_single_run(
             meta
             status
             createdAt
-            aggregatedTokens {{
+            aggregatedUsage {{
                 totalTokens
                 inputTokens
                 outputTokens
@@ -378,9 +378,9 @@ async def test_query_single_run(
     assert response.data["run"]["status"] == "COMPLETED"
     assert len(response.data["run"]["spans"]) > 0
     # Verify tokens are fetched from ClickHouse via GraphQL fields
-    assert response.data["run"]["aggregatedTokens"]["totalTokens"] is not None
-    assert response.data["run"]["aggregatedTokens"]["inputTokens"] is not None
-    assert response.data["run"]["aggregatedTokens"]["outputTokens"] is not None
+    assert response.data["run"]["aggregatedUsage"]["totalTokens"] is not None
+    assert response.data["run"]["aggregatedUsage"]["inputTokens"] is not None
+    assert response.data["run"]["aggregatedUsage"]["outputTokens"] is not None
 
     # Verify tokens are NOT cached in meta anymore
     metadb = runtime.storage_runtime().metadb
@@ -518,10 +518,13 @@ async def test_query_experiment_with_usage(
         experiment(id: "{exp_id}") {{
             id
             status
-            aggregatedTokens {{
+            aggregatedUsage {{
                 totalTokens
                 inputTokens
                 outputTokens
+                cacheCreationInputTokens
+                cacheReadInputTokens
+                totalCost
             }}
         }}
     }}
@@ -534,23 +537,27 @@ async def test_query_experiment_with_usage(
 
     assert response.errors is None
     assert response.data["experiment"]["status"] == "CANCELLED"
-    assert response.data["experiment"]["aggregatedTokens"] is not None
-    assert response.data["experiment"]["aggregatedTokens"]["totalTokens"] is not None
-    assert response.data["experiment"]["aggregatedTokens"]["inputTokens"] is not None
-    assert response.data["experiment"]["aggregatedTokens"]["outputTokens"] is not None
+    assert response.data["experiment"]["aggregatedUsage"] is not None
+    assert response.data["experiment"]["aggregatedUsage"]["totalTokens"] is not None
+    assert response.data["experiment"]["aggregatedUsage"]["inputTokens"] is not None
+    assert response.data["experiment"]["aggregatedUsage"]["outputTokens"] is not None
+    assert (
+        response.data["experiment"]["aggregatedUsage"]["cacheCreationInputTokens"]
+        is not None
+    )
+    assert (
+        response.data["experiment"]["aggregatedUsage"]["cacheReadInputTokens"]
+        is not None
+    )
+    assert response.data["experiment"]["aggregatedUsage"]["totalCost"] is not None
 
     exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
     assert exp_obj.status == Status.CANCELLED
-    assert exp_obj.usage is not None
-    assert "total_tokens" in exp_obj.usage
-    assert "input_tokens" in exp_obj.usage
-    assert "output_tokens" in exp_obj.usage
 
     # resume the experiment
     async with CraftExperiment.start(name="integration_test_experiment_resume") as exp:
         exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
         assert exp_obj.status == Status.RUNNING
-        assert exp_obj.usage is None
 
 
 @pytest.mark.asyncio

@@ -106,65 +106,75 @@ export function RunDetailPage() {
         <TabsContent value="overview" className="space-y-2">
           {/* Run Overview */}
           <Card>
-        <CardContent className="p-3">
-          <h3 className="text-sm font-semibold mb-2">Overview</h3>
-          <dl className="grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">
-                {run.aggregatedTokens?.totalTokens !== undefined && run.aggregatedTokens.totalTokens > 0 ? (
-                  <>
-                    {Number(run.aggregatedTokens.totalTokens).toLocaleString()}
-                    <span className="text-muted-foreground text-xs ml-1">
-                      ({Number(run.aggregatedTokens.inputTokens || 0).toLocaleString()}↓ {Number(run.aggregatedTokens.outputTokens || 0).toLocaleString()}↑)
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
-              <dd className="mt-1.5 text-foreground font-mono text-sm">
-                {run.duration !== undefined && run.duration > 0 ? (
-                  formatDuration(run.duration)
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
-              <dd className="mt-1.5 text-foreground text-sm">
-                {formatDistanceToNow(new Date(run.createdAt), {
-                  addSuffix: true,
-                })}
-              </dd>
-            </div>
-          </dl>
-
-
-          {/* Metadata */}
-          {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
-            <div className="mt-3 pt-3 border-t">
-              <h3 className="text-sm font-semibold mb-2">Metadata</h3>
+            <CardContent className="p-3">
+              <h3 className="text-sm font-semibold mb-2">Overview</h3>
               <dl className="grid grid-cols-3 gap-2 text-sm">
-                {Object.entries(run.meta)
-                  .filter(([key]) => key !== 'execution_result')
-                  .map(([key, value]) => (
-                    <div key={key} className="break-words">
-                      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
-                      <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
-                        {typeof value === 'string' ? value : JSON.stringify(value)}
-                      </dd>
-                    </div>
-                  ))}
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Tokens</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">
+                    {run.aggregatedUsage?.totalTokens !== undefined && run.aggregatedUsage.totalTokens > 0 ? (
+                      <>
+                        {Number(run.aggregatedUsage.totalTokens).toLocaleString()}
+                        <span className="text-muted-foreground text-xs ml-1">
+                          ({Number(run.aggregatedUsage.inputTokens || 0).toLocaleString()}↓ {Number(run.aggregatedUsage.outputTokens || 0).toLocaleString()}↑)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Total Cost</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">
+                    {run.aggregatedUsage?.totalCost !== undefined && run.aggregatedUsage.totalCost > 0 ? (
+                      <>${run.aggregatedUsage.totalCost.toFixed(4)}</>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Duration</dt>
+                  <dd className="mt-1.5 text-foreground font-mono text-sm">
+                    {run.duration !== undefined && run.duration > 0 ? (
+                      formatDuration(run.duration)
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Created</dt>
+                  <dd className="mt-1.5 text-foreground text-sm">
+                    {formatDistanceToNow(new Date(run.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </dd>
+                </div>
               </dl>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+
+              {/* Metadata */}
+              {run.meta && Object.keys(run.meta).filter(k => k !== 'execution_result').length > 0 && (
+                <div className="mt-3 pt-3 border-t">
+                  <h3 className="text-sm font-semibold mb-2">Metadata</h3>
+                  <dl className="grid grid-cols-3 gap-2 text-sm">
+                    {Object.entries(run.meta)
+                      .filter(([key]) => key !== 'execution_result')
+                      .map(([key, value]) => (
+                        <div key={key} className="break-words">
+                          <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{key}</dt>
+                          <dd className="mt-1.5 text-foreground font-mono text-sm break-all">
+                            {typeof value === 'string' ? value : JSON.stringify(value)}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Metrics */}
           <Card>
