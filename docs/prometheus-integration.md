@@ -47,7 +47,7 @@ Set environment variables in your `.env` file:
 ALPHATRION_ENABLE_TRACING=true
 
 # Enable Prometheus export
-ALPHATRION_ENABLE_PROMETHEUS=true
+ALPHATRION_ENABLE_PROMETHEUS_EXPORTER=true
 
 # Push gateway URL (default: localhost:9091)
 ALPHATRION_PROMETHEUS_PUSHGATEWAY_URL=localhost:9091
@@ -81,44 +81,44 @@ async with experiment.CraftExperiment.start(name="my_experiment") as exp:
 ### LLM Token Metrics
 
 - **`llm_tokens_total`** - Total LLM tokens consumed
-  - Labels: `team_id`, `experiment_id`, `model`, `token_type` (input/output/cache_read_input/cache_creation_input/total)
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `token_type` (input/output/cache_read_input/cache_creation_input/total)
 
 - **`llm_input_tokens_total`** - Total input tokens
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_output_tokens_total`** - Total output tokens
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_read_input_tokens_total`** - Total cache read input tokens
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_creation_input_tokens_total`** - Total cache creation input tokens
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 ### LLM Cost Metrics (USD)
 
 - **`llm_cost_total`** - Total LLM cost in USD
-  - Labels: `team_id`, `experiment_id`, `model`, `cost_type` (total)
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `cost_type` (total)
 
 - **`llm_input_cost_total`** - Total input token cost in USD
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_output_cost_total`** - Total output token cost in USD
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_read_cost_total`** - Total cache read cost in USD
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_creation_cost_total`** - Total cache creation cost in USD
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
 
 ### LLM Request Metrics
 
 - **`llm_requests_total`** - Total number of LLM requests
-  - Labels: `team_id`, `experiment_id`, `model`, `status`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `status`
 
 - **`llm_request_duration_seconds`** - LLM request duration histogram
-  - Labels: `team_id`, `experiment_id`, `model`
+  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
   - Buckets: 0.1s, 0.5s, 1s, 2s, 5s, 10s, 30s, 60s
 
 ### Error Tracking
@@ -304,14 +304,20 @@ tracer_provider.add_span_processor(BatchSpanProcessor(prometheus_exporter))
 
 ### Label Cardinality
 
-The implementation is optimized for low cardinality to ensure Prometheus performance. Metrics are aggregated by:
+The implementation balances observability with Prometheus performance. Metrics are aggregated by:
 
-- `team_id` - Organization/team level
-- `experiment_id` - Experiment level
-- `model` - AI model being used (LLM metrics only)
+- `team_id` - Organization/team level (low cardinality)
+- `user_id` - User level for per-user cost tracking (medium cardinality)
+- `experiment_id` - Experiment level (medium-high cardinality)
+- `model` - AI model being used (low cardinality)
 - Other minimal dimensions (`status`, `token_type`)
 
-Labels like `run_id`, `span_kind`, and `semantic_kind` are intentionally excluded. For detailed trace analysis and span classification, use the ClickHouse trace store which is optimized for high-cardinality data.
+**Cardinality Considerations:**
+- `user_id` is included to enable per-user cost tracking and billing
+- In high-user environments (1000+ users), consider aggregating costs by team in Prometheus and using ClickHouse for detailed per-user breakdowns
+- Labels like `run_id`, `span_kind`, and `semantic_kind` are intentionally excluded
+
+For detailed trace analysis and span classification, use the ClickHouse trace store which is optimized for high-cardinality data.
 
 ## Troubleshooting
 
@@ -324,7 +330,7 @@ Labels like `run_id`, `span_kind`, and `semantic_kind` are intentionally exclude
 
 2. Check Prometheus is enabled:
    ```bash
-   ALPHATRION_ENABLE_PROMETHEUS=true
+   ALPHATRION_ENABLE_PROMETHEUS_EXPORTER=true
    ```
 
 3. Verify push gateway is running:
