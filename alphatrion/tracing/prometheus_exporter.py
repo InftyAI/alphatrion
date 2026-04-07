@@ -68,35 +68,35 @@ class PrometheusExporter(SpanExporter):
         self.llm_tokens_total = Counter(
             "llm_tokens_total",
             "Total LLM tokens consumed",
-            ["team_id", "experiment_id", "model", "token_type"],
+            ["team_id", "user_id", "experiment_id", "model", "token_type"],
             registry=self.registry,
         )
 
         self.llm_input_tokens_total = Counter(
             "llm_input_tokens_total",
             "Total LLM input tokens consumed",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_output_tokens_total = Counter(
             "llm_output_tokens_total",
             "Total LLM output tokens consumed",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_cache_read_input_tokens_total = Counter(
             "llm_cache_read_input_tokens_total",
             "Total LLM cache read input tokens",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_cache_creation_input_tokens_total = Counter(
             "llm_cache_creation_input_tokens_total",
             "Total LLM cache creation input tokens",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
@@ -104,35 +104,35 @@ class PrometheusExporter(SpanExporter):
         self.llm_cost_total = Counter(
             "llm_cost_total",
             "Total LLM cost in USD",
-            ["team_id", "experiment_id", "model", "cost_type"],
+            ["team_id", "user_id", "experiment_id", "model", "cost_type"],
             registry=self.registry,
         )
 
         self.llm_input_cost_total = Counter(
             "llm_input_cost_total",
             "Total LLM input cost in USD",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_output_cost_total = Counter(
             "llm_output_cost_total",
             "Total LLM output cost in USD",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_cache_read_cost_total = Counter(
             "llm_cache_read_cost_total",
             "Total LLM cache read cost in USD",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
         self.llm_cache_creation_cost_total = Counter(
             "llm_cache_creation_cost_total",
             "Total LLM cache creation cost in USD",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             registry=self.registry,
         )
 
@@ -140,7 +140,7 @@ class PrometheusExporter(SpanExporter):
         self.llm_requests_total = Counter(
             "llm_requests_total",
             "Total number of LLM requests",
-            ["team_id", "experiment_id", "model", "status"],
+            ["team_id", "user_id", "experiment_id", "model", "status"],
             registry=self.registry,
         )
 
@@ -148,7 +148,7 @@ class PrometheusExporter(SpanExporter):
         self.llm_request_duration_seconds = Histogram(
             "llm_request_duration_seconds",
             "LLM request duration in seconds",
-            ["team_id", "experiment_id", "model"],
+            ["team_id", "user_id", "experiment_id", "model"],
             buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0],
             registry=self.registry,
         )
@@ -190,6 +190,7 @@ class PrometheusExporter(SpanExporter):
 
             attributes = {k: str(v) for k, v in span.attributes.items()}
             team_id = attributes.get("team_id", "unknown")
+            user_id = attributes.get("user_id", "unknown")
             experiment_id = attributes.get("experiment_id", "unknown")
 
             if "llm.usage.total_tokens" not in attributes:
@@ -204,7 +205,7 @@ class PrometheusExporter(SpanExporter):
                 self.llm_errors_total.labels(error_type=error_type).inc()
 
             self._process_llm_span(
-                span, attributes, team_id, experiment_id, duration, status
+                span, attributes, team_id, user_id, experiment_id, duration, status
             )
 
         except Exception as e:
@@ -236,6 +237,7 @@ class PrometheusExporter(SpanExporter):
         span: ReadableSpan,
         attributes: dict[str, str],
         team_id: str,
+        user_id: str,
         experiment_id: str,
         duration: float,
         status: str,
@@ -259,6 +261,7 @@ class PrometheusExporter(SpanExporter):
         if total_tokens > 0:
             self.llm_tokens_total.labels(
                 team_id=team_id,
+                user_id=user_id,
                 experiment_id=experiment_id,
                 model=model,
                 token_type="total",
@@ -266,10 +269,11 @@ class PrometheusExporter(SpanExporter):
 
         if input_tokens > 0:
             self.llm_input_tokens_total.labels(
-                team_id=team_id, experiment_id=experiment_id, model=model
+                team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
             ).inc(input_tokens)
             self.llm_tokens_total.labels(
                 team_id=team_id,
+                user_id=user_id,
                 experiment_id=experiment_id,
                 model=model,
                 token_type="input",
@@ -277,10 +281,11 @@ class PrometheusExporter(SpanExporter):
 
         if output_tokens > 0:
             self.llm_output_tokens_total.labels(
-                team_id=team_id, experiment_id=experiment_id, model=model
+                team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
             ).inc(output_tokens)
             self.llm_tokens_total.labels(
                 team_id=team_id,
+                user_id=user_id,
                 experiment_id=experiment_id,
                 model=model,
                 token_type="output",
@@ -288,10 +293,11 @@ class PrometheusExporter(SpanExporter):
 
         if cache_read_input_tokens > 0:
             self.llm_cache_read_input_tokens_total.labels(
-                team_id=team_id, experiment_id=experiment_id, model=model
+                team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
             ).inc(cache_read_input_tokens)
             self.llm_tokens_total.labels(
                 team_id=team_id,
+                user_id=user_id,
                 experiment_id=experiment_id,
                 model=model,
                 token_type="cache_read_input",
@@ -299,10 +305,11 @@ class PrometheusExporter(SpanExporter):
 
         if cache_creation_input_tokens > 0:
             self.llm_cache_creation_input_tokens_total.labels(
-                team_id=team_id, experiment_id=experiment_id, model=model
+                team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
             ).inc(cache_creation_input_tokens)
             self.llm_tokens_total.labels(
                 team_id=team_id,
+                user_id=user_id,
                 experiment_id=experiment_id,
                 model=model,
                 token_type="cache_creation_input",
@@ -323,6 +330,7 @@ class PrometheusExporter(SpanExporter):
             if total_cost > 0:
                 self.llm_cost_total.labels(
                     team_id=team_id,
+                    user_id=user_id,
                     experiment_id=experiment_id,
                     model=model,
                     cost_type="total",
@@ -330,22 +338,22 @@ class PrometheusExporter(SpanExporter):
 
             if input_cost > 0:
                 self.llm_input_cost_total.labels(
-                    team_id=team_id, experiment_id=experiment_id, model=model
+                    team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
                 ).inc(input_cost)
 
             if output_cost > 0:
                 self.llm_output_cost_total.labels(
-                    team_id=team_id, experiment_id=experiment_id, model=model
+                    team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
                 ).inc(output_cost)
 
             if cache_read_cost > 0:
                 self.llm_cache_read_cost_total.labels(
-                    team_id=team_id, experiment_id=experiment_id, model=model
+                    team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
                 ).inc(cache_read_cost)
 
             if cache_creation_cost > 0:
                 self.llm_cache_creation_cost_total.labels(
-                    team_id=team_id, experiment_id=experiment_id, model=model
+                    team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
                 ).inc(cache_creation_cost)
 
         except (ValueError, TypeError) as e:
@@ -353,12 +361,12 @@ class PrometheusExporter(SpanExporter):
 
         # Request count
         self.llm_requests_total.labels(
-            team_id=team_id, experiment_id=experiment_id, model=model, status=status
+            team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model, status=status
         ).inc()
 
         # Duration
         self.llm_request_duration_seconds.labels(
-            team_id=team_id, experiment_id=experiment_id, model=model
+            team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
         ).observe(duration)
 
     def _push_metrics(self):
