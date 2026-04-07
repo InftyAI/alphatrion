@@ -81,44 +81,44 @@ async with experiment.CraftExperiment.start(name="my_experiment") as exp:
 ### LLM Token Metrics
 
 - **`llm_tokens_total`** - Total LLM tokens consumed
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `token_type` (input/output/cache_read_input/cache_creation_input/total)
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`, `token_type` (input/output/cache_read_input/cache_creation_input/total)
 
 - **`llm_input_tokens_total`** - Total input tokens
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_output_tokens_total`** - Total output tokens
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_read_input_tokens_total`** - Total cache read input tokens
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_creation_input_tokens_total`** - Total cache creation input tokens
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 ### LLM Cost Metrics (USD)
 
 - **`llm_cost_total`** - Total LLM cost in USD
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `cost_type` (total)
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`, `cost_type` (total)
 
 - **`llm_input_cost_total`** - Total input token cost in USD
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_output_cost_total`** - Total output token cost in USD
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_read_cost_total`** - Total cache read cost in USD
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 - **`llm_cache_creation_cost_total`** - Total cache creation cost in USD
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
 
 ### LLM Request Metrics
 
 - **`llm_requests_total`** - Total number of LLM requests
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`, `status`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`, `status`
 
 - **`llm_request_duration_seconds`** - LLM request duration histogram
-  - Labels: `team_id`, `user_id`, `experiment_id`, `model`
+  - Labels: `org_id`, `team_id`, `user_id`, `experiment_id`, `model`
   - Buckets: 0.1s, 0.5s, 1s, 2s, 5s, 10s, 30s, 60s
 
 ### Error Tracking
@@ -228,6 +228,18 @@ The platform dashboard provides a comprehensive view combining operational healt
 Create your own panels with queries like:
 
 ```promql
+# Cost by organization
+sum by (org_id) (llm_cost_total{cost_type="total"})
+
+# Cost by team within org
+sum by (org_id, team_id) (llm_cost_total{cost_type="total"})
+
+# Top 10 users by cost
+topk(10, sum by (user_id) (llm_cost_total{cost_type="total"}))
+
+# Specific user's cost
+sum(llm_cost_total{user_id="user123", cost_type="total"})
+
 # Token usage by experiment
 sum by (experiment_id) (llm_tokens_total{token_type="total"})
 
@@ -238,7 +250,7 @@ sum by (experiment_id) (llm_cost_total{cost_type="total"})
 rate(llm_requests_total{team_id="YOUR_TEAM_ID"}[5m])
 
 # Average latency
-rate(llm_duration_seconds_sum[5m]) / rate(llm_duration_seconds_count[5m])
+rate(llm_request_duration_seconds_sum[5m]) / rate(llm_request_duration_seconds_count[5m])
 
 # Success rate
 sum(rate(llm_requests_total{status="OK"}[5m])) / sum(rate(llm_requests_total[5m]))
@@ -257,6 +269,9 @@ sum by (team_id) (llm_errors_total)
 
 # Count unique experiments (derived metric)
 count(sum by (experiment_id) (llm_requests_total))
+
+# Per-user cost within a specific org
+sum by (user_id) (llm_cost_total{org_id="org123", cost_type="total"})
 
 # Count unique teams (derived metric)
 count(sum by (team_id) (llm_requests_total))
@@ -306,16 +321,21 @@ tracer_provider.add_span_processor(BatchSpanProcessor(prometheus_exporter))
 
 The implementation balances observability with Prometheus performance. Metrics are aggregated by:
 
-- `team_id` - Organization/team level (low cardinality)
+- `org_id` - Organization level (very low cardinality)
+- `team_id` - Team level within org (low cardinality)
 - `user_id` - User level for per-user cost tracking (medium cardinality)
 - `experiment_id` - Experiment level (medium-high cardinality)
 - `model` - AI model being used (low cardinality)
 - Other minimal dimensions (`status`, `token_type`)
 
 **Cardinality Considerations:**
-- `user_id` is included to enable per-user cost tracking and billing
-- In high-user environments (1000+ users), consider aggregating costs by team in Prometheus and using ClickHouse for detailed per-user breakdowns
+- `org_id` enables multi-tenant deployments and per-organization billing
+- `team_id` allows tracking within organizations
+- `user_id` enables per-user cost tracking and billing within teams
+- In high-user environments (1000+ users per org), consider aggregating costs by team/org in Prometheus and using ClickHouse for detailed per-user breakdowns
 - Labels like `run_id`, `span_kind`, and `semantic_kind` are intentionally excluded
+
+**Label Hierarchy:** `org_id` > `team_id` > `user_id` > `experiment_id`
 
 For detailed trace analysis and span classification, use the ClickHouse trace store which is optimized for high-cardinality data.
 
