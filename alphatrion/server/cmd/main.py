@@ -11,12 +11,11 @@ import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-import httpx
 import uvicorn
 from dotenv import load_dotenv
 from faker import Faker
-from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, Response
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 from rich.text import Text
@@ -49,19 +48,14 @@ def main():
     server.set_defaults(func=run_server)
 
     dashboard = subparsers.add_parser(
-        "dashboard", help="Launch the AlphaTrion web dashboard"
+        "dashboard",
+        help="Serve pre-built dashboard (for testing production builds locally)",
     )
     dashboard.add_argument(
         "--port",
         type=int,
         default=5173,
-        help="Port to run the dashboard on (default: 5173)",
-    )
-    dashboard.add_argument(
-        "--backend-url",
-        type=str,
-        default="http://localhost:8000",
-        help="Backend server URL to proxy requests to (default: http://localhost:8000)",
+        help="Port to serve the dashboard on (default: 5173)",
     )
     dashboard.set_defaults(func=start_dashboard)
 
@@ -560,98 +554,28 @@ def start_dashboard(args):
     )
     console.print(msg)
     console.print(Text(f"📂 Serving static files from: {static_path}", style="dim"))
-
-    console.print(
-        Text(f"🔗 Proxying backend requests to: {args.backend_url}", style="dim")
-    )
     console.print()
     console.print(
-        Text("💡 Note: Make sure the backend server is running:", style="bold yellow")
+        Text(
+            "💡 Note: Make sure the backend server is running at http://localhost:8000",
+            style="bold yellow",
+        )
     )
-    console.print(Text("   alphatrion server", style="cyan"))
+    console.print(Text("   Run: alphatrion server", style="cyan"))
     console.print()
 
     app = FastAPI()
 
-    # Create HTTP client for proxying requests to backend
-    http_client = httpx.AsyncClient(base_url=args.backend_url, timeout=30.0)
-
-    # Proxy /graphql requests to backend (MUST be before catch-all route)
-    @app.api_route("/graphql", methods=["GET", "POST"])
-    async def proxy_graphql(request: Request):
-        headers = dict(request.headers)
-        headers.pop("host", None)  # Remove host header
-
-        try:
-            response = await http_client.request(
-                method=request.method,
-                url="/graphql",
-                content=await request.body(),
-                headers=headers,
-            )
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                headers=dict(response.headers),
-            )
-        except Exception as e:
-            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
-            return Response(
-                content=f'{{"error": "Backend server not available. Make sure it\'s running at {args.backend_url}"}}',
-                status_code=503,
-                media_type="application/json",
-            )
-
-    # Proxy /api requests to backend (MUST be before catch-all route)
-    @app.api_route("/api/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-    async def proxy_api(path: str, request: Request):
-        headers = dict(request.headers)
-        headers.pop("host", None)
-
-        try:
-            response = await http_client.request(
-                method=request.method,
-                url=f"/api/{path}",
-                content=await request.body(),
-                headers=headers,
-            )
-            return Response(
-                content=response.content,
-                status_code=response.status_code,
-                headers=dict(response.headers),
-            )
-        except Exception as e:
-            console.print(Text(f"❌ Error connecting to backend: {e}", style="red"))
-            return Response(
-                content='{"error": "Backend server not available"}',
-                status_code=503,
-                media_type="application/json",
-            )
-
     # Mount the entire static directory at /static
     app.mount("/static", StaticFiles(directory=static_path, html=True), name="static")
 
-    @app.get("/")
-    def serve_root():
-        # Serve index.html at root
-        index_file = static_path / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
-        return {"error": "index.html not found"}
-
+    # SPA fallback: serve index.html for all routes (enables client-side routing)
     @app.get("/{full_path:path}")
     def spa_fallback(full_path: str):
-        # Serve index.html for all routes (SPA fallback)
-        # This enables client-side routing
         index_file = static_path / "index.html"
         if index_file.exists():
             return FileResponse(index_file)
         return {"error": "index.html not found"}
-
-    # Register cleanup handler for HTTP client
-    @app.on_event("shutdown")
-    async def shutdown_event():
-        await http_client.aclose()
 
     url = f"http://127.0.0.1:{args.port}"
 

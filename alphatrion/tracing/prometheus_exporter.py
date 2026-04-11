@@ -206,7 +206,14 @@ class PrometheusExporter(SpanExporter):
                 self.llm_errors_total.labels(error_type=error_type).inc()
 
             self._process_llm_span(
-                span, attributes, org_id, team_id, user_id, experiment_id, duration, status
+                span,
+                attributes,
+                org_id,
+                team_id,
+                user_id,
+                experiment_id,
+                duration,
+                status,
             )
 
         except Exception as e:
@@ -272,7 +279,11 @@ class PrometheusExporter(SpanExporter):
 
         if input_tokens > 0:
             self.llm_input_tokens_total.labels(
-                org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                org_id=org_id,
+                team_id=team_id,
+                user_id=user_id,
+                experiment_id=experiment_id,
+                model=model,
             ).inc(input_tokens)
             self.llm_tokens_total.labels(
                 org_id=org_id,
@@ -285,7 +296,11 @@ class PrometheusExporter(SpanExporter):
 
         if output_tokens > 0:
             self.llm_output_tokens_total.labels(
-                org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                org_id=org_id,
+                team_id=team_id,
+                user_id=user_id,
+                experiment_id=experiment_id,
+                model=model,
             ).inc(output_tokens)
             self.llm_tokens_total.labels(
                 org_id=org_id,
@@ -298,7 +313,11 @@ class PrometheusExporter(SpanExporter):
 
         if cache_read_input_tokens > 0:
             self.llm_cache_read_input_tokens_total.labels(
-                org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                org_id=org_id,
+                team_id=team_id,
+                user_id=user_id,
+                experiment_id=experiment_id,
+                model=model,
             ).inc(cache_read_input_tokens)
             self.llm_tokens_total.labels(
                 org_id=org_id,
@@ -311,7 +330,11 @@ class PrometheusExporter(SpanExporter):
 
         if cache_creation_input_tokens > 0:
             self.llm_cache_creation_input_tokens_total.labels(
-                org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                org_id=org_id,
+                team_id=team_id,
+                user_id=user_id,
+                experiment_id=experiment_id,
+                model=model,
             ).inc(cache_creation_input_tokens)
             self.llm_tokens_total.labels(
                 org_id=org_id,
@@ -346,22 +369,38 @@ class PrometheusExporter(SpanExporter):
 
             if input_cost > 0:
                 self.llm_input_cost_total.labels(
-                    org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                    org_id=org_id,
+                    team_id=team_id,
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                    model=model,
                 ).inc(input_cost)
 
             if output_cost > 0:
                 self.llm_output_cost_total.labels(
-                    org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                    org_id=org_id,
+                    team_id=team_id,
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                    model=model,
                 ).inc(output_cost)
 
             if cache_read_cost > 0:
                 self.llm_cache_read_cost_total.labels(
-                    org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                    org_id=org_id,
+                    team_id=team_id,
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                    model=model,
                 ).inc(cache_read_cost)
 
             if cache_creation_cost > 0:
                 self.llm_cache_creation_cost_total.labels(
-                    org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+                    org_id=org_id,
+                    team_id=team_id,
+                    user_id=user_id,
+                    experiment_id=experiment_id,
+                    model=model,
                 ).inc(cache_creation_cost)
 
         except (ValueError, TypeError) as e:
@@ -369,12 +408,21 @@ class PrometheusExporter(SpanExporter):
 
         # Request count
         self.llm_requests_total.labels(
-            org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model, status=status
+            org_id=org_id,
+            team_id=team_id,
+            user_id=user_id,
+            experiment_id=experiment_id,
+            model=model,
+            status=status,
         ).inc()
 
         # Duration
         self.llm_request_duration_seconds.labels(
-            org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=experiment_id, model=model
+            org_id=org_id,
+            team_id=team_id,
+            user_id=user_id,
+            experiment_id=experiment_id,
+            model=model,
         ).observe(duration)
 
     def _push_metrics(self):
