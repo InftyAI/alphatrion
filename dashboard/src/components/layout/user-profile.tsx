@@ -7,14 +7,14 @@ import { useTeamContext } from '../../context/team-context';
 import { useOrganization } from '../../hooks/use-organization';
 import { cn } from '../../lib/utils';
 
-// Use runtime config (Kubernetes) > build-time env (Docker) > relative URL (local dev with proxy)
+// Use runtime config (Kubernetes) > build-time env (Docker) > localhost dev
 const getApiBaseUrl = () => {
   // @ts-ignore - window.ENV is injected at runtime by entrypoint.sh
   if (typeof window !== 'undefined' && window.ENV?.VITE_API_URL) {
     // @ts-ignore
     return window.ENV.VITE_API_URL;
   }
-  return import.meta.env.VITE_API_URL || '';
+  return import.meta.env.VITE_API_URL || 'http://localhost:8000';
 };
 
 export function UserProfile() {

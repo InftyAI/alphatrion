@@ -30,17 +30,5 @@ export default defineConfig(({ command }) => ({
         watch: {
             usePolling: true,
         },
-        proxy: {
-            // Proxy API requests to backend
-            "/api": {
-                target: "http://localhost:8000",
-                changeOrigin: true,
-            },
-            // Proxy GraphQL requests to backend
-            "/graphql": {
-                target: "http://localhost:8000",
-                changeOrigin: true,
-            },
-        },
     },
 }));

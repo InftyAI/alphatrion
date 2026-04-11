@@ -75,7 +75,10 @@ class StorageRuntime:
                 tracer_provider.add_span_processor(CostEnrichmentProcessor())
 
                 # 3. Add Prometheus exporter if enabled
-                if os.getenv(envs.ENABLE_PROMETHEUS_EXPORTER, "false").lower() == "true":
+                if (
+                    os.getenv(envs.ENABLE_PROMETHEUS_EXPORTER, "false").lower()
+                    == "true"
+                ):
                     pushgateway_url = os.getenv(
                         envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
                     )

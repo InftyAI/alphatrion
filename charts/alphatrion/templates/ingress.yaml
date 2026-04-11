@@ -28,14 +28,29 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
+          # API routes go to backend server
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "alphatrion.server.fullname" $ }}
+                port:
+                  number: {{ $.Values.server.service.port }}
+          # GraphQL routes go to backend server
+          - path: /graphql
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "alphatrion.server.fullname" $ }}
+                port:
+                  number: {{ $.Values.server.service.port }}
+          # Everything else (/, /static/*, SPA routes) goes to dashboard (static files)
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: {{ include "alphatrion.dashboard.fullname" $ }}
                 port:
                   number: {{ $.Values.dashboard.service.port }}
-          {{- end }}
     {{- end }}
 {{- end }}
