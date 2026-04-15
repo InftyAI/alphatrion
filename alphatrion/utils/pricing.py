@@ -1,6 +1,7 @@
 """LLM pricing utilities for cost calculation."""
 
 import logging
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -23,14 +24,36 @@ def load_pricing_config() -> dict[str, Any]:
     if _PRICING_CACHE is not None:
         return _PRICING_CACHE
 
-    config_path = Path(__file__).parent.parent.parent / "config" / "modelspec.yaml"
-
     try:
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-            _PRICING_CACHE = config
-            logger.info(f"Loaded pricing config from {config_path}")
-            return config
+        # Try to load from package resources (when installed)
+        try:
+            if hasattr(resources, "files"):
+                # Python 3.9+
+                config_file = resources.files("alphatrion").joinpath(
+                    "config/modelspec.yaml"
+                )
+                config_data = config_file.read_text()
+            else:
+                # Python 3.7-3.8 fallback
+                import importlib.resources as pkg_resources
+
+                config_data = pkg_resources.read_text(
+                    "alphatrion.config", "modelspec.yaml"
+                )
+
+            config = yaml.safe_load(config_data)
+            logger.info("Loaded pricing config from package resources")
+        except (FileNotFoundError, ModuleNotFoundError):
+            # Fall back to relative path (for development)
+            config_path = (
+                Path(__file__).parent.parent.parent / "config" / "modelspec.yaml"
+            )
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+                logger.info(f"Loaded pricing config from {config_path}")
+
+        _PRICING_CACHE = config
+        return config
     except Exception as e:
         logger.error(f"Failed to load pricing config: {e}")
         raise
