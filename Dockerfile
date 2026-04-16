@@ -11,6 +11,7 @@ WORKDIR /app
 # Copy dependency files and source code for installation
 COPY pyproject.toml README.md ./
 COPY alphatrion/ ./alphatrion/
+COPY config/modelspec.yaml ./config/modelspec.yaml
 
 # Install dependencies and package using uv (non-editable for Docker)
 RUN uv pip install --system --no-cache .
