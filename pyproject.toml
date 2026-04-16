@@ -27,6 +27,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "bcrypt>=4.0.0",
     "python-multipart>=0.0.6",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
