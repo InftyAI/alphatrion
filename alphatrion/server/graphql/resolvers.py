@@ -22,9 +22,9 @@ from .types import (
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    CreateExperimentInput,
     CreateTeamInput,
     CreateUserInput,
-    CreateExperimentInput,
     DailyCostUsage,
     Dataset,
     Experiment,
@@ -1636,7 +1636,9 @@ class GraphQLMutations:
             )
 
         # Check if experiment with same name already exists in the team
-        existing_exp = metadb.get_exp_by_name(name=input.name, team_id=team_id, include_deleted=True)
+        existing_exp = metadb.get_exp_by_name(
+            name=input.name, team_id=team_id, include_deleted=True
+        )
         if existing_exp:
             raise RuntimeError(
                 f"Experiment with name '{input.name}' already exists in this team"

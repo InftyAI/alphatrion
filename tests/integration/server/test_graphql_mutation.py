@@ -1171,7 +1171,6 @@ def test_create_experiment_duplicate_name(
 ):
     """Test that creating an experiment with duplicate name fails"""
     runtime.init()
-    metadb = runtime.storage_runtime().metadb
 
     # Create first experiment
     mutation1 = f"""
