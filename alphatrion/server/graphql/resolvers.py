@@ -22,6 +22,7 @@ from .types import (
     ArtifactContent,
     ArtifactRepository,
     ArtifactTag,
+    CreateExperimentInput,
     CreateTeamInput,
     CreateUserInput,
     DailyCostUsage,
@@ -1613,6 +1614,70 @@ class GraphQLMutations:
 
         # Remove user from team (deletes TeamMember entry)
         return metadb.remove_user_from_team(user_id=user_id, team_id=team_id)
+
+    @staticmethod
+    def create_experiment(
+        info: Info[GraphQLContext, None], input: CreateExperimentInput
+    ) -> Experiment:
+        """Create a new experiment."""
+
+        user_id = uuid.UUID(info.context.user_id)
+        org_id = uuid.UUID(info.context.org_id)
+        team_id = uuid.UUID(input.team_id)
+
+        metadb = runtime.storage_runtime().metadb
+
+        # Verify user has access to the team
+        if not metadb.team_is_accessible_to_user(
+            team_id=team_id, user_id=user_id, org_id=org_id
+        ):
+            raise RuntimeError(
+                "Not allowed to create experiments in team that user does not belong to"
+            )
+
+        # Check if experiment with same name already exists in the team
+        existing_exp = metadb.get_exp_by_name(
+            name=input.name, team_id=team_id, include_deleted=True
+        )
+        if existing_exp:
+            raise RuntimeError(
+                f"Experiment with name '{input.name}' already exists in this team"
+            )
+
+        # Create experiment
+        experiment_id = metadb.create_experiment(
+            name=input.name,
+            org_id=org_id,
+            team_id=team_id,
+            user_id=user_id,
+            description=input.description,
+            labels=input.labels,
+            tags=input.tags,
+            meta=input.meta,
+            params=input.params,
+            status=Status.PENDING,
+        )
+
+        # Get the created experiment
+        exp = metadb.get_experiment(experiment_id=experiment_id)
+        if not exp:
+            raise RuntimeError("Failed to create experiment")
+
+        return Experiment(
+            id=exp.uuid,
+            org_id=exp.org_id,
+            team_id=exp.team_id,
+            user_id=exp.user_id,
+            name=exp.name,
+            description=exp.description,
+            meta=exp.meta,
+            params=exp.params,
+            duration=exp.duration,
+            status=GraphQLStatusEnum[Status(exp.status).name],
+            kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
+            created_at=exp.created_at,
+            updated_at=exp.updated_at,
+        )
 
     @staticmethod
     def delete_experiment(

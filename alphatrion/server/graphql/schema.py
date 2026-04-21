@@ -10,6 +10,7 @@ from alphatrion.server.graphql.types import (
     ArtifactFile,
     ArtifactRepository,
     ArtifactTag,
+    CreateExperimentInput,
     CreateTeamInput,
     CreateUserInput,
     DailyCostUsage,
@@ -268,6 +269,12 @@ class Mutation:
         self, dataset_ids: list[strawberry.ID], info: Info[GraphQLContext, None]
     ) -> bool:
         return GraphQLMutations.delete_datasets(info=info, dataset_ids=dataset_ids)
+
+    @strawberry.mutation
+    def create_experiment(
+        self, input: CreateExperimentInput, info: Info[GraphQLContext, None]
+    ) -> Experiment:
+        return GraphQLMutations.create_experiment(info=info, input=input)
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

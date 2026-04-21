@@ -1103,3 +1103,114 @@ def test_delete_experiments_all_running(
     assert exp_2 is not None
     assert exp_1.status == Status.RUNNING
     assert exp_2.status == Status.RUNNING
+
+
+def test_create_experiment_mutation(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    """Test creating an experiment via GraphQL mutation"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    mutation = f"""
+    mutation {{
+        createExperiment(input: {{
+            name: "Test Experiment"
+            teamId: "{test_team_id}"
+            description: "An experiment created via mutation"
+            tags: ["ml", "training"]
+            meta: {{model: "gpt-4", version: "1.0"}}
+            params: {{learningRate: 0.001, batchSize: 32}}
+        }}) {{
+            id
+            name
+            description
+            status
+            kind
+            meta
+            params
+            tags
+            createdAt
+            updatedAt
+        }}
+    }}
+    """
+    response = execute_graphql(
+        query=mutation,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    assert response.errors is None
+    assert response.data["createExperiment"]["name"] == "Test Experiment"
+    assert (
+        response.data["createExperiment"]["description"]
+        == "An experiment created via mutation"
+    )
+    assert response.data["createExperiment"]["status"] == "PENDING"
+    assert response.data["createExperiment"]["kind"] == "CRAFT_EXPERIMENT"
+    assert response.data["createExperiment"]["meta"] == {
+        "model": "gpt-4",
+        "version": "1.0",
+    }
+    assert response.data["createExperiment"]["params"] == {
+        "learningRate": 0.001,
+        "batchSize": 32,
+    }
+    assert response.data["createExperiment"]["tags"] == ["ml", "training"]
+
+    # Verify experiment was actually created in database
+    new_exp_id = uuid.UUID(response.data["createExperiment"]["id"])
+    exp = metadb.get_experiment(experiment_id=new_exp_id)
+    assert exp is not None
+    assert exp.name == "Test Experiment"
+    assert exp.status == Status.PENDING
+
+
+def test_create_experiment_duplicate_name(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    """Test that creating an experiment with duplicate name fails"""
+    runtime.init()
+
+    # Create first experiment
+    mutation1 = f"""
+    mutation {{
+        createExperiment(input: {{
+            name: "Duplicate Name Test"
+            teamId: "{test_team_id}"
+            description: "First experiment"
+        }}) {{
+            id
+            name
+        }}
+    }}
+    """
+    response1 = execute_graphql(
+        query=mutation1,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    assert response1.errors is None
+    assert response1.data["createExperiment"]["name"] == "Duplicate Name Test"
+
+    # Try to create second experiment with same name
+    mutation2 = f"""
+    mutation {{
+        createExperiment(input: {{
+            name: "Duplicate Name Test"
+            teamId: "{test_team_id}"
+            description: "Second experiment with same name"
+        }}) {{
+            id
+            name
+        }}
+    }}
+    """
+    response2 = execute_graphql(
+        query=mutation2,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    # Should return an error
+    assert response2.errors is not None
+    assert "already exists" in str(response2.errors[0])

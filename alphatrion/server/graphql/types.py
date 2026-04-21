@@ -432,6 +432,18 @@ class RemoveUserFromTeamInput:
     team_id: strawberry.ID
 
 
+@strawberry.input
+class CreateExperimentInput:
+    name: str
+    team_id: strawberry.ID
+    description: str | None = None
+    labels: str | None = None
+    tags: list[str] | None = None
+    meta: JSON | None = None
+    params: JSON | None = None
+    kind: GraphQLExperimentTypeEnum = GraphQLExperimentTypeEnum.CRAFT_EXPERIMENT
+
+
 # Artifact types
 @strawberry.type
 class ArtifactRepository:
