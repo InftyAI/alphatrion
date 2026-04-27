@@ -14,6 +14,7 @@ from alphatrion.storage import runtime
 from alphatrion.storage.sql_models import (
     AgentType,
     Status,
+    StatusMap,
 )
 
 from .types import (
@@ -43,6 +44,7 @@ from .types import (
     Team,
     TraceEvent,
     TraceLink,
+    UpdateExperimentInput,
     UpdateOrganizationInput,
     UpdateUserInput,
     User,
@@ -1680,6 +1682,73 @@ class GraphQLMutations:
         )
 
     @staticmethod
+    def update_experiment(
+        info: Info[GraphQLContext, None], input: UpdateExperimentInput
+    ) -> Experiment:
+        """Update an existing experiment."""
+
+        user_id = uuid.UUID(info.context.user_id)
+        experiment_id = uuid.UUID(input.id)
+
+        metadb = runtime.storage_runtime().metadb
+
+        # Verify user has access to the experiment
+        if not metadb.experiment_is_accessible_to_user(
+            experiment_id=experiment_id, user_id=user_id
+        ):
+            raise RuntimeError(
+                "Not allowed to update experiment that user does not have access to"
+            )
+
+        # Get the experiment to check if it exists
+        exp = metadb.get_experiment(experiment_id=experiment_id)
+        if not exp:
+            raise RuntimeError(f"Experiment with id '{input.id}' not found")
+
+        # Build update kwargs
+        update_kwargs = {}
+        if input.description is not None:
+            update_kwargs["description"] = input.description
+        if input.meta is not None:
+            update_kwargs["meta"] = input.meta
+        if input.params is not None:
+            update_kwargs["params"] = input.params
+        if input.labels is not None:
+            update_kwargs["labels"] = input.labels
+        if input.tags is not None:
+            update_kwargs["tags"] = input.tags
+
+        # Update experiment
+        if update_kwargs:
+            metadb.update_experiment(
+                experiment_id=experiment_id,
+                **update_kwargs,
+            )
+
+        # Get the updated experiment
+        updated_exp = metadb.get_experiment(experiment_id=experiment_id)
+        if not updated_exp:
+            raise RuntimeError("Failed to retrieve updated experiment")
+
+        return Experiment(
+            id=updated_exp.uuid,
+            org_id=updated_exp.org_id,
+            team_id=updated_exp.team_id,
+            user_id=updated_exp.user_id,
+            name=updated_exp.name,
+            description=updated_exp.description,
+            meta=updated_exp.meta,
+            params=updated_exp.params,
+            duration=updated_exp.duration,
+            status=GraphQLStatusEnum[Status(updated_exp.status).name],
+            kind=GraphQLExperimentTypeEnum[
+                GraphQLExperimentType(updated_exp.kind).name
+            ],
+            created_at=updated_exp.created_at,
+            updated_at=updated_exp.updated_at,
+        )
+
+    @staticmethod
     def delete_experiment(
         info: Info[GraphQLContext, None], experiment_id: strawberry.ID
     ) -> bool:
@@ -1740,3 +1809,64 @@ class GraphQLMutations:
         for id in dataset_ids:
             GraphQLMutations.delete_dataset(info=info, dataset_id=id)
         return True
+
+    @staticmethod
+    def abort_experiment(
+        info: Info[GraphQLContext, None], experiment_id: strawberry.ID
+    ) -> Experiment:
+        """Abort an experiment by changing its status to ABORTED.
+        Only works if the experiment is in PENDING status."""
+
+        user_id = uuid.UUID(info.context.user_id)
+        experiment_id_uuid = uuid.UUID(experiment_id)
+
+        metadb = runtime.storage_runtime().metadb
+
+        # Verify user has access to the experiment
+        if not metadb.experiment_is_accessible_to_user(
+            experiment_id=experiment_id_uuid, user_id=user_id
+        ):
+            raise RuntimeError(
+                "Not allowed to abort experiment that user does not have access to"
+            )
+
+        # Get the experiment to check if it exists
+        exp = metadb.get_experiment(experiment_id=experiment_id_uuid)
+        if not exp:
+            raise RuntimeError(f"Experiment with id '{experiment_id}' not found")
+
+        # Only abort if experiment is in PENDING status
+        if exp.status != Status.PENDING:
+            raise RuntimeError(
+                f"Cannot abort experiment with status '{StatusMap[Status(exp.status)]}'. "
+                "Only experiments in PENDING status can be aborted."
+            )
+
+        # Update status to ABORTED
+        metadb.update_experiment(
+            experiment_id=experiment_id_uuid,
+            status=Status.ABORTED,
+        )
+
+        # Get the updated experiment
+        updated_exp = metadb.get_experiment(experiment_id=experiment_id_uuid)
+        if not updated_exp:
+            raise RuntimeError("Failed to retrieve aborted experiment")
+
+        return Experiment(
+            id=updated_exp.uuid,
+            org_id=updated_exp.org_id,
+            team_id=updated_exp.team_id,
+            user_id=updated_exp.user_id,
+            name=updated_exp.name,
+            description=updated_exp.description,
+            meta=updated_exp.meta,
+            params=updated_exp.params,
+            duration=updated_exp.duration,
+            status=GraphQLStatusEnum[Status(updated_exp.status).name],
+            kind=GraphQLExperimentTypeEnum[
+                GraphQLExperimentType(updated_exp.kind).name
+            ],
+            created_at=updated_exp.created_at,
+            updated_at=updated_exp.updated_at,
+        )

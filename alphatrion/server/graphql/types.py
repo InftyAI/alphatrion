@@ -154,6 +154,7 @@ class GraphQLStatus(Enum):
     CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
 
 GraphQLStatusEnum = strawberry.enum(GraphQLStatus)
@@ -442,6 +443,16 @@ class CreateExperimentInput:
     meta: JSON | None = None
     params: JSON | None = None
     kind: GraphQLExperimentTypeEnum = GraphQLExperimentTypeEnum.CRAFT_EXPERIMENT
+
+
+@strawberry.input
+class UpdateExperimentInput:
+    id: strawberry.ID
+    description: str | None = None
+    labels: str | None = None
+    tags: list[str] | None = None
+    meta: JSON | None = None
+    params: JSON | None = None
 
 
 # Artifact types
