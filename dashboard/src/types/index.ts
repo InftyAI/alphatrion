@@ -8,6 +8,7 @@ export enum Status {
   CANCELLED = "CANCELLED",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
+  ABORTED = "ABORTED",
 }
 
 export enum ExperimentType {
