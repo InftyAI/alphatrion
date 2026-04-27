@@ -283,5 +283,11 @@ class Mutation:
     ) -> Experiment:
         return GraphQLMutations.update_experiment(info=info, input=input)
 
+    @strawberry.mutation
+    def abort_experiment(
+        self, experiment_id: strawberry.ID, info: Info[GraphQLContext, None]
+    ) -> Experiment:
+        return GraphQLMutations.abort_experiment(info=info, experiment_id=experiment_id)
+
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

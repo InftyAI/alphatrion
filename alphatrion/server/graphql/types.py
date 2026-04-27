@@ -154,6 +154,7 @@ class GraphQLStatus(Enum):
     CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
 
 GraphQLStatusEnum = strawberry.enum(GraphQLStatus)

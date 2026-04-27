@@ -26,6 +26,7 @@ class Status(enum.IntEnum):
     COMPLETED = 9
     CANCELLED = 10
     FAILED = 11
+    ABORTED = 12
 
 
 StatusMap = {
@@ -35,9 +36,10 @@ StatusMap = {
     Status.CANCELLED: "CANCELLED",
     Status.COMPLETED: "COMPLETED",
     Status.FAILED: "FAILED",
+    Status.ABORTED: "ABORTED",
 }
 
-FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED]
+FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED, Status.ABORTED]
 
 
 class Organization(Base):
