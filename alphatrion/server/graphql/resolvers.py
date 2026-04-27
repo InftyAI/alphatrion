@@ -43,6 +43,7 @@ from .types import (
     Team,
     TraceEvent,
     TraceLink,
+    UpdateExperimentInput,
     UpdateOrganizationInput,
     UpdateUserInput,
     User,
@@ -1677,6 +1678,73 @@ class GraphQLMutations:
             kind=GraphQLExperimentTypeEnum[GraphQLExperimentType(exp.kind).name],
             created_at=exp.created_at,
             updated_at=exp.updated_at,
+        )
+
+    @staticmethod
+    def update_experiment(
+        info: Info[GraphQLContext, None], input: UpdateExperimentInput
+    ) -> Experiment:
+        """Update an existing experiment."""
+
+        user_id = uuid.UUID(info.context.user_id)
+        experiment_id = uuid.UUID(input.id)
+
+        metadb = runtime.storage_runtime().metadb
+
+        # Verify user has access to the experiment
+        if not metadb.experiment_is_accessible_to_user(
+            experiment_id=experiment_id, user_id=user_id
+        ):
+            raise RuntimeError(
+                "Not allowed to update experiment that user does not have access to"
+            )
+
+        # Get the experiment to check if it exists
+        exp = metadb.get_experiment(experiment_id=experiment_id)
+        if not exp:
+            raise RuntimeError(f"Experiment with id '{input.id}' not found")
+
+        # Build update kwargs
+        update_kwargs = {}
+        if input.description is not None:
+            update_kwargs["description"] = input.description
+        if input.meta is not None:
+            update_kwargs["meta"] = input.meta
+        if input.params is not None:
+            update_kwargs["params"] = input.params
+        if input.labels is not None:
+            update_kwargs["labels"] = input.labels
+        if input.tags is not None:
+            update_kwargs["tags"] = input.tags
+
+        # Update experiment
+        if update_kwargs:
+            metadb.update_experiment(
+                experiment_id=experiment_id,
+                **update_kwargs,
+            )
+
+        # Get the updated experiment
+        updated_exp = metadb.get_experiment(experiment_id=experiment_id)
+        if not updated_exp:
+            raise RuntimeError("Failed to retrieve updated experiment")
+
+        return Experiment(
+            id=updated_exp.uuid,
+            org_id=updated_exp.org_id,
+            team_id=updated_exp.team_id,
+            user_id=updated_exp.user_id,
+            name=updated_exp.name,
+            description=updated_exp.description,
+            meta=updated_exp.meta,
+            params=updated_exp.params,
+            duration=updated_exp.duration,
+            status=GraphQLStatusEnum[Status(updated_exp.status).name],
+            kind=GraphQLExperimentTypeEnum[
+                GraphQLExperimentType(updated_exp.kind).name
+            ],
+            created_at=updated_exp.created_at,
+            updated_at=updated_exp.updated_at,
         )
 
     @staticmethod

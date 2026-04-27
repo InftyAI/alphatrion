@@ -1214,3 +1214,136 @@ def test_create_experiment_duplicate_name(
     # Should return an error
     assert response2.errors is not None
     assert "already exists" in str(response2.errors[0])
+
+
+def test_update_experiment_mutation(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    """Test updating an experiment via GraphQL mutation"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create an experiment first
+    exp_id = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        name="Original Name",
+        description="Original description",
+        meta={"key1": "value1"},
+        params={"param1": 1},
+    )
+
+    # Update the experiment
+    mutation = f"""
+    mutation {{
+        updateExperiment(input: {{
+            id: "{exp_id}"
+            description: "Updated description"
+            meta: {{key2: "value2"}}
+            params: {{param2: 2}}
+        }}) {{
+            id
+            name
+            description
+            meta
+            params
+            status
+        }}
+    }}
+    """
+    response = execute_graphql(
+        query=mutation,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    assert response.errors is None
+    assert response.data["updateExperiment"]["name"] == "Original Name"  # Name should not change
+    assert response.data["updateExperiment"]["description"] == "Updated description"
+    assert response.data["updateExperiment"]["meta"] == {"key1": "value1", "key2": "value2"}
+    assert response.data["updateExperiment"]["params"] == {"param2": 2}
+
+    # Verify in database
+    exp = metadb.get_experiment(experiment_id=exp_id)
+    assert exp is not None
+    assert exp.name == "Original Name"  # Name should remain unchanged
+    assert exp.description == "Updated description"
+
+
+def test_update_experiment_labels_and_tags(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    """Test updating experiment labels and tags"""
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create an experiment with labels and tags
+    exp_id = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        name="Labels Tags Test",
+        labels="env:dev,version:1.0",
+        tags=["ml", "training"],
+    )
+
+    # Update labels and tags
+    mutation = f"""
+    mutation {{
+        updateExperiment(input: {{
+            id: "{exp_id}"
+            labels: "env:prod,version:2.0"
+            tags: ["deep-learning", "testing"]
+        }}) {{
+            id
+            labels {{
+                name
+                value
+            }}
+            tags
+        }}
+    }}
+    """
+    response = execute_graphql(
+        query=mutation,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    assert response.errors is None
+    assert len(response.data["updateExperiment"]["labels"]) == 2
+    assert response.data["updateExperiment"]["tags"] == ["deep-learning", "testing"]
+
+    # Verify old labels/tags are replaced
+    labels = metadb.list_labels_by_exp_id(exp_id)
+    assert len(labels) == 2
+    label_dict = {label.label_name: label.label_value for label in labels}
+    assert label_dict["env"] == "prod"
+    assert label_dict["version"] == "2.0"
+
+
+def test_update_experiment_not_found(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    """Test updating a non-existent experiment"""
+    runtime.init()
+
+    fake_exp_id = uuid.uuid4()
+    mutation = f"""
+    mutation {{
+        updateExperiment(input: {{
+            id: "{fake_exp_id}"
+            description: "New Description"
+        }}) {{
+            id
+            description
+        }}
+    }}
+    """
+    response = execute_graphql(
+        query=mutation,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+    # Should return an error
+    assert response.errors is not None
+    assert "not found" in str(response.errors[0]).lower()

@@ -652,6 +652,11 @@ class SQLStore(MetaStore):
             .first()
         )
         if exp:
+            # Handle labels separately
+            labels = kwargs.pop("labels", None)
+            tags = kwargs.pop("tags", None)
+
+            # Update experiment fields
             for key, value in kwargs.items():
                 if key == "meta" and isinstance(value, dict):
                     if exp.meta is None:
@@ -659,6 +664,53 @@ class SQLStore(MetaStore):
                     exp.meta.update(value)
                 else:
                     setattr(exp, key, value)
+
+            # Update labels if provided
+            if labels is not None:
+                # Delete existing labels
+                session.query(ExperimentLabel).filter(
+                    ExperimentLabel.experiment_id == experiment_id
+                ).delete(synchronize_session=False)
+
+                # Add new labels
+                if labels:
+                    label_pairs = labels.rstrip().split(",")
+                    for pair in label_pairs:
+                        if ":" in pair:
+                            label_name, label_value = pair.split(":", 1)
+                        elif "=" in pair:
+                            label_name, label_value = pair.split("=", 1)
+                        else:
+                            continue  # skip invalid label
+
+                        exp_label = ExperimentLabel(
+                            org_id=exp.org_id,
+                            team_id=exp.team_id,
+                            experiment_id=experiment_id,
+                            label_name=label_name.strip(),
+                            label_value=label_value.strip(),
+                        )
+                        session.add(exp_label)
+
+            # Update tags if provided
+            if tags is not None:
+                # Delete existing tags
+                session.query(ExperimentTag).filter(
+                    ExperimentTag.experiment_id == experiment_id
+                ).delete(synchronize_session=False)
+
+                # Add new tags
+                if tags:
+                    for tag in [t.strip() for t in tags]:
+                        if tag:
+                            exp_tag = ExperimentTag(
+                                org_id=exp.org_id,
+                                team_id=exp.team_id,
+                                experiment_id=experiment_id,
+                                tag=tag,
+                            )
+                            session.add(exp_tag)
+
             session.commit()
         session.close()
 
