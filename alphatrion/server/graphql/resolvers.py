@@ -1688,22 +1688,22 @@ class GraphQLMutations:
         """Update an existing experiment."""
 
         user_id = uuid.UUID(info.context.user_id)
+        org_id = uuid.UUID(info.context.org_id)
         experiment_id = uuid.UUID(input.id)
 
         metadb = runtime.storage_runtime().metadb
-
-        # Verify user has access to the experiment
-        if not metadb.experiment_is_accessible_to_user(
-            experiment_id=experiment_id, user_id=user_id
-        ):
-            raise RuntimeError(
-                "Not allowed to update experiment that user does not have access to"
-            )
 
         # Get the experiment to check if it exists
         exp = metadb.get_experiment(experiment_id=experiment_id)
         if not exp:
             raise RuntimeError(f"Experiment with id '{input.id}' not found")
+
+        if not metadb.team_is_accessible_to_user(
+            team_id=exp.team_id, user_id=user_id, org_id=org_id
+        ):
+            raise RuntimeError(
+                "Not allowed to update experiment in team that user does not belong to"
+            )
 
         # Build update kwargs
         update_kwargs = {}
@@ -1818,22 +1818,22 @@ class GraphQLMutations:
         Only works if the experiment is in PENDING status."""
 
         user_id = uuid.UUID(info.context.user_id)
+        org_id = uuid.UUID(info.context.org_id)
         experiment_id_uuid = uuid.UUID(experiment_id)
 
         metadb = runtime.storage_runtime().metadb
-
-        # Verify user has access to the experiment
-        if not metadb.experiment_is_accessible_to_user(
-            experiment_id=experiment_id_uuid, user_id=user_id
-        ):
-            raise RuntimeError(
-                "Not allowed to abort experiment that user does not have access to"
-            )
 
         # Get the experiment to check if it exists
         exp = metadb.get_experiment(experiment_id=experiment_id_uuid)
         if not exp:
             raise RuntimeError(f"Experiment with id '{experiment_id}' not found")
+
+        if not metadb.team_is_accessible_to_user(
+            team_id=exp.team_id, user_id=user_id, org_id=org_id
+        ):
+            raise RuntimeError(
+                "Not allowed to update experiment in team that user does not belong to"
+            )
 
         # Only abort if experiment is in PENDING status
         if exp.status != Status.PENDING:

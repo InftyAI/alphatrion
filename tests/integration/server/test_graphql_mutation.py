@@ -1355,8 +1355,8 @@ def test_update_experiment_not_found(
         user_id=test_user_id,
     )
     assert response.errors is not None
-    # experiment not found in the experiment_is_accessible_to_user
-    assert "not allowed to update experiment" in str(response.errors[0]).lower()
+    # The implementation checks if experiment exists first, so we get "not found" error
+    assert "not found" in str(response.errors[0]).lower()
 
 
 def test_abort_experiment_pending(
@@ -1508,5 +1508,5 @@ def test_abort_experiment_not_found(
         user_id=test_user_id,
     )
     assert response.errors is not None
-    # experiment not found in the experiment_is_accessible_to_user
-    assert "not allowed to abort experiment" in str(response.errors[0]).lower()
+    # The implementation checks if experiment exists first, so we get "not found" error
+    assert "not found" in str(response.errors[0]).lower()
