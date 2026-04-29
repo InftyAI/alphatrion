@@ -6,7 +6,7 @@ from typing import Any
 from alphatrion.runtime.runtime import global_runtime
 
 
-class PostRunHooks:
+class PostRunHook:
     """Library of built-in post-run hooks."""
 
     @staticmethod
@@ -26,7 +26,7 @@ class PostRunHooks:
                     "num_epochs": 10,
                 }
 
-            run = exp.run(train_model, post_run_hooks=[PostRunHooks.sync_metadata])
+            run = exp.run(train_model, post_run_hooks=[PostRunHook.sync_metadata])
             # After completion, run metadata will contain accuracy, loss, num_epochs
 
         :param run_id: UUID of the run
