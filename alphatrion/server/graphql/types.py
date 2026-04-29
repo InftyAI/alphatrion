@@ -359,6 +359,15 @@ class Run:
             total_cost=usage["total_cost"],
         )
 
+    @strawberry.field
+    def datasets(self, info: Info, name: str | None = None) -> list["Dataset"]:
+        """Get datasets for this run, optionally filtered by name."""
+        from alphatrion.server.graphql.resolvers import GraphQLResolvers
+
+        return GraphQLResolvers.list_datasets_by_run_id(
+            info=info, run_id=self.id, name=name
+        )
+
 
 @strawberry.type
 class Metric:
