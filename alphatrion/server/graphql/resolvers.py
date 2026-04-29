@@ -857,8 +857,9 @@ class GraphQLResolvers:
             )
 
         arf = runtime.storage_runtime().artifact
+        org_id = info.context.org_id
         return [
-            ArtifactTag(name=tag) for tag in arf.list_versions(f"{team_id}/{repo_name}")
+            ArtifactTag(name=tag) for tag in arf.list_versions(f"{org_id}/{team_id}/{repo_name}")
         ]
 
     @staticmethod
@@ -877,7 +878,8 @@ class GraphQLResolvers:
 
         try:
             arf = runtime.storage_runtime().artifact
-            file_paths = arf.pull(repo_name=f"{team_id}/{repo_name}", version=tag)
+            org_id = info.context.org_id
+            file_paths = arf.pull(repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag)
 
             if not file_paths:
                 return []
@@ -930,10 +932,11 @@ class GraphQLResolvers:
         try:
             # Initialize artifact client
             arf = runtime.storage_runtime().artifact
+            org_id = info.context.org_id
 
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
-            file_paths = arf.pull(repo_name=f"{team_id}/{repo_name}", version=tag)
+            file_paths = arf.pull(repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag)
 
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
