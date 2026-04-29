@@ -36,7 +36,7 @@ async def log_artifact(
            If want to save something, make sure it's under the paths.
 
     :return: the path of the logged artifact in the format of
-    {team_id}/{repo_name}:{version}
+    {org_id}/{team_id}/{repo_name}:{version}
     """
 
     if not paths:
@@ -60,7 +60,7 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, f"{runtime.team_id}/{repo_name}", paths, version
+        None, runtime._artifact.push, f"{runtime.org_id}/{runtime.team_id}/{repo_name}", paths, version
     )
 
 
