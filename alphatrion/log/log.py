@@ -105,21 +105,21 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     if exp is None:
         raise RuntimeError(f"Experiment {exp_id} not found in the database.")
 
+    # Create all metrics in a single batch operation
+    runtime._metadb.create_metrics(
+        metrics=metrics,
+        org_id=runtime.org_id,
+        team_id=runtime.team_id,
+        experiment_id=exp_id,
+        run_id=run_id,
+    )
+
     # track if any metric is the best metric
     should_checkpoint = False
     should_early_stop = False
     should_stop_on_target = False
     is_best_metric = False
     for key, value in metrics.items():
-        runtime._metadb.create_metric(
-            key=key,
-            value=value,
-            org_id=runtime.org_id,
-            team_id=runtime.team_id,
-            experiment_id=exp_id,
-            run_id=run_id,
-        )
-
         # Always call the should_checkpoint_on_best first because
         # it also updates the best metric.
         should_checkpoint_tmp, is_best_metric_tmp = exp.should_checkpoint_on_best(

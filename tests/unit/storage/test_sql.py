@@ -134,3 +134,33 @@ def test_create_user_without_team(db):
     assert user.meta == {"role": "engineer", "level": "senior"}
     teams = db.list_user_teams(user_id)
     assert len(teams) == 0
+
+
+def test_create_metrics_batch(db):
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    exp_id = db.create_experiment(
+        org_id=org_id, team_id=team_id, user_id=user_id, name="test-exp"
+    )
+    run_id = db.create_run(
+        org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=exp_id
+    )
+
+    # Create multiple metrics at once
+    metrics = {"accuracy": 0.95, "loss": 0.1, "precision": 0.92, "recall": 0.88}
+    metric_ids = db.create_metrics(org_id, team_id, exp_id, run_id, metrics)
+
+    # Verify all metrics were created
+    assert len(metric_ids) == 4
+
+    # Verify metrics can be retrieved
+    stored_metrics = db.list_metrics_by_experiment_id(exp_id)
+    assert len(stored_metrics) == 4
+
+    # Verify values are correct
+    metric_dict = {m.key: m.value for m in stored_metrics}
+    assert metric_dict["accuracy"] == 0.95
+    assert metric_dict["loss"] == 0.1
+    assert metric_dict["precision"] == 0.92
+    assert metric_dict["recall"] == 0.88

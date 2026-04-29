@@ -1456,6 +1456,53 @@ class GraphQLResolvers:
             )
         return None
 
+    @staticmethod
+    def list_datasets_by_run_id(
+        info: Info[GraphQLContext, None],
+        run_id: strawberry.ID,
+        name: str | None = None,
+    ) -> list[Dataset]:
+        """List all datasets associated with a run, optionally filtered by name."""
+        user_id = info.context.user_id
+        metadb = runtime.storage_runtime().metadb
+
+        # Check if user has access to the run
+        if not metadb.run_is_accessible_to_user(
+            run_id=uuid.UUID(run_id), user_id=user_id
+        ):
+            raise RuntimeError("Not allowed to access run that user does not belong to")
+
+        # Get the run to find its team_id
+        run = metadb.get_run(run_id=uuid.UUID(run_id))
+        if not run:
+            return []
+
+        # List datasets for this run
+        datasets = metadb.list_datasets(
+            team_id=run.team_id,
+            run_id=uuid.UUID(run_id),
+            name=name,
+            page=0,
+            page_size=1000,  # Get all datasets for the run
+        )
+        return [
+            Dataset(
+                id=d.uuid,
+                org_id=d.org_id,
+                name=d.name,
+                description=d.description,
+                path=d.path,
+                meta=d.meta,
+                team_id=d.team_id,
+                experiment_id=d.experiment_id,
+                run_id=d.run_id,
+                user_id=d.user_id,
+                created_at=d.created_at,
+                updated_at=d.updated_at,
+            )
+            for d in datasets
+        ]
+
 
 class GraphQLMutations:
     @staticmethod

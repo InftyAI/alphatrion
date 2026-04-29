@@ -17,7 +17,7 @@ from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
-from alphatrion.types import CallableEntry
+from alphatrion.types import CallableEntry, PostRunHook
 from alphatrion.utils import context
 
 
@@ -69,6 +69,8 @@ class MonitorMode(enum.Enum):
 class ExperimentConfig(BaseModel):
     """Configuration for a Experiment."""
 
+    model_config = {"arbitrary_types_allowed": True}
+
     max_execution_seconds: int = Field(
         default=-1,
         description="Maximum execution seconds for the Experiment. \
@@ -109,6 +111,12 @@ class ExperimentConfig(BaseModel):
     checkpoint: CheckpointConfig = Field(
         default=CheckpointConfig(),
         description="Configuration for checkpointing.",
+    )
+    post_run_hooks: list[PostRunHook] | None = Field(
+        default=None,
+        description="List of hooks to execute after each run completes. \
+            Each hook has signature: (run_id, result) -> None. \
+            Hooks can update metadata by calling metadb.update_run().",
     )
 
     @model_validator(mode="after")
@@ -417,10 +425,14 @@ class Experiment(ABC):
     def _get_obj(self):
         return self._runtime._metadb.get_experiment(experiment_id=self.id)
 
-    def run(self, call_func: CallableEntry) -> Run:
+    def run(
+        self, call_func: CallableEntry, post_run_hooks: list[PostRunHook] | None = None
+    ) -> Run:
         """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.
+        :param post_run_hooks: List of hooks to execute after run completes.
+                               Each hook signature: (run_id, result) -> dict
         :return: the Run instance."""
 
         # Check if experiment is already done. This usually happens when we
@@ -430,7 +442,12 @@ class Experiment(ABC):
                 f"Cannot create new run: Experiment {self.id} is already completed."
             )
 
-        run = Run(exp_id=self.id)
+        # Merge experiment-level hooks with run-specific hooks
+        all_hooks = list(self.config.post_run_hooks or [])
+        if post_run_hooks:
+            all_hooks.extend(post_run_hooks)
+
+        run = Run(exp_id=self.id, post_run_hooks=all_hooks)
         run.start(call_func)
         self._runs[run.id] = run
 

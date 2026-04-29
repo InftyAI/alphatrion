@@ -126,5 +126,16 @@ class MetaStore(ABC):
         raise NotImplementedError("Subclasses must implement this method.")
 
     @abstractmethod
+    def create_metrics(
+        self,
+        org_id: uuid.UUID,
+        team_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        run_id: uuid.UUID,
+        metrics: dict[str, float],
+    ) -> list[uuid.UUID]:
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    @abstractmethod
     def list_metrics_by_experiment_id(self, experiment_id: uuid.UUID) -> list[dict]:
         raise NotImplementedError("Subclasses must implement this method.")

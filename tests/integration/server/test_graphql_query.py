@@ -599,3 +599,119 @@ async def test_query_datasets(execute_graphql, test_org_id, test_user_id, test_t
     assert dataset["id"] == str(dataset_id)
     assert dataset["name"] == "test_dataset"
     assert dataset["path"] is not None
+
+
+def test_query_run_with_datasets(
+    execute_graphql, test_org_id, test_user_id, test_team_id
+):
+    runtime.init()
+    metadb = runtime.storage_runtime().metadb
+
+    # Create experiment
+    exp_id = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        name="Test Experiment with Datasets",
+    )
+
+    # Create run
+    run_id = metadb.create_run(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        experiment_id=exp_id,
+    )
+
+    # Create datasets associated with the run
+    dataset_id_1 = metadb.create_dataset(
+        name="train_data",
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        path="/path/to/train",
+        experiment_id=exp_id,
+        run_id=run_id,
+        description="Training dataset",
+    )
+
+    dataset_id_2 = metadb.create_dataset(
+        name="test_data",
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        path="/path/to/test",
+        experiment_id=exp_id,
+        run_id=run_id,
+        description="Test dataset",
+    )
+
+    # Query the run with datasets
+    query = f"""
+    query {{
+        run(id: "{run_id}") {{
+            id
+            experimentId
+            datasets {{
+                id
+                name
+                path
+                description
+                experimentId
+                runId
+            }}
+        }}
+    }}
+    """
+
+    response = execute_graphql(
+        query=query,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+
+    assert response.errors is None
+    assert response.data["run"]["id"] == str(run_id)
+    assert response.data["run"]["experimentId"] == str(exp_id)
+
+    # Verify datasets are returned
+    datasets = response.data["run"]["datasets"]
+    assert len(datasets) == 2
+
+    dataset_ids = {d["id"] for d in datasets}
+    assert str(dataset_id_1) in dataset_ids
+    assert str(dataset_id_2) in dataset_ids
+
+    dataset_names = {d["name"] for d in datasets}
+    assert "train_data" in dataset_names
+    assert "test_data" in dataset_names
+
+    # Verify all datasets belong to this run
+    for dataset in datasets:
+        assert dataset["runId"] == str(run_id)
+        assert dataset["experimentId"] == str(exp_id)
+
+    # Test filtering by name
+    query_with_filter = f"""
+    query {{
+        run(id: "{run_id}") {{
+            id
+            datasets(name: "train_data") {{
+                id
+                name
+            }}
+        }}
+    }}
+    """
+
+    response_filtered = execute_graphql(
+        query=query_with_filter,
+        org_id=test_org_id,
+        user_id=test_user_id,
+    )
+
+    assert response_filtered.errors is None
+    filtered_datasets = response_filtered.data["run"]["datasets"]
+    assert len(filtered_datasets) == 1
+    assert filtered_datasets[0]["name"] == "train_data"
+    assert filtered_datasets[0]["id"] == str(dataset_id_1)

@@ -5,16 +5,19 @@ from datetime import UTC, datetime
 from alphatrion.runtime.contextvars import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import Status
-from alphatrion.types import CallableEntry
+from alphatrion.types import CallableEntry, PostRunHook
 
 
 class Run:
-    __slots__ = ("_id", "_task", "_runtime", "_exp_id", "_result")
+    __slots__ = ("_id", "_task", "_runtime", "_exp_id", "_result", "_post_run_hooks")
 
-    def __init__(self, exp_id: uuid.UUID):
+    def __init__(
+        self, exp_id: uuid.UUID, post_run_hooks: list[PostRunHook] | None = None
+    ):
         self._runtime = global_runtime()
         self._exp_id = exp_id
         self._result = None
+        self._post_run_hooks = post_run_hooks or []
 
     @property
     def id(self) -> uuid.UUID:
@@ -49,6 +52,7 @@ class Run:
     def done(self):
         # Callback will always be called even if the run is cancelled.
         # Make sure we don't update the status if it's already cancelled.
+        # Also since it's cancelled, no need to execute the post-run hooks.
         if self.cancelled():
             return
 
@@ -57,10 +61,26 @@ class Run:
             datetime.now(UTC) - run.created_at.replace(tzinfo=UTC)
         ).total_seconds()
 
+        # Update run with status and duration first
         self._runtime.metadb.update_run(
-            run_id=self._id, status=Status.COMPLETED, duration=duration
+            run_id=self._id,
+            status=Status.COMPLETED,
+            duration=duration,
         )
+
         self._result = self._task.result()
+
+        # Execute post-run hooks
+        # Each hook is responsible for its own logic (e.g., updating metadata)
+        for hook in self._post_run_hooks:
+            try:
+                hook(self.id, self._result)
+            except Exception as e:
+                # Log error but don't fail the run
+                import traceback
+
+                print(f"Warning: Post-run hook {hook.__name__} failed: {e}")
+                traceback.print_exc()
 
     def cancel(self):
         # TODO: we should wait for the task to be actually cancelled
