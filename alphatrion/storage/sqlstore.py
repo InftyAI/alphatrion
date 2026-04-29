@@ -1128,6 +1128,42 @@ class SQLStore(MetaStore):
         session.close()
         return new_metric_id
 
+    def create_metrics(
+        self,
+        org_id: uuid.UUID,
+        team_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        run_id: uuid.UUID,
+        metrics: dict[str, float],
+    ) -> list[uuid.UUID]:
+        """
+        Batch create multiple metrics in a single transaction.
+
+        :param org_id: organization UUID
+        :param team_id: team UUID
+        :param experiment_id: experiment UUID
+        :param run_id: run UUID
+        :param metrics: dict of key-value pairs where key is metric name and value is metric value
+        :return: list of created metric UUIDs
+        """
+        session = self._session()
+        metric_ids = []
+        for key, value in metrics.items():
+            new_metric = Metric(
+                org_id=org_id,
+                team_id=team_id,
+                experiment_id=experiment_id,
+                run_id=run_id,
+                key=key,
+                value=value,
+            )
+            session.add(new_metric)
+            session.flush()  # Flush to get the UUID
+            metric_ids.append(new_metric.uuid)
+        session.commit()
+        session.close()
+        return metric_ids
+
     def list_metrics_by_experiment_id(self, experiment_id: uuid.UUID) -> list[Metric]:
         session = self._session()
         metrics = (
