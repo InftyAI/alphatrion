@@ -38,10 +38,10 @@ async def test_log_artifact():
             print("Logged artifact address:", address)
             assert (
                 address
-                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v1"
+                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo:v1"
             )
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo"
+                f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo"
             )
             assert "v1" in versions
 
@@ -56,19 +56,19 @@ async def test_log_artifact():
             )
             assert (
                 address
-                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v2"
+                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo:v2"
             )
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo"
+                f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo"
             )
             assert "v2" in versions
 
             exp._runtime._artifact.delete(
-                repo_name=f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo",
+                repo_name=f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo",
                 versions=["v1", "v2"],
             )
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo"
+                f"{exp._runtime._org_id}/{exp._runtime._team_id}/{exp.id}/log_artifact_repo"
             )
             assert len(versions) == 0
 
@@ -215,14 +215,14 @@ async def test_log_metrics_with_save_on_max():
             # We need this because the returned version is unordered.
             used_version = []
 
-            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/ckpt")
+            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/ckpt")
             assert len(versions) == 1
             run_obj = run._get_obj()
             fixed_version = versions[0]
             used_version.append(fixed_version)
             assert (
                 run_obj.meta[BEST_RESULT_PATH]
-                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+                == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 2
@@ -233,7 +233,7 @@ async def test_log_metrics_with_save_on_max():
             run = exp.run(lambda: log_metric(0.78))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/ckpt")
+            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/ckpt")
             assert len(versions) == 1
 
             time.sleep(1)
@@ -241,7 +241,7 @@ async def test_log_metrics_with_save_on_max():
             run = exp.run(lambda: log_metric(0.91))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/ckpt")
+            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/ckpt")
             assert len(versions) == 2
 
             fixed_version = find_unused_version(used_version, versions)
@@ -249,7 +249,7 @@ async def test_log_metrics_with_save_on_max():
             run_obj = run._get_obj()
             assert (
                 run_obj.meta[BEST_RESULT_PATH]
-                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+                == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
 
             with open(file) as f:
@@ -260,7 +260,7 @@ async def test_log_metrics_with_save_on_max():
             run = exp.run(lambda: log_metric(0.98))
             await run.wait()
 
-            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/ckpt")
+            versions = exp._runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/ckpt")
             assert len(versions) == 3
             run_obj = run._get_obj()
 
@@ -268,7 +268,7 @@ async def test_log_metrics_with_save_on_max():
             used_version.append(fixed_version)
             assert (
                 run_obj.meta[BEST_RESULT_PATH]
-                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+                == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
             with open(file) as f:
                 assert len(f.readlines()) == 4
@@ -308,7 +308,7 @@ async def test_log_metrics_with_save_on_min():
             await run.wait()
 
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime.org_id}/{exp._runtime.team_id}/ckpt"
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
             )
             assert len(versions) == 1
 
@@ -319,7 +319,7 @@ async def test_log_metrics_with_save_on_min():
             await run.wait()
 
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime.org_id}/{exp._runtime.team_id}/ckpt"
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
             )
             assert len(versions) == 1
 
@@ -329,7 +329,7 @@ async def test_log_metrics_with_save_on_min():
             await run.wait()
 
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime.org_id}/{exp._runtime.team_id}/ckpt"
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
             )
             assert len(versions) == 2
 
@@ -338,7 +338,7 @@ async def test_log_metrics_with_save_on_min():
             task = exp.run(lambda: log_metric(0.18))
             await task.wait()
             versions = exp._runtime._artifact.list_versions(
-                f"{exp._runtime.org_id}/{exp._runtime.team_id}/ckpt"
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
             )
             assert len(versions) == 3
 
@@ -560,7 +560,7 @@ async def test_log_dataset_with_json():
         assert run_obj is not None
         runtime = exp._runtime
 
-        list_versions = runtime._artifact.list_versions(f"{org_id}/{team_id}/dataset")
+        list_versions = runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/dataset")
         assert len(list_versions) == 1
         datasets = runtime._metadb.list_datasets(team_id=team_id, run_id=run_obj.uuid)
         assert len(datasets) == 1
@@ -569,7 +569,7 @@ async def test_log_dataset_with_json():
         assert datasets[0].user_id == runtime._user_id
         assert datasets[0].experiment_id == exp.id
         assert datasets[0].run_id == run_obj.uuid
-        assert datasets[0].path == f"{org_id}/{team_id}/dataset:{list_versions[0]}"
+        assert datasets[0].path == f"{org_id}/{team_id}/{exp.id}/dataset:{list_versions[0]}"
         assert int(datasets[0].meta["size"]) > 0
 
 
@@ -607,7 +607,7 @@ async def test_log_dataset_with_file():
         assert run_obj is not None
         runtime = exp._runtime
 
-        list_versions = runtime._artifact.list_versions(f"{org_id}/{team_id}/dataset")
+        list_versions = runtime._artifact.list_versions(f"{org_id}/{team_id}/{exp.id}/dataset")
         assert len(list_versions) == 1
         datasets = runtime._metadb.list_datasets(team_id=team_id, run_id=run_obj.uuid)
         assert len(datasets) == 1
@@ -616,5 +616,5 @@ async def test_log_dataset_with_file():
         assert datasets[0].user_id == runtime._user_id
         assert datasets[0].experiment_id == exp.id
         assert datasets[0].run_id == run_obj.uuid
-        assert datasets[0].path == f"{org_id}/{team_id}/dataset:{list_versions[0]}"
+        assert datasets[0].path == f"{org_id}/{team_id}/{exp.id}/dataset:{list_versions[0]}"
         assert datasets[0].meta is None

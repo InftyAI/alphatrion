@@ -60,10 +60,16 @@ async def log_artifact(
             raise ValueError("pre_save_hook must be a callable function")
 
     loop = asyncio.get_running_loop()
+
+    exp_id = current_exp_id.get()
+    new_repo = f"{runtime.org_id}/{runtime.team_id}"
+    if exp_id is not None:
+        new_repo += f"/{exp_id}"
+
     return await loop.run_in_executor(
         None,
         runtime._artifact.push,
-        f"{runtime.org_id}/{runtime.team_id}/{repo_name}",
+        f"{new_repo}/{repo_name}",
         paths,
         version,
     )
