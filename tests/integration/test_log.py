@@ -36,7 +36,10 @@ async def test_log_artifact():
                 version="v1",
             )
             print("Logged artifact address:", address)
-            assert address == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v1"
+            assert (
+                address
+                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v1"
+            )
             versions = exp._runtime._artifact.list_versions(
                 f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo"
             )
@@ -51,7 +54,10 @@ async def test_log_artifact():
                 repo_name="log_artifact_repo",
                 version="v2",
             )
-            assert address == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v2"
+            assert (
+                address
+                == f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo:v2"
+            )
             versions = exp._runtime._artifact.list_versions(
                 f"{exp._runtime._org_id}/{exp._runtime._team_id}/log_artifact_repo"
             )
@@ -214,7 +220,10 @@ async def test_log_metrics_with_save_on_max():
             run_obj = run._get_obj()
             fixed_version = versions[0]
             used_version.append(fixed_version)
-            assert run_obj.meta[BEST_RESULT_PATH] == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            assert (
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            )
             with open(file) as f:
                 assert len(f.readlines()) == 2
 
@@ -238,7 +247,10 @@ async def test_log_metrics_with_save_on_max():
             fixed_version = find_unused_version(used_version, versions)
             used_version.append(fixed_version)
             run_obj = run._get_obj()
-            assert run_obj.meta[BEST_RESULT_PATH] == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            assert (
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            )
 
             with open(file) as f:
                 assert len(f.readlines()) == 3
@@ -254,7 +266,10 @@ async def test_log_metrics_with_save_on_max():
 
             fixed_version = find_unused_version(used_version, versions)
             used_version.append(fixed_version)
-            assert run_obj.meta[BEST_RESULT_PATH] == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            assert (
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{org_id}/{team_id}/ckpt:" + fixed_version
+            )
             with open(file) as f:
                 assert len(f.readlines()) == 4
 

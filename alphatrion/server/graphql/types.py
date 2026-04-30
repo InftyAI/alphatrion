@@ -489,6 +489,24 @@ class ArtifactContent:
     content_type: str
 
 
+@strawberry.type
+class ArtifactDownloadUrl:
+    """Download URL for an artifact file."""
+
+    filename: str
+    url: str
+    expires_in: int  # Seconds until URL expires
+
+
+@strawberry.type
+class ArtifactDownloadResult:
+    """Result of artifact download URL generation."""
+
+    success: bool
+    message: str
+    download_urls: list[ArtifactDownloadUrl]
+
+
 # Trace types
 @strawberry.type
 class TraceEvent:

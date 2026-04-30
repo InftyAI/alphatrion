@@ -35,8 +35,9 @@ async def log_artifact(
     :param pre_save_hook: a callable function to be called before saving the artifact.
            If want to save something, make sure it's under the paths.
 
-    :return: the path of the logged artifact in the format of
-    {org_id}/{team_id}/{repo_name}:{version}
+    :return: the path of the logged artifact.
+        OCI format: {org_id}/{team_id}/{repo_name}:{version}
+        S3 format: {org_id}/{team_id}/{repo_name}/{version}
     """
 
     if not paths:
@@ -60,7 +61,11 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, runtime._artifact.push, f"{runtime.org_id}/{runtime.team_id}/{repo_name}", paths, version
+        None,
+        runtime._artifact.push,
+        f"{runtime.org_id}/{runtime.team_id}/{repo_name}",
+        paths,
+        version,
     )
 
 

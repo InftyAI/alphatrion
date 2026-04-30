@@ -1394,7 +1394,7 @@ class SQLStore(MetaStore):
             session.close()
             return True
 
-        # Check if user is in the team that the experiment belongs to
+        # Check if user is in the team that the run belongs to
         membership = (
             session.query(TeamMember)
             .filter(

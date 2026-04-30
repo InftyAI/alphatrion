@@ -821,6 +821,7 @@ class GraphQLResolvers:
 
     @staticmethod
     # TODO: isolated by team_id for multi-tenancy.
+    # Only support container registry now.
     async def list_artifact_repositories(
         info: Info[GraphQLContext, None],
     ) -> list[ArtifactRepository]:
@@ -859,7 +860,8 @@ class GraphQLResolvers:
         arf = runtime.storage_runtime().artifact
         org_id = info.context.org_id
         return [
-            ArtifactTag(name=tag) for tag in arf.list_versions(f"{org_id}/{team_id}/{repo_name}")
+            ArtifactTag(name=tag)
+            for tag in arf.list_versions(f"{org_id}/{team_id}/{repo_name}")
         ]
 
     @staticmethod
@@ -879,7 +881,9 @@ class GraphQLResolvers:
         try:
             arf = runtime.storage_runtime().artifact
             org_id = info.context.org_id
-            file_paths = arf.pull(repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag)
+            file_paths = arf.pull(
+                repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag
+            )
 
             if not file_paths:
                 return []
@@ -936,7 +940,9 @@ class GraphQLResolvers:
 
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
-            file_paths = arf.pull(repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag)
+            file_paths = arf.pull(
+                repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag
+            )
 
             if not file_paths:
                 raise RuntimeError("No files found in artifact")
@@ -977,6 +983,91 @@ class GraphQLResolvers:
             )
         except Exception as e:
             raise RuntimeError(f"Failed to get artifact content: {e}") from e
+
+    @staticmethod
+    async def get_artifact_download_urls(
+        info: Info[GraphQLContext, None],
+        dataset_id: str,
+        expires_in: int = 30,
+    ):
+        """Get presigned download URLs for artifact files.
+
+        For OCI backend: pulls files and returns temporary paths (not recommended for production)
+        For S3 backend: generates presigned URLs for direct S3 download
+
+        :param info: GraphQL context
+        :param dataset_id: Dataset ID (contains path to artifact)
+        :param expires_in: URL expiration time in seconds (default: 30)
+        :return: ArtifactDownloadResult with download URLs
+        """
+        from alphatrion.artifact.s3_backend import S3Backend
+        from alphatrion.server.graphql.types import (
+            ArtifactDownloadResult,
+            ArtifactDownloadUrl,
+        )
+
+        user_id = info.context.user_id
+        metadb = runtime.storage_runtime().metadb
+
+        # Get dataset and verify access
+        dataset = metadb.get_dataset(dataset_id=uuid.UUID(dataset_id))
+        if not dataset:
+            return ArtifactDownloadResult(
+                success=False,
+                message=f"Dataset {dataset_id} not found",
+                download_urls=[],
+            )
+
+        # Verify user has access to the dataset's team
+        if not metadb.team_is_accessible_to_user(
+            team_id=str(dataset.team_id),
+            user_id=user_id,
+            org_id=uuid.UUID(info.context.org_id),
+        ):
+            raise RuntimeError(
+                "Not allowed to access dataset that user does not belong to"
+            )
+
+        try:
+            arf = runtime.storage_runtime().artifact
+
+            # Parse path from dataset
+            # Format: org_id/team_id/repo_name:version (OCI) or org_id/team_id/repo_name/version (S3)
+            path = dataset.path
+
+            # Check if backend is S3 and supports presigned URLs
+            if isinstance(arf._backend, S3Backend):
+                # Generate presigned URLs for S3 using the full path from dataset
+                urls = arf._backend.generate_download_urls(path, expires_in)
+
+                download_urls = [
+                    ArtifactDownloadUrl(
+                        filename=url_info["filename"],
+                        url=url_info["url"],
+                        expires_in=expires_in,
+                    )
+                    for url_info in urls
+                ]
+
+                return ArtifactDownloadResult(
+                    success=True,
+                    message=f"Generated {len(download_urls)} presigned URL(s)",
+                    download_urls=download_urls,
+                )
+            else:
+                # For OCI backend, pull is supported but not recommended via API
+                # Users should use CLI or direct registry access
+                return ArtifactDownloadResult(
+                    success=False,
+                    message="Download URLs not supported for OCI backend. Use OCI CLI or registry directly.",
+                    download_urls=[],
+                )
+        except Exception as e:
+            return ArtifactDownloadResult(
+                success=False,
+                message=f"Failed to generate download URLs: {e}",
+                download_urls=[],
+            )
 
     @staticmethod
     def aggregate_run_usage(

@@ -1,0 +1,109 @@
+"""OCI registry artifact storage backend."""
+
+import os
+
+import oras.client
+
+from alphatrion import envs
+from alphatrion.artifact.base import ArtifactStorageBackend
+from alphatrion.utils import time as utiltime
+
+
+class OCIBackend(ArtifactStorageBackend):
+    """OCI registry backend using ORAS."""
+
+    def __init__(self, insecure: bool = False):
+        self._url = get_registry_url()
+        self._client = oras.client.OrasClient(
+            hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
+        )
+
+    def push(
+        self,
+        repo_name: str,
+        paths: str | list[str],
+        version: str | None = None,
+    ) -> str:
+        if paths is None or not paths:
+            raise ValueError("no files specified to push")
+
+        if isinstance(paths, str):
+            if os.path.isdir(paths):
+                os.chdir(paths)
+                files_to_push = [f for f in os.listdir(".") if os.path.isfile(f)]
+            else:
+                files_to_push = [paths]
+        else:
+            files_to_push = paths
+
+        if not files_to_push:
+            raise ValueError("No files to push.")
+
+        if version is None:
+            version = utiltime.now_2_hash()
+
+        path = f"{repo_name}:{version}"
+        target = f"{self._url}/{path}"
+
+        try:
+            self._client.push(target, files=files_to_push, disable_path_validation=True)
+        except Exception as e:
+            raise RuntimeError("Failed to push artifacts") from e
+
+        return path
+
+    def list_versions(self, repo_name: str) -> list[str]:
+        target = f"{self._url}/{repo_name}"
+        try:
+            tags = self._client.get_tags(target)
+            return tags
+        except Exception as e:
+            # Check if it's a "not found" error (404, repository doesn't exist)
+            error_msg = str(e).lower()
+            if (
+                "404" in error_msg
+                or "not found" in error_msg
+                or "does not exist" in error_msg
+            ):
+                return []
+            raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
+
+    def pull(
+        self, repo_name: str, version: str, output_dir: str | None = None
+    ) -> list[str]:
+        path = f"{repo_name}:{version}"
+        target = f"{self._url}/{path}"
+        original_dir = None
+
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            original_dir = os.getcwd()
+            os.chdir(output_dir)
+
+        try:
+            filenames = self._client.pull(target, outdir="." if output_dir else None)
+            download_dir = os.getcwd()
+            return [os.path.abspath(os.path.join(download_dir, f)) for f in filenames]
+        except Exception as e:
+            raise RuntimeError(f"Failed to pull artifacts: {e}") from e
+        finally:
+            if output_dir and original_dir:
+                os.chdir(original_dir)
+
+    def delete(self, repo_name: str, versions: str | list[str]):
+        target = f"{self._url}/{repo_name}"
+        try:
+            self._client.delete_tags(target, tags=versions)
+        except Exception as e:
+            raise RuntimeError("Failed to delete artifact versions") from e
+
+
+def get_registry_url() -> str:
+    """Get the ORAS registry URL from environment variables."""
+    registry_url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
+    if not registry_url:
+        raise RuntimeError("ARTIFACT_REGISTRY_URL not configured")
+    # Ensure URL has scheme
+    if not registry_url.startswith(("http://", "https://")):
+        registry_url = f"http://{registry_url}"
+    return registry_url.rstrip("/")
