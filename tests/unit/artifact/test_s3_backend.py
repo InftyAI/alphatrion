@@ -37,7 +37,7 @@ def s3_env_vars():
 
 @pytest.fixture
 def s3_client():
-    """Create a mock S3 client."""
+    """Create a mock S3 client with versioning enabled."""
     try:
         from moto import mock_aws
     except ImportError:
@@ -49,11 +49,17 @@ def s3_client():
         # Create the bucket
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-bucket")
+
+        # Enable versioning on the bucket for native versioning support
+        s3.put_bucket_versioning(
+            Bucket="test-bucket", VersioningConfiguration={"Status": "Enabled"}
+        )
+
         yield s3
 
 
 def test_s3_backend_push_single_file(s3_client):
-    """Test S3 backend push with single file."""
+    """Test S3 backend push with single file using path-based versioning."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -64,13 +70,13 @@ def test_s3_backend_push_single_file(s3_client):
         with open(test_file, "w") as f:
             f.write("test content")
 
-        # Push artifact
+        # Push artifact with explicit version
         path = artifact.push(
             repo_name="org123/team456/test-repo", paths=test_file, version="v1"
         )
         assert path == "org123/team456/test-repo/v1"
 
-        # Verify file was uploaded to S3
+        # Verify file was uploaded to S3 with version in path
         response = s3_client.list_objects_v2(
             Bucket="test-bucket", Prefix="org123/team456/test-repo/v1/"
         )
@@ -80,7 +86,7 @@ def test_s3_backend_push_single_file(s3_client):
 
 
 def test_s3_backend_push_multiple_files(s3_client):
-    """Test S3 backend push with multiple files."""
+    """Test S3 backend push with multiple files using path-based versioning."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -94,13 +100,13 @@ def test_s3_backend_push_multiple_files(s3_client):
                 f.write(f"content {i}")
             files.append(file_path)
 
-        # Push multiple files
+        # Push multiple files with version
         path = artifact.push(
             repo_name="org123/team456/test-repo", paths=files, version="v2"
         )
         assert path == "org123/team456/test-repo/v2"
 
-        # Verify all files were uploaded
+        # Verify all files were uploaded with version in path
         response = s3_client.list_objects_v2(
             Bucket="test-bucket", Prefix="org123/team456/test-repo/v2/"
         )
@@ -109,7 +115,7 @@ def test_s3_backend_push_multiple_files(s3_client):
 
 
 def test_s3_backend_push_folder(s3_client):
-    """Test S3 backend push with folder."""
+    """Test S3 backend push with folder using path-based versioning."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -123,13 +129,13 @@ def test_s3_backend_push_folder(s3_client):
             with open(os.path.join(test_dir, f"file{i}.txt"), "w") as f:
                 f.write(f"content {i}")
 
-        # Push folder
+        # Push folder with version
         path = artifact.push(
             repo_name="org123/team456/test-repo", paths=test_dir, version="v3"
         )
         assert path == "org123/team456/test-repo/v3"
 
-        # Verify all files were uploaded
+        # Verify all files were uploaded with version in path
         response = s3_client.list_objects_v2(
             Bucket="test-bucket", Prefix="org123/team456/test-repo/v3/"
         )
@@ -138,7 +144,7 @@ def test_s3_backend_push_folder(s3_client):
 
 
 def test_s3_backend_push_auto_version(s3_client):
-    """Test S3 backend push with auto-generated version."""
+    """Test S3 backend push with auto-generated version (native versioning ignores version param)."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -148,13 +154,11 @@ def test_s3_backend_push_auto_version(s3_client):
         with open(test_file, "w") as f:
             f.write("test content")
 
-        # Push without version (should auto-generate timestamp hash)
+        # Push without version (native versioning doesn't use version parameter)
         path = artifact.push(repo_name="org123/team456/test-repo", paths=test_file)
 
-        # Should have format: repo_name/timestamp-hash
-        assert path.startswith("org123/team456/test-repo/")
-        version = path.split("/")[-1]
-        assert len(version) > 0  # Auto-generated version
+        # Should return repo_name (no version in path)
+        assert path == "org123/team456/test-repo"
 
 
 def test_s3_backend_push_empty_files_error(s3_client):
@@ -188,7 +192,7 @@ def test_s3_backend_push_empty_folder_error(s3_client):
 
 
 def test_s3_backend_list_versions_not_implemented(s3_client):
-    """Test that list_versions raises NotImplementedError."""
+    """Test that list_versions raises NotImplementedError for S3 backend."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -207,6 +211,44 @@ def test_s3_backend_pull_not_implemented(s3_client):
         artifact.pull(repo_name="org123/team456/test-repo", version="v1")
 
 
+def test_s3_backend_path_based_versioning(s3_client):
+    """Test path-based versioning - different versions go to different folders."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_file = os.path.join(tmpdir, "test.txt")
+
+        # Push version 1
+        with open(test_file, "w") as f:
+            f.write("version 1 content")
+        path1 = artifact.push(
+            repo_name="org123/team456/test-repo", paths=test_file, version="v1"
+        )
+
+        # Push version 2 (same filename, different content, different version)
+        with open(test_file, "w") as f:
+            f.write("version 2 content - updated")
+        path2 = artifact.push(
+            repo_name="org123/team456/test-repo", paths=test_file, version="v2"
+        )
+
+        # Should return different paths
+        assert path1 == "org123/team456/test-repo/v1"
+        assert path2 == "org123/team456/test-repo/v2"
+
+        # Should have 2 object keys (in different version folders)
+        response = s3_client.list_objects_v2(
+            Bucket="test-bucket", Prefix="org123/team456/test-repo/"
+        )
+        assert "Contents" in response
+        assert len(response["Contents"]) == 2
+        keys = [obj["Key"] for obj in response["Contents"]]
+        assert "org123/team456/test-repo/v1/test.txt" in keys
+        assert "org123/team456/test-repo/v2/test.txt" in keys
+
+
 def test_s3_backend_delete_not_implemented(s3_client):
     """Test that delete raises NotImplementedError."""
     from alphatrion.artifact.artifact import Artifact
@@ -218,7 +260,7 @@ def test_s3_backend_delete_not_implemented(s3_client):
 
 
 def test_s3_backend_generate_download_urls(s3_client):
-    """Test S3 backend generate_download_urls method."""
+    """Test S3 backend generate_download_urls method with path-based versioning."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
@@ -232,7 +274,7 @@ def test_s3_backend_generate_download_urls(s3_client):
         with open(test_file2, "w") as f:
             f.write("content 2")
 
-        # Push artifacts
+        # Push artifacts with version
         path = artifact.push(
             repo_name="org123/team456/test-repo",
             paths=[test_file1, test_file2],
@@ -240,7 +282,7 @@ def test_s3_backend_generate_download_urls(s3_client):
         )
         assert path == "org123/team456/test-repo/v1"
 
-        # Generate download URLs using the full path
+        # Generate download URLs using the full path with version
         urls = artifact._backend.generate_download_urls(
             path="org123/team456/test-repo/v1", expires_in=60
         )

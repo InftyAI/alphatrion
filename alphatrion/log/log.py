@@ -61,8 +61,8 @@ async def log_artifact(
 
     loop = asyncio.get_running_loop()
 
-    exp_id = current_exp_id.get()
     new_repo = f"{runtime.org_id}/{runtime.team_id}"
+    exp_id = current_exp_id.get()
     if exp_id is not None:
         new_repo += f"/{exp_id}"
 
@@ -171,6 +171,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 async def log_dataset(
     name: str,
     data_or_path: dict[str, Any] | str | list[str],
+    version: str | None = None,
 ) -> uuid.UUID | None:
     """
     Log dataset to the database and artifact registry.
@@ -191,6 +192,7 @@ async def log_dataset(
             path = await log_artifact(
                 paths=name,
                 repo_name="dataset",
+                version=version,
             )
 
             id = runtime.metadb.create_dataset(
@@ -208,6 +210,7 @@ async def log_dataset(
         path = await log_artifact(
             paths=data_or_path,
             repo_name="dataset",
+            version=version,
         )
         id = runtime.metadb.create_dataset(
             name=name,
