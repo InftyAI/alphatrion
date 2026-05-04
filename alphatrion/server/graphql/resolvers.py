@@ -1038,7 +1038,9 @@ class GraphQLResolvers:
             # Check if backend is S3 and supports presigned URLs
             if isinstance(arf._backend, S3Backend):
                 # Generate presigned URLs for S3 using the full path from dataset
-                urls = arf._backend.generate_download_urls(path, version=None, expires_in=expires_in)
+                urls = arf._backend.generate_download_urls(
+                    path, version=None, expires_in=expires_in
+                )
 
                 download_urls = [
                     ArtifactDownloadUrl(

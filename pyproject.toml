@@ -47,6 +47,7 @@ test = [
     "pytest>=8.4",
     "pytest-asyncio>=0.22",
     "pytest-timeout>=2.1",
+    "nest-asyncio>=1.5.0",  # Required for DataLoader tests
     "moto>=5.0.0",  # For S3 backend testing
     "boto3>=1.35.0",  # Required by moto for S3 mocking
 ]
