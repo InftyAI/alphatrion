@@ -115,19 +115,19 @@ class S3Backend(ArtifactStorageBackend):
         raise NotImplementedError("delete is not implemented for S3 backend")
 
     def generate_download_urls(
-        self, path: str, version_id: str | None = None, expires_in: int = 30
+        self, path: str, version: str | None = None, expires_in: int = 30
     ) -> list[dict[str, str]]:
         """Generate presigned URLs for downloading artifacts from S3 with native versioning.
 
         :param path: Repository path (e.g., "org_id/team_id/exp_id/repo")
-        :param version_id: Optional specific version ID to download. If None, downloads latest versions.
+        :param version: Optional specific version ID to download. If None, downloads latest versions.
         :param expires_in: URL expiration time in seconds (default: 30 seconds)
         :return: List of dicts with 'filename' and 'url' keys
         """
         try:
             prefix = f"{path}/"
 
-            if version_id:
+            if version:
                 # Get specific version
                 response = self._s3.list_object_versions(
                     Bucket=self._bucket, Prefix=prefix
@@ -138,7 +138,7 @@ class S3Backend(ArtifactStorageBackend):
 
                 download_urls = []
                 for obj in response["Versions"]:
-                    if obj["VersionId"] == version_id:
+                    if obj["VersionId"] == version:
                         s3_key = obj["Key"]
                         filename = os.path.basename(s3_key)
 
@@ -147,7 +147,7 @@ class S3Backend(ArtifactStorageBackend):
                             Params={
                                 "Bucket": self._bucket,
                                 "Key": s3_key,
-                                "VersionId": version_id,
+                                "VersionId": version,
                             },
                             ExpiresIn=expires_in,
                         )
