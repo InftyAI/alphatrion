@@ -1020,8 +1020,8 @@ class GraphQLResolvers:
 
         # Verify user has access to the dataset's team
         if not metadb.team_is_accessible_to_user(
-            team_id=str(dataset.team_id),
-            user_id=user_id,
+            team_id=dataset.team_id,
+            user_id=uuid.UUID(user_id),
             org_id=uuid.UUID(info.context.org_id),
         ):
             raise RuntimeError(

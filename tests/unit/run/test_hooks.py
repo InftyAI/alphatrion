@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from alphatrion.run.hooks import PostRunHook
+from alphatrion.run.hooks import PostRunHookFn
 from alphatrion.storage.sqlstore import SQLStore
 
 
@@ -51,7 +51,7 @@ def test_sync_metadata_with_dict_result(db):
 
     with patch("alphatrion.run.hooks.global_runtime", return_value=mock_runtime):
         # Call the hook
-        PostRunHook.sync_metadata(run_id, result)
+        PostRunHookFn.sync_metadata(run_id, result)
 
         # Verify metadata was updated
         run = db.get_run(run_id)
@@ -92,7 +92,7 @@ def test_sync_metadata_with_non_dict_result(db):
 
     with patch("alphatrion.run.hooks.global_runtime", return_value=mock_runtime):
         # Call the hook
-        PostRunHook.sync_metadata(run_id, result)
+        PostRunHookFn.sync_metadata(run_id, result)
 
         # Verify metadata was not updated
         run = db.get_run(run_id)
@@ -136,7 +136,7 @@ def test_sync_metadata_merges_with_existing_metadata(db):
 
     with patch("alphatrion.run.hooks.global_runtime", return_value=mock_runtime):
         # Call the hook
-        PostRunHook.sync_metadata(run_id, result)
+        PostRunHookFn.sync_metadata(run_id, result)
 
         # Verify metadata was merged, not replaced
         run = db.get_run(run_id)
@@ -193,7 +193,7 @@ def test_hook_signature():
     """Test that sync_metadata has correct signature"""
     import inspect
 
-    sig = inspect.signature(PostRunHook.sync_metadata)
+    sig = inspect.signature(PostRunHookFn.sync_metadata)
     params = list(sig.parameters.keys())
 
     # Should have exactly 2 parameters: run_id and result
