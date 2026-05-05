@@ -7,7 +7,7 @@ import pytest
 
 import alphatrion as alpha
 from alphatrion.experiment import CraftExperiment, ExperimentConfig
-from alphatrion.run import PostRunHook
+from alphatrion.run import PostRunHookFn
 from alphatrion.runtime.runtime import global_runtime
 
 
@@ -43,7 +43,7 @@ async def test_run_hook_sync_metadata(test_org_id, test_user_id, test_team_id):
 
     async with CraftExperiment.start("test_hook_experiment") as exp:
         # Create run with sync_metadata hook
-        run = exp.run(train_model, post_run_hooks=[PostRunHook.sync_metadata])
+        run = exp.run(train_model, post_run_hooks=[PostRunHookFn.sync_metadata])
         await exp.wait()
 
         # Verify run completed
@@ -72,7 +72,7 @@ async def test_run_hook_with_non_dict_result(test_org_id, test_user_id, test_tea
 
     async with CraftExperiment.start("test_hook_non_dict") as exp:
         run = exp.run(
-            task_with_string_result, post_run_hooks=[PostRunHook.sync_metadata]
+            task_with_string_result, post_run_hooks=[PostRunHookFn.sync_metadata]
         )
         await exp.wait()
 
@@ -98,7 +98,7 @@ async def test_experiment_level_hooks(test_org_id, test_user_id, test_team_id):
         return {"task": "task2", "accuracy": 0.94}
 
     # Configure experiment with sync_metadata hook
-    config = ExperimentConfig(post_run_hooks=[PostRunHook.sync_metadata])
+    config = ExperimentConfig(post_run_hooks=[PostRunHookFn.sync_metadata])
 
     async with CraftExperiment.start("test_exp_hooks", config=config) as exp:
         run1 = exp.run(task1)
@@ -143,7 +143,7 @@ async def test_custom_hook(test_org_id, test_user_id, test_team_id):
     async with CraftExperiment.start("test_custom_hook") as exp:
         # Use both built-in and custom hooks
         run = exp.run(
-            train_model, post_run_hooks=[PostRunHook.sync_metadata, add_custom_info]
+            train_model, post_run_hooks=[PostRunHookFn.sync_metadata, add_custom_info]
         )
         await exp.wait()
 
@@ -172,7 +172,7 @@ async def test_hook_merges_with_existing_metadata(
         return {"accuracy": 0.96, "loss": 0.04}
 
     async with CraftExperiment.start("test_merge_metadata") as exp:
-        run = exp.run(train_model, post_run_hooks=[PostRunHook.sync_metadata])
+        run = exp.run(train_model, post_run_hooks=[PostRunHookFn.sync_metadata])
 
         # Manually add some metadata before run completes
         metadb = global_runtime().metadb
@@ -209,7 +209,7 @@ async def test_hook_failure_does_not_crash_run(test_org_id, test_user_id, test_t
 
     async with CraftExperiment.start("test_hook_failure") as exp:
         run = exp.run(
-            train_model, post_run_hooks=[buggy_hook, PostRunHook.sync_metadata]
+            train_model, post_run_hooks=[buggy_hook, PostRunHookFn.sync_metadata]
         )
         await exp.wait()
 

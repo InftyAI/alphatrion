@@ -5,14 +5,14 @@ from datetime import UTC, datetime
 from alphatrion.runtime.contextvars import current_run_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage.sql_models import Status
-from alphatrion.types import CallableEntry, PostRunHook
+from alphatrion.types import CallableEntry, PostRunHookFn
 
 
 class Run:
     __slots__ = ("_id", "_task", "_runtime", "_exp_id", "_result", "_post_run_hooks")
 
     def __init__(
-        self, exp_id: uuid.UUID, post_run_hooks: list[PostRunHook] | None = None
+        self, exp_id: uuid.UUID, post_run_hooks: list[PostRunHookFn] | None = None
     ):
         self._runtime = global_runtime()
         self._exp_id = exp_id

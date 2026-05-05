@@ -1,5 +1,5 @@
 """Run package."""
 
-from alphatrion.run.hooks import PostRunHook
+from alphatrion.run.hooks import PostRunHookFn
 
-__all__ = ["PostRunHook"]
+__all__ = ["PostRunHookFn"]

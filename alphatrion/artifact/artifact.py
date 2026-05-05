@@ -1,19 +1,31 @@
+"""Artifact storage client with pluggable backends (OCI or S3)."""
+
 import os
 
-import oras.client
-
 from alphatrion import envs
-from alphatrion.utils import time as utiltime
 
 SUCCESS_CODE = 201
 
 
 class Artifact:
+    """Artifact storage client with pluggable backends (OCI or S3)."""
+
     def __init__(self, insecure: bool = False):
-        self._url = get_registry_url()
-        self._client = oras.client.OrasClient(
-            hostname=self._url.strip("/"), auth_backend="token", insecure=insecure
-        )
+        storage_type = os.environ.get(envs.ARTIFACT_STORAGE_TYPE, "oci").lower()
+
+        if storage_type == "s3":
+            from alphatrion.artifact.s3_backend import S3Backend
+
+            self._backend = S3Backend()
+        elif storage_type == "oci":
+            from alphatrion.artifact.oci_backend import OCIBackend
+
+            self._backend = OCIBackend(insecure=insecure)
+        else:
+            raise ValueError(
+                f"Unsupported artifact storage type: {storage_type}. "
+                f"Supported types: 'oci', 's3'"
+            )
 
     def push(
         self,
@@ -22,115 +34,39 @@ class Artifact:
         version: str | None = None,
     ) -> str:
         """
-        Push files or all files in a folder to the artifact registry.
-        You can specify either files or folder, but not both.
-        If both are specified, a ValueError will be raised.
+        Push files or all files in a folder to the artifact storage.
 
         :param repo_name: the name of the repository to push to
         :param paths: list of file paths or a folder path to push.
         :param version: the version (tag) to push the files under
         """
-
-        if paths is None or not paths:
-            raise ValueError("no files specified to push")
-
-        if isinstance(paths, str):
-            if os.path.isdir(paths):
-                os.chdir(paths)
-                files_to_push = [f for f in os.listdir(".") if os.path.isfile(f)]
-            else:
-                files_to_push = [paths]
-        else:
-            files_to_push = paths
-
-        if not files_to_push:
-            raise ValueError("No files to push.")
-
-        if version is None:
-            version = utiltime.now_2_hash()
-
-        path = f"{repo_name}:{version}"
-        target = f"{self._url}/{path}"
-
-        try:
-            self._client.push(target, files=files_to_push, disable_path_validation=True)
-        except Exception as e:
-            raise RuntimeError("Failed to push artifacts") from e
-
-        return path
+        return self._backend.push(repo_name, paths, version)
 
     def list_versions(self, repo_name: str) -> list[str]:
-        target = f"{self._url}/{repo_name}"
-        try:
-            tags = self._client.get_tags(target)
-            return tags
-        except Exception as e:
-            # Check if it's a "not found" error (404, repository doesn't exist)
-            # TODO: it's not a proper way but let's do it for now.
-            error_msg = str(e).lower()
-            if (
-                "404" in error_msg
-                or "not found" in error_msg
-                or "does not exist" in error_msg
-            ):
-                # Return empty list if repository doesn't exist yet
-                return []
-            # Re-raise other errors
-            raise RuntimeError(f"Failed to list artifacts versions: {e}") from e
+        """List all versions for a repository."""
+        return self._backend.list_versions(repo_name)
 
     def pull(
         self, repo_name: str, version: str, output_dir: str | None = None
     ) -> list[str]:
         """
-        Pull artifacts from the registry.
+        Pull artifacts from the storage.
 
         :param repo_name: the name of the repository to pull from
         :param version: the version (tag) to pull
         :param output_dir: optional directory to save files to
-                           (defaults to ORAS temp directory)
         :return: list of absolute file paths that were downloaded
         """
-        path = f"{repo_name}:{version}"
-        target = f"{self._url}/{path}"
-        original_dir = None
-
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            original_dir = os.getcwd()
-            os.chdir(output_dir)
-
-        try:
-            # ORAS client returns list of filenames
-            # If output_dir specified, we've already chdir'd into it, so use "."
-            # Otherwise, ORAS will use its default temp directory
-            filenames = self._client.pull(target, outdir="." if output_dir else None)
-
-            # Get current directory (where files were downloaded)
-            download_dir = os.getcwd()
-
-            # Return absolute paths to downloaded files
-            return [os.path.abspath(os.path.join(download_dir, f)) for f in filenames]
-        except Exception as e:
-            raise RuntimeError(f"Failed to pull artifacts: {e}") from e
-        finally:
-            if output_dir:
-                os.chdir(original_dir)
+        return self._backend.pull(repo_name, version, output_dir)
 
     def delete(self, repo_name: str, versions: str | list[str]):
-        target = f"{self._url}/{repo_name}"
-
-        try:
-            self._client.delete_tags(target, tags=versions)
-        except Exception as e:
-            raise RuntimeError("Failed to delete artifact versions") from e
+        """Delete specific versions from a repository."""
+        return self._backend.delete(repo_name, versions)
 
 
+# For backward compatibility
 def get_registry_url() -> str:
     """Get the ORAS registry URL from environment variables."""
-    registry_url = os.environ.get(envs.ARTIFACT_REGISTRY_URL)
-    if not registry_url:
-        raise RuntimeError("ARTIFACT_REGISTRY_URL not configured")
-    # Ensure URL has scheme
-    if not registry_url.startswith(("http://", "https://")):
-        registry_url = f"http://{registry_url}"
-    return registry_url.rstrip("/")
+    from alphatrion.artifact.oci_backend import get_registry_url as _get_registry_url
+
+    return _get_registry_url()

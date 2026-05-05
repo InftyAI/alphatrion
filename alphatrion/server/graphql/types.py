@@ -331,11 +331,23 @@ class Run:
     created_at: datetime
 
     @strawberry.field
-    def metrics(self, info: Info) -> list["Metric"]:
-        """Get metrics for this run."""
-        from alphatrion.server.graphql.resolvers import GraphQLResolvers
+    async def metrics(self, info: Info) -> list["Metric"]:
+        """Get metrics for this run using DataLoader."""
+        metrics = await info.context.metrics_loader.load(str(self.id))
 
-        return GraphQLResolvers.list_run_metrics(info=info, run_id=self.id)
+        return [
+            Metric(
+                id=m.uuid,
+                org_id=m.org_id,
+                key=m.key,
+                value=m.value,
+                team_id=m.team_id,
+                experiment_id=m.experiment_id,
+                run_id=m.run_id,
+                created_at=m.created_at,
+            )
+            for m in metrics
+        ]
 
     @strawberry.field
     def spans(self, info: Info) -> list["Span"]:
@@ -360,13 +372,31 @@ class Run:
         )
 
     @strawberry.field
-    def datasets(self, info: Info, name: str | None = None) -> list["Dataset"]:
-        """Get datasets for this run, optionally filtered by name."""
-        from alphatrion.server.graphql.resolvers import GraphQLResolvers
+    async def datasets(self, info: Info, name: str | None = None) -> list["Dataset"]:
+        """Get datasets for this run using DataLoader, optionally filtered by name."""
+        datasets = await info.context.datasets_loader.load(str(self.id))
 
-        return GraphQLResolvers.list_datasets_by_run_id(
-            info=info, run_id=self.id, name=name
-        )
+        # Filter by name if provided
+        if name:
+            datasets = [d for d in datasets if d.name == name]
+
+        return [
+            Dataset(
+                id=d.uuid,
+                org_id=d.org_id,
+                name=d.name,
+                description=d.description,
+                path=d.path,
+                meta=d.meta,
+                team_id=d.team_id,
+                experiment_id=d.experiment_id,
+                run_id=d.run_id,
+                user_id=d.user_id,
+                created_at=d.created_at,
+                updated_at=d.updated_at,
+            )
+            for d in datasets
+        ]
 
 
 @strawberry.type
@@ -487,6 +517,24 @@ class ArtifactContent:
     filename: str
     content: str
     content_type: str
+
+
+@strawberry.type
+class ArtifactDownloadUrl:
+    """Download URL for an artifact file."""
+
+    filename: str
+    url: str
+    expires_in: int  # Seconds until URL expires
+
+
+@strawberry.type
+class ArtifactDownloadResult:
+    """Result of artifact download URL generation."""
+
+    success: bool
+    message: str
+    download_urls: list[ArtifactDownloadUrl]
 
 
 # Trace types

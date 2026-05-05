@@ -35,8 +35,9 @@ async def log_artifact(
     :param pre_save_hook: a callable function to be called before saving the artifact.
            If want to save something, make sure it's under the paths.
 
-    :return: the path of the logged artifact in the format of
-    {org_id}/{team_id}/{repo_name}:{version}
+    :return: the path of the logged artifact.
+        OCI format: {org_id}/{team_id}/{repo_name}:{version}
+        S3 format: {org_id}/{team_id}/{repo_name}/{version}
     """
 
     if not paths:
@@ -59,8 +60,18 @@ async def log_artifact(
             raise ValueError("pre_save_hook must be a callable function")
 
     loop = asyncio.get_running_loop()
+
+    new_repo = f"{runtime.org_id}/{runtime.team_id}"
+    exp_id = current_exp_id.get()
+    if exp_id is not None:
+        new_repo += f"/{exp_id}"
+
     return await loop.run_in_executor(
-        None, runtime._artifact.push, f"{runtime.org_id}/{runtime.team_id}/{repo_name}", paths, version
+        None,
+        runtime._artifact.push,
+        f"{new_repo}/{repo_name}",
+        paths,
+        version,
     )
 
 
@@ -160,6 +171,7 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 async def log_dataset(
     name: str,
     data_or_path: dict[str, Any] | str | list[str],
+    version: str | None = None,
 ) -> uuid.UUID | None:
     """
     Log dataset to the database and artifact registry.
@@ -180,6 +192,7 @@ async def log_dataset(
             path = await log_artifact(
                 paths=name,
                 repo_name="dataset",
+                version=version,
             )
 
             id = runtime.metadb.create_dataset(
@@ -197,6 +210,7 @@ async def log_dataset(
         path = await log_artifact(
             paths=data_or_path,
             repo_name="dataset",
+            version=version,
         )
         id = runtime.metadb.create_dataset(
             name=name,

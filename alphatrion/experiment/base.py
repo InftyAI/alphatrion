@@ -17,7 +17,7 @@ from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
-from alphatrion.types import CallableEntry, PostRunHook
+from alphatrion.types import CallableEntry, PostRunHookFn
 from alphatrion.utils import context
 
 
@@ -112,7 +112,7 @@ class ExperimentConfig(BaseModel):
         default=CheckpointConfig(),
         description="Configuration for checkpointing.",
     )
-    post_run_hooks: list[PostRunHook] | None = Field(
+    post_run_hooks: list[PostRunHookFn] | None = Field(
         default=None,
         description="List of hooks to execute after each run completes. \
             Each hook has signature: (run_id, result) -> None. \
@@ -426,13 +426,15 @@ class Experiment(ABC):
         return self._runtime._metadb.get_experiment(experiment_id=self.id)
 
     def run(
-        self, call_func: CallableEntry, post_run_hooks: list[PostRunHook] | None = None
+        self,
+        call_func: CallableEntry,
+        post_run_hooks: list[PostRunHookFn] | None = None,
     ) -> Run:
         """Start a new run for the Experiment.
         :param call_func: a callable function that returns a coroutine.
                           It must be a async and lambda function.
         :param post_run_hooks: List of hooks to execute after run completes.
-                               Each hook signature: (run_id, result) -> dict
+                               Each hook signature: (run_id: UUID, result: Any) -> None
         :return: the Run instance."""
 
         # Check if experiment is already done. This usually happens when we

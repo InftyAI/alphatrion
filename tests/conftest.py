@@ -99,6 +99,8 @@ def execute_graphql():
         Returns:
             GraphQL execution result
         """
+        import asyncio
+
         mock_request = Mock()
         context = GraphQLContext(
             org_id=str(org_id),
@@ -106,10 +108,41 @@ def execute_graphql():
             request=mock_request,
         )
 
-        return schema.execute_sync(
-            query,
-            variable_values=variables or {},
-            context_value=context,
+        # Support async execution for DataLoader
+
+        # Check if there's already a running loop (from pytest-asyncio)
+        try:
+            asyncio.get_running_loop()
+            # There's already a running loop - apply nest_asyncio to allow nested loops
+            try:
+                import nest_asyncio
+
+                nest_asyncio.apply()
+            except ImportError as err:
+                raise RuntimeError(
+                    "nest_asyncio is required when running inside an async context. "
+                    "Install it with: pip install nest-asyncio"
+                ) from err
+        except RuntimeError:
+            # No running loop
+            pass
+
+        # Get or create event loop
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_closed():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        return loop.run_until_complete(
+            schema.execute(
+                query,
+                variable_values=variables or {},
+                context_value=context,
+            )
         )
 
     return _execute

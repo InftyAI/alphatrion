@@ -7,6 +7,7 @@ from alphatrion.server.graphql.types import (
     AddUserToTeamInput,
     Agent,
     ArtifactContent,
+    ArtifactDownloadResult,
     ArtifactFile,
     ArtifactRepository,
     ArtifactTag,
@@ -178,6 +179,21 @@ class Query:
             info, str(team_id), tag, repo_name, filename
         )
 
+    @strawberry.field
+    async def artifact_download_urls(
+        self,
+        info: Info[GraphQLContext, None],
+        dataset_id: strawberry.ID,
+        expires_in: int = 30,
+    ) -> ArtifactDownloadResult:
+        """Get presigned download URLs for artifact files (S3 only).
+
+        All artifact information (path, team_id, etc.) is derived from the dataset.
+        """
+        return await GraphQLResolvers.get_artifact_download_urls(
+            info, str(dataset_id), expires_in
+        )
+
     # Dataset queries
     @strawberry.field
     def datasets(
@@ -186,6 +202,7 @@ class Query:
         team_id: strawberry.ID,
         experiment_id: strawberry.ID | None = None,
         run_id: strawberry.ID | None = None,
+        name: str | None = None,
         page: int = 0,
         page_size: int = 20,
         order_by: str = "created_at",
@@ -196,6 +213,7 @@ class Query:
             team_id=team_id,
             experiment_id=experiment_id,
             run_id=run_id,
+            name=name,
             page=page,
             page_size=page_size,
             order_by=order_by,

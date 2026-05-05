@@ -1158,8 +1158,9 @@ class SQLStore(MetaStore):
                 value=value,
             )
             session.add(new_metric)
-            session.flush()  # Flush to get the UUID
+            # UUID is assigned via default=uuid.uuid4, available immediately
             metric_ids.append(new_metric.uuid)
+        session.flush()
         session.commit()
         session.close()
         return metric_ids
@@ -1394,7 +1395,7 @@ class SQLStore(MetaStore):
             session.close()
             return True
 
-        # Check if user is in the team that the experiment belongs to
+        # Check if user is in the team that the run belongs to
         membership = (
             session.query(TeamMember)
             .filter(

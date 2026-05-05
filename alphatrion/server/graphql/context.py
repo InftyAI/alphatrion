@@ -1,12 +1,73 @@
 """GraphQL context for request-scoped data."""
 
 import os
+import uuid
+from collections import defaultdict
 
 from fastapi import Request
+from strawberry.dataloader import DataLoader
 from strawberry.fastapi import BaseContext
 
 from alphatrion import envs
 from alphatrion.server.auth import decode_access_token
+from alphatrion.storage import runtime
+from alphatrion.storage.sql_models import Dataset, Metric
+
+
+async def load_metrics_batch(run_ids: list[str]) -> list[list[Metric]]:
+    """Batch load metrics for multiple runs in a single query."""
+    metadb = runtime.storage_runtime().metadb
+
+    # Convert to UUIDs
+    run_uuids = [uuid.UUID(rid) for rid in run_ids]
+
+    # Single query for all metrics
+    session = metadb._session()
+    try:
+        all_metrics = (
+            session.query(Metric)
+            .filter(Metric.run_id.in_(run_uuids))
+            .order_by(Metric.created_at)
+            .all()
+        )
+
+        # Group by run_id
+        metrics_by_run = defaultdict(list)
+        for metric in all_metrics:
+            metrics_by_run[str(metric.run_id)].append(metric)
+
+        # Return in same order as requested
+        return [metrics_by_run.get(rid, []) for rid in run_ids]
+    finally:
+        session.close()
+
+
+async def load_datasets_batch(run_ids: list[str]) -> list[list[Dataset]]:
+    """Batch load datasets for multiple runs in a single query."""
+    metadb = runtime.storage_runtime().metadb
+
+    # Convert to UUIDs
+    run_uuids = [uuid.UUID(rid) for rid in run_ids]
+
+    # Single query for all datasets
+    session = metadb._session()
+    try:
+        all_datasets = (
+            session.query(Dataset)
+            .filter(Dataset.run_id.in_(run_uuids))
+            .order_by(Dataset.created_at)
+            .all()
+        )
+
+        # Group by run_id
+        datasets_by_run = defaultdict(list)
+        for dataset in all_datasets:
+            datasets_by_run[str(dataset.run_id)].append(dataset)
+
+        # Return in same order as requested
+        return [datasets_by_run.get(rid, []) for rid in run_ids]
+    finally:
+        session.close()
 
 
 class GraphQLContext(BaseContext):
@@ -17,6 +78,10 @@ class GraphQLContext(BaseContext):
         self.org_id = org_id
         self.user_id = user_id
         self.request = request
+
+        # Initialize DataLoaders
+        self.metrics_loader = DataLoader(load_fn=load_metrics_batch)
+        self.datasets_loader = DataLoader(load_fn=load_datasets_batch)
 
 
 async def get_context(request: Request) -> GraphQLContext:
