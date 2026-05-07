@@ -194,7 +194,7 @@ class PrometheusExporter(SpanExporter):
             user_id = attributes.get("user_id", "unknown")
             experiment_id = attributes.get("experiment_id", "unknown")
 
-            if "llm.usage.total_tokens" not in attributes:
+            if "gen_ai.usage.total_tokens" not in attributes:
                 return
 
             duration = (span.end_time - span.start_time) / 1_000_000_000
@@ -257,7 +257,7 @@ class PrometheusExporter(SpanExporter):
         )
 
         # Token metrics
-        total_tokens = int(attributes.get("llm.usage.total_tokens", 0))
+        total_tokens = int(attributes.get("gen_ai.usage.total_tokens", 0))
         input_tokens = int(attributes.get("gen_ai.usage.input_tokens", 0))
         output_tokens = int(attributes.get("gen_ai.usage.output_tokens", 0))
         cache_read_input_tokens = int(
