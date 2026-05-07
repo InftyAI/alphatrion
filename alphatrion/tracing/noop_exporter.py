@@ -9,7 +9,6 @@ from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
 
 
 class NoOpSpanExporter(SpanExporter):
-
     def export(self, spans: list[ReadableSpan]) -> SpanExportResult:
         return SpanExportResult.SUCCESS
 

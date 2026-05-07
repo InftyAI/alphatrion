@@ -64,14 +64,19 @@ test: lint
 test-integration: lint
 	@bash -c '\
 	set -e; \
-	docker-compose -f ./docker-compose.yaml up -d; \
-	trap "docker-compose -f ./docker-compose.yaml down" EXIT; \
+	set -a; \
+	source .env.integration-test; \
+	set +a; \
+	docker-compose -f ./docker-compose.test.yaml up -d; \
+	trap "docker-compose -f ./docker-compose.test.yaml down" EXIT; \
 	echo "Waiting for PostgreSQL..."; \
-	until docker exec postgres pg_isready -U alphatr1on; do sleep 1; done; \
+	until docker exec postgres-test pg_isready -U alphatr1on; do sleep 1; done; \
 	echo "Waiting for ClickHouse..."; \
-	until docker exec clickhouse clickhouse-client --query "SELECT 1"; do sleep 1; done; \
+	until docker exec clickhouse-test clickhouse-client --query "SELECT 1"; do sleep 1; done; \
+	echo "Waiting for Prometheus Push Gateway..."; \
+	until curl -sf http://localhost:29091/-/ready > /dev/null 2>&1; do sleep 1; done; \
 	echo "Waiting for Ollama..."; \
-	until curl -sf http://localhost:11434/api/tags | grep "smollm:135m" > /dev/null; do sleep 1; done; \
+	until curl -sf http://localhost:21434/api/tags | grep "smollm:135m" > /dev/null; do sleep 1; done; \
 	echo "Running migrations..."; \
 	make migrate-all; \
 	echo "Running integration tests..."; \

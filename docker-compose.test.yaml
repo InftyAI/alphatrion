@@ -1,0 +1,106 @@
+services:
+  ollama:
+    container_name: ollama-test
+    image: ollama/ollama:latest
+    ports:
+      - "21434:11434"
+    entrypoint: ["/bin/bash", "-c", "\
+      ollama serve & \
+      sleep 2 && \
+      ollama pull smollm:135m && \
+      wait"]
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+  postgres:
+    container_name: postgres-test
+    image: postgres:16
+    environment:
+      POSTGRES_USER: alphatrion
+      POSTGRES_PASSWORD: alphatr1on
+      POSTGRES_DB: alphatrion
+    ports:
+      - "25432:5432"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+  pgadmin:
+    container_name: pgadmin-test
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: alphatrion@inftyai.com
+      PGADMIN_DEFAULT_PASSWORD: alphatr1on
+    ports:
+      - 28081:80
+    depends_on:
+      - postgres
+  registry-ui:
+    image: joxit/docker-registry-ui:main
+    restart: always
+    ports:
+      - 20080:80
+    environment:
+      - SINGLE_REGISTRY=true
+      - REGISTRY_TITLE=Docker Registry UI
+      - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
+      - NGINX_PROXY_PASS_URL=http://registry:5000
+      - SHOW_CATALOG_NB_TAGS=true
+      - CATALOG_MIN_BRANCHES=1
+      - CATALOG_MAX_BRANCHES=1
+      - TAGLIST_PAGE_SIZE=100
+      - REGISTRY_SECURED=false
+      - CATALOG_ELEMENTS_LIMIT=1000
+    container_name: registry-ui-test
+  registry:
+    container_name: registry-test
+    image: registry:3
+    ports:
+      - "25001:5000"
+  clickhouse:
+    container_name: clickhouse-test
+    image: clickhouse/clickhouse-server:24-alpine
+    ports:
+      - "29000:9000"  # Native protocol
+      - "28123:8123"  # HTTP interface
+    environment:
+      CLICKHOUSE_DB: alphatrion_traces
+      CLICKHOUSE_USER: alphatrion
+      CLICKHOUSE_PASSWORD: alphatr1on
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+  prometheus-pushgateway:
+    container_name: prometheus-pushgateway-test
+    image: prom/pushgateway:latest
+    ports:
+      - "29091:9091"  # Push gateway HTTP interface
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+  prometheus:
+    container_name: prometheus-test
+    image: prom/prometheus:latest
+    ports:
+      - "29090:9090"  # Prometheus UI
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - prometheus-pushgateway
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
