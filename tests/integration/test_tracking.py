@@ -284,6 +284,7 @@ async def test_token_tracking_and_storage(
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(60)
 async def test_prometheus_metrics_export(
     test_org_id: uuid.UUID,
     test_team_id: uuid.UUID,
@@ -387,6 +388,7 @@ async def test_prometheus_metrics_export(
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(60)
 async def test_aggregated_usage_via_graphql(
     test_org_id: uuid.UUID,
     test_team_id: uuid.UUID,
@@ -414,6 +416,7 @@ async def test_aggregated_usage_via_graphql(
         tracked_call()
         tracked_call()
 
+    experiment_id = None
     async with experiment.CraftExperiment.start(name="usage_aggregation_test") as exp:
         experiment_id = exp.id
         task = exp.run(usage_workflow)
