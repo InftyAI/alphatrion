@@ -1119,8 +1119,8 @@ class GraphQLResolvers:
             span_attrs = span.get("SpanAttributes", {})
 
             # Aggregate tokens from LLM spans
-            if "llm.usage.total_tokens" in span_attrs:
-                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            if "gen_ai.usage.total_tokens" in span_attrs:
+                total_tokens += int(span_attrs["gen_ai.usage.total_tokens"])
             if "gen_ai.usage.input_tokens" in span_attrs:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
@@ -1198,8 +1198,8 @@ class GraphQLResolvers:
             span_attrs = span.get("SpanAttributes", {})
 
             # Aggregate tokens from LLM spans
-            if "llm.usage.total_tokens" in span_attrs:
-                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            if "gen_ai.usage.total_tokens" in span_attrs:
+                total_tokens += int(span_attrs["gen_ai.usage.total_tokens"])
             if "gen_ai.usage.input_tokens" in span_attrs:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
