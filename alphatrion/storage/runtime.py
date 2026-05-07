@@ -13,6 +13,7 @@ from alphatrion.storage.sqlstore import SQLStore
 from alphatrion.storage.tracestore import TraceStore
 from alphatrion.tracing.clickhouse_exporter import ClickHouseSpanExporter
 from alphatrion.tracing.cost_enrichment_processor import CostEnrichmentProcessor
+from alphatrion.tracing.noop_exporter import NoOpSpanExporter
 from alphatrion.tracing.prometheus_exporter import PrometheusExporter
 from alphatrion.tracing.span_processor import ContextAttributesSpanProcessor
 
@@ -23,6 +24,7 @@ class StorageRuntime:
     _metadb = None
     _tracestore = None
     _artifact = None
+    _otel_initialized = False
     _inited = False
 
     def __init__(self):
@@ -34,8 +36,15 @@ class StorageRuntime:
             init_tables=os.getenv(envs.METADATA_INIT_TABLES, "false").lower() == "true",
         )
 
-        # Disable tracing by default now
-        if os.getenv(envs.ENABLE_TRACING, "false").lower() == "true":
+        enable_tracing = (
+            os.getenv(envs.ENABLE_TRACING, "false").lower() == "true"
+        )
+        enable_prometheus = (
+            os.getenv(envs.ENABLE_PROMETHEUS_EXPORTER, "false").lower() == "true"
+        )
+
+        # ClickHouse TraceStore (only when full tracing is on)
+        if enable_tracing:
             try:
                 self._tracestore = TraceStore(
                     host=os.getenv(envs.CLICKHOUSE_URL, "localhost:8123"),
@@ -43,6 +52,7 @@ class StorageRuntime:
                     username=os.getenv(envs.CLICKHOUSE_USERNAME, "alphatrion"),
                     password=os.getenv(envs.CLICKHOUSE_PASSWORD, "alphatr1on"),
                 )
+                primary_exporter = ClickHouseSpanExporter(self._tracestore)
             except Exception as e:
                 logger = logging.getLogger(__name__)
                 logger.warning(
@@ -51,47 +61,55 @@ class StorageRuntime:
                     "or set ALPHATRION_ENABLE_TRACING=false to suppress this warning."
                 )
                 self._tracestore = None
+                # Use a NoOp exporter when setting-up full tracing fails, since we may still
+                # want to enable to OTel pipeline for exporting to prometheus.
+                primary_exporter = NoOpSpanExporter()
+        else:
+            # Use a NoOp exporter when full tracing is disabled, since we may still want to
+            # enable to OTel pipeline for exporting to prometheus.
+            primary_exporter = NoOpSpanExporter()
 
-            # Only initialize tracing components if TraceStore was successfully created
-            if self._tracestore is not None:
-                enable_batch = (
-                    os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
+        # OTel pipeline (when tracing OR prometheus is on)
+        if enable_tracing or enable_prometheus:
+            enable_batch = (
+                os.getenv(envs.CLICKHOUSE_ENABLE_BATCH, "true").lower() == "true"
+            )
+            Traceloop.init(
+                app_name="alphatrion",
+                exporter=primary_exporter,
+                disable_batch=not enable_batch,
+                telemetry_enabled=False,
+            )
+
+            # Add custom span processors
+            tracer_provider = trace.get_tracer_provider()
+
+            # 1. Context attributes processor - injects context (run_id, etc.) into all spans
+            tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
+
+            # 2. Cost enrichment processor - calculates costs from tokens and adds to span attributes
+            # This runs early so downstream processors/exporters can access cost data
+            tracer_provider.add_span_processor(CostEnrichmentProcessor())
+
+            # 3. Add Prometheus exporter if enabled
+            if enable_prometheus:
+                pushgateway_url = os.getenv(
+                    envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
                 )
-                Traceloop.init(
-                    app_name="alphatrion",
-                    exporter=ClickHouseSpanExporter(self.tracestore),
-                    disable_batch=not enable_batch,
-                    telemetry_enabled=False,
+                job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
+
+                prometheus_exporter = PrometheusExporter(
+                    pushgateway_url=pushgateway_url,
+                    job_name=job_name,
+                )
+                # Use BatchSpanProcessor for better performance
+                tracer_provider.add_span_processor(
+                    BatchSpanProcessor(prometheus_exporter)
                 )
 
-                # Add custom span processors
-                tracer_provider = trace.get_tracer_provider()
-
-                # 1. Context attributes processor - injects context (run_id, etc.) into all spans
-                tracer_provider.add_span_processor(ContextAttributesSpanProcessor())
-
-                # 2. Cost enrichment processor - calculates costs from tokens and adds to span attributes
-                # This runs early so downstream processors/exporters can access cost data
-                tracer_provider.add_span_processor(CostEnrichmentProcessor())
-
-                # 3. Add Prometheus exporter if enabled
-                if (
-                    os.getenv(envs.ENABLE_PROMETHEUS_EXPORTER, "false").lower()
-                    == "true"
-                ):
-                    pushgateway_url = os.getenv(
-                        envs.PROMETHEUS_PUSHGATEWAY_URL, "localhost:9091"
-                    )
-                    job_name = os.getenv(envs.PROMETHEUS_JOB_NAME, "alphatrion")
-
-                    prometheus_exporter = PrometheusExporter(
-                        pushgateway_url=pushgateway_url,
-                        job_name=job_name,
-                    )
-                    # Use BatchSpanProcessor for better performance
-                    tracer_provider.add_span_processor(
-                        BatchSpanProcessor(prometheus_exporter)
-                    )
+            self._otel_initialized = True
+        else:
+            self._otel_initialized = False
 
         artifact_insecure = os.getenv(envs.ARTIFACT_INSECURE, "false").lower() == "true"
         if artifact_storage_enabled():
@@ -108,10 +126,14 @@ class StorageRuntime:
         return self._tracestore
 
     def flush(self):
-        if self._tracestore:
+        if self._otel_initialized:
             tracer_provider = trace.get_tracer_provider()
             if isinstance(tracer_provider, TracerProvider):
                 tracer_provider.force_flush(timeout_millis=5000)
+
+    @property
+    def otel_initialized(self):
+        return self._otel_initialized
 
     @property
     def artifact(self):
