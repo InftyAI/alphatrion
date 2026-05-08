@@ -36,9 +36,7 @@ class StorageRuntime:
             init_tables=os.getenv(envs.METADATA_INIT_TABLES, "false").lower() == "true",
         )
 
-        enable_tracing = (
-            os.getenv(envs.ENABLE_TRACING, "false").lower() == "true"
-        )
+        enable_tracing = os.getenv(envs.ENABLE_TRACING, "false").lower() == "true"
         enable_prometheus = (
             os.getenv(envs.ENABLE_PROMETHEUS_EXPORTER, "false").lower() == "true"
         )

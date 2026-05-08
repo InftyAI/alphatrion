@@ -1103,7 +1103,7 @@ def create_clickhouse_spans_for_turn(
                     cache_creation_input_tokens
                 ),
                 "gen_ai.usage.cache_read_input_tokens": str(cache_read_input_tokens),
-                "gen_ai.usage.total_tokens": str(
+                "llm.usage.total_tokens": str(
                     input_tokens
                     + output_tokens
                     + cache_creation_input_tokens

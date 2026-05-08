@@ -61,26 +61,37 @@ class Run:
             datetime.now(UTC) - run.created_at.replace(tzinfo=UTC)
         ).total_seconds()
 
-        # Update run with status and duration first
+        # Try to get the result, but handle failures gracefully
+        try:
+            self._result = self._task.result()
+            status = Status.COMPLETED
+        except Exception as e:
+            # Task failed - store the exception
+            self._result = e
+            status = Status.FAILED
+            import traceback
+
+            print(f"Run {self._id} failed with exception: {e}")
+            traceback.print_exc()
+
+        # Update run with status and duration
         self._runtime.metadb.update_run(
             run_id=self._id,
-            status=Status.COMPLETED,
+            status=status,
             duration=duration,
         )
 
-        self._result = self._task.result()
+        # Execute post-run hooks only if successful
+        if status == Status.COMPLETED:
+            for hook in self._post_run_hooks:
+                try:
+                    hook(self.id, self._result)
+                except Exception as e:
+                    # Log error but don't fail the run
+                    import traceback
 
-        # Execute post-run hooks
-        # Each hook is responsible for its own logic (e.g., updating metadata)
-        for hook in self._post_run_hooks:
-            try:
-                hook(self.id, self._result)
-            except Exception as e:
-                # Log error but don't fail the run
-                import traceback
-
-                print(f"Warning: Post-run hook {hook.__name__} failed: {e}")
-                traceback.print_exc()
+                    print(f"Warning: Post-run hook {hook.__name__} failed: {e}")
+                    traceback.print_exc()
 
     def cancel(self):
         # TODO: we should wait for the task to be actually cancelled

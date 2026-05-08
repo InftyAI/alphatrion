@@ -3,6 +3,7 @@
 # test query from graphql endpoint
 
 import asyncio
+import os
 import uuid
 from datetime import datetime, timedelta
 
@@ -297,8 +298,10 @@ def test_query_experiments(execute_graphql, test_org_id, test_user_id, test_team
     assert len(response.data["experiments"]) == 2
 
 
+# Use test Ollama port from environment
+ollama_port = os.getenv("OLLAMA_PORT", "11434")
 client = OpenAI(
-    base_url="http://localhost:11434/v1",
+    base_url=f"http://localhost:{ollama_port}/v1",
     api_key="",
 )
 
