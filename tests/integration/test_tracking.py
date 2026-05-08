@@ -422,6 +422,8 @@ async def test_aggregated_usage_via_graphql(
         task = exp.run(usage_workflow)
         await task.wait()
 
+    runtime.storage_runtime().flush()  # Ensure data is available for querying
+
     # Query aggregated usage via GraphQL resolvers
     from unittest.mock import Mock
 
