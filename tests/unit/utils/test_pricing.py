@@ -160,25 +160,14 @@ def test_calculate_cost():
     )
 
     assert isinstance(cost, dict)
-    assert "total_cost" in cost
     assert "input_cost" in cost
     assert "output_cost" in cost
     assert "cache_creation_input_cost" in cost
     assert "cache_read_input_cost" in cost
 
     # All costs should be non-negative
-    assert cost["total_cost"] >= 0
     assert cost["input_cost"] >= 0
     assert cost["output_cost"] >= 0
-
-    # Total should be sum of all components
-    expected_total = (
-        cost["input_cost"]
-        + cost["output_cost"]
-        + cost["cache_creation_input_cost"]
-        + cost["cache_read_input_cost"]
-    )
-    assert abs(cost["total_cost"] - expected_total) < 0.00000001
 
 
 def test_calculate_cost_zero_tokens():
@@ -192,7 +181,6 @@ def test_calculate_cost_zero_tokens():
         cache_read_input_tokens=0,
     )
 
-    assert cost["total_cost"] == 0
     assert cost["input_cost"] == 0
     assert cost["output_cost"] == 0
     assert cost["cache_creation_input_cost"] == 0

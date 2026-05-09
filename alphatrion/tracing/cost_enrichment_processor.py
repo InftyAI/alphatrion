@@ -44,7 +44,7 @@ class CostEnrichmentProcessor(SpanProcessor):
                 return
 
             # Check if costs are already present
-            if "alphatrion.cost.total_tokens" in span.attributes:
+            if "alphatrion.cost.input_tokens" in span.attributes:
                 # Costs already calculated (e.g., in claude.py)
                 return
 
@@ -79,15 +79,12 @@ class CostEnrichmentProcessor(SpanProcessor):
                 cache_read_input_tokens=cache_read_input_tokens,
             )
 
-            # Add cost attributes to span
+            # Add cost attributes to span (individual types only, not total)
             # Note: We can't modify ReadableSpan.attributes directly after span ends,
             # but we can modify the underlying _attributes dict that will be read
             # by exporters. This is a bit of a hack but it's the only way to enrich
             # spans post-creation without modifying OpenTelemetry internals.
             if hasattr(span, "_attributes"):
-                span._attributes["alphatrion.cost.total_tokens"] = str(
-                    cost_result["total_cost"]
-                )
                 span._attributes["alphatrion.cost.input_tokens"] = str(
                     cost_result["input_cost"]
                 )
@@ -99,9 +96,6 @@ class CostEnrichmentProcessor(SpanProcessor):
                 )
                 span._attributes["alphatrion.cost.cache_read_input_tokens"] = str(
                     cost_result["cache_read_input_cost"]
-                )
-                logger.debug(
-                    f"Enriched span {span.name} with cost: ${cost_result['total_cost']:.6f}"
                 )
 
         except Exception as e:

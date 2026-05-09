@@ -658,7 +658,30 @@ class GraphQLResolvers:
         trace_store = runtime.storage_runtime().tracestore
         result = trace_store.get_llm_usage_by_team_id(org_id=org_id, team_id=team_id)
         if result and len(result) > 0:
-            return result[0]
+            data = result[0]
+            # Calculate totals from components
+            total_tokens = (
+                data.get("input_tokens", 0)
+                + data.get("output_tokens", 0)
+                + data.get("cache_read_input_tokens", 0)
+                + data.get("cache_creation_input_tokens", 0)
+            )
+            total_cost = (
+                data.get("input_cost", 0.0)
+                + data.get("output_cost", 0.0)
+                + data.get("cache_read_cost", 0.0)
+                + data.get("cache_creation_cost", 0.0)
+            )
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": data.get("input_tokens", 0),
+                "output_tokens": data.get("output_tokens", 0),
+                "cache_read_input_tokens": data.get("cache_read_input_tokens", 0),
+                "cache_creation_input_tokens": data.get(
+                    "cache_creation_input_tokens", 0
+                ),
+                "total_cost": total_cost,
+            }
         return {
             "total_tokens": 0,
             "input_tokens": 0,
@@ -698,7 +721,30 @@ class GraphQLResolvers:
             org_id=org_id, team_id=agent.team_id, agent_id=agent_id
         )
         if result and len(result) > 0:
-            return result[0]
+            data = result[0]
+            # Calculate totals from components
+            total_tokens = (
+                data.get("input_tokens", 0)
+                + data.get("output_tokens", 0)
+                + data.get("cache_read_input_tokens", 0)
+                + data.get("cache_creation_input_tokens", 0)
+            )
+            total_cost = (
+                data.get("input_cost", 0.0)
+                + data.get("output_cost", 0.0)
+                + data.get("cache_read_cost", 0.0)
+                + data.get("cache_creation_cost", 0.0)
+            )
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": data.get("input_tokens", 0),
+                "output_tokens": data.get("output_tokens", 0),
+                "cache_read_input_tokens": data.get("cache_read_input_tokens", 0),
+                "cache_creation_input_tokens": data.get(
+                    "cache_creation_input_tokens", 0
+                ),
+                "total_cost": total_cost,
+            }
         return {
             "total_tokens": 0,
             "input_tokens": 0,
@@ -740,7 +786,30 @@ class GraphQLResolvers:
             org_id=org_id, team_id=session.team_id, session_id=session.uuid
         )
         if result and len(result) > 0:
-            return result[0]
+            data = result[0]
+            # Calculate totals from components
+            total_tokens = (
+                data.get("input_tokens", 0)
+                + data.get("output_tokens", 0)
+                + data.get("cache_read_input_tokens", 0)
+                + data.get("cache_creation_input_tokens", 0)
+            )
+            total_cost = (
+                data.get("input_cost", 0.0)
+                + data.get("output_cost", 0.0)
+                + data.get("cache_read_cost", 0.0)
+                + data.get("cache_creation_cost", 0.0)
+            )
+            return {
+                "total_tokens": total_tokens,
+                "input_tokens": data.get("input_tokens", 0),
+                "output_tokens": data.get("output_tokens", 0),
+                "cache_read_input_tokens": data.get("cache_read_input_tokens", 0),
+                "cache_creation_input_tokens": data.get(
+                    "cache_creation_input_tokens", 0
+                ),
+                "total_cost": total_cost,
+            }
         return {
             "total_tokens": 0,
             "input_tokens": 0,
@@ -1118,9 +1187,7 @@ class GraphQLResolvers:
         for span in spans:
             span_attrs = span.get("SpanAttributes", {})
 
-            # Aggregate tokens from LLM spans
-            if "llm.usage.total_tokens" in span_attrs:
-                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            # Aggregate tokens from LLM spans (calculate total from components)
             if "gen_ai.usage.input_tokens" in span_attrs:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
@@ -1133,8 +1200,28 @@ class GraphQLResolvers:
                 cache_creation_input_tokens += int(
                     span_attrs["gen_ai.usage.cache_creation_input_tokens"]
                 )
-            if "alphatrion.cost.total_tokens" in span_attrs:
-                total_cost += float(span_attrs["alphatrion.cost.total_tokens"])
+
+            # Aggregate costs (calculate total from components)
+            if "alphatrion.cost.input_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.input_tokens"])
+            if "alphatrion.cost.output_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.output_tokens"])
+            if "alphatrion.cost.cache_read_input_tokens" in span_attrs:
+                total_cost += float(
+                    span_attrs["alphatrion.cost.cache_read_input_tokens"]
+                )
+            if "alphatrion.cost.cache_creation_input_tokens" in span_attrs:
+                total_cost += float(
+                    span_attrs["alphatrion.cost.cache_creation_input_tokens"]
+                )
+
+        # Calculate total tokens from components
+        total_tokens = (
+            input_tokens
+            + output_tokens
+            + cache_read_input_tokens
+            + cache_creation_input_tokens
+        )
 
         return {
             "total_tokens": total_tokens,
@@ -1197,9 +1284,7 @@ class GraphQLResolvers:
         for span in spans:
             span_attrs = span.get("SpanAttributes", {})
 
-            # Aggregate tokens from LLM spans
-            if "llm.usage.total_tokens" in span_attrs:
-                total_tokens += int(span_attrs["llm.usage.total_tokens"])
+            # Aggregate tokens from LLM spans (calculate total from components)
             if "gen_ai.usage.input_tokens" in span_attrs:
                 input_tokens += int(span_attrs["gen_ai.usage.input_tokens"])
             if "gen_ai.usage.output_tokens" in span_attrs:
@@ -1212,8 +1297,28 @@ class GraphQLResolvers:
                 cache_creation_input_tokens += int(
                     span_attrs["gen_ai.usage.cache_creation_input_tokens"]
                 )
-            if "alphatrion.cost.total_tokens" in span_attrs:
-                total_cost += float(span_attrs["alphatrion.cost.total_tokens"])
+
+            # Aggregate costs (calculate total from components)
+            if "alphatrion.cost.input_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.input_tokens"])
+            if "alphatrion.cost.output_tokens" in span_attrs:
+                total_cost += float(span_attrs["alphatrion.cost.output_tokens"])
+            if "alphatrion.cost.cache_read_input_tokens" in span_attrs:
+                total_cost += float(
+                    span_attrs["alphatrion.cost.cache_read_input_tokens"]
+                )
+            if "alphatrion.cost.cache_creation_input_tokens" in span_attrs:
+                total_cost += float(
+                    span_attrs["alphatrion.cost.cache_creation_input_tokens"]
+                )
+
+        # Calculate total tokens from components
+        total_tokens = (
+            input_tokens
+            + output_tokens
+            + cache_read_input_tokens
+            + cache_creation_input_tokens
+        )
 
         return {
             "total_tokens": total_tokens,

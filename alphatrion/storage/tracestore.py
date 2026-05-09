@@ -372,12 +372,14 @@ class TraceStore:
             try:
                 query = f"""
                 SELECT
-                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
-                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.input_tokens'])) as input_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.output_tokens'])) as output_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_read_input_tokens'])) as cache_read_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_creation_input_tokens'])) as cache_creation_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
                 """
@@ -385,14 +387,16 @@ class TraceStore:
                 result = self.client.query(query)
                 return [
                     {
-                        "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
                         "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
                         "cache_creation_input_tokens": int(
                             row["cache_creation_input_tokens"]
                         ),
-                        "total_cost": float(row["total_cost"]),
+                        "input_cost": float(row["input_cost"]),
+                        "output_cost": float(row["output_cost"]),
+                        "cache_read_cost": float(row["cache_read_cost"]),
+                        "cache_creation_cost": float(row["cache_creation_cost"]),
                     }
                     for row in result.named_results()
                 ]
@@ -410,18 +414,20 @@ class TraceStore:
             team_id: The team ID to filter by
             agent_id: The agent ID to filter by
         Returns:
-            List with one dict containing total_tokens, input_tokens, output_tokens
+            List with one dict containing input_tokens, output_tokens
         """
         with self._lock:
             try:
                 query = f"""
                 SELECT
-                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
-                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.input_tokens'])) as input_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.output_tokens'])) as output_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_read_input_tokens'])) as cache_read_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_creation_input_tokens'])) as cache_creation_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}' AND AgentId = '{agent_id}'
                 """
@@ -429,14 +435,16 @@ class TraceStore:
                 result = self.client.query(query)
                 return [
                     {
-                        "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
                         "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
                         "cache_creation_input_tokens": int(
                             row["cache_creation_input_tokens"]
                         ),
-                        "total_cost": float(row["total_cost"]),
+                        "input_cost": float(row["input_cost"]),
+                        "output_cost": float(row["output_cost"]),
+                        "cache_read_cost": float(row["cache_read_cost"]),
+                        "cache_creation_cost": float(row["cache_creation_cost"]),
                     }
                     for row in result.named_results()
                 ]
@@ -454,18 +462,20 @@ class TraceStore:
             team_id: The team ID to filter by
             session_id: The session ID to filter by
         Returns:
-            List with one dict containing total_tokens, input_tokens, output_tokens
+            List with one dict containing input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens, input_cost, output_cost, cache_read_cost, cache_creation_cost
         """
         with self._lock:
             try:
                 query = f"""
                 SELECT
-                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_creation_input_tokens'])) as cache_creation_input_tokens,
-                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.input_tokens'])) as input_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.output_tokens'])) as output_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_read_input_tokens'])) as cache_read_cost,
+                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_creation_input_tokens'])) as cache_creation_cost
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}' AND SessionId = '{session_id}'
                 """
@@ -473,14 +483,16 @@ class TraceStore:
                 result = self.client.query(query)
                 return [
                     {
-                        "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
                         "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
                         "cache_creation_input_tokens": int(
                             row["cache_creation_input_tokens"]
                         ),
-                        "total_cost": float(row["total_cost"]),
+                        "input_cost": float(row["input_cost"]),
+                        "output_cost": float(row["output_cost"]),
+                        "cache_read_cost": float(row["cache_read_cost"]),
+                        "cache_creation_cost": float(row["cache_creation_cost"]),
                     }
                     for row in result.named_results()
                 ]
@@ -498,14 +510,13 @@ class TraceStore:
             team_id: The team ID to filter by
 
         Returns:
-            List of dicts with keys: semantic_kind, total_tokens, input_tokens, output_tokens
+            List of dicts with keys: semantic_kind, input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens
         """
         with self._lock:
             try:
                 query = f"""
                 SELECT
                     SemanticKind as semantic_kind,
-                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
@@ -513,14 +524,12 @@ class TraceStore:
                 FROM {self.database}.otel_spans
                 WHERE OrgId = '{org_id}' AND TeamId = '{team_id}'
                 GROUP BY SemanticKind
-                ORDER BY total_tokens DESC
                 """
 
                 result = self.client.query(query)
                 return [
                     {
                         "semantic_kind": row["semantic_kind"],
-                        "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
                         "cache_read_input_tokens": int(row["cache_read_input_tokens"]),
@@ -587,19 +596,17 @@ class TraceStore:
             days: Number of days to look back (default: 30)
 
         Returns:
-            List of dicts with keys: date, total_cost, input_cost, output_cost, total_tokens, input_tokens, output_tokens
+            List of dicts with keys: date, input_cost, output_cost,  input_tokens, output_tokens
         """
         with self._lock:
             try:
                 query = f"""
                 SELECT
                     toDate(Timestamp) as date,
-                    SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.total_tokens'])) as total_cost,
                     SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.input_tokens'])) as input_cost,
                     SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.output_tokens'])) as output_cost,
                     SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_creation_input_tokens'])) as cache_creation_input_cost,
                     SUM(toFloat64OrZero(SpanAttributes['alphatrion.cost.cache_read_input_tokens'])) as cache_read_input_cost,
-                    SUM(toInt64OrZero(SpanAttributes['llm.usage.total_tokens'])) as total_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.input_tokens'])) as input_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.output_tokens'])) as output_tokens,
                     SUM(toInt64OrZero(SpanAttributes['gen_ai.usage.cache_read_input_tokens'])) as cache_read_input_tokens,
@@ -616,14 +623,12 @@ class TraceStore:
                 return [
                     {
                         "date": row["date"].strftime("%Y-%m-%d"),
-                        "total_cost": float(row["total_cost"]),
                         "input_cost": float(row["input_cost"]),
                         "output_cost": float(row["output_cost"]),
                         "cache_creation_input_cost": float(
                             row["cache_creation_input_cost"]
                         ),
                         "cache_read_input_cost": float(row["cache_read_input_cost"]),
-                        "total_tokens": int(row["total_tokens"]),
                         "input_tokens": int(row["input_tokens"]),
                         "output_tokens": int(row["output_tokens"]),
                         "cache_read_input_tokens": int(row["cache_read_input_tokens"]),

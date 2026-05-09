@@ -133,10 +133,7 @@ def calculate_cost(
         "cache_read_input_tokens_price"
     ]
 
-    total_cost = input_cost + output_cost + cache_creation_cost + cache_read_cost
-
     return {
-        "total_cost": round(total_cost, 8),
         "input_cost": round(input_cost, 8),
         "output_cost": round(output_cost, 8),
         "cache_creation_input_cost": round(cache_creation_cost, 8),
