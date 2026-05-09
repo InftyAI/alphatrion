@@ -1091,7 +1091,7 @@ def create_clickhouse_spans_for_turn(
                 cache_read_input_tokens=cache_read_input_tokens,
             )
 
-            # Build span attributes
+            # Build span attributes (individual types only, no totals)
             span_attributes = {
                 "gen_ai.system": "Anthropic",
                 "llm.request.type": "chat",
@@ -1103,13 +1103,6 @@ def create_clickhouse_spans_for_turn(
                     cache_creation_input_tokens
                 ),
                 "gen_ai.usage.cache_read_input_tokens": str(cache_read_input_tokens),
-                "llm.usage.total_tokens": str(
-                    input_tokens
-                    + output_tokens
-                    + cache_creation_input_tokens
-                    + cache_read_input_tokens
-                ),
-                "alphatrion.cost.total_tokens": str(span_costs["total_cost"]),
                 "alphatrion.cost.input_tokens": str(span_costs["input_cost"]),
                 "alphatrion.cost.output_tokens": str(span_costs["output_cost"]),
                 "alphatrion.cost.cache_creation_input_tokens": str(

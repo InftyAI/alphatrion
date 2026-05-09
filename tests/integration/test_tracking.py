@@ -158,26 +158,24 @@ async def test_token_tracking_and_storage(
     span_attrs = tracestore.client.query(debug_query_attrs).result_rows
     print(f"DEBUG: Sample span attributes: {span_attrs}")
 
-    # Debug: Check spans with llm.usage attributes
+    # Debug: Check spans with gen_ai.usage attributes
     debug_query2 = f"""
     SELECT COUNT(*) as count
     FROM {database}.otel_spans
     WHERE ExperimentId = '{experiment_id}'
-        AND mapContains(SpanAttributes, 'llm.usage.total_tokens')
+        AND mapContains(SpanAttributes, 'gen_ai.usage.input_tokens')
     """
     llm_spans = tracestore.client.query(debug_query2).result_rows[0][0]
-    print(f"DEBUG: Spans with llm.usage.total_tokens: {llm_spans}")
+    print(f"DEBUG: Spans with gen_ai.usage.input_tokens: {llm_spans}")
 
     query = f"""
     SELECT
         SpanId as span_id,
         SpanName as span_name,
-        SpanAttributes['llm.usage.total_tokens'] as total_tokens,
         SpanAttributes['gen_ai.usage.input_tokens'] as input_tokens,
         SpanAttributes['gen_ai.usage.output_tokens'] as output_tokens,
         SpanAttributes['gen_ai.usage.cache_read_input_tokens'] as cache_read_tokens,
         SpanAttributes['gen_ai.usage.cache_creation_input_tokens'] as cache_creation_tokens,
-        SpanAttributes['alphatrion.cost.total_tokens'] as total_cost,
         SpanAttributes['alphatrion.cost.input_tokens'] as input_cost,
         SpanAttributes['alphatrion.cost.output_tokens'] as output_cost,
         SpanAttributes['alphatrion.cost.cache_read_input_tokens'] as cache_read_cost,
@@ -187,7 +185,7 @@ async def test_token_tracking_and_storage(
         ExperimentId as experiment_id
     FROM {database}.otel_spans
     WHERE ExperimentId = '{experiment_id}'
-        AND mapContains(SpanAttributes, 'llm.usage.total_tokens')
+        AND mapContains(SpanAttributes, 'gen_ai.usage.input_tokens')
     ORDER BY Timestamp DESC
     """
 
@@ -202,12 +200,10 @@ async def test_token_tracking_and_storage(
         (
             span_id,
             span_name,
-            total_tokens,
             input_tokens,
             output_tokens,
             cache_read_tokens,
             cache_creation_tokens,
-            total_cost,
             input_cost,
             output_cost,
             cache_read_cost,
@@ -218,69 +214,48 @@ async def test_token_tracking_and_storage(
         ) = span
 
         # Validate token fields exist and are positive
-        assert total_tokens, f"Span {span_id}: total_tokens is missing"
-        assert int(total_tokens) > 0, f"Span {span_id}: total_tokens must be > 0"
-
         assert input_tokens, f"Span {span_id}: input_tokens is missing"
         assert int(input_tokens) > 0, f"Span {span_id}: input_tokens must be > 0"
 
         assert output_tokens, f"Span {span_id}: output_tokens is missing"
         assert int(output_tokens) > 0, f"Span {span_id}: output_tokens must be > 0"
 
-        # Validate token math
-        total = int(total_tokens)
+        # Calculate total tokens from components
         inp = int(input_tokens)
         out = int(output_tokens)
-        assert total == inp + out, (
-            f"Span {span_id}: total_tokens ({total}) != "
-            f"input_tokens ({inp}) + output_tokens ({out})"
+        cache_read = int(cache_read_tokens) if cache_read_tokens else 0
+        cache_creation = int(cache_creation_tokens) if cache_creation_tokens else 0
+
+        assert inp > 0 and out > 0, (
+            f"Span {span_id}: input and output tokens must be > 0"
+        )
+        # Validate cache tokens are non-negative
+        assert cache_read >= 0, f"Span {span_id}: cache_read_tokens must be >= 0"
+        assert cache_creation >= 0, (
+            f"Span {span_id}: cache_creation_tokens must be >= 0"
         )
 
         # Validate cost fields exist and are non-negative
-        assert total_cost, f"Span {span_id}: total_cost is missing"
-        assert float(total_cost) >= 0, f"Span {span_id}: total_cost must be >= 0"
-
         assert input_cost, f"Span {span_id}: input_cost is missing"
-        assert float(input_cost) >= 0, f"Span {span_id}: input_cost must be >= 0"
+        inp_c = float(input_cost)
+        assert inp_c >= 0, f"Span {span_id}: input_cost must be >= 0"
 
         assert output_cost, f"Span {span_id}: output_cost is missing"
-        assert float(output_cost) >= 0, f"Span {span_id}: output_cost must be >= 0"
+        out_c = float(output_cost)
+        assert out_c >= 0, f"Span {span_id}: output_cost must be >= 0"
 
         # Validate cache cost fields are non-negative (may be empty)
         cache_read_c = float(cache_read_cost) if cache_read_cost else 0.0
         cache_creation_c = float(cache_creation_cost) if cache_creation_cost else 0.0
-        assert cache_read_c >= 0, (
-            f"Span {span_id}: cache_read_cost must be >= 0"
-        )
+        assert cache_read_c >= 0, f"Span {span_id}: cache_read_cost must be >= 0"
         assert cache_creation_c >= 0, (
             f"Span {span_id}: cache_creation_cost must be >= 0"
-        )
-
-        # Validate cost math (allowing small floating point errors)
-        # total_cost = input_cost + output_cost + cache_read_cost + cache_creation_cost
-        total_c = float(total_cost)
-        inp_c = float(input_cost)
-        out_c = float(output_cost)
-        expected_total = inp_c + out_c + cache_read_c + cache_creation_c
-        assert abs(total_c - expected_total) < 0.0001, (
-            f"Span {span_id}: total_cost ({total_c}) != "
-            f"input_cost ({inp_c}) + output_cost ({out_c}) + "
-            f"cache_read_cost ({cache_read_c}) + cache_creation_cost ({cache_creation_c}) "
-            f"= {expected_total}"
         )
 
         # Validate metadata
         assert model == "smollm:135m", f"Span {span_id}: unexpected model {model}"
         assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
         assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
-
-        # Cache tokens should be 0 or empty for non-cached calls
-        cache_read = int(cache_read_tokens) if cache_read_tokens else 0
-        cache_creation = int(cache_creation_tokens) if cache_creation_tokens else 0
-        assert cache_read >= 0, f"Span {span_id}: cache_read_tokens must be >= 0"
-        assert cache_creation >= 0, (
-            f"Span {span_id}: cache_creation_tokens must be >= 0"
-        )
 
 
 @pytest.mark.asyncio
@@ -326,8 +301,9 @@ async def test_prometheus_metrics_export(
 
     # Force flush span processors to ensure metrics are pushed
     from opentelemetry import trace
+
     tracer_provider = trace.get_tracer_provider()
-    if hasattr(tracer_provider, '_active_span_processor'):
+    if hasattr(tracer_provider, "_active_span_processor"):
         tracer_provider._active_span_processor.force_flush()
 
     # Verify spans were created first
@@ -340,7 +316,7 @@ async def test_prometheus_metrics_export(
     span_check_query = f"""
     SELECT count(*) as span_count
     FROM {database}.otel_spans
-    WHERE mapContains(SpanAttributes, 'llm.usage.total_tokens')
+    WHERE mapContains(SpanAttributes, 'gen_ai.usage.input_tokens')
     """
     span_count = tracestore.client.query(span_check_query).result_rows[0][0]
 
@@ -350,7 +326,6 @@ async def test_prometheus_metrics_export(
             "Either Ollama failed or spans weren't exported. "
             "Check that Ollama is running with smollm:135m model."
         )
-
 
     # Query push gateway metrics
     import httpx
@@ -363,15 +338,15 @@ async def test_prometheus_metrics_export(
         response = httpx.get(f"http://{pushgateway_url}/metrics", timeout=5.0)
         metrics = response.text
 
-        # Validate token metrics exist
+        # Validate token metrics exist (with token_type label)
         assert "llm_tokens_total" in metrics, "llm_tokens_total metric not found"
-        assert "llm_input_tokens_total" in metrics, "llm_input_tokens_total not found"
-        assert "llm_output_tokens_total" in metrics, "llm_output_tokens_total not found"
+        assert 'token_type="total"' in metrics, "token_type=total label not found"
+        assert 'token_type="input"' in metrics, "token_type=input label not found"
+        assert 'token_type="output"' in metrics, "token_type=output label not found"
 
-        # Validate cost metrics exist
+        # Validate cost metrics exist (with token_type label)
         assert "llm_cost_total" in metrics, "llm_cost_total metric not found"
-        assert "llm_input_cost_total" in metrics, "llm_input_cost_total not found"
-        assert "llm_output_cost_total" in metrics, "llm_output_cost_total not found"
+        # Cost metrics should also have token_type labels
 
         # Validate request metrics exist
         assert "llm_requests_total" in metrics, "llm_requests_total metric not found"

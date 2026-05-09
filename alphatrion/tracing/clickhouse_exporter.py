@@ -127,9 +127,9 @@ class ClickHouseSpanExporter(SpanExporter):
         if span.attributes:
             span_attributes = {k: str(v) for k, v in span.attributes.items()}
 
-        # Calculate cost for LLM spans with token usage
-        # Store cost per span to enable model-level cost analytics
-        if "alphatrion.cost.total_tokens" in span_attributes:
+        # Check if LLM span has cost attributes
+        # Cost attributes are enriched by CostEnrichmentProcessor
+        if "alphatrion.cost.input_tokens" in span_attributes:
             try:
                 # Cost attributes are already enriched by CostEnrichmentProcessor
                 # Just ensure they exist in span_attributes for ClickHouse storage

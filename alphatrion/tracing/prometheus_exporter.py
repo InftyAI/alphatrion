@@ -64,75 +64,19 @@ class PrometheusExporter(SpanExporter):
 
     def _init_metrics(self):
         """Initialize Prometheus metrics."""
-        # Token metrics
+        # Token metrics - single metric with token_type label
         self.llm_tokens_total = Counter(
             "llm_tokens_total",
-            "Total LLM tokens consumed",
+            "Total LLM tokens consumed by type",
             ["org_id", "team_id", "user_id", "experiment_id", "model", "token_type"],
             registry=self.registry,
         )
 
-        self.llm_input_tokens_total = Counter(
-            "llm_input_tokens_total",
-            "Total LLM input tokens consumed",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_output_tokens_total = Counter(
-            "llm_output_tokens_total",
-            "Total LLM output tokens consumed",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_cache_read_input_tokens_total = Counter(
-            "llm_cache_read_input_tokens_total",
-            "Total LLM cache read input tokens",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_cache_creation_input_tokens_total = Counter(
-            "llm_cache_creation_input_tokens_total",
-            "Total LLM cache creation input tokens",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        # Cost metrics
+        # Cost metrics - single metric with token_type label for consistency
         self.llm_cost_total = Counter(
             "llm_cost_total",
-            "Total LLM cost in USD",
-            ["org_id", "team_id", "user_id", "experiment_id", "model", "cost_type"],
-            registry=self.registry,
-        )
-
-        self.llm_input_cost_total = Counter(
-            "llm_input_cost_total",
-            "Total LLM input cost in USD",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_output_cost_total = Counter(
-            "llm_output_cost_total",
-            "Total LLM output cost in USD",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_cache_read_cost_total = Counter(
-            "llm_cache_read_cost_total",
-            "Total LLM cache read cost in USD",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
-            registry=self.registry,
-        )
-
-        self.llm_cache_creation_cost_total = Counter(
-            "llm_cache_creation_cost_total",
-            "Total LLM cache creation cost in USD",
-            ["org_id", "team_id", "user_id", "experiment_id", "model"],
+            "Total LLM cost in USD by token type",
+            ["org_id", "team_id", "user_id", "experiment_id", "model", "token_type"],
             registry=self.registry,
         )
 
@@ -194,7 +138,8 @@ class PrometheusExporter(SpanExporter):
             user_id = attributes.get("user_id", "unknown")
             experiment_id = attributes.get("experiment_id", "unknown")
 
-            if "llm.usage.total_tokens" not in attributes:
+            # Check if this is an LLM span by looking for token usage attributes
+            if "gen_ai.usage.input_tokens" not in attributes:
                 return
 
             duration = (span.end_time - span.start_time) / 1_000_000_000
@@ -257,7 +202,6 @@ class PrometheusExporter(SpanExporter):
         )
 
         # Token metrics
-        total_tokens = int(attributes.get("llm.usage.total_tokens", 0))
         input_tokens = int(attributes.get("gen_ai.usage.input_tokens", 0))
         output_tokens = int(attributes.get("gen_ai.usage.output_tokens", 0))
         cache_read_input_tokens = int(
@@ -267,87 +211,59 @@ class PrometheusExporter(SpanExporter):
             attributes.get("gen_ai.usage.cache_creation_input_tokens", 0)
         )
 
-        if total_tokens > 0:
-            self.llm_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
-                token_type="total",
-            ).inc(total_tokens)
+        # Calculate total tokens
+        total_tokens = (
+            input_tokens
+            + output_tokens
+            + cache_read_input_tokens
+            + cache_creation_input_tokens
+        )
 
+        # Skip if no token data
+        if total_tokens == 0:
+            return
+
+        base_labels = {
+            "org_id": org_id,
+            "team_id": team_id,
+            "user_id": user_id,
+            "experiment_id": experiment_id,
+            "model": model,
+        }
+
+        # Export total tokens
+        self.llm_tokens_total.labels(
+            **base_labels,
+            token_type="total",
+        ).inc(total_tokens)
+
+        # Export individual token types
         if input_tokens > 0:
-            self.llm_input_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
-            ).inc(input_tokens)
             self.llm_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
+                **base_labels,
                 token_type="input",
             ).inc(input_tokens)
 
         if output_tokens > 0:
-            self.llm_output_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
-            ).inc(output_tokens)
             self.llm_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
+                **base_labels,
                 token_type="output",
             ).inc(output_tokens)
 
         if cache_read_input_tokens > 0:
-            self.llm_cache_read_input_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
-            ).inc(cache_read_input_tokens)
             self.llm_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
+                **base_labels,
                 token_type="cache_read_input",
             ).inc(cache_read_input_tokens)
 
         if cache_creation_input_tokens > 0:
-            self.llm_cache_creation_input_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
-            ).inc(cache_creation_input_tokens)
             self.llm_tokens_total.labels(
-                org_id=org_id,
-                team_id=team_id,
-                user_id=user_id,
-                experiment_id=experiment_id,
-                model=model,
+                **base_labels,
                 token_type="cache_creation_input",
             ).inc(cache_creation_input_tokens)
 
         # Cost metrics - read from enriched attributes
         try:
-            total_cost = float(attributes.get("alphatrion.cost.total_tokens", 0))
             input_cost = float(attributes.get("alphatrion.cost.input_tokens", 0))
             output_cost = float(attributes.get("alphatrion.cost.output_tokens", 0))
             cache_read_cost = float(
@@ -357,50 +273,41 @@ class PrometheusExporter(SpanExporter):
                 attributes.get("alphatrion.cost.cache_creation_input_tokens", 0)
             )
 
+            # Calculate total cost
+            total_cost = (
+                input_cost + output_cost + cache_read_cost + cache_creation_cost
+            )
+
+            # Export total cost
             if total_cost > 0:
                 self.llm_cost_total.labels(
-                    org_id=org_id,
-                    team_id=team_id,
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                    model=model,
-                    cost_type="total",
+                    **base_labels,
+                    token_type="total",
                 ).inc(total_cost)
 
+            # Export individual cost types
             if input_cost > 0:
-                self.llm_input_cost_total.labels(
-                    org_id=org_id,
-                    team_id=team_id,
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                    model=model,
+                self.llm_cost_total.labels(
+                    **base_labels,
+                    token_type="input",
                 ).inc(input_cost)
 
             if output_cost > 0:
-                self.llm_output_cost_total.labels(
-                    org_id=org_id,
-                    team_id=team_id,
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                    model=model,
+                self.llm_cost_total.labels(
+                    **base_labels,
+                    token_type="output",
                 ).inc(output_cost)
 
             if cache_read_cost > 0:
-                self.llm_cache_read_cost_total.labels(
-                    org_id=org_id,
-                    team_id=team_id,
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                    model=model,
+                self.llm_cost_total.labels(
+                    **base_labels,
+                    token_type="cache_read_input",
                 ).inc(cache_read_cost)
 
             if cache_creation_cost > 0:
-                self.llm_cache_creation_cost_total.labels(
-                    org_id=org_id,
-                    team_id=team_id,
-                    user_id=user_id,
-                    experiment_id=experiment_id,
-                    model=model,
+                self.llm_cost_total.labels(
+                    **base_labels,
+                    token_type="cache_creation_input",
                 ).inc(cache_creation_cost)
 
         except (ValueError, TypeError) as e:
