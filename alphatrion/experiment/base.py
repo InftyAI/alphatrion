@@ -16,6 +16,7 @@ from alphatrion.run.run import Run
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.snapshot.snapshot import team_path
+from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.types import CallableEntry, PostRunHookFn
 from alphatrion.utils import context
@@ -398,6 +399,7 @@ class Experiment(ABC):
 
     def _cancel(self):
         self._context.cancel()
+        storage_runtime.storage_runtime().flush()
 
     def _stop(self):
         # cancel the runs first, then stop the experiment.

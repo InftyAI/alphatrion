@@ -341,11 +341,6 @@ async def test_query_single_run(
         exp_id = exp.id
         await exp.wait()
 
-    # Force flush all spans to ClickHouse
-    runtime.storage_runtime().flush()
-    # Give ClickHouse time to process the write
-    await asyncio.sleep(1)
-
     query = f"""
     query {{
         run(id: "{run_id}") {{

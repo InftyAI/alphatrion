@@ -118,9 +118,6 @@ async def test_token_tracking_and_storage(
     runtime.init()
     tracestore = runtime.storage_runtime().tracestore
 
-    # flush spans to ensure data is available for querying
-    runtime.storage_runtime().flush()
-
     assert tracestore is not None, (
         "Tracestore is not initialized, cannot verify token tracking"
     )
@@ -396,8 +393,6 @@ async def test_aggregated_usage_via_graphql(
         experiment_id = exp.id
         task = exp.run(usage_workflow)
         await task.wait()
-
-    runtime.storage_runtime().flush()  # Ensure data is available for querying
 
     # Query aggregated usage via GraphQL resolvers
     from unittest.mock import Mock
