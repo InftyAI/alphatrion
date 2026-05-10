@@ -57,15 +57,16 @@ class PostRunHookFn:
     @staticmethod
     def sync_status(run_id: uuid.UUID, result: Any) -> None:
         """
-        Sync function result to run status.
+        Sync function result to run status and optional status_msg to metadata.
 
         Looks for 'status' key in result dict. Status can be a string representation,
-        or integer value.
+        or integer value. Optionally looks for 'status_msg' key to store in metadata.
 
         Example:
             async def train_model():
                 return {
-                    "status": "COMPLETED"  # or 9
+                    "status": "COMPLETED",  # or 9
+                    "status_msg": "Training completed successfully"
                 }
 
             run = exp.run(train_model, post_run_hooks=[
@@ -79,28 +80,42 @@ class PostRunHookFn:
             return
 
         status = None
+        status_msg = None
 
-        # Extract status from dict
-        if isinstance(result, dict) and "status" in result:
-            status_value = result["status"]
+        # Extract status and status_msg from dict
+        if isinstance(result, dict):
+            if "status" in result:
+                status_value = result["status"]
 
-            if isinstance(status_value, str):
-                try:
-                    status = Status[status_value.upper()]
-                except (KeyError, AttributeError):
-                    logger.warning(
-                        f"PostRunHookFn.sync_status: Invalid status value '{status_value}' for run {run_id}. Skipping status sync."
-                    )
-                    return
-            elif isinstance(status_value, int):
-                try:
-                    status = Status(status_value)
-                except ValueError:
-                    logger.warning(
-                        f"PostRunHookFn.sync_status: Invalid status value '{status_value}' for run {run_id}. Skipping status sync."
-                    )
-                    return
+                if isinstance(status_value, str):
+                    try:
+                        status = Status[status_value.upper()]
+                    except (KeyError, AttributeError):
+                        logger.warning(
+                            f"PostRunHookFn.sync_status: Invalid status value '{status_value}' for run {run_id}. Skipping status sync."
+                        )
+                        return
+                elif isinstance(status_value, int):
+                    try:
+                        status = Status(status_value)
+                    except ValueError:
+                        logger.warning(
+                            f"PostRunHookFn.sync_status: Invalid status value '{status_value}' for run {run_id}. Skipping status sync."
+                        )
+                        return
 
-        if status is not None:
+            if "status_msg" in result:
+                status_msg = result["status_msg"]
+
+        # Update both status and status_msg in a single call if needed
+        if status is not None or status_msg is not None:
             metadb = global_runtime().metadb
-            metadb.update_run(run_id=run_id, status=status)
+            update_kwargs = {}
+
+            if status is not None:
+                update_kwargs["status"] = status
+
+            if status_msg is not None:
+                update_kwargs["meta"] = {"status_msg": status_msg}
+
+            metadb.update_run(run_id=run_id, **update_kwargs)

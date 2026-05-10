@@ -455,3 +455,45 @@ def test_both_hooks_together(db):
         assert run.meta["loss"] == 0.05
         assert run.meta["num_epochs"] == 10
         assert run.status == Status.COMPLETED
+
+
+def test_sync_status_with_status_msg(db):
+    """Test sync_status hook with status_msg"""
+    org_id = uuid.uuid4()
+    team_id = db.create_team(org_id=org_id, name="Test Team")
+    user_id = db.create_user(
+        org_id=org_id,
+        name="tester",
+        email="tester@example.com",
+    )
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="test-exp",
+    )
+    run_id = db.create_run(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        experiment_id=exp_id,
+    )
+
+    # Mock result with status and status_msg
+    result = {
+        "status": "COMPLETED",
+        "status_msg": "Training completed successfully",
+    }
+
+    # Mock global_runtime
+    mock_runtime = Mock()
+    mock_runtime.metadb = db
+
+    with patch("alphatrion.run.hooks.global_runtime", return_value=mock_runtime):
+        # Call the hook
+        PostRunHookFn.sync_status(run_id, result)
+
+        # Verify status and status_msg were updated
+        run = db.get_run(run_id)
+        assert run.status == Status.COMPLETED
+        assert run.meta["status_msg"] == "Training completed successfully"

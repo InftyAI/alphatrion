@@ -306,3 +306,35 @@ async def test_sync_metadata_with_none(test_org_id, test_user_id, test_team_id):
         # Metadata should be None or empty (hook didn't update it)
         assert run_obj.meta is None or run_obj.meta == {}
         assert run_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_sync_status_with_status_msg(test_org_id, test_user_id, test_team_id):
+    """Test sync_status hook with status_msg"""
+    alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
+
+    async def train_model():
+        await asyncio.sleep(0.1)
+        return {
+            "status": "COMPLETED",
+            "status_msg": "Training completed successfully with high accuracy",
+        }
+
+    async with CraftExperiment.start("test_status_msg") as exp:
+        run = exp.run(
+            train_model,
+            post_run_hooks=[PostRunHookFn.sync_metadata, PostRunHookFn.sync_status],
+        )
+        await exp.wait()
+
+        # Verify both hooks ran
+        metadb = global_runtime().metadb
+        run_obj = metadb.get_run(run_id=run.id)
+
+        # From sync_metadata hook
+        assert run_obj.meta["accuracy"] == 0.95
+        assert run_obj.meta["loss"] == 0.05
+
+        # From sync_status hook - status and status_msg
+        assert run_obj.status == Status.COMPLETED
+        assert run_obj.meta["status_msg"] == "Training completed successfully with high accuracy"
