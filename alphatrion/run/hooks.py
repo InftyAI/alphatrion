@@ -37,6 +37,9 @@ class PostRunHookFn:
         :param run_id: UUID of the run
         :param result: Return value from the run function
         """
+        if result is None:
+            return
+
         if isinstance(result, dict) and "metadata" in result:
             metadata = result["metadata"]
             if isinstance(metadata, dict):
@@ -72,6 +75,9 @@ class PostRunHookFn:
         :param run_id: UUID of the run
         :param result: Return value from the run function
         """
+        if result is None:
+            return
+
         status = None
 
         # Extract status from dict
