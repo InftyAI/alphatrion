@@ -32,13 +32,15 @@ async def test_run_hook_sync_metadata(test_org_id, test_user_id, test_team_id):
     alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
 
     async def train_model():
-        """Function that returns metrics as dict"""
+        """Function that returns metrics in nested metadata structure"""
         await asyncio.sleep(0.1)
         return {
-            "accuracy": 0.95,
-            "loss": 0.05,
-            "learning_rate": 0.001,
-            "num_epochs": 10,
+            "metadata": {
+                "accuracy": 0.95,
+                "loss": 0.05,
+                "learning_rate": 0.001,
+                "num_epochs": 10,
+            }
         }
 
     async with CraftExperiment.start("test_hook_experiment") as exp:
@@ -85,17 +87,43 @@ async def test_run_hook_with_non_dict_result(test_org_id, test_user_id, test_tea
 
 
 @pytest.mark.asyncio
+async def test_run_hook_with_dict_without_metadata_key(
+    test_org_id, test_user_id, test_team_id
+):
+    """Test sync_metadata hook with dict result but no 'metadata' key"""
+    alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
+
+    async def task_without_metadata_key():
+        """Function that returns dict without 'metadata' key"""
+        await asyncio.sleep(0.1)
+        return {"accuracy": 0.95}
+
+    async with CraftExperiment.start("test_hook_no_metadata_key") as exp:
+        run = exp.run(
+            task_without_metadata_key, post_run_hooks=[PostRunHookFn.sync_metadata]
+        )
+        await exp.wait()
+
+        # Verify metadata was not updated
+        metadb = global_runtime().metadb
+        run_obj = metadb.get_run(run_id=run.id)
+
+        # Metadata should be None or empty (hook didn't update it)
+        assert run_obj.meta is None or run_obj.meta == {}
+
+
+@pytest.mark.asyncio
 async def test_experiment_level_hooks(test_org_id, test_user_id, test_team_id):
     """Test hooks configured at experiment level apply to all runs"""
     alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
 
     async def task1():
         await asyncio.sleep(0.1)
-        return {"task": "task1", "accuracy": 0.92}
+        return {"metadata": {"task": "task1", "accuracy": 0.92}}
 
     async def task2():
         await asyncio.sleep(0.1)
-        return {"task": "task2", "accuracy": 0.94}
+        return {"metadata": {"task": "task2", "accuracy": 0.94}}
 
     # Configure experiment with sync_metadata hook
     config = ExperimentConfig(post_run_hooks=[PostRunHookFn.sync_metadata])
@@ -138,7 +166,7 @@ async def test_custom_hook(test_org_id, test_user_id, test_team_id):
 
     async def train_model():
         await asyncio.sleep(0.1)
-        return {"accuracy": 0.95}
+        return {"metadata": {"accuracy": 0.95}}
 
     async with CraftExperiment.start("test_custom_hook") as exp:
         # Use both built-in and custom hooks
@@ -169,7 +197,7 @@ async def test_hook_merges_with_existing_metadata(
 
     async def train_model():
         await asyncio.sleep(0.1)
-        return {"accuracy": 0.96, "loss": 0.04}
+        return {"metadata": {"accuracy": 0.96, "loss": 0.04}}
 
     async with CraftExperiment.start("test_merge_metadata") as exp:
         run = exp.run(train_model, post_run_hooks=[PostRunHookFn.sync_metadata])
@@ -205,7 +233,7 @@ async def test_hook_failure_does_not_crash_run(test_org_id, test_user_id, test_t
 
     async def train_model():
         await asyncio.sleep(0.1)
-        return {"accuracy": 0.95}
+        return {"metadata": {"accuracy": 0.95}}
 
     async with CraftExperiment.start("test_hook_failure") as exp:
         run = exp.run(
@@ -220,3 +248,38 @@ async def test_hook_failure_does_not_crash_run(test_org_id, test_user_id, test_t
         metadb = global_runtime().metadb
         run_obj = metadb.get_run(run_id=run.id)
         assert run_obj.meta["accuracy"] == 0.95
+
+
+@pytest.mark.asyncio
+async def test_both_hooks_together(test_org_id, test_user_id, test_team_id):
+    """Test sync_metadata and sync_status hooks working together"""
+    alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
+
+    async def train_model():
+        await asyncio.sleep(0.1)
+        return {
+            "metadata": {"accuracy": 0.95, "loss": 0.05, "num_epochs": 10},
+            "status": "failed",
+        }
+
+    async with CraftExperiment.start("test_both_hooks") as exp:
+        # Use both hooks
+        run = exp.run(
+            train_model,
+            post_run_hooks=[PostRunHookFn.sync_metadata, PostRunHookFn.sync_status],
+        )
+        await exp.wait()
+
+        # Verify both hooks ran
+        metadb = global_runtime().metadb
+        run_obj = metadb.get_run(run_id=run.id)
+
+        # From sync_metadata hook
+        assert run_obj.meta["accuracy"] == 0.95
+        assert run_obj.meta["loss"] == 0.05
+        assert run_obj.meta["num_epochs"] == 10
+
+        # From sync_status hook
+        from alphatrion.storage.sql_models import Status
+
+        assert run_obj.status == Status.FAILED
