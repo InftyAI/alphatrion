@@ -14,19 +14,15 @@
 
 **AlphaTrion** is an open-source framework for building and optimizing GenAI applications. Track experiments, monitor performance, analyze model usage, and manage artifacts—all through an intuitive dashboard. Named after the oldest and wisest Transformer.
 
-*Currently in active development.*
+Trusted by companies like [Hiverge.ai](https://hiverge.ai).
 
 ## Features
 
-- **🔬 Experiment Tracking** - Organize and manage ML experiments with hierarchical teams, experiments, and runs
-- **📊 Performance Monitoring** - Track metrics, visualize trends, and monitor experiment status in real-time
-- **🔍 Distributed Tracing** - Automatic OpenTelemetry integration for LLM calls with detailed span analysis
-- **💰 Token Usage Analytics** - Monitor daily token consumption across input/output with historical trends
-- **🤖 Model Distribution** - Analyze request patterns and usage across different AI models
-- **📦 Artifact Management** - Store and version execution results, checkpoints, and model outputs
-- **🎯 Interactive Dashboard** - Modern web UI for exploring experiments, metrics, and traces
-- **🔐 Secure Authentication** - JWT-based authentication with user profiles and multi-team support
-- **👥 Multi-User Support** - Collaborative workspace with organization and team management
+- **🔬 Experiment Tracking** - Organize ML experiments with hierarchical teams, experiments, and runs
+- **📊 Performance Monitoring** - Track metrics, visualize trends, and monitor experiment status
+- **🔍 Distributed Tracing** - Automatic OpenTelemetry integration for LLM calls with token usage and span analysis
+- **🪝 Post-Run Hooks** - Automatically sync metadata and status after run completion
+- **🎯 Interactive Dashboard** - Modern web UI for exploring experiments and traces
 - **🔌 Easy Integration** - Simple Python API with async/await support
 
 ## Core Concepts
@@ -50,7 +46,7 @@ git clone https://github.com/inftyai/alphatrion.git && cd alphatrion
 source start.sh
 ```
 
-### 2. Setup Infrastructure
+### 2. Setup
 
 ```bash
 # Start PostgreSQL, ClickHouse, and Registry
@@ -58,7 +54,7 @@ cp .env.example .env
 make up
 
 # Wait for services to be ready, then run migrations
-make migrate
+make migrate-all
 
 # Initialize your organization, team, and user account
 alphatrion init
@@ -70,11 +66,11 @@ alphatrion init
 - Grafana: `http://localhost:3000` (admin / admin) - LLM metrics dashboard
 - Prometheus: `http://localhost:9090` - Metrics explorer
 
-### 3. Track Your First Experiment
+### 3. Run Your First Experiment
 
 ```python
 import alphatrion as alpha
-from alphatrion import experiment
+from alphatrion.experiment import CraftExperiment
 
 # Initialize with your user ID
 alpha.init(user_id="<your_user_id>")
@@ -83,9 +79,9 @@ async def my_task():
     # Your code here
     await alpha.log_metrics({"accuracy": 0.95, "loss": 0.12})
 
-async with experiment.CraftExperiment.start(name="my_experiment") as exp:
-    task = exp.run(my_task)
-    await task.wait()
+async with CraftExperiment.start(name="my_experiment") as exp:
+    run = exp.run(my_task)
+    await exp.wait()
 ```
 
 ### 4. Launch Dashboard
@@ -108,13 +104,36 @@ AlphaTrion automatically captures distributed tracing data for all LLM calls, in
 
 ![tracing](./site/images/trace.png)
 
-### Cleanup
+### 6. Using Post-Run Hooks (Optional)
+
+Automatically sync metadata and status after run completion.
+
+```python
+from alphatrion.experiment import CraftExperiment
+from alphatrion.run import PostRunHookFn
+
+async def train_model():
+    # Your training code
+    return {
+        "metadata": {"accuracy": 0.95, "loss": 0.05},
+        "status": "COMPLETED",
+    }
+
+async with CraftExperiment.start("training") as exp:
+    run = exp.run(
+        train_model,
+        post_run_hooks=[PostRunHookFn.sync_metadata, PostRunHookFn.sync_status]
+    )
+    await exp.wait()
+```
+
+### 7. Cleanup
 
 ```bash
 make down
 ```
 
-## Documentation
+## References
 
 - **Architecture**: [Diagrams](./docs/architecture/diagrams.md)
 - **Dashboard**: [Setup Guide](./docs/dashboard/setup.md) | [CLI Reference](./docs/dashboard/dashboard-cli.md) | [Architecture](./docs/dashboard/dashboard-architecture.md)
