@@ -282,6 +282,7 @@ async def test_both_hooks_together(test_org_id, test_user_id, test_team_id):
 
         assert run_obj.status == Status.FAILED
 
+
 async def test_sync_metadata_with_none(test_org_id, test_user_id, test_team_id):
     """Test that sync_metadata with None result doesn't update metadata"""
     alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
@@ -289,11 +290,11 @@ async def test_sync_metadata_with_none(test_org_id, test_user_id, test_team_id):
     async def task_with_none_result():
         """Function that returns None"""
         await asyncio.sleep(0.1)
-        return None
 
     async with CraftExperiment.start("test_hook_none_result") as exp:
         run = exp.run(
-            task_with_none_result, post_run_hooks=[PostRunHookFn.sync_metadata, PostRunHookFn.sync_status]
+            task_with_none_result,
+            post_run_hooks=[PostRunHookFn.sync_metadata, PostRunHookFn.sync_status],
         )
         await exp.wait()
 
