@@ -283,6 +283,7 @@ async def test_both_hooks_together(test_org_id, test_user_id, test_team_id):
         assert run_obj.status == Status.FAILED
 
 
+@pytest.mark.asyncio
 async def test_sync_metadata_with_none(test_org_id, test_user_id, test_team_id):
     """Test that sync_metadata with None result doesn't update metadata"""
     alpha.init(org_id=test_org_id, team_id=test_team_id, user_id=test_user_id)
