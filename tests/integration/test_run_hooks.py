@@ -337,4 +337,7 @@ async def test_sync_status_with_status_msg(test_org_id, test_user_id, test_team_
 
         # From sync_status hook - status and status_msg
         assert run_obj.status == Status.COMPLETED
-        assert run_obj.meta["status_msg"] == "Training completed successfully with high accuracy"
+        assert (
+            run_obj.meta["status_msg"]
+            == "Training completed successfully with high accuracy"
+        )
