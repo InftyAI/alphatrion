@@ -14,7 +14,11 @@
 
 **AlphaTrion** is an open-source framework for building and optimizing GenAI applications. Track experiments, monitor performance, analyze model usage, and manage artifacts—all through an intuitive dashboard. Named after the oldest and wisest Transformer.
 
-Trusted by companies like [Hiverge.ai](https://hiverge.ai).
+### Trusted By
+
+<a href="https://hiverge.ai" target="_blank">
+  <img src="./site/images/hiverge-logo.svg" alt="Hiverge.ai" height="40">
+</a>
 
 ## Features
 
