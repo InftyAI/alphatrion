@@ -55,7 +55,16 @@ class CostEnrichmentProcessor(SpanProcessor):
 
             # Extract token usage
             attributes = span.attributes
-            provider = determine_provider(str(attributes.get("gen_ai.openai.api_base")))
+            # OpenAI SDK populates the `gen_ai.openai.api_base` with base URL
+            # whereas Bedrock SDK either only populates the `gen_ai.system` with "AWS"
+            # or the `gen_ai.provider.name` with "aws.bedrock"
+            provider = determine_provider(
+                str(
+                    attributes.get("gen_ai.openai.api_base")
+                    or attributes.get("gen_ai.system")
+                    or attributes.get("gen_ai.provider.name")
+                )
+            )
             model = str(
                 attributes.get("gen_ai.request.model")
                 or attributes.get("gen_ai.response.model", "")
