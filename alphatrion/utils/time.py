@@ -23,5 +23,5 @@ def humanize_time(timestamp: str) -> str:
 
 def now_2_hash() -> str:
     timestamp = str(int(datetime.now(UTC).timestamp()))
-    unique_hash = hashlib.sha1(timestamp.encode()).hexdigest()[:7]
+    unique_hash = hashlib.sha1(timestamp.encode()).hexdigest()[:16]
     return unique_hash
