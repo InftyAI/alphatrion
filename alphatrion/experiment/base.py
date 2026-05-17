@@ -122,11 +122,6 @@ class ExperimentConfig(BaseModel):
 
     @model_validator(mode="after")
     def metric_must_be_valid(self):
-        if self.checkpoint.save_on_best and not self.monitor_metric:
-            raise ValueError(
-                "monitor_metric must be specified \
-                when checkpoint.save_on_best=True"
-            )
         if self.early_stopping_runs > 0 and not self.monitor_metric:
             raise ValueError(
                 "monitor_metric must be specified \
@@ -271,23 +266,24 @@ class Experiment(ABC):
     def config(self) -> ExperimentConfig:
         return self._config
 
+    # TODO: if restart from existing experiment,
+    # load the best_metrics from database.
     def _construct_meta(self):
-        self._meta = dict()
+        self._meta = {"best_metrics": dict()}
 
-        # TODO: if restart from existing experiment,
-        # load the best_metrics from database.
-        if self._config.monitor_mode == MonitorMode.MAX:
-            self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
-        elif self._config.monitor_mode == MonitorMode.MIN:
-            self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
-        else:
-            raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
+        if self._config.monitor_metric:
+            if self._config.monitor_mode == MonitorMode.MAX:
+                self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
+            elif self._config.monitor_mode == MonitorMode.MIN:
+                self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
+            else:
+                raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
     def should_checkpoint_on_best(
         self, metric_key: str, metric_value: float
-    ) -> tuple[bool, bool]:
+    ) -> bool:
         is_best_metric = self.save_if_best_metric(metric_key, metric_value)
-        return (self._checkpoint_on_best_enabled() and is_best_metric), is_best_metric
+        return self._checkpoint_on_best_enabled() and is_best_metric
 
     def _checkpoint_on_best_enabled(self) -> bool:
         return self._config.checkpoint.enabled and self._config.checkpoint.save_on_best
@@ -296,10 +292,11 @@ class Experiment(ABC):
         """Save the metric if it is the best so far.
         Returns True if the metric is the best so far, False otherwise.
         """
-        if metric_key != self._config.monitor_metric:
-            return False
 
-        best_value = self._meta["best_metrics"][metric_key]
+        best_value = self._meta["best_metrics"].get(metric_key, None)
+        if best_value is None:
+            self._meta["best_metrics"][metric_key] = metric_value
+            return True
 
         if self._config.monitor_mode == MonitorMode.MAX:
             if metric_value > best_value:
@@ -340,6 +337,9 @@ class Experiment(ABC):
         ):
             return False
 
+        # when enable early stop, the monitor metric must be specified,
+        # so the metric_key must be in the best_metrics dict.
+        # See _construct_meta().
         best_value = self._meta["best_metrics"][metric_key]
 
         if self._config.monitor_mode == MonitorMode.MAX:

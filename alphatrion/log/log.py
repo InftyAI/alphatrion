@@ -94,7 +94,7 @@ async def log_params(params: dict):
     )
 
 
-async def log_metrics(metrics: dict[str, float]) -> bool:
+async def log_metrics(metrics: dict[str, float]):
     """
     Log metrics to the database.
     Support in Run level currently, should be called after starting a Run.
@@ -129,22 +129,27 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
     should_checkpoint = False
     should_early_stop = False
     should_stop_on_target = False
-    is_best_metric = False
     for key, value in metrics.items():
+        if not isinstance(value, (int, float)):
+            # TODO: replace with logging library.
+            print(
+                f"Warning: Metric '{key}' has non-numeric value '{value}' and will be skipped for best metric tracking."
+            )
+            continue
+
+        float_value = float(value)
+
         # Always call the should_checkpoint_on_best first because
         # it also updates the best metric.
-        should_checkpoint_tmp, is_best_metric_tmp = exp.should_checkpoint_on_best(
-            metric_key=key, metric_value=value
+        should_checkpoint |= exp.should_checkpoint_on_best(
+            metric_key=key, metric_value=float_value
         )
-        should_checkpoint |= should_checkpoint_tmp
-        is_best_metric |= is_best_metric_tmp
 
-        should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=value)
+        should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=float_value)
         should_stop_on_target |= exp.should_stop_on_target_metric(
-            metric_key=key, metric_value=value
+            metric_key=key, metric_value=float_value
         )
 
-    # TODO: refactor this with an event driven mechanism later.
     if should_checkpoint:
         path = await log_artifact(
             repo_name="ckpt",
@@ -159,8 +164,6 @@ async def log_metrics(metrics: dict[str, float]) -> bool:
 
     if should_early_stop or should_stop_on_target:
         exp.done()
-
-    return is_best_metric
 
 
 # log_records is used to log a list of records, which is similar to log_metrics

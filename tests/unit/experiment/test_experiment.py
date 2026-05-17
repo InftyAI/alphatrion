@@ -34,24 +34,22 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                 "error": False,
             },
             {
-                "name": "save_on_best True config",
+                "name": "save_on_best True with monitor_metric",
                 "config": {
-                    "monitor_metric": "accuracy",
                     "checkpoint.save_on_best": True,
-                    "early_stopping_runs": 2,
+                    "monitor_metric": "accuracy",
                 },
                 "error": False,
             },
             {
-                "name": "Invalid config missing monitor_metric",
+                "name": "save_on_best with no monitor_metric",
                 "config": {
                     "checkpoint.save_on_best": True,
-                    "early_stopping_runs": -1,
                 },
-                "error": True,
+                "error": False,
             },
             {
-                "name": "Invalid config early_stopping_runs > 0",
+                "name": "early_stopping_runs > 0 with no monitor_metric",
                 "config": {
                     "checkpoint.save_on_best": False,
                     "early_stopping_runs": 2,
@@ -108,8 +106,8 @@ async def test_snapshot_path():
         assert checkpoint_path() == (
             Path(exp._runtime.root_path)
             / "snapshots"
+            / f"org_{org_id}"
             / f"team_{team_id}"
-            / f"user_{user_id}"
             / f"exp_{exp.id}"
             / "checkpoints"
         )

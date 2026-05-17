@@ -350,6 +350,73 @@ async def test_log_metrics_with_save_on_min():
             )
             assert len(versions) == 3
 
+@pytest.mark.asyncio
+async def test_log_metrics_with_multi_metrics():
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def log_metric(accuracy: float, loss: float):
+        await alpha.log_metrics({"accuracy": accuracy, "loss": loss})
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        os.chdir(tmpdir)
+
+        async with experiment.CraftExperiment.start(
+            name="exp-with-save_on_best",
+            config=experiment.ExperimentConfig(
+                checkpoint=experiment.CheckpointConfig(
+                    enabled=True,
+                    path=tmpdir,
+                    save_on_best=True,
+                ),
+                monitor_mode=experiment.MonitorMode.MAX,
+            ),
+        ) as exp:
+            file1 = "file1.txt"
+            with open(file1, "w") as f:
+                f.write("This is file1.")
+
+            run = exp.run(lambda: log_metric(0.30, 0.5))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 1
+
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
+
+            run = exp.run(lambda: log_metric(0.58, 0.4))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 2
+
+            time.sleep(1)
+
+            run = exp.run(lambda: log_metric(0.21, 0.6))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 3
+
+            time.sleep(1)
+
+            task = exp.run(lambda: log_metric(0.18, 0.3))
+            await task.wait()
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 3
+
 
 @pytest.mark.asyncio
 async def test_log_metrics_with_early_stopping():
