@@ -30,10 +30,8 @@ def test_push_with_files(artifact):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-
-        file1 = "file1.txt"
-        file2 = "file2.txt"
+        file1 = os.path.join(tmpdir, "file1.txt")
+        file2 = os.path.join(tmpdir, "file2.txt")
         with open(file1, "w") as f:
             f.write("This is file1.")
         with open(file2, "w") as f:
@@ -57,10 +55,8 @@ def test_push_with_folder(artifact):
     )
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-
-        file1 = "file1.txt"
-        file2 = "file2.txt"
+        file1 = os.path.join(tmpdir, "file1.txt")
+        file2 = os.path.join(tmpdir, "file2.txt")
         with open(file1, "w") as f:
             f.write("This is a new file1.")
         with open(file2, "w") as f:

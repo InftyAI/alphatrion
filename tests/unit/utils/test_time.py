@@ -15,7 +15,7 @@ def test_now_2_hash():
             return fixed_datetime
 
     with patch("alphatrion.utils.time.datetime", FixedDateTime):
-        expected_hash = hashlib.sha1(str(fixed_timestamp).encode()).hexdigest()[:7]
+        expected_hash = hashlib.sha1(str(fixed_timestamp).encode()).hexdigest()[:16]
         assert now_2_hash() == expected_hash
 
 

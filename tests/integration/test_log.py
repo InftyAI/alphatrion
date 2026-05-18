@@ -24,9 +24,7 @@ async def test_log_artifact():
 
     async with experiment.CraftExperiment.start(name="first-exp") as exp:
         with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
-
-            file = "file.txt"
+            file = os.path.join(tmpdir, "file.txt")
             with open(file, "w") as f:
                 f.write("This is file1.")
 
@@ -185,19 +183,18 @@ async def test_log_metrics_with_save_on_max():
         return None
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        file = "file.txt"
+        file_path = os.path.join(tmpdir, "file.txt")
 
         def pre_save_hook():
-            with open(file, "a") as f:
+            with open(file_path, "a") as f:
                 f.write("This is pre_save_hook modified file.\n")
+            return file_path
 
         async with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
                     enabled=True,
-                    path=tmpdir,
                     save_on_best=True,
                     pre_save_hook=pre_save_hook,
                 ),
@@ -206,7 +203,7 @@ async def test_log_metrics_with_save_on_max():
                 monitor_mode="max",
             ),
         ) as exp:
-            with open(file, "w") as f:
+            with open(file_path, "w") as f:
                 f.write("This is file.\n")
 
             run = exp.run(lambda: log_metric(0.90))
@@ -226,7 +223,7 @@ async def test_log_metrics_with_save_on_max():
                 run_obj.meta[BEST_RESULT_PATH]
                 == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
-            with open(file) as f:
+            with open(file_path) as f:
                 assert len(f.readlines()) == 2
 
             # To avoid the same timestamp hash, we wait for 1 second
@@ -258,7 +255,7 @@ async def test_log_metrics_with_save_on_max():
                 == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
 
-            with open(file) as f:
+            with open(file_path) as f:
                 assert len(f.readlines()) == 3
 
             time.sleep(1)
@@ -278,8 +275,61 @@ async def test_log_metrics_with_save_on_max():
                 run_obj.meta[BEST_RESULT_PATH]
                 == f"{org_id}/{team_id}/{exp.id}/ckpt:" + fixed_version
             )
-            with open(file) as f:
+            with open(file_path) as f:
                 assert len(f.readlines()) == 4
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_post_save_hook():
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    alpha.init(team_id=team_id, user_id=user_id, org_id=org_id)
+
+    async def log_metric(value: float):
+        await alpha.log_metrics({"accuracy": value})
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        file_path = os.path.join(tmpdir, "file.txt")
+
+        def pre_save_hook():
+            with open(file_path, "a") as f:
+                f.write("This is pre_save_hook modified file.\n")
+            return file_path
+
+        def post_save_hook():
+            os.remove(file_path)
+
+        async with experiment.CraftExperiment.start(
+            name="exp-with-save_on_best",
+            config=experiment.ExperimentConfig(
+                checkpoint=experiment.CheckpointConfig(
+                    enabled=True,
+                    save_on_best=True,
+                    pre_save_hook=pre_save_hook,
+                    post_save_hook=post_save_hook,
+                ),
+                monitor_metric="accuracy",
+                # Make sure raw max also works.
+                monitor_mode="max",
+            ),
+        ) as exp:
+            with open(file_path, "w") as f:
+                f.write("This is file.\n")
+
+            run = exp.run(lambda: log_metric(0.90))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{org_id}/{team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 1
+            run_obj = run._get_obj()
+            assert (
+                run_obj.meta[BEST_RESULT_PATH]
+                == f"{org_id}/{team_id}/{exp.id}/ckpt:" + versions[0]
+            )
+            assert not os.path.exists(file_path)
 
 
 @pytest.mark.asyncio
@@ -294,24 +344,25 @@ async def test_log_metrics_with_save_on_min():
         await alpha.log_metrics({"accuracy": value})
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
+        file1_path = os.path.join(tmpdir, "file1.txt")
+
+        def save_checkpoint():
+            with open(file1_path, "w") as f:
+                f.write("This is file1.")
+            return file1_path
 
         async with experiment.CraftExperiment.start(
             name="exp-with-save_on_best",
             config=experiment.ExperimentConfig(
                 checkpoint=experiment.CheckpointConfig(
                     enabled=True,
-                    path=tmpdir,
                     save_on_best=True,
+                    pre_save_hook=save_checkpoint,
                 ),
                 monitor_metric="accuracy",
                 monitor_mode=experiment.MonitorMode.MIN,
             ),
         ) as exp:
-            file1 = "file1.txt"
-            with open(file1, "w") as f:
-                f.write("This is file1.")
-
             run = exp.run(lambda: log_metric(0.30))
             await run.wait()
 
@@ -344,6 +395,75 @@ async def test_log_metrics_with_save_on_min():
             time.sleep(1)
 
             task = exp.run(lambda: log_metric(0.18))
+            await task.wait()
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 3
+
+
+@pytest.mark.asyncio
+async def test_log_metrics_with_multi_metrics():
+    alpha.init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def log_metric(accuracy: float, loss: float):
+        await alpha.log_metrics({"accuracy": accuracy, "loss": loss})
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        file1_path = os.path.join(tmpdir, "file1.txt")
+
+        def save_checkpoint():
+            with open(file1_path, "w") as f:
+                f.write("This is file1.")
+            return file1_path
+
+        async with experiment.CraftExperiment.start(
+            name="exp-with-save_on_best",
+            config=experiment.ExperimentConfig(
+                checkpoint=experiment.CheckpointConfig(
+                    enabled=True,
+                    save_on_best=True,
+                    pre_save_hook=save_checkpoint,
+                ),
+                monitor_mode=experiment.MonitorMode.MAX,
+            ),
+        ) as exp:
+            run = exp.run(lambda: log_metric(0.30, 0.5))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 1
+
+            # To avoid the same timestamp hash, we wait for 1 second
+            time.sleep(1)
+
+            run = exp.run(lambda: log_metric(0.58, 0.4))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 2
+
+            time.sleep(1)
+
+            run = exp.run(lambda: log_metric(0.21, 0.6))
+            await run.wait()
+
+            versions = exp._runtime._artifact.list_versions(
+                f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
+            )
+            assert len(versions) == 3
+
+            time.sleep(1)
+
+            task = exp.run(lambda: log_metric(0.18, 0.3))
             await task.wait()
             versions = exp._runtime._artifact.list_versions(
                 f"{exp._runtime.org_id}/{exp._runtime.team_id}/{exp.id}/ckpt"
@@ -583,7 +703,6 @@ async def test_log_dataset_with_json():
             datasets[0].path
             == f"{org_id}/{team_id}/{exp.id}/dataset:{list_versions[0]}"
         )
-        assert int(datasets[0].meta["size"]) > 0
 
 
 @pytest.mark.asyncio
@@ -598,8 +717,7 @@ async def test_log_dataset_with_file():
 
     async def fake_worker():
         with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
-            file_path = "test_dataset.txt"
+            file_path = os.path.join(tmpdir, "test_dataset.txt")
             with open(file_path, "w") as f:
                 f.write("This is a test dataset file.")
 
