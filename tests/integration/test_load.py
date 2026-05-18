@@ -9,15 +9,8 @@ import alphatrion as alpha
 
 @pytest.mark.asyncio
 async def test_save_and_load_dataset():
-    # Ensure valid working directory before initialization
-    project_root = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    )
-    os.chdir(project_root)
-
-    team_id = uuid.uuid4()
     alpha.init(
-        team_id=team_id,
+        team_id=uuid.uuid4(),
         user_id=uuid.uuid4(),
         org_id=uuid.uuid4(),
     )
@@ -50,3 +43,5 @@ async def test_save_and_load_dataset():
         # Verify content
         with open(os.path.join(download_dir, "test_dataset.txt")) as f:
             assert f.read() == "This is a test dataset file."
+        with open(os.path.join(download_dir, "test_dataset2.txt")) as f:
+            assert f.read() == "This is another test dataset file."

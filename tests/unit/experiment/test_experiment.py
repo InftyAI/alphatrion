@@ -56,6 +56,21 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                 },
                 "error": True,
             },
+            {
+                "name": "checkpoint enabled with pre_save_hook",
+                "config": {
+                    "checkpoint.enabled": True,
+                    "checkpoint.pre_save_hook": lambda: "path/to/checkpoint",
+                },
+                "error": False,
+            },
+            {
+                "name": "checkpoint enabled with no pre_save_hook",
+                "config": {
+                    "checkpoint.enabled": True,
+                },
+                "error": True,
+            },
         ]
 
         init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), org_id=uuid.uuid4())
@@ -70,8 +85,14 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                                     "monitor_metric", None
                                 ),
                                 checkpoint=CheckpointConfig(
+                                    enabled=case["config"].get(
+                                        "checkpoint.enabled", False
+                                    ),
                                     save_on_best=case["config"].get(
                                         "checkpoint.save_on_best", False
+                                    ),
+                                    pre_save_hook=case["config"].get(
+                                        "checkpoint.pre_save_hook", None
                                     ),
                                 ),
                                 early_stopping_runs=case["config"].get(
@@ -84,8 +105,12 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                         config=ExperimentConfig(
                             monitor_metric=case["config"].get("monitor_metric", None),
                             checkpoint=CheckpointConfig(
+                                enabled=case["config"].get("checkpoint.enabled", False),
                                 save_on_best=case["config"].get(
                                     "checkpoint.save_on_best", False
+                                ),
+                                pre_save_hook=case["config"].get(
+                                    "checkpoint.pre_save_hook", None
                                 ),
                             ),
                             early_stopping_runs=case["config"].get(

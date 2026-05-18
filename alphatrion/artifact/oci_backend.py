@@ -29,8 +29,11 @@ class OCIBackend(ArtifactStorageBackend):
 
         if isinstance(paths, str):
             if os.path.isdir(paths):
-                os.chdir(paths)
-                files_to_push = [f for f in os.listdir(".") if os.path.isfile(f)]
+                files_to_push = [
+                    os.path.join(paths, f)
+                    for f in os.listdir(paths)
+                    if os.path.isfile(os.path.join(paths, f))
+                ]
             else:
                 files_to_push = [paths]
         else:

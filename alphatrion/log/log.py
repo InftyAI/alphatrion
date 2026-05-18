@@ -8,40 +8,35 @@ from typing import Any
 
 from alphatrion.runtime.contextvars import current_exp_id, current_run_id
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.snapshot.snapshot import (
-    checkpoint_path,
-)
 from alphatrion.storage import runtime as storage_runtime
 
 BEST_RESULT_PATH = "best_result_path"
 
 
 async def log_artifact(
-    paths: str | list[str],
     repo_name: str,
+    paths: str | list[str] | None = None,
     version: str | None = None,
-    pre_save_hook: Callable | None = None,
+    pre_save_hook: Callable[[], str | list[str] | None] | None = None,
 ) -> str:
     """
     Log artifacts (files) to the artifact registry.
 
+    :param repo_name: the name of the repository to log the artifact to (required).
     :param paths: list of file paths to log.
         Support one or multiple files or a folder, multiple folders is not supported.
         If a folder is provided, all files in the folder will be logged.
         Don't support nested folders currently, only files in the first level
         of the folder will be logged.
-    :param repo_name: the name of the repository to log the artifact to.
     :param version: the version (tag) to log the files
     :param pre_save_hook: a callable function to be called before saving the artifact.
-           If want to save something, make sure it's under the paths.
+           Can return str | list[str] to override the paths parameter, or None to use paths.
+           This allows dynamic file creation (e.g., checkpointing) or just side effects.
 
     :return: the path of the logged artifact.
-        OCI format: {org_id}/{team_id}/{repo_name}:{version}
-        S3 format: {org_id}/{team_id}/{repo_name}/{version}
+        OCI format: {org_id}/{team_id}/{exp_id}/{repo_name}:{version}
+        S3 format: {org_id}/{team_id}/{exp_id}/{repo_name}/{version}
     """
-
-    if not paths:
-        raise ValueError("no files specified to log")
 
     runtime = global_runtime()
     if runtime is None:
@@ -53,11 +48,22 @@ async def log_artifact(
             "Set ENABLE_ARTIFACT_STORAGE=true in the environment variables."
         )
 
+    # Execute pre_save_hook if provided
     if pre_save_hook is not None:
-        if callable(pre_save_hook):
-            pre_save_hook()
-        else:
+        if not callable(pre_save_hook):
             raise ValueError("pre_save_hook must be a callable function")
+
+        hook_result = pre_save_hook()
+        # If hook returns paths, use those (override)
+        if hook_result is not None:
+            paths = hook_result
+
+    # Now validate that we have paths
+    if not paths:
+        raise ValueError(
+            "No files specified to log. Either provide 'paths' parameter or "
+            "have 'pre_save_hook' return file paths."
+        )
 
     loop = asyncio.get_running_loop()
 
@@ -145,7 +151,9 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=float_value
         )
 
-        should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=float_value)
+        should_early_stop |= exp.should_early_stop(
+            metric_key=key, metric_value=float_value
+        )
         should_stop_on_target |= exp.should_stop_on_target_metric(
             metric_key=key, metric_value=float_value
         )
@@ -153,10 +161,9 @@ async def log_metrics(metrics: dict[str, float]):
     if should_checkpoint:
         path = await log_artifact(
             repo_name="ckpt",
-            # If not provided, will use the default checkpoint path.
-            paths=exp.config.checkpoint.path or checkpoint_path(),
             pre_save_hook=exp.config.checkpoint.pre_save_hook,
         )
+
         runtime.metadb.update_run(
             run_id=run_id,
             meta={BEST_RESULT_PATH: path},
@@ -185,34 +192,26 @@ async def log_dataset(
     """
     runtime = global_runtime()
 
-    if isinstance(data_or_path, dict):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            os.chdir(tmpdir)
-            with open(name, "w") as f:
+    paths = None
+    tmpdir_obj = None
+    try:
+        if isinstance(data_or_path, dict):
+            tmpdir_obj = tempfile.TemporaryDirectory()
+            tmpdir = tmpdir_obj.name
+            file_path = os.path.join(tmpdir, name)
+            with open(file_path, "w") as f:
                 f.write(json.dumps(data_or_path))
-            file_size = os.path.getsize(name)
-
-            path = await log_artifact(
-                paths=name,
-                repo_name="dataset",
-                version=version,
+            paths = [file_path]
+        elif isinstance(data_or_path, (str, list)):
+            paths = data_or_path if isinstance(data_or_path, list) else [data_or_path]
+        else:
+            raise NotImplementedError(
+                f"Logging dataset of type {type(data_or_path)} is not implemented yet."
             )
 
-            id = runtime.metadb.create_dataset(
-                name=name,
-                org_id=runtime.org_id,
-                team_id=runtime.team_id,
-                user_id=runtime.user_id,
-                path=path,
-                experiment_id=current_exp_id.get(),
-                run_id=current_run_id.get(),
-                meta={"size": file_size},
-            )
-            return id
-    elif isinstance(data_or_path, (str, list)):
         path = await log_artifact(
-            paths=data_or_path,
             repo_name="dataset",
+            paths=paths,
             version=version,
         )
         id = runtime.metadb.create_dataset(
@@ -225,7 +224,6 @@ async def log_dataset(
             run_id=current_run_id.get(),
         )
         return id
-
-    raise NotImplementedError(
-        f"Logging dataset of type {type(data_or_path)} is not implemented yet."
-    )
+    finally:
+        if tmpdir_obj is not None:
+            tmpdir_obj.cleanup()

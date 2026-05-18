@@ -46,19 +46,13 @@ class CheckpointConfig(BaseModel):
             The metric to monitor is specified by monitor_metric. Default is False. \
             Can be enabled together with save_every_n_steps/save_every_n_seconds.",
     )
-    path: str | None = Field(
-        default=None,
-        description="The path to save checkpoints. \
-                     If None, will be under the specified experiment directory. \
-                     Call snapshot.checkpoint_path() to get the path. Remember to \
-                     create the directory if it does not exist. It's lazy created.",
-    )
-    pre_save_hook: Callable | None = Field(
+    pre_save_hook: Callable[[], str | list[str] | None] | None = Field(
         default=None,
         description="A callable function to be called before saving a checkpoint. \
-            The function should take no arguments. You can use partial if you want. \
-            If you want to save something, make sure it's under the checkpoint path. \
-            Default is None. ",
+            Takes no arguments and can return file path(s) (str or list[str]) to upload, or None. \
+            Must return valid path(s) for checkpointing to work. \
+            This allows dynamic file creation (e.g., checkpointing) and flexible checkpoint saving. \
+            Required if save_on_best is enabled.",
     )
 
 
@@ -131,6 +125,15 @@ class ExperimentConfig(BaseModel):
             raise ValueError(
                 "monitor_metric must be specified \
                 when target_metric_value is set"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def checkpoint_config_must_be_valid(self):
+        if self.checkpoint.enabled and not self.checkpoint.pre_save_hook:
+            raise ValueError(
+                "checkpoint.pre_save_hook must be specified \
+                when checkpoint is enabled"
             )
         return self
 
@@ -273,15 +276,15 @@ class Experiment(ABC):
 
         if self._config.monitor_metric:
             if self._config.monitor_mode == MonitorMode.MAX:
-                self._meta["best_metrics"] = {self._config.monitor_metric: float("-inf")}
+                self._meta["best_metrics"] = {
+                    self._config.monitor_metric: float("-inf")
+                }
             elif self._config.monitor_mode == MonitorMode.MIN:
                 self._meta["best_metrics"] = {self._config.monitor_metric: float("inf")}
             else:
                 raise ValueError(f"Invalid monitor_mode: {self._config.monitor_mode}")
 
-    def should_checkpoint_on_best(
-        self, metric_key: str, metric_value: float
-    ) -> bool:
+    def should_checkpoint_on_best(self, metric_key: str, metric_value: float) -> bool:
         is_best_metric = self.save_if_best_metric(metric_key, metric_value)
         return self._checkpoint_on_best_enabled() and is_best_metric
 

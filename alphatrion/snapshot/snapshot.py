@@ -53,4 +53,9 @@ def checkpoint_path() -> str:
 
 def team_path() -> str:
     runtime = global_runtime()
-    return Path(runtime.root_path) / "snapshots" / f"org_{runtime.org_id}" / f"team_{runtime.team_id}"
+    return (
+        Path(runtime.root_path)
+        / "snapshots"
+        / f"org_{runtime.org_id}"
+        / f"team_{runtime.team_id}"
+    )
