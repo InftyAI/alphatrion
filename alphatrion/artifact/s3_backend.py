@@ -104,12 +104,115 @@ class S3Backend(ArtifactStorageBackend):
         return repo_name if version is None else f"{repo_name}/{version}"
 
     def list_versions(self, repo_name: str) -> list[str]:
-        raise NotImplementedError("list_versions is not implemented for S3 backend")
+        """List all files directly under a repository path (ignores nested files).
+
+        Returns at most 3000 files (3 pages). If you have more checkpoints than this,
+        consider using database metadata to track versions instead.
+
+        :param repo_name: Repository path (e.g., "org_id/team_id/exp_id/ckpt")
+        :return: List of filenames sorted by LastModified (newest first), max 3000 items
+        """
+        try:
+            prefix = f"{repo_name}/"
+            files_with_time = []
+            continuation_token = None
+            max_pages = 3  # Limit to 3000 files (1000 per page)
+            pages_fetched = 0
+
+            # Handle pagination for >1000 files, up to max_pages
+            while pages_fetched < max_pages:
+                # Use delimiter to only list top-level files, ignoring nested directories
+                params = {
+                    "Bucket": self._bucket,
+                    "Prefix": prefix,
+                    "Delimiter": "/",
+                }
+                if continuation_token:
+                    params["ContinuationToken"] = continuation_token
+
+                response = self._s3.list_objects_v2(**params)
+                pages_fetched += 1
+
+                if "Contents" in response:
+                    # Extract filenames and timestamps
+                    for obj in response["Contents"]:
+                        s3_key = obj["Key"]
+                        # Get filename: "repo_name/file.txt" -> "file.txt"
+                        filename = s3_key[len(prefix) :]
+                        if filename:  # Skip empty
+                            files_with_time.append((filename, obj["LastModified"]))
+
+                # Check if there are more results
+                if response.get("IsTruncated") and pages_fetched < max_pages:
+                    continuation_token = response.get("NextContinuationToken")
+                else:
+                    break
+
+            if not files_with_time:
+                return []
+
+            # Sort by LastModified descending (newest first)
+            files_with_time.sort(key=lambda x: x[1], reverse=True)
+
+            return [f[0] for f in files_with_time]
+        except Exception as e:
+            error_msg = str(e).lower()
+            if (
+                "404" in error_msg
+                or "not found" in error_msg
+                or "nosuchbucket" in error_msg
+            ):
+                return []
+            raise RuntimeError(f"Failed to list versions: {e}") from e
 
     def pull(
         self, repo_name: str, version: str, output_dir: str | None = None
     ) -> list[str]:
-        raise NotImplementedError("pull is not implemented for S3 backend")
+        """Pull (download) files from S3.
+
+        :param repo_name: Repository path (e.g., "org_id/team_id/exp_id/ckpt")
+        :param version: The filename to download (for flat structure) or folder name (for versioned structure)
+        :param output_dir: Optional directory to save files. If None, downloads to current directory.
+        :return: List of absolute paths to downloaded files
+        """
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            download_dir = os.path.abspath(output_dir)
+        else:
+            download_dir = os.getcwd()
+
+        try:
+            # Check if version looks like a filename (has extension) or version folder
+            if "." in version:
+                # Single file: repo_name/version (e.g., "ckpt/checkpoint_123.pt")
+                s3_key = f"{repo_name}/{version}"
+                local_path = os.path.join(download_dir, version)
+
+                self._s3.download_file(self._bucket, s3_key, local_path)
+                return [local_path]
+            else:
+                # Version folder: repo_name/version/* (e.g., "ckpt/v1/*")
+                prefix = f"{repo_name}/{version}/"
+
+                response = self._s3.list_objects_v2(
+                    Bucket=self._bucket, Prefix=prefix, Delimiter="/"
+                )
+
+                if "Contents" not in response:
+                    return []
+
+                downloaded_files = []
+                for obj in response["Contents"]:
+                    s3_key = obj["Key"]
+                    filename = s3_key[len(prefix) :]
+                    if filename:  # Skip empty/directory markers
+                        local_path = os.path.join(download_dir, filename)
+                        self._s3.download_file(self._bucket, s3_key, local_path)
+                        downloaded_files.append(local_path)
+
+                return downloaded_files
+        except Exception as e:
+            raise RuntimeError(f"Failed to pull artifacts from S3: {e}") from e
 
     def delete(self, repo_name: str, versions: str | list[str]):
         raise NotImplementedError("delete is not implemented for S3 backend")

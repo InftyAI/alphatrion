@@ -76,22 +76,18 @@ class OCIBackend(ArtifactStorageBackend):
     ) -> list[str]:
         path = f"{repo_name}:{version}"
         target = f"{self._url}/{path}"
-        original_dir = None
 
         if output_dir:
             os.makedirs(output_dir, exist_ok=True)
-            original_dir = os.getcwd()
-            os.chdir(output_dir)
+            download_dir = os.path.abspath(output_dir)
+        else:
+            download_dir = os.getcwd()
 
         try:
-            filenames = self._client.pull(target, outdir="." if output_dir else None)
-            download_dir = os.getcwd()
-            return [os.path.abspath(os.path.join(download_dir, f)) for f in filenames]
+            filenames = self._client.pull(target, outdir=download_dir)
+            return [os.path.join(download_dir, f) for f in filenames]
         except Exception as e:
             raise RuntimeError(f"Failed to pull artifacts: {e}") from e
-        finally:
-            if output_dir and original_dir:
-                os.chdir(original_dir)
 
     def delete(self, repo_name: str, versions: str | list[str]):
         target = f"{self._url}/{repo_name}"
