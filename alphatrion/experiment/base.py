@@ -54,6 +54,12 @@ class CheckpointConfig(BaseModel):
             This allows dynamic file creation (e.g., checkpointing) and flexible checkpoint saving. \
             Required if save_on_best is enabled.",
     )
+    post_save_hook: Callable[[], None] | None = Field(
+        default=None,
+        description="A callable function to be called after saving a checkpoint. \
+            Takes no arguments and returns nothing. This allows side effects after checkpoint is saved, \
+            such as logging or cleanup.",
+    )
 
 
 class MonitorMode(enum.Enum):

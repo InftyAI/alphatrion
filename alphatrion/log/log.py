@@ -18,6 +18,7 @@ async def log_artifact(
     paths: str | list[str] | None = None,
     version: str | None = None,
     pre_save_hook: Callable[[], str | list[str] | None] | None = None,
+    post_save_hook: Callable[[], None] | None = None,
 ) -> str:
     """
     Log artifacts (files) to the artifact registry.
@@ -32,6 +33,9 @@ async def log_artifact(
     :param pre_save_hook: a callable function to be called before saving the artifact.
            Can return str | list[str] to override the paths parameter, or None to use paths.
            This allows dynamic file creation (e.g., checkpointing) or just side effects.
+    :param post_save_hook: a callable function to be called after saving the artifact.
+           Takes no arguments and returns nothing. This allows side effects after the artifact is saved,
+           such as logging or cleanup.
 
     :return: the path of the logged artifact.
         OCI format: {org_id}/{team_id}/{exp_id}/{repo_name}:{version}
@@ -72,13 +76,21 @@ async def log_artifact(
     if exp_id is not None:
         new_repo += f"/{exp_id}"
 
-    return await loop.run_in_executor(
+    path = await loop.run_in_executor(
         None,
         runtime._artifact.push,
         f"{new_repo}/{repo_name}",
         paths,
         version,
     )
+
+    # Execute post_save_hook if provided
+    if post_save_hook is not None:
+        if not callable(post_save_hook):
+            raise ValueError("post_save_hook must be a callable function")
+        post_save_hook()
+
+    return path
 
 
 async def log_params(params: dict):
@@ -162,6 +174,7 @@ async def log_metrics(metrics: dict[str, float]):
         path = await log_artifact(
             repo_name="ckpt",
             pre_save_hook=exp.config.checkpoint.pre_save_hook,
+            post_save_hook=exp.config.checkpoint.post_save_hook,
         )
 
         runtime.metadb.update_run(
