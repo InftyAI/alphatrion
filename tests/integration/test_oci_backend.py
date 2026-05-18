@@ -18,6 +18,8 @@ import uuid
 
 import pytest
 
+import alphatrion as alpha
+
 
 @pytest.fixture(autouse=True)
 def oci_env_vars():
@@ -202,7 +204,9 @@ def test_oci_backend_pull_multiple_files(artifact, unique_repo):
 
         # Pull the files
         output_dir = os.path.join(tmpdir, "download")
-        result = artifact.pull(repo_name=unique_repo, version="v1", output_dir=output_dir)
+        result = artifact.pull(
+            repo_name=unique_repo, version="v1", output_dir=output_dir
+        )
 
         # Verify all files were downloaded
         assert len(result) == 3
@@ -299,3 +303,170 @@ def test_oci_backend_delete_multiple_versions(artifact, unique_repo):
         assert "v0" not in versions
         assert "v1" not in versions
         assert "v2" in versions
+
+
+@pytest.mark.asyncio
+async def test_load_checkpoint_latest(artifact):
+    """Test load_checkpoint with 'latest' tag."""
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
+
+    alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push multiple checkpoint versions with different content and timestamps
+        import time
+
+        for i in range(3):
+            test_file = os.path.join(tmpdir, f"checkpoint_{i}.pt")
+            with open(test_file, "w") as f:
+                f.write(f"model weights version {i}")
+
+            artifact.push(
+                repo_name=f"{org_id}/{team_id}/{exp_id}/ckpt",
+                paths=test_file,
+                version=f"v{i}",
+            )
+            if i < 2:
+                time.sleep(0.1)  # Small delay for timestamp ordering
+
+        # Load latest checkpoint (should be v2 for S3, but arbitrary for OCI)
+        output_dir = os.path.join(tmpdir, "download")
+        result = await alpha.load_checkpoint(
+            id=exp_id, version="latest", output_dir=output_dir
+        )
+
+        # Verify checkpoint was downloaded
+        assert result is not None
+        assert len(result) == 1
+        assert os.path.exists(result[0])
+
+        # Verify it's one of the versions
+        with open(result[0]) as f:
+            content = f.read()
+            assert content.startswith("model weights version")
+
+
+@pytest.mark.asyncio
+async def test_load_checkpoint_specific_version(artifact):
+    """Test load_checkpoint with specific version tag."""
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
+
+    alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push multiple checkpoint versions
+        for i in range(3):
+            test_file = os.path.join(tmpdir, f"checkpoint_{i}.pt")
+            with open(test_file, "w") as f:
+                f.write(f"model weights version {i}")
+
+            artifact.push(
+                repo_name=f"{org_id}/{team_id}/{exp_id}/ckpt",
+                paths=test_file,
+                version=f"v{i}",
+            )
+
+        # Load specific version v1
+        output_dir = os.path.join(tmpdir, "download")
+
+        # Verify output_dir doesn't exist yet
+        assert not os.path.exists(output_dir), "Output dir should not exist before load_checkpoint"
+
+        result = await alpha.load_checkpoint(
+            id=exp_id, version="v1", output_dir=output_dir
+        )
+
+        # Validate output_dir was created
+        assert os.path.exists(output_dir), "Output dir should be created by load_checkpoint"
+        assert os.path.isdir(output_dir), "Output path should be a directory"
+
+        # Validate results
+        assert result is not None
+        assert len(result) == 1
+
+        # Validate file is in the correct output directory
+        downloaded_file = result[0]
+        # Use realpath to resolve symlinks (e.g., /var -> /private/var on macOS)
+        real_downloaded = os.path.realpath(downloaded_file)
+        real_output_dir = os.path.realpath(output_dir)
+        assert real_downloaded.startswith(real_output_dir), \
+            f"File {real_downloaded} should be in output_dir {real_output_dir}"
+
+        # Verify the file actually exists in output_dir
+        filename = os.path.basename(downloaded_file)
+        expected_path = os.path.join(output_dir, filename)
+        assert os.path.exists(expected_path), f"File should exist at {expected_path}"
+
+        # Verify it's the correct version
+        with open(result[0]) as f:
+            content = f.read()
+            assert content == "model weights version 1"
+
+
+@pytest.mark.asyncio
+async def test_load_checkpoint_nonexistent(artifact):
+    """Test load_checkpoint returns None for nonexistent experiment."""
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
+
+    alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Try to load checkpoint from non-existent experiment
+        result = await alpha.load_checkpoint(
+            id=exp_id, version="latest", output_dir=tmpdir
+        )
+
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_load_checkpoint_multiple_files(artifact):
+    """Test load_checkpoint with multiple files in checkpoint."""
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    exp_id = uuid.uuid4()
+
+    alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push checkpoint with multiple files
+        files = []
+        for i in range(3):
+            file_path = os.path.join(tmpdir, f"layer_{i}.pt")
+            with open(file_path, "w") as f:
+                f.write(f"layer {i} weights")
+            files.append(file_path)
+
+        artifact.push(
+            repo_name=f"{org_id}/{team_id}/{exp_id}/ckpt", paths=files, version="v1"
+        )
+
+        # Load checkpoint
+        output_dir = os.path.join(tmpdir, "download")
+        result = await alpha.load_checkpoint(
+            id=exp_id, version="v1", output_dir=output_dir
+        )
+
+        # Verify all files were downloaded
+        assert result is not None
+        assert len(result) == 3
+
+        for i in range(3):
+            filename = f"layer_{i}.pt"
+            assert any(filename in r for r in result)
+
+            file_path = os.path.join(output_dir, filename)
+            assert os.path.exists(file_path)
+
+            with open(file_path) as f:
+                assert f.read() == f"layer {i} weights"

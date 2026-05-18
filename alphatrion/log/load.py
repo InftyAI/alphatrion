@@ -28,30 +28,32 @@ async def load_dataset(id: str | uuid.UUID, output_dir: str | None = None) -> li
 
 
 async def load_checkpoint(
-    experiment_id: str | uuid.UUID,
+    id: str | uuid.UUID,
     version: str = "latest",
+    type: str = "experiment",
     output_dir: str | None = None,
 ) -> list[str]:
     """
     Load checkpoint from artifact registry.
 
-    :param experiment_id: the id of the experiment.
+    :param id: the id of the experiment.
     :param version: the version of the checkpoint to load, default is "latest".
         For oci backend, version is the tag of the artifact.
         For s3 backend, version is the name of the file to load.
             If version is "latest", the most recently modified file will be loaded.
+    :param type: the type of the checkpoint, can be "experiment" or "agent", default is "experiment".
     :param output_dir: the directory to which the checkpoint will be loaded.
     """
     runtime = global_runtime()
 
-    if isinstance(experiment_id, str):
-        experiment_id = uuid.UUID(experiment_id)
+    if isinstance(id, str):
+        id = uuid.UUID(id)
 
     artifact = runtime.artifact
     if artifact is None:
         raise RuntimeError("Artifact storage is not initialized in the runtime.")
 
-    repo_name = f"{runtime.org_id}/{runtime.team_id}/{experiment_id}/ckpt"
+    repo_name = f"{runtime.org_id}/{runtime.team_id}/{id}/ckpt"
 
     versions = artifact.list_versions(repo_name)
     if versions is None or len(versions) == 0:
