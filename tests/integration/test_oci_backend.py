@@ -376,14 +376,18 @@ async def test_load_checkpoint_specific_version(artifact):
         output_dir = os.path.join(tmpdir, "download")
 
         # Verify output_dir doesn't exist yet
-        assert not os.path.exists(output_dir), "Output dir should not exist before load_checkpoint"
+        assert not os.path.exists(output_dir), (
+            "Output dir should not exist before load_checkpoint"
+        )
 
         result = await alpha.load_checkpoint(
             id=exp_id, version="v1", output_dir=output_dir
         )
 
         # Validate output_dir was created
-        assert os.path.exists(output_dir), "Output dir should be created by load_checkpoint"
+        assert os.path.exists(output_dir), (
+            "Output dir should be created by load_checkpoint"
+        )
         assert os.path.isdir(output_dir), "Output path should be a directory"
 
         # Validate results
@@ -395,8 +399,9 @@ async def test_load_checkpoint_specific_version(artifact):
         # Use realpath to resolve symlinks (e.g., /var -> /private/var on macOS)
         real_downloaded = os.path.realpath(downloaded_file)
         real_output_dir = os.path.realpath(output_dir)
-        assert real_downloaded.startswith(real_output_dir), \
+        assert real_downloaded.startswith(real_output_dir), (
             f"File {real_downloaded} should be in output_dir {real_output_dir}"
+        )
 
         # Verify the file actually exists in output_dir
         filename = os.path.basename(downloaded_file)
