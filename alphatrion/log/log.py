@@ -19,7 +19,7 @@ async def log_artifact(
     version: str | None = None,
     pre_save_hook: Callable[[], str | list[str] | None] | None = None,
     post_save_hook: Callable[[], None] | None = None,
-) -> str:
+) -> str | None:
     """
     Log artifacts (files) to the artifact registry.
 
@@ -64,10 +64,11 @@ async def log_artifact(
 
     # Now validate that we have paths
     if not paths:
-        raise ValueError(
-            "No files specified to log. Either provide 'paths' parameter or "
-            "have 'pre_save_hook' return file paths."
+        # TODO: replace with logging library.
+        print(
+            "Warning: No paths provided for log_artifact. Nothing will be logged."
         )
+        return None
 
     loop = asyncio.get_running_loop()
 
@@ -177,10 +178,11 @@ async def log_metrics(metrics: dict[str, float]):
             post_save_hook=exp.config.checkpoint.post_save_hook,
         )
 
-        runtime.metadb.update_run(
-            run_id=run_id,
-            meta={BEST_RESULT_PATH: path},
-        )
+        if path is not None:
+            runtime.metadb.update_run(
+                run_id=run_id,
+                meta={BEST_RESULT_PATH: path},
+            )
 
     if should_early_stop or should_stop_on_target:
         exp.done()
@@ -227,6 +229,12 @@ async def log_dataset(
             paths=paths,
             version=version,
         )
+        if path is None:
+            print(
+                "Warning: log_artifact did not return a path. Dataset will not be logged."
+            )
+            return None
+
         id = runtime.metadb.create_dataset(
             name=name,
             org_id=runtime.org_id,
