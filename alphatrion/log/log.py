@@ -68,6 +68,13 @@ async def log_artifact(
         print(
             "Warning: No paths provided for log_artifact. Nothing will be logged."
         )
+
+        # We should still run the post_save_hook even if there's nothing to log,
+        # because the hook might have side effects that are important (e.g., cleanup).
+        if post_save_hook is not None:
+            if not callable(post_save_hook):
+                raise ValueError("post_save_hook must be a callable function")
+            post_save_hook()
         return None
 
     loop = asyncio.get_running_loop()
