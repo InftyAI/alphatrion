@@ -65,9 +65,7 @@ async def log_artifact(
     # Now validate that we have paths
     if not paths:
         # TODO: replace with logging library.
-        print(
-            "Warning: No paths provided for log_artifact. Nothing will be logged."
-        )
+        print("Warning: No paths provided for log_artifact. Nothing will be logged.")
 
         # We should still run the post_save_hook even if there's nothing to log,
         # because the hook might have side effects that are important (e.g., cleanup).

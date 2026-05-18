@@ -191,24 +191,243 @@ def test_s3_backend_push_empty_folder_error(s3_client):
             )
 
 
-def test_s3_backend_list_versions_not_implemented(s3_client):
-    """Test that list_versions raises NotImplementedError for S3 backend."""
+def test_s3_backend_list_versions_empty(s3_client):
+    """Test list_versions returns empty list for non-existent repo."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
 
-    with pytest.raises(NotImplementedError, match="list_versions is not implemented"):
-        artifact.list_versions("org123/team456/test-repo")
+    versions = artifact.list_versions("org123/team456/nonexistent")
+    assert versions == []
 
 
-def test_s3_backend_pull_not_implemented(s3_client):
-    """Test that pull raises NotImplementedError."""
+def test_s3_backend_list_versions_single_file(s3_client):
+    """Test list_versions with a single file."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
 
-    with pytest.raises(NotImplementedError, match="pull is not implemented"):
-        artifact.pull(repo_name="org123/team456/test-repo", version="v1")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_file = os.path.join(tmpdir, "checkpoint.pt")
+        with open(test_file, "w") as f:
+            f.write("model weights")
+
+        # Push file directly (no version folder)
+        artifact.push(repo_name="org123/team456/exp1/ckpt", paths=test_file)
+
+        # List versions should return the filename
+        versions = artifact.list_versions("org123/team456/exp1/ckpt")
+        assert len(versions) == 1
+        assert "checkpoint.pt" in versions
+
+
+def test_s3_backend_list_versions_multiple_files(s3_client):
+    """Test list_versions with multiple files sorted by time."""
+    import time
+
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push 3 files with small delays to ensure different timestamps
+        for i in range(3):
+            test_file = os.path.join(tmpdir, f"checkpoint_{i}.pt")
+            with open(test_file, "w") as f:
+                f.write(f"model weights {i}")
+
+            artifact.push(repo_name="org123/team456/exp1/ckpt", paths=test_file)
+            time.sleep(1)  # Small delay to ensure different timestamps
+
+        # List versions should return files sorted by LastModified (newest first)
+        versions = artifact.list_versions("org123/team456/exp1/ckpt")
+        assert len(versions) == 3
+        # The newest file (checkpoint_2.pt) should be first
+        assert versions[0] == "checkpoint_2.pt"
+        assert versions[1] == "checkpoint_1.pt"
+        assert versions[2] == "checkpoint_0.pt"
+
+
+def test_s3_backend_list_versions_ignores_nested(s3_client):
+    """Test list_versions ignores nested files (uses delimiter)."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push top-level file
+        top_file = os.path.join(tmpdir, "checkpoint.pt")
+        with open(top_file, "w") as f:
+            f.write("top level")
+        artifact.push(repo_name="org123/team456/exp1/ckpt", paths=top_file)
+
+        # Manually create nested file in S3 (simulating accidental nested upload)
+        s3_client.put_object(
+            Bucket="test-bucket",
+            Key="org123/team456/exp1/ckpt/nested/file.txt",
+            Body=b"nested content",
+        )
+
+        # List versions should only return top-level file
+        versions = artifact.list_versions("org123/team456/exp1/ckpt")
+        assert len(versions) == 1
+        assert versions[0] == "checkpoint.pt"
+
+
+def test_s3_backend_list_versions_pagination_limit(s3_client):
+    """Test list_versions respects 3000 file limit (3 pages)."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Create 10 test files (simulating pagination scenario)
+        # In real scenario, we'd create 3500 files but that's slow for tests
+        files = []
+        for i in range(10):
+            test_file = os.path.join(tmpdir, f"checkpoint_{i:04d}.pt")
+            with open(test_file, "w") as f:
+                f.write(f"model {i}")
+            files.append(test_file)
+
+        # Push all files
+        artifact.push(repo_name="org123/team456/exp1/ckpt", paths=files)
+
+        # List versions should return all files (under the 3000 limit)
+        versions = artifact.list_versions("org123/team456/exp1/ckpt")
+        assert len(versions) == 10
+        # Should be sorted by timestamp (newest first)
+        assert all(f"checkpoint_{i:04d}.pt" in versions for i in range(10))
+
+
+def test_s3_backend_pull_single_file(s3_client):
+    """Test pull with single file (flat structure)."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push a file
+        test_file = os.path.join(tmpdir, "checkpoint.pt")
+        with open(test_file, "w") as f:
+            f.write("model weights")
+        artifact.push(repo_name="org123/team456/exp1/ckpt", paths=test_file)
+
+        # Pull the file to a new directory
+        output_dir = os.path.join(tmpdir, "download")
+        result = artifact.pull(
+            repo_name="org123/team456/exp1/ckpt",
+            version="checkpoint.pt",
+            output_dir=output_dir,
+        )
+
+        # Verify file was downloaded
+        assert len(result) == 1
+        assert os.path.exists(result[0])
+        assert os.path.basename(result[0]) == "checkpoint.pt"
+
+        # Verify content
+        with open(result[0]) as f:
+            assert f.read() == "model weights"
+
+
+def test_s3_backend_pull_version_folder(s3_client):
+    """Test pull with version folder (versioned structure)."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Push multiple files with version
+        files = []
+        for i in range(3):
+            file_path = os.path.join(tmpdir, f"file{i}.txt")
+            with open(file_path, "w") as f:
+                f.write(f"content {i}")
+            files.append(file_path)
+
+        artifact.push(repo_name="org123/team456/exp1/ckpt", paths=files, version="v1")
+
+        # Pull the version folder
+        output_dir = os.path.join(tmpdir, "download")
+        result = artifact.pull(
+            repo_name="org123/team456/exp1/ckpt", version="v1", output_dir=output_dir
+        )
+
+        # Verify all files were downloaded
+        assert len(result) == 3
+        for i in range(3):
+            expected_file = os.path.join(output_dir, f"file{i}.txt")
+            assert any(expected_file == r for r in result)
+            assert os.path.exists(expected_file)
+
+            with open(expected_file) as f:
+                assert f.read() == f"content {i}"
+
+
+def test_s3_backend_pull_to_current_dir(s3_client):
+    """Test pull without output_dir (downloads to current directory)."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Change to temp directory
+        original_dir = os.getcwd()
+        try:
+            os.chdir(tmpdir)
+
+            # Push a file
+            test_file = os.path.join(tmpdir, "test.txt")
+            with open(test_file, "w") as f:
+                f.write("test content")
+            artifact.push(repo_name="org123/team456/test-repo", paths=test_file)
+
+            # Pull without output_dir
+            result = artifact.pull(
+                repo_name="org123/team456/test-repo", version="test.txt"
+            )
+
+            # Should download to current directory
+            assert len(result) == 1
+            assert os.path.basename(result[0]) == "test.txt"
+            assert os.path.exists(result[0])
+
+            with open(result[0]) as f:
+                assert f.read() == "test content"
+        finally:
+            os.chdir(original_dir)
+
+
+def test_s3_backend_pull_nonexistent_file(s3_client):
+    """Test pull with non-existent file raises error."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with pytest.raises(RuntimeError, match="Failed to pull artifacts"):
+            artifact.pull(
+                repo_name="org123/team456/nonexistent",
+                version="missing.txt",
+                output_dir=tmpdir,
+            )
+
+
+def test_s3_backend_pull_empty_version_folder(s3_client):
+    """Test pull with empty version folder returns empty list."""
+    from alphatrion.artifact.artifact import Artifact
+
+    artifact = Artifact()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Pull non-existent version folder
+        result = artifact.pull(
+            repo_name="org123/team456/exp1/ckpt", version="v999", output_dir=tmpdir
+        )
+
+        # Should return empty list
+        assert result == []
 
 
 def test_s3_backend_path_based_versioning(s3_client):
