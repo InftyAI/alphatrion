@@ -6,26 +6,35 @@ from alphatrion import envs
 
 SUCCESS_CODE = 201
 
+ARTIFACT_TYPE_S3 = "s3"
+ARTIFACT_TYPE_OCI = "oci"
+
 
 class Artifact:
     """Artifact storage client with pluggable backends (OCI or S3)."""
 
     def __init__(self, insecure: bool = False):
-        storage_type = os.environ.get(envs.ARTIFACT_STORAGE_TYPE, "oci").lower()
+        self._storage_type = os.environ.get(
+            envs.ARTIFACT_STORAGE_TYPE, ARTIFACT_TYPE_OCI
+        ).lower()
 
-        if storage_type == "s3":
+        if self._storage_type == ARTIFACT_TYPE_S3:
             from alphatrion.artifact.s3_backend import S3Backend
 
             self._backend = S3Backend()
-        elif storage_type == "oci":
+        elif self._storage_type == ARTIFACT_TYPE_OCI:
             from alphatrion.artifact.oci_backend import OCIBackend
 
             self._backend = OCIBackend(insecure=insecure)
         else:
             raise ValueError(
-                f"Unsupported artifact storage type: {storage_type}. "
-                f"Supported types: 'oci', 's3'"
+                f"Unsupported artifact storage type: {self._storage_type}. "
+                f"Supported types: '{ARTIFACT_TYPE_OCI}', '{ARTIFACT_TYPE_S3}'"
             )
+
+    @property
+    def storage_type(self):
+        return self._storage_type
 
     def push(
         self,
