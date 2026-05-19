@@ -6,13 +6,22 @@
 </p>
 
 <h3 align="center">
-⚒️ The observability platform for agentic systems.
+The open-source framework for LLM experiments and agent orchestration.
 </h3>
 
-[![stability-alpha](https://img.shields.io/badge/stability-alpha-f4d03f.svg)](https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#alpha)
-[![Latest Release](https://img.shields.io/github/v/release/inftyai/alphatrion?include_prereleases)](https://github.com/inftyai/alphatrion/releases/latest)
+<p align="center">
+  <a href="https://github.com/mkenney/software-guides/blob/master/STABILITY-BADGES.md#beta">
+    <img src="https://img.shields.io/badge/stability-beta-f4d03f.svg" alt="Beta Stability">
+  </a>
+  <a href="https://pypi.org/project/alphatrion/">
+    <img src="https://img.shields.io/pypi/v/alphatrion" alt="PyPI">
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/github/license/inftyai/alphatrion" alt="License">
+  </a>
+</p>
 
-**AlphaTrion** is an open-source framework for building and optimizing GenAI applications. Track experiments, monitor performance, analyze model usage, and manage artifacts—all through an intuitive dashboard. Named after the oldest and wisest Transformer.
+**AlphaTrion** is an open-source experiment tracking and agent orchestration framework for LLM application developers and AI engineers. Orchestrate multi-agent workflows, track LLM experiments, manage artifacts, and gain deep observability into your GenAI applications—all through an intuitive Python API and modern dashboard. Named after the oldest and wisest Transformer.
 
 ### Trusted By
 
@@ -20,14 +29,14 @@
   <img src="./site/images/hiverge-logo.svg" alt="Hiverge.ai" height="40">
 </a>
 
-## Features
+## Key Features
 
-- **🔬 Experiment Tracking** - Organize ML experiments with hierarchical teams, experiments, and runs
-- **📊 Performance Monitoring** - Track metrics, visualize trends, and monitor experiment status
-- **🔍 Distributed Tracing** - Automatic OpenTelemetry integration for LLM calls with token usage and span analysis
-- **🪝 Post-Run Hooks** - Automatically sync metadata and status after run completion
-- **🎯 Interactive Dashboard** - Modern web UI for exploring experiments and traces
-- **🔌 Easy Integration** - Simple Python API with async/await support
+- **🔬 Experiment Management** - Hierarchical experiments and runs with smart checkpointing (save on best metrics, early stopping, target optimization)
+- **📦 Artifact Registry** - Version datasets and model checkpoints using OCI registries or S3, with native `push`/`pull` APIs
+- **📊 Metrics & Observability** - Built-in Prometheus metrics and distributed tracing (OpenTelemetry + ClickHouse) for LLM calls
+- **🪝 Extensible Hooks** - Pre/post-save hooks and post-run hooks for custom workflows
+- **🎯 Modern Dashboard** - Explore experiments, visualize metrics, and analyze traces through an intuitive web UI
+- **🔌 Production-Ready** - Async-first design, PostgreSQL metadata storage, and support for distributed workloads
 
 ## Core Concepts
 
