@@ -316,9 +316,7 @@ async def test_load_checkpoint_latest(artifact):
     alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Push multiple checkpoint versions with different content and timestamps
-        import time
-
+        # Push multiple checkpoint versions with different content
         for i in range(3):
             test_file = os.path.join(tmpdir, f"checkpoint_{i}.pt")
             with open(test_file, "w") as f:
@@ -329,10 +327,19 @@ async def test_load_checkpoint_latest(artifact):
                 paths=test_file,
                 version=f"v{i}",
             )
-            if i < 2:
-                time.sleep(0.1)  # Small delay for timestamp ordering
 
-        # Load latest checkpoint (should be v2 for S3, but arbitrary for OCI)
+        # For OCI, also push a version tagged as "latest"
+        latest_file = os.path.join(tmpdir, "checkpoint_latest.pt")
+        with open(latest_file, "w") as f:
+            f.write("model weights version latest")
+
+        artifact.push(
+            repo_name=f"{org_id}/{team_id}/{exp_id}/ckpt",
+            paths=latest_file,
+            version="latest",
+        )
+
+        # Load latest checkpoint
         output_dir = os.path.join(tmpdir, "download")
         result = await alpha.load_checkpoint(
             id=exp_id, version="latest", output_dir=output_dir
@@ -343,10 +350,10 @@ async def test_load_checkpoint_latest(artifact):
         assert len(result) == 1
         assert os.path.exists(result[0])
 
-        # Verify it's one of the versions
+        # For OCI, "latest" tag should return the checkpoint tagged as "latest"
         with open(result[0]) as f:
             content = f.read()
-            assert content.startswith("model weights version")
+            assert content == "model weights version latest"
 
 
 @pytest.mark.asyncio
@@ -416,7 +423,7 @@ async def test_load_checkpoint_specific_version(artifact):
 
 @pytest.mark.asyncio
 async def test_load_checkpoint_nonexistent(artifact):
-    """Test load_checkpoint returns None for nonexistent experiment."""
+    """Test load_checkpoint with nonexistent checkpoint tag raises error for OCI."""
     org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
@@ -425,12 +432,12 @@ async def test_load_checkpoint_nonexistent(artifact):
     alpha.init(org_id=org_id, team_id=team_id, user_id=user_id)
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Try to load checkpoint from non-existent experiment
-        result = await alpha.load_checkpoint(
-            id=exp_id, version="latest", output_dir=tmpdir
-        )
-
-        assert result == []
+        # For OCI, trying to pull a non-existent tag should raise an error
+        # (unlike S3 which returns [] when no files exist)
+        with pytest.raises(RuntimeError, match="Failed to pull artifacts"):
+            await alpha.load_checkpoint(
+                id=exp_id, version="latest", output_dir=tmpdir
+            )
 
 
 @pytest.mark.asyncio

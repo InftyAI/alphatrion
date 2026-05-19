@@ -1,6 +1,7 @@
 import asyncio
 import uuid
 
+from alphatrion.artifact.artifact import ARTIFACT_TYPE_S3
 from alphatrion.runtime.runtime import global_runtime
 
 
@@ -55,11 +56,13 @@ async def load_checkpoint(
 
     repo_name = f"{runtime.org_id}/{runtime.team_id}/{id}/ckpt"
 
-    versions = artifact.list_versions(repo_name)
-    if versions is None or len(versions) == 0:
-        return []
+    # We only need to do this for s3 backend, because for oci backend,
+    # the version is the tag and "latest" tag will always point to the latest version.
+    if version == "latest" and artifact.storage_type == ARTIFACT_TYPE_S3:
+        versions = artifact.list_versions(repo_name)
+        if versions is None or len(versions) == 0:
+            return []
 
-    if version == "latest":
         version = versions[0]  # Assuming versions are sorted by time, newest first
 
     result = await asyncio.get_running_loop().run_in_executor(
