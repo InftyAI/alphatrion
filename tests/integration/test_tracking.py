@@ -125,46 +125,6 @@ async def test_token_tracking_and_storage(
     # Query spans with token data (use tracestore database name)
     database = tracestore.database
 
-    # Debug: Check if any spans exist for this experiment
-    debug_query = f"""
-    SELECT COUNT(*) as count
-    FROM {database}.otel_spans
-    WHERE ExperimentId = '{experiment_id}'
-    """
-    total_spans = tracestore.client.query(debug_query).result_rows[0][0]
-    print(f"DEBUG: Total spans for experiment {experiment_id}: {total_spans}")
-
-    # Debug: Check what span names we have
-    debug_query_names = f"""
-    SELECT SpanName, COUNT(*) as count
-    FROM {database}.otel_spans
-    WHERE ExperimentId = '{experiment_id}'
-    GROUP BY SpanName
-    ORDER BY count DESC
-    """
-    span_names = tracestore.client.query(debug_query_names).result_rows
-    print(f"DEBUG: Span names: {span_names}")
-
-    # Debug: Check what attributes exist in spans
-    debug_query_attrs = f"""
-    SELECT SpanName, mapKeys(SpanAttributes) as attr_keys
-    FROM {database}.otel_spans
-    WHERE ExperimentId = '{experiment_id}'
-    LIMIT 5
-    """
-    span_attrs = tracestore.client.query(debug_query_attrs).result_rows
-    print(f"DEBUG: Sample span attributes: {span_attrs}")
-
-    # Debug: Check spans with gen_ai.usage attributes
-    debug_query2 = f"""
-    SELECT COUNT(*) as count
-    FROM {database}.otel_spans
-    WHERE ExperimentId = '{experiment_id}'
-        AND mapContains(SpanAttributes, 'gen_ai.usage.input_tokens')
-    """
-    llm_spans = tracestore.client.query(debug_query2).result_rows[0][0]
-    print(f"DEBUG: Spans with gen_ai.usage.input_tokens: {llm_spans}")
-
     query = f"""
     SELECT
         SpanId as span_id,

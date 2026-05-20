@@ -11,10 +11,25 @@ from alphatrion.runtime.contextvars import (
 logger = logging.getLogger(__name__)
 
 # Semantic kind enums:
+# Core application spans (decorated with @workflow, @task, @tool)
+SEMANTIC_KIND_WORKFLOW = "workflow"
+SEMANTIC_KIND_TASK = "task"
 SEMANTIC_KIND_TOOL = "tool"
-SEMANTIC_KIND_REASONING = "reasoning"
+SEMANTIC_KIND_AGENT = "agent"
+
+# LLM operations
 SEMANTIC_KIND_CHAT = "chat"
+SEMANTIC_KIND_COMPLETION = "completion"
+SEMANTIC_KIND_EMBEDDINGS = "embeddings"
+SEMANTIC_KIND_REASONING = "reasoning"
+
+# Infrastructure operations
 SEMANTIC_KIND_DB = "db"
+SEMANTIC_KIND_HTTP = "http"
+SEMANTIC_KIND_MESSAGING = "messaging"
+SEMANTIC_KIND_RPC = "rpc"
+
+# Fallback
 SEMANTIC_KIND_UNKNOWN = "unknown"
 
 
