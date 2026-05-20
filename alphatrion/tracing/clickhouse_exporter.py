@@ -248,30 +248,68 @@ class ClickHouseSpanExporter(SpanExporter):
 def determine_semantic_kind(attributes: dict[str, str]) -> str:
     """Determine the semantic kind of a span.
 
+    Priority order:
+    1. Extended thinking/reasoning (LLM with reasoning tokens)
+    2. Traceloop decorators (workflow, task, tool, agent)
+    3. LLM operations (chat, completion, embeddings)
+    4. Database operations
+    5. HTTP operations
+    6. Message queue operations
+    7. Unknown fallback
+
     Args:
         attributes: Span attributes
 
     Returns:
-        Semantic kind string
+        Semantic kind string (workflow, task, tool, chat, completion,
+        reasoning, db, http, messaging, unknown)
     """
+    if not attributes:
+        return SEMANTIC_KIND_UNKNOWN
 
-    if (
-        "gen_ai.usage.reasoning_tokens" in attributes
-        and int(attributes["gen_ai.usage.reasoning_tokens"]) > 0
-    ):
-        return SEMANTIC_KIND_REASONING
+    # Priority 1: Extended thinking/reasoning
+    # Check for LLM operations with reasoning tokens (o1, Claude extended thinking)
+    if "gen_ai.usage.reasoning_tokens" in attributes:
+        try:
+            reasoning_tokens = int(attributes["gen_ai.usage.reasoning_tokens"])
+            if reasoning_tokens > 0:
+                return SEMANTIC_KIND_REASONING
+        except (ValueError, TypeError):
+            pass
 
-    if "llm.request.type" in attributes:
-        return attributes["llm.request.type"]
+    # Priority 2: Traceloop decorators (@workflow, @task, @tool)
+    # These are explicitly decorated by developers and should take precedence
+    if "traceloop.span.kind" in attributes:
+        traceloop_kind = attributes["traceloop.span.kind"]
+        # Valid values: workflow, task, tool, agent
+        if traceloop_kind in ("workflow", "task", "tool", "agent"):
+            return traceloop_kind
 
-    # Check for database operations
+    # Priority 3: LLM operations (auto-instrumented by Traceloop)
+    # Check for GenAI operations from OpenTelemetry semantic conventions
+    if "gen_ai.operation.name" in attributes:
+        operation = attributes["gen_ai.operation.name"]
+        # Common values: chat, completion, embeddings
+        return operation
+
+    # Priority 4: Database operations
+    # Auto-instrumented by OpenTelemetry (psycopg2, SQLAlchemy, etc.)
     if "db.system" in attributes or "db.statement" in attributes:
         return SEMANTIC_KIND_DB
 
-    # One of workflow, task, agent, tool
-    if "traceloop.span.kind" in attributes:
-        traceloop_kind = attributes["traceloop.span.kind"]
-        return traceloop_kind
+    # Priority 5: HTTP operations
+    # Auto-instrumented by OpenTelemetry (requests, httpx, urllib3, etc.)
+    if "http.method" in attributes or "http.request.method" in attributes:
+        return "http"
 
-    # Default to unknown
+    # Priority 6: Messaging/Queue operations
+    # Auto-instrumented by OpenTelemetry (RabbitMQ, Kafka, SQS, etc.)
+    if "messaging.system" in attributes:
+        return "messaging"
+
+    # Priority 7: RPC operations
+    if "rpc.system" in attributes:
+        return "rpc"
+
+    # Default: unknown
     return SEMANTIC_KIND_UNKNOWN
