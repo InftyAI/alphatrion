@@ -273,12 +273,7 @@ def determine_semantic_kind(attributes: dict[str, str]) -> str:
     # Priority 1: Extended thinking/reasoning
     # Check for LLM operations with reasoning tokens (o1, Claude extended thinking)
     if "gen_ai.usage.reasoning_tokens" in attributes:
-        try:
-            reasoning_tokens = int(attributes["gen_ai.usage.reasoning_tokens"])
-            if reasoning_tokens > 0:
-                return SEMANTIC_KIND_REASONING
-        except (ValueError, TypeError):
-            pass
+        return SEMANTIC_KIND_REASONING
 
     # Priority 2: Traceloop decorators (@workflow, @task, @tool)
     # These are explicitly decorated by developers and should take precedence
