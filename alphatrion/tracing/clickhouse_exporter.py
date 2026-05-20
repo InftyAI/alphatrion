@@ -264,8 +264,8 @@ def determine_semantic_kind(attributes: dict[str, str]) -> str:
         attributes: Span attributes
 
     Returns:
-        Semantic kind string (workflow, task, tool, chat, completion,
-        reasoning, db, http, messaging, unknown)
+        Semantic kind string (workflow, task, tool, agent, chat, completion,
+        embeddings, reasoning, db, http, messaging, rpc, unknown)
     """
     if not attributes:
         return SEMANTIC_KIND_UNKNOWN
