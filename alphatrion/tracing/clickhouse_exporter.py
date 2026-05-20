@@ -10,7 +10,10 @@ from opentelemetry.trace import StatusCode
 from alphatrion.storage.tracestore import TraceStore
 from alphatrion.tracing.span_processor import (
     SEMANTIC_KIND_DB,
+    SEMANTIC_KIND_HTTP,
+    SEMANTIC_KIND_MESSAGING,
     SEMANTIC_KIND_REASONING,
+    SEMANTIC_KIND_RPC,
     SEMANTIC_KIND_UNKNOWN,
 )
 
@@ -300,16 +303,16 @@ def determine_semantic_kind(attributes: dict[str, str]) -> str:
     # Priority 5: HTTP operations
     # Auto-instrumented by OpenTelemetry (requests, httpx, urllib3, etc.)
     if "http.method" in attributes or "http.request.method" in attributes:
-        return "http"
+        return SEMANTIC_KIND_HTTP
 
     # Priority 6: Messaging/Queue operations
     # Auto-instrumented by OpenTelemetry (RabbitMQ, Kafka, SQS, etc.)
     if "messaging.system" in attributes:
-        return "messaging"
+        return SEMANTIC_KIND_MESSAGING
 
     # Priority 7: RPC operations
     if "rpc.system" in attributes:
-        return "rpc"
+        return SEMANTIC_KIND_RPC
 
     # Default: unknown
     return SEMANTIC_KIND_UNKNOWN
