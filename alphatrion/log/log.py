@@ -154,26 +154,17 @@ async def log_metrics(metrics: dict[str, float]):
     should_early_stop = False
     should_stop_on_target = False
     for key, value in metrics.items():
-        if not isinstance(value, (int, float)):
-            # TODO: replace with logging library.
-            print(
-                f"Warning: Metric '{key}' has non-numeric value '{value}' and will be skipped for best metric tracking."
-            )
-            continue
-
-        float_value = float(value)
-
         # Always call the should_checkpoint_on_best first because
         # it also updates the best metric.
         should_checkpoint |= exp.should_checkpoint_on_best(
-            metric_key=key, metric_value=float_value
+            metric_key=key, metric_value=value
         )
 
         should_early_stop |= exp.should_early_stop(
-            metric_key=key, metric_value=float_value
+            metric_key=key, metric_value=value
         )
         should_stop_on_target |= exp.should_stop_on_target_metric(
-            metric_key=key, metric_value=float_value
+            metric_key=key, metric_value=value
         )
 
     if should_checkpoint:
