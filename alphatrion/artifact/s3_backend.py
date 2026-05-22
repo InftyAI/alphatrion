@@ -1,10 +1,3 @@
-"""S3-compatible artifact storage backend (push-only).
-
-This backend supports pushing artifacts to S3 for archival/backup purposes.
-list_versions() and pull() are not implemented - use AWS S3 console, CLI,
-or SDK directly to retrieve artifacts if needed.
-"""
-
 import os
 
 from alphatrion import envs
@@ -166,12 +159,14 @@ class S3Backend(ArtifactStorageBackend):
             raise RuntimeError(f"Failed to list versions: {e}") from e
 
     def pull(
-        self, repo_name: str, version: str, output_dir: str | None = None
+        self, repo_name: str, version_or_filename: str, output_dir: str | None = None
     ) -> list[str]:
         """Pull (download) files from S3.
 
         :param repo_name: Repository path (e.g., "org_id/team_id/exp_id/ckpt")
-        :param version: The filename to download (for flat structure) or folder name (for versioned structure)
+        :param version_or_filename: For S3 backend, if this matches a file name under the repo,
+            that file will be pulled. Otherwise, if this matches a version folder (e.g., "v1"),
+            all files under that folder will be pulled.
         :param output_dir: Optional directory to save files. If None, downloads to current directory.
         :return: List of absolute paths to downloaded files
         """
@@ -182,25 +177,15 @@ class S3Backend(ArtifactStorageBackend):
             download_dir = os.getcwd()
 
         try:
-            # Check if version looks like a filename (has extension) or version folder
-            if "." in version:
-                # Single file: repo_name/version (e.g., "ckpt/checkpoint_123.pt")
-                s3_key = f"{repo_name}/{version}"
-                local_path = os.path.join(download_dir, version)
+            # First, try as a version folder (e.g., "v1" or "v1.0")
+            prefix = f"{repo_name}/{version_or_filename}/"
 
-                self._s3.download_file(self._bucket, s3_key, local_path)
-                return [local_path]
-            else:
-                # Version folder: repo_name/version/* (e.g., "ckpt/v1/*")
-                prefix = f"{repo_name}/{version}/"
+            response = self._s3.list_objects_v2(
+                Bucket=self._bucket, Prefix=prefix, Delimiter="/"
+            )
 
-                response = self._s3.list_objects_v2(
-                    Bucket=self._bucket, Prefix=prefix, Delimiter="/"
-                )
-
-                if "Contents" not in response:
-                    return []
-
+            if "Contents" in response and len(response["Contents"]) > 0:
+                # It's a version folder with files
                 downloaded_files = []
                 for obj in response["Contents"]:
                     s3_key = obj["Key"]
@@ -211,6 +196,24 @@ class S3Backend(ArtifactStorageBackend):
                         downloaded_files.append(local_path)
 
                 return downloaded_files
+
+            # Check if it's an empty folder (no contents) - return empty list
+            # vs a file that doesn't exist (should raise error)
+            # We distinguish by trying to download as a file
+            s3_key = f"{repo_name}/{version_or_filename}"
+            local_path = os.path.join(download_dir, version_or_filename)
+
+            try:
+                self._s3.download_file(self._bucket, s3_key, local_path)
+                return [local_path]
+            except Exception as download_error:
+                error_msg = str(download_error).lower()
+                if "404" in error_msg or "not found" in error_msg:
+                    # Neither folder nor file exists - return empty list
+                    return []
+                raise
+        except RuntimeError:
+            raise
         except Exception as e:
             raise RuntimeError(f"Failed to pull artifacts from S3: {e}") from e
 

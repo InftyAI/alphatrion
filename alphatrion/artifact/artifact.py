@@ -56,17 +56,21 @@ class Artifact:
         return self._backend.list_versions(repo_name)
 
     def pull(
-        self, repo_name: str, version: str, output_dir: str | None = None
+        self, repo_name: str, version_or_filename: str, output_dir: str | None = None
     ) -> list[str]:
         """
         Pull artifacts from the storage.
 
         :param repo_name: the name of the repository to pull from
-        :param version: the version (tag) to pull
+        :param version_or_filename: the version (tag) or filename to pull.
+            For OCI backend, this is always the tag.
+            For S3 backend, if this matches a file name under the repo,
+            that file will be pulled. Otherwise, if this matches a version folder
+            (e.g., "v1"), all files under that folder will be pulled.
         :param output_dir: optional directory to save files to
         :return: list of absolute file paths that were downloaded
         """
-        return self._backend.pull(repo_name, version, output_dir)
+        return self._backend.pull(repo_name, version_or_filename, output_dir)
 
     def delete(self, repo_name: str, versions: str | list[str]):
         """Delete specific versions from a repository."""

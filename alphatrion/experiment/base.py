@@ -1,8 +1,6 @@
 import asyncio
 import contextlib
 import enum
-import os
-import shutil
 import signal
 import uuid
 from abc import ABC, abstractmethod
@@ -11,11 +9,9 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, model_validator
 
-from alphatrion import envs
 from alphatrion.run.run import Run
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
-from alphatrion.snapshot.snapshot import team_path
 from alphatrion.storage import runtime as storage_runtime
 from alphatrion.storage.sql_models import FINISHED_STATUS, Status
 from alphatrion.types import CallableEntry, PostRunHookFn
@@ -211,8 +207,6 @@ class Experiment(ABC):
         if self._token:
             current_exp_id.reset(self._token)
             self._runtime.current_experiment = None
-
-        self._cleanup_files()
 
     def _start(
         self,
@@ -497,14 +491,6 @@ class Experiment(ABC):
         params: dict | None = None,
     ) -> "Experiment":
         raise NotImplementedError
-
-    def _cleanup_files(self):
-        # remove the whole folder once the experiment is done.
-        if (
-            os.path.exists(team_path())
-            and os.getenv(envs.AUTO_CLEANUP, "true").lower() == "true"
-        ):
-            shutil.rmtree(team_path(), ignore_errors=True)
 
     def _start_signal_handlers(self):
         loop = asyncio.get_running_loop()

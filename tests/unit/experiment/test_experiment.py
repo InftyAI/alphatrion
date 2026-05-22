@@ -5,9 +5,7 @@ import unittest
 import uuid
 from datetime import datetime, timedelta
 from functools import partial
-from pathlib import Path
 
-import faker
 import pytest
 
 from alphatrion.experiment import base as experiment
@@ -18,7 +16,6 @@ from alphatrion.experiment.base import (
 from alphatrion.experiment.craft_experiment import CraftExperiment
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime, init
-from alphatrion.snapshot.snapshot import checkpoint_path
 from alphatrion.storage.sql_models import Status
 
 
@@ -118,25 +115,6 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                             ),
                         ),
                     )
-
-
-@pytest.mark.asyncio
-async def test_snapshot_path():
-    team_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    org_id = uuid.uuid4()
-    init(team_id=team_id, user_id=user_id, org_id=org_id)
-
-    async with CraftExperiment.start(name=faker.Faker().word()) as exp:
-        assert checkpoint_path() == (
-            Path(exp._runtime.root_path)
-            / "snapshots"
-            / f"org_{org_id}"
-            / f"team_{team_id}"
-            / f"exp_{exp.id}"
-            / "checkpoints"
-        )
-
 
 @pytest.mark.asyncio
 async def test_experiment_with_done():

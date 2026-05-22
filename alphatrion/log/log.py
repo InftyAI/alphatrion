@@ -37,7 +37,7 @@ async def log_artifact(
            Takes no arguments and returns nothing. This allows side effects after the artifact is saved,
            such as logging or cleanup.
 
-    :return: the path of the logged artifact.
+    :return: the path of the logged artifact or None if no artifact was logged (e.g., if paths is empty).
         OCI format: {org_id}/{team_id}/{exp_id}/{repo_name}:{version}
         S3 format: {org_id}/{team_id}/{exp_id}/{repo_name}/{version}
     """
