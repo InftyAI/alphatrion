@@ -160,9 +160,7 @@ async def log_metrics(metrics: dict[str, float]):
             metric_key=key, metric_value=value
         )
 
-        should_early_stop |= exp.should_early_stop(
-            metric_key=key, metric_value=value
-        )
+        should_early_stop |= exp.should_early_stop(metric_key=key, metric_value=value)
         should_stop_on_target |= exp.should_stop_on_target_metric(
             metric_key=key, metric_value=value
         )

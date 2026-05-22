@@ -435,9 +435,7 @@ async def test_load_checkpoint_nonexistent(artifact):
         # For OCI, trying to pull a non-existent tag should raise an error
         # (unlike S3 which returns [] when no files exist)
         with pytest.raises(RuntimeError, match="Failed to pull artifacts"):
-            await alpha.load_checkpoint(
-                id=exp_id, version="latest", output_dir=tmpdir
-            )
+            await alpha.load_checkpoint(id=exp_id, version="latest", output_dir=tmpdir)
 
 
 @pytest.mark.asyncio

@@ -116,6 +116,7 @@ class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
                         ),
                     )
 
+
 @pytest.mark.asyncio
 async def test_experiment_with_done():
     init(
