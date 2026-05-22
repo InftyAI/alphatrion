@@ -351,7 +351,9 @@ def test_s3_backend_pull_version_folder(s3_client):
         # Pull the version folder
         output_dir = os.path.join(tmpdir, "download")
         result = artifact.pull(
-            repo_name="org123/team456/exp1/ckpt", version_or_filename="v1", output_dir=output_dir
+            repo_name="org123/team456/exp1/ckpt",
+            version_or_filename="v1",
+            output_dir=output_dir,
         )
 
         # Verify all files were downloaded
@@ -423,7 +425,9 @@ def test_s3_backend_pull_empty_version_folder(s3_client):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Pull non-existent version folder
         result = artifact.pull(
-            repo_name="org123/team456/exp1/ckpt", version_or_filename="v999", output_dir=tmpdir
+            repo_name="org123/team456/exp1/ckpt",
+            version_or_filename="v999",
+            output_dir=tmpdir,
         )
 
         # Should return empty list
