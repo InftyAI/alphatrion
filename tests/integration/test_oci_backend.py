@@ -176,7 +176,7 @@ def test_oci_backend_pull_single_file(artifact, unique_repo):
         # Pull the file
         output_dir = os.path.join(tmpdir, "download")
         result = artifact.pull(
-            repo_name=unique_repo, version="v1", output_dir=output_dir
+            repo_name=unique_repo, version_or_filename="v1", output_dir=output_dir
         )
 
         # Verify file was downloaded
@@ -205,7 +205,7 @@ def test_oci_backend_pull_multiple_files(artifact, unique_repo):
         # Pull the files
         output_dir = os.path.join(tmpdir, "download")
         result = artifact.pull(
-            repo_name=unique_repo, version="v1", output_dir=output_dir
+            repo_name=unique_repo, version_or_filename="v1", output_dir=output_dir
         )
 
         # Verify all files were downloaded
@@ -239,7 +239,7 @@ def test_oci_backend_pull_to_current_dir(artifact, unique_repo):
             artifact.push(repo_name=unique_repo, paths=test_file, version="v1")
 
             # Pull without output_dir
-            result = artifact.pull(repo_name=unique_repo, version="v1")
+            result = artifact.pull(repo_name=unique_repo, version_or_filename="v1")
 
             # Should download to current directory
             assert len(result) == 1

@@ -38,7 +38,7 @@ class ArtifactStorageBackend(ABC):
         """Pull artifacts from the storage.
 
         :param repo_name: the name of the repository to pull from
-        :param version: the version (tag) to pull
+        :param version: the version (tag) or filename to pull
         :param output_dir: optional directory to save files to
         :return: list of absolute file paths that were downloaded
         """

@@ -951,7 +951,7 @@ class GraphQLResolvers:
             arf = runtime.storage_runtime().artifact
             org_id = info.context.org_id
             file_paths = arf.pull(
-                repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag
+                repo_name=f"{org_id}/{team_id}/{repo_name}", version_or_filename=tag
             )
 
             if not file_paths:
@@ -1010,7 +1010,7 @@ class GraphQLResolvers:
             # Pull the artifact - ORAS will manage temp directory
             # Returns absolute paths to files in ORAS temp directory
             file_paths = arf.pull(
-                repo_name=f"{org_id}/{team_id}/{repo_name}", version=tag
+                repo_name=f"{org_id}/{team_id}/{repo_name}", version_or_filename=tag
             )
 
             if not file_paths:

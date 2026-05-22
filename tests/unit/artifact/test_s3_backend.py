@@ -317,7 +317,7 @@ def test_s3_backend_pull_single_file(s3_client):
         output_dir = os.path.join(tmpdir, "download")
         result = artifact.pull(
             repo_name="org123/team456/exp1/ckpt",
-            version="checkpoint.pt",
+            version_or_filename="checkpoint.pt",
             output_dir=output_dir,
         )
 
@@ -351,7 +351,7 @@ def test_s3_backend_pull_version_folder(s3_client):
         # Pull the version folder
         output_dir = os.path.join(tmpdir, "download")
         result = artifact.pull(
-            repo_name="org123/team456/exp1/ckpt", version="v1", output_dir=output_dir
+            repo_name="org123/team456/exp1/ckpt", version_or_filename="v1", output_dir=output_dir
         )
 
         # Verify all files were downloaded
@@ -385,7 +385,7 @@ def test_s3_backend_pull_to_current_dir(s3_client):
 
             # Pull without output_dir
             result = artifact.pull(
-                repo_name="org123/team456/test-repo", version="test.txt"
+                repo_name="org123/team456/test-repo", version_or_filename="test.txt"
             )
 
             # Should download to current directory
@@ -400,18 +400,18 @@ def test_s3_backend_pull_to_current_dir(s3_client):
 
 
 def test_s3_backend_pull_nonexistent_file(s3_client):
-    """Test pull with non-existent file raises error."""
+    """Test pull with non-existent file returns empty list."""
     from alphatrion.artifact.artifact import Artifact
 
     artifact = Artifact()
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        with pytest.raises(RuntimeError, match="Failed to pull artifacts"):
-            artifact.pull(
-                repo_name="org123/team456/nonexistent",
-                version="missing.txt",
-                output_dir=tmpdir,
-            )
+        result = artifact.pull(
+            repo_name="org123/team456/nonexistent",
+            version_or_filename="missing.txt",
+            output_dir=tmpdir,
+        )
+        assert result == []
 
 
 def test_s3_backend_pull_empty_version_folder(s3_client):
@@ -423,7 +423,7 @@ def test_s3_backend_pull_empty_version_folder(s3_client):
     with tempfile.TemporaryDirectory() as tmpdir:
         # Pull non-existent version folder
         result = artifact.pull(
-            repo_name="org123/team456/exp1/ckpt", version="v999", output_dir=tmpdir
+            repo_name="org123/team456/exp1/ckpt", version_or_filename="v999", output_dir=tmpdir
         )
 
         # Should return empty list

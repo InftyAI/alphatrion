@@ -35,13 +35,13 @@ async def load_checkpoint(
     output_dir: str | None = None,
 ) -> list[str]:
     """
-    Load checkpoint from artifact registry.
+    Load checkpoint from artifact registry, the path is expected to be in the format of
+    "org_id/team_id/exp_id/ckpt/".
 
     :param id: the id of the experiment.
     :param version: the version of the checkpoint to load, default is "latest".
-        For oci backend, version is the tag of the artifact.
-        For s3 backend, version is the name of the file to load.
-            If version is "latest", the most recently modified file will be loaded.
+        If version is "latest", it will load the latest version (for oci backend) or
+        the file with the latest timestamp (for s3 backend).
     :param type: the type of the checkpoint, can be "experiment" or "agent", default is "experiment".
     :param output_dir: the directory to which the checkpoint will be loaded.
     """
