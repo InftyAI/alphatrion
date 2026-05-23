@@ -342,7 +342,7 @@ async def test_load_checkpoint_latest(artifact):
         # Load latest checkpoint
         output_dir = os.path.join(tmpdir, "download")
         result = await alpha.load_checkpoint(
-            id=exp_id, version="latest", output_dir=output_dir
+            id=exp_id, version_or_filename="latest", output_dir=output_dir
         )
 
         # Verify checkpoint was downloaded
@@ -388,7 +388,7 @@ async def test_load_checkpoint_specific_version(artifact):
         )
 
         result = await alpha.load_checkpoint(
-            id=exp_id, version="v1", output_dir=output_dir
+            id=exp_id, version_or_filename="v1", output_dir=output_dir
         )
 
         # Validate output_dir was created
@@ -435,7 +435,9 @@ async def test_load_checkpoint_nonexistent(artifact):
         # For OCI, trying to pull a non-existent tag should raise an error
         # (unlike S3 which returns [] when no files exist)
         with pytest.raises(RuntimeError, match="Failed to pull artifacts"):
-            await alpha.load_checkpoint(id=exp_id, version="latest", output_dir=tmpdir)
+            await alpha.load_checkpoint(
+                id=exp_id, version_or_filename="latest", output_dir=tmpdir
+            )
 
 
 @pytest.mark.asyncio
@@ -464,7 +466,7 @@ async def test_load_checkpoint_multiple_files(artifact):
         # Load checkpoint
         output_dir = os.path.join(tmpdir, "download")
         result = await alpha.load_checkpoint(
-            id=exp_id, version="v1", output_dir=output_dir
+            id=exp_id, version_or_filename="v1", output_dir=output_dir
         )
 
         # Verify all files were downloaded
