@@ -38,8 +38,8 @@ async def load_checkpoint(
 ) -> list[str]:
     """
     Load checkpoint from artifact registry, the path is expected to be in the format of:
-      - OCI: "org_id/team_id/exp_id/ckpt:version"
-      - S3: "org_id/team_id/exp_id/ckpt/filename"
+      - OCI: "org_id/team_id/exp_id/ckpt:version_or_filename", it should be a version.
+      - S3: "org_id/team_id/exp_id/ckpt/version_or_filename", it should be a filename.
 
     :param id: the id of the experiment.
     :param version_or_filename: the version or filename of the checkpoint to load, default is "latest".
