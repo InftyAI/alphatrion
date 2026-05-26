@@ -326,7 +326,9 @@ def test_add_user_to_team_with_invalid_team(
         user_id=test_user_id,
     )
     assert response.errors is not None
-    assert "not found" in str(response.errors[0])
+    # When team doesn't exist, user_and_team_in_same_org returns False
+    # which triggers "must belong to the same organization" error
+    assert "same organization" in str(response.errors[0]).lower()
 
 
 def test_add_user_to_team_with_invalid_user(
@@ -355,7 +357,9 @@ def test_add_user_to_team_with_invalid_user(
         user_id=test_user_id,
     )
     assert response.errors is not None
-    assert "not found" in str(response.errors[0])
+    # When user doesn't exist, user_and_team_in_same_org returns False
+    # which triggers "must belong to the same organization" error
+    assert "same organization" in str(response.errors[0]).lower()
 
 
 def test_user_workflow(execute_graphql, test_org_id, test_user_id, test_team_id):

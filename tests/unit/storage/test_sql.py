@@ -164,3 +164,79 @@ def test_create_metrics_batch(db):
     assert metric_dict["loss"] == 0.1
     assert metric_dict["precision"] == 0.92
     assert metric_dict["recall"] == 0.88
+
+
+def test_user_and_team_in_same_org_success(db):
+    """Test that user and team in same org returns True"""
+    org_id = uuid.uuid4()
+
+    # Create team
+    team_id = db.create_team(org_id=org_id, name="Test Team")
+
+    # Create user in same org
+    user_id = db.create_user(
+        org_id=org_id, name="test_user", email="user@example.com", team_id=team_id
+    )
+
+    # Verify user and team are in same org
+    assert db.user_and_team_in_same_org(user_id, team_id, org_id) is True
+
+
+def test_user_and_team_in_same_org_different_orgs(db):
+    """Test that user and team in different orgs returns False"""
+    org1_id = uuid.uuid4()
+    org2_id = uuid.uuid4()
+
+    # Create team in org1
+    team_id = db.create_team(org_id=org1_id, name="Team in Org1")
+
+    # Create user in org2 (different org)
+    user_id = db.create_user(org_id=org2_id, name="test_user", email="user@example.com")
+
+    # Verify user and team are NOT in same org
+    assert db.user_and_team_in_same_org(user_id, team_id, org1_id) is False
+
+
+def test_user_and_team_in_same_org_nonexistent_team(db):
+    """Test that nonexistent team returns False"""
+    org_id = uuid.uuid4()
+
+    # Create user
+    user_id = db.create_user(org_id=org_id, name="test_user", email="user@example.com")
+
+    # Use nonexistent team ID
+    nonexistent_team_id = uuid.uuid4()
+
+    # Verify returns False for nonexistent team
+    assert db.user_and_team_in_same_org(user_id, nonexistent_team_id, org_id) is False
+
+
+def test_user_and_team_in_same_org_nonexistent_user(db):
+    """Test that nonexistent user returns False"""
+    org_id = uuid.uuid4()
+
+    # Create team
+    team_id = db.create_team(org_id=org_id, name="Test Team")
+
+    # Use nonexistent user ID
+    nonexistent_user_id = uuid.uuid4()
+
+    # Verify returns False for nonexistent user
+    assert db.user_and_team_in_same_org(nonexistent_user_id, team_id, org_id) is False
+
+
+def test_user_and_team_in_same_org_wrong_target_org(db):
+    """Test that wrong target org returns False"""
+    org_id = uuid.uuid4()
+    wrong_org_id = uuid.uuid4()
+
+    # Create team in org_id
+    team_id = db.create_team(org_id=org_id, name="Test Team")
+
+    # Create user in same org
+    user_id = db.create_user(
+        org_id=org_id, name="test_user", email="user@example.com", team_id=team_id
+    )
+
+    # Verify returns False when checking against wrong target org
+    assert db.user_and_team_in_same_org(user_id, team_id, wrong_org_id) is False
