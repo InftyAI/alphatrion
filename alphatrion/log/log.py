@@ -182,11 +182,6 @@ async def log_metrics(metrics: dict[str, float]):
         exp.done()
 
 
-# log_records is used to log a list of records, which is similar to log_metrics
-# but for tracing the execution of the code.
-# async def log_records():
-
-
 async def log_dataset(
     name: str,
     data_or_path: dict[str, Any] | str | list[str],

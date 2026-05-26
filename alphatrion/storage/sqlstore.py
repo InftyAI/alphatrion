@@ -1324,12 +1324,17 @@ class SQLStore(MetaStore):
         return admin_membership is not None
 
     def team_is_accessible_to_user(
-        self, team_id: uuid.UUID, user_id: uuid.UUID, org_id: uuid.UUID
+        self, team_id: uuid.UUID, user_id: uuid.UUID
     ) -> bool:
         session = self._session()
 
+        team = self.get_team(team_id)
+        if team is None:
+            session.close()
+            return False
+
         # Check if user is super admin
-        if self.user_is_super_admin_in_org(user_id, org_id):
+        if self.user_is_super_admin_in_org(user_id, team.org_id):
             session.close()
             return True
 
@@ -1350,6 +1355,29 @@ class SQLStore(MetaStore):
         user = (
             session.query(User)
             .filter(User.uuid == user_id, User.org_id == org_id, User.is_del == 0)
+            .first()
+        )
+        session.close()
+        return user is not None
+
+    def user_and_team_in_same_org(
+        self, user_id: uuid.UUID, team_id: uuid.UUID, target_org_id: uuid.UUID
+    ) -> bool:
+        session = self._session()
+        team = (
+            session.query(Team).filter(Team.uuid == team_id, Team.is_del == 0).first()
+        )
+        if team is None:
+            session.close()
+            return False
+
+        if team.org_id != target_org_id:
+            session.close()
+            return False
+
+        user = (
+            session.query(User)
+            .filter(User.uuid == user_id, User.org_id == team.org_id, User.is_del == 0)
             .first()
         )
         session.close()
@@ -1471,7 +1499,7 @@ class SQLStore(MetaStore):
         session = self._session()
         dst = (
             session.query(Dataset)
-            .filter(Dataset.uuid == dataset_id, Agent.is_del == 0)
+            .filter(Dataset.uuid == dataset_id, Dataset.is_del == 0)
             .first()
         )
         if dst is None:

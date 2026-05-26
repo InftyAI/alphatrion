@@ -46,7 +46,9 @@ def s3_env_vars():
         else:
             os.environ[key] = value
 
-    storage_runtime_module.__STORAGE_RUNTIME__ = None  # Reset again to clear any cached runtime
+    storage_runtime_module.__STORAGE_RUNTIME__ = (
+        None  # Reset again to clear any cached runtime
+    )
 
 
 @pytest.fixture

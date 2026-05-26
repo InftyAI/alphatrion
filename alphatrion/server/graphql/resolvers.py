@@ -78,9 +78,7 @@ class GraphQLResolvers:
         user_id = info.context.user_id
 
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -206,9 +204,7 @@ class GraphQLResolvers:
     ) -> list[Experiment]:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -352,9 +348,7 @@ class GraphQLResolvers:
         user_id = info.context.user_id
 
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -517,9 +511,7 @@ class GraphQLResolvers:
     def total_agents(info: Info[GraphQLContext, None], team_id: strawberry.ID) -> int:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -530,9 +522,7 @@ class GraphQLResolvers:
     def total_sessions(info: Info[GraphQLContext, None], team_id: strawberry.ID) -> int:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -596,9 +586,7 @@ class GraphQLResolvers:
     ) -> int:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -609,9 +597,7 @@ class GraphQLResolvers:
     def total_runs(info: Info[GraphQLContext, None], team_id: strawberry.ID) -> int:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -622,9 +608,7 @@ class GraphQLResolvers:
     def total_datasets(info: Info[GraphQLContext, None], team_id: strawberry.ID) -> int:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -648,9 +632,7 @@ class GraphQLResolvers:
         org_id = uuid.UUID(info.context.org_id)
         user_id = uuid.UUID(info.context.user_id)
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -831,9 +813,7 @@ class GraphQLResolvers:
         org_id = uuid.UUID(ctx.org_id)
         user_id = uuid.UUID(ctx.user_id)
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -856,9 +836,7 @@ class GraphQLResolvers:
     ) -> list[Experiment]:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -919,9 +897,7 @@ class GraphQLResolvers:
         """List tags for a repository."""
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -940,9 +916,7 @@ class GraphQLResolvers:
         """List files in an artifact without loading content."""
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -995,9 +969,7 @@ class GraphQLResolvers:
         """Get artifact content from registry."""
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -1091,7 +1063,6 @@ class GraphQLResolvers:
         if not metadb.team_is_accessible_to_user(
             team_id=dataset.team_id,
             user_id=uuid.UUID(user_id),
-            org_id=uuid.UUID(info.context.org_id),
         ):
             raise RuntimeError(
                 "Not allowed to access dataset that user does not belong to"
@@ -1515,9 +1486,7 @@ class GraphQLResolvers:
         org_id = uuid.UUID(ctx.org_id)
         user_id = uuid.UUID(ctx.user_id)
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             return []
 
         try:
@@ -1593,9 +1562,7 @@ class GraphQLResolvers:
     ) -> list[Dataset]:
         user_id = info.context.user_id
         metadb = runtime.storage_runtime().metadb
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=uuid.UUID(info.context.org_id)
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to access team that user does not belong to"
             )
@@ -1838,6 +1805,13 @@ class GraphQLMutations:
         ):
             raise RuntimeError("Only super admin can add users to teams")
 
+        if not metadb.user_and_team_in_same_org(
+            user_id=uuid.UUID(input.user_id),
+            team_id=uuid.UUID(input.team_id),
+            target_org_id=uuid.UUID(info.context.org_id),
+        ):
+            raise RuntimeError("User and team must belong to the same organization")
+
         user_id = uuid.UUID(input.user_id)
         team_id = uuid.UUID(input.team_id)
 
@@ -1856,7 +1830,6 @@ class GraphQLMutations:
         if not metadb.team_is_accessible_to_user(
             team_id=team_id,
             user_id=uuid.UUID(info.context.user_id),
-            org_id=uuid.UUID(info.context.org_id),
         ):
             raise RuntimeError(
                 "Not allowed to modify team that user does not belong to"
@@ -1878,9 +1851,7 @@ class GraphQLMutations:
         metadb = runtime.storage_runtime().metadb
 
         # Verify user has access to the team
-        if not metadb.team_is_accessible_to_user(
-            team_id=team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to create experiments in team that user does not belong to"
             )
@@ -1936,7 +1907,6 @@ class GraphQLMutations:
         """Update an existing experiment."""
 
         user_id = uuid.UUID(info.context.user_id)
-        org_id = uuid.UUID(info.context.org_id)
         experiment_id = uuid.UUID(input.id)
 
         metadb = runtime.storage_runtime().metadb
@@ -1946,9 +1916,7 @@ class GraphQLMutations:
         if not exp:
             raise RuntimeError(f"Experiment with id '{input.id}' not found")
 
-        if not metadb.team_is_accessible_to_user(
-            team_id=exp.team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=exp.team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to update experiment in team that user does not belong to"
             )
@@ -2066,7 +2034,6 @@ class GraphQLMutations:
         Only works if the experiment is in PENDING status."""
 
         user_id = uuid.UUID(info.context.user_id)
-        org_id = uuid.UUID(info.context.org_id)
         experiment_id_uuid = uuid.UUID(experiment_id)
 
         metadb = runtime.storage_runtime().metadb
@@ -2076,9 +2043,7 @@ class GraphQLMutations:
         if not exp:
             raise RuntimeError(f"Experiment with id '{experiment_id}' not found")
 
-        if not metadb.team_is_accessible_to_user(
-            team_id=exp.team_id, user_id=user_id, org_id=org_id
-        ):
+        if not metadb.team_is_accessible_to_user(team_id=exp.team_id, user_id=user_id):
             raise RuntimeError(
                 "Not allowed to update experiment in team that user does not belong to"
             )
