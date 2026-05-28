@@ -199,7 +199,6 @@ class Experiment(ABC):
             self.done_with_err()
         else:
             self.done()
-        self.done()
         self._end_status = None
 
         if self._signal_task:
