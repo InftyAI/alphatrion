@@ -161,6 +161,36 @@ async def test_experiment_with_done_with_err():
 
 
 @pytest.mark.asyncio
+async def test_experiment_exception_handling():
+    """Test that exceptions in experiment context automatically mark it as failed."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    run_id = None
+
+    with pytest.raises(ValueError, match="Simulated error"):
+        async with CraftExperiment.start(name="failing-experiment") as exp:
+            exp_id = exp.id
+            run = exp.run(lambda: asyncio.sleep(2))
+            run_id = run.id
+            raise ValueError("Simulated error")
+
+    # Verify experiment was marked as FAILED due to exception
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj is not None
+    assert exp_obj.status == Status.FAILED
+    assert exp_obj.duration is not None
+
+    # Verify run was cancelled
+    run_obj = global_runtime().metadb.get_run(run_id=run_id)
+    assert run_obj.status == Status.CANCELLED
+
+
+@pytest.mark.asyncio
 async def test_experiment_with_resume():
     init(
         team_id=uuid.uuid4(),

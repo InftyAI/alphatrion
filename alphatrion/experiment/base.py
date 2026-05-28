@@ -194,6 +194,11 @@ class Experiment(ABC):
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        # If we are here because of an exception, we want to mark the experiment as done with error.
+        if exc_type is not None:
+            self.done_with_err()
+        else:
+            self.done()
         self.done()
         self._end_status = None
 
