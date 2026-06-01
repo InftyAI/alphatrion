@@ -1,10 +1,10 @@
 import uuid
 
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
-from traceloop.sdk.decorators import task as _task
-from traceloop.sdk.decorators import workflow as _workflow
 from traceloop.sdk.decorators import agent as _agent
+from traceloop.sdk.decorators import task as _task
 from traceloop.sdk.decorators import tool as _tool
+from traceloop.sdk.decorators import workflow as _workflow
 
 
 def task(
@@ -52,6 +52,7 @@ def workflow(
 
     return decorator
 
+
 def tool(
     version: int | None = None,
     method_name: str | None = None,
@@ -69,6 +70,7 @@ def tool(
         )(func)
 
     return decorator
+
 
 def agent(
     version: int | None = None,
