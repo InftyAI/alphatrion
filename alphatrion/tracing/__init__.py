@@ -1,6 +1,8 @@
-from alphatrion.tracing.tracing import task, workflow
+from alphatrion.tracing.tracing import agent, task, tool, workflow
 
 __all__ = [
     "task",
     "workflow",
+    "tool",
+    "agent",
 ]
