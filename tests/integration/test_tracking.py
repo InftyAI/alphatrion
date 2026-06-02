@@ -386,3 +386,510 @@ async def test_aggregated_usage_via_graphql(
     assert usage["total_tokens"] == usage["input_tokens"] + usage["output_tokens"], (
         "total_tokens should equal sum of input and output tokens"
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_tool_decorator_tracking(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+    openai_client: OpenAI,
+):
+    """Test that @tool decorator creates spans with correct semantic kind in ClickHouse."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.tool()
+    def search_database(query: str) -> str:
+        """Simulate a tool that searches a database."""
+        return f"Results for: {query}"
+
+    @tracing.tool()
+    def calculate(x: int, y: int) -> int:
+        """Simulate a calculation tool."""
+        return x + y
+
+    @tracing.workflow()
+    async def tool_workflow():
+        """Workflow that uses tools."""
+        result1 = search_database("test query")
+        result2 = calculate(5, 3)
+        return result1, result2
+
+    async with experiment.CraftExperiment.start(name="tool_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(tool_workflow)
+        await task.wait()
+
+    # Query ClickHouse for tool spans
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanId,
+        SpanName,
+        SemanticKind,
+        TeamId,
+        ExperimentId,
+        SpanAttributes['traceloop.span.kind'] as traceloop_kind
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind = 'tool'
+    ORDER BY Timestamp
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) == 2, f"Expected 2 tool spans, got {len(spans)}"
+
+    tool_names = {span[1] for span in spans}
+    assert any("search_database" in name for name in tool_names), (
+        f"search_database not found in {tool_names}"
+    )
+    assert any("calculate" in name for name in tool_names), (
+        f"calculate not found in {tool_names}"
+    )
+
+    for span in spans:
+        span_id, span_name, semantic_kind, team_id, exp_id, traceloop_kind = span
+
+        assert semantic_kind == "tool", f"Span {span_id}: wrong semantic kind"
+        assert traceloop_kind == "tool", f"Span {span_id}: wrong traceloop kind"
+        assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
+        assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_agent_decorator_tracking(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+    openai_client: OpenAI,
+):
+    """Test that @agent decorator creates spans with correct semantic kind in ClickHouse."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.agent()
+    def research_agent(topic: str) -> str:
+        """Simulate an agent that does research."""
+        completion = openai_client.chat.completions.create(
+            model="smollm:135m",
+            messages=[{"role": "user", "content": f"Research: {topic}"}],
+        )
+        return completion.choices[0].message.content
+
+    @tracing.agent()
+    def planning_agent(goal: str) -> str:
+        """Simulate an agent that creates plans."""
+        return f"Plan for: {goal}"
+
+    @tracing.workflow()
+    async def agent_workflow():
+        """Workflow that uses agents."""
+        research = research_agent("AI trends")
+        plan = planning_agent("launch product")
+        return research, plan
+
+    async with experiment.CraftExperiment.start(name="agent_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(agent_workflow)
+        await task.wait()
+
+    # Query ClickHouse for agent spans
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanId,
+        SpanName,
+        SemanticKind,
+        TeamId,
+        ExperimentId,
+        SpanAttributes['traceloop.span.kind'] as traceloop_kind
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind = 'agent'
+    ORDER BY Timestamp
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) == 2, f"Expected 2 agent spans, got {len(spans)}"
+
+    agent_names = {span[1] for span in spans}
+    assert any("research_agent" in name for name in agent_names), (
+        f"research_agent not found in {agent_names}"
+    )
+    assert any("planning_agent" in name for name in agent_names), (
+        f"planning_agent not found in {agent_names}"
+    )
+
+    for span in spans:
+        span_id, span_name, semantic_kind, team_id, exp_id, traceloop_kind = span
+
+        assert semantic_kind == "agent", f"Span {span_id}: wrong semantic kind"
+        assert traceloop_kind == "agent", f"Span {span_id}: wrong traceloop kind"
+        assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
+        assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_agent_with_nested_tools(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+    openai_client: OpenAI,
+):
+    """Test agent calling tools - verify span hierarchy and semantic kinds."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.tool()
+    def fetch_data(source: str) -> str:
+        """Tool that fetches data."""
+        return f"Data from {source}"
+
+    @tracing.tool()
+    def process_data(data: str) -> str:
+        """Tool that processes data."""
+        return f"Processed: {data}"
+
+    @tracing.agent()
+    def data_agent(query: str) -> str:
+        """Agent that uses tools."""
+        raw = fetch_data("database")
+        processed = process_data(raw)
+        return processed
+
+    @tracing.workflow()
+    async def nested_workflow():
+        """Workflow with agent using tools."""
+        return data_agent("get user data")
+
+    async with experiment.CraftExperiment.start(name="nested_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(nested_workflow)
+        await task.wait()
+
+    # Query all spans and verify hierarchy
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanName,
+        SemanticKind,
+        COUNT(*) as count
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+    GROUP BY SpanName, SemanticKind
+    ORDER BY SemanticKind, SpanName
+    """
+
+    results = tracestore.client.query(query).result_rows
+
+    semantic_kinds = {row[1] for row in results}
+    assert "agent" in semantic_kinds, "Missing agent spans"
+    assert "tool" in semantic_kinds, "Missing tool spans"
+    assert "workflow" in semantic_kinds, "Missing workflow spans"
+
+    # Check that each expected function appears in the results
+    span_names = [row[0] for row in results]
+    assert any("data_agent" in name for name in span_names), (
+        f"data_agent not found in {span_names}"
+    )
+    assert any("fetch_data" in name for name in span_names), (
+        f"fetch_data not found in {span_names}"
+    )
+    assert any("process_data" in name for name in span_names), (
+        f"process_data not found in {span_names}"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_agent_tool_with_version(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+):
+    """Test that version parameter is tracked correctly for agents and tools."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.tool(version=2)
+    def versioned_tool() -> str:
+        """Tool with version 2."""
+        return "versioned result"
+
+    @tracing.agent(version=3)
+    def versioned_agent() -> str:
+        """Agent with version 3."""
+        return versioned_tool()
+
+    @tracing.workflow()
+    async def versioned_workflow():
+        """Workflow with versioned components."""
+        return versioned_agent()
+
+    async with experiment.CraftExperiment.start(name="versioned_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(versioned_workflow)
+        await task.wait()
+
+    # Verify version attributes are stored
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanName,
+        SemanticKind,
+        SpanAttributes['traceloop.entity.version'] as version
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind IN ('agent', 'tool')
+    ORDER BY SemanticKind
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) >= 2, f"Expected at least 2 spans, got {len(spans)}"
+
+    # Find agent and tool spans by semantic kind
+    agent_spans = [s for s in spans if s[1] == "agent"]
+    tool_spans = [s for s in spans if s[1] == "tool"]
+
+    assert len(agent_spans) >= 1, f"Expected at least 1 agent span, got {len(agent_spans)}"
+    assert len(tool_spans) >= 1, f"Expected at least 1 tool span, got {len(tool_spans)}"
+
+    # Check that function names appear in span names
+    agent_span_names = [s[0] for s in agent_spans]
+    tool_span_names = [s[0] for s in tool_spans]
+
+    assert any("versioned_agent" in name for name in agent_span_names), (
+        f"versioned_agent not found in {agent_span_names}"
+    )
+    assert any("versioned_tool" in name for name in tool_span_names), (
+        f"versioned_tool not found in {tool_span_names}"
+    )
+
+    # Verify versions are tracked
+    agent_version = agent_spans[0][2]
+    tool_version = tool_spans[0][2]
+
+    assert agent_version == "3", f"Agent version not tracked, expected '3', got '{agent_version}'"
+    assert tool_version == "2", f"Tool version not tracked, expected '2', got '{tool_version}'"
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_workflow_decorator_tracking(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+):
+    """Test that @workflow decorator creates spans with correct semantic kind in ClickHouse."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.workflow()
+    async def data_processing_workflow():
+        """A workflow that processes data."""
+        return "data processed"
+
+    @tracing.workflow()
+    async def notification_workflow():
+        """A workflow that sends notifications."""
+        return "notifications sent"
+
+    @tracing.workflow()
+    async def main_workflow():
+        """Main workflow that orchestrates sub-workflows."""
+        result1 = await data_processing_workflow()
+        result2 = await notification_workflow()
+        return result1, result2
+
+    async with experiment.CraftExperiment.start(name="workflow_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(main_workflow)
+        await task.wait()
+
+    # Query ClickHouse for workflow spans
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanId,
+        SpanName,
+        SemanticKind,
+        TeamId,
+        ExperimentId,
+        SpanAttributes['traceloop.span.kind'] as traceloop_kind
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind = 'workflow'
+    ORDER BY Timestamp
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) >= 3, f"Expected at least 3 workflow spans, got {len(spans)}"
+
+    workflow_names = {span[1] for span in spans}
+    assert any("data_processing_workflow" in name for name in workflow_names), (
+        f"data_processing_workflow not found in {workflow_names}"
+    )
+    assert any("notification_workflow" in name for name in workflow_names), (
+        f"notification_workflow not found in {workflow_names}"
+    )
+    assert any("main_workflow" in name for name in workflow_names), (
+        f"main_workflow not found in {workflow_names}"
+    )
+
+    for span in spans:
+        span_id, span_name, semantic_kind, team_id, exp_id, traceloop_kind = span
+
+        assert semantic_kind == "workflow", f"Span {span_id}: wrong semantic kind"
+        assert traceloop_kind == "workflow", f"Span {span_id}: wrong traceloop kind"
+        assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
+        assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_task_decorator_tracking(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+):
+    """Test that @task decorator creates spans with correct semantic kind in ClickHouse."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    @tracing.task()
+    def validate_input(data: str) -> bool:
+        """Task that validates input."""
+        return len(data) > 0
+
+    @tracing.task()
+    def transform_data(data: str) -> str:
+        """Task that transforms data."""
+        return data.upper()
+
+    @tracing.task()
+    def save_result(data: str) -> str:
+        """Task that saves result."""
+        return f"Saved: {data}"
+
+    @tracing.workflow()
+    async def task_workflow():
+        """Workflow that uses tasks."""
+        is_valid = validate_input("test data")
+        if is_valid:
+            transformed = transform_data("test data")
+            result = save_result(transformed)
+            return result
+        return "invalid"
+
+    async with experiment.CraftExperiment.start(name="task_tracking_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(task_workflow)
+        await task.wait()
+
+    # Query ClickHouse for task spans
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanId,
+        SpanName,
+        SemanticKind,
+        TeamId,
+        ExperimentId,
+        SpanAttributes['traceloop.span.kind'] as traceloop_kind
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind = 'task'
+    ORDER BY Timestamp
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) == 3, f"Expected 3 task spans, got {len(spans)}"
+
+    task_names = {span[1] for span in spans}
+    assert any("validate_input" in name for name in task_names), (
+        f"validate_input not found in {task_names}"
+    )
+    assert any("transform_data" in name for name in task_names), (
+        f"transform_data not found in {task_names}"
+    )
+    assert any("save_result" in name for name in task_names), (
+        f"save_result not found in {task_names}"
+    )
+
+    for span in spans:
+        span_id, span_name, semantic_kind, team_id, exp_id, traceloop_kind = span
+
+        assert semantic_kind == "task", f"Span {span_id}: wrong semantic kind"
+        assert traceloop_kind == "task", f"Span {span_id}: wrong traceloop kind"
+        assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
+        assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
