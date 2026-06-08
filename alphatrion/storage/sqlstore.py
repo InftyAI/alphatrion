@@ -779,25 +779,41 @@ class SQLStore(MetaStore):
         Also deletes all associated runs.
         Returns the number of experiments successfully deleted.
         Caller must ensure user has permission to delete these experiments.
+
+        Status transitions on deletion:
+        - PENDING experiments -> ABORTED
+        - RUNNING experiments -> CANCELLED
+        - Other statuses remain unchanged
         """
+        from sqlalchemy import case
+
         session = self._session()
         # Delete the experiments
-        # if experiment is running, skip deletion for that experiment
         filtered_exps = (
             session.query(Experiment.uuid)
             .filter(
                 Experiment.uuid.in_(experiment_ids),
                 Experiment.is_del == 0,
-                Experiment.status != Status.RUNNING,
             )
             .all()
         )
         filtered_exp_ids = [exp_id for (exp_id,) in filtered_exps]  # unpack tuples
 
+        # Update status based on current state: PENDING -> ABORTED, RUNNING -> CANCELLED
         deleted_count = (
             session.query(Experiment)
             .filter(Experiment.uuid.in_(filtered_exp_ids))
-            .update({Experiment.is_del: 1}, synchronize_session=False)
+            .update(
+                {
+                    Experiment.is_del: 1,
+                    Experiment.status: case(
+                        (Experiment.status == Status.PENDING, Status.ABORTED),
+                        (Experiment.status == Status.RUNNING, Status.CANCELLED),
+                        else_=Experiment.status,
+                    ),
+                },
+                synchronize_session=False,
+            )
         )
         # Delete all runs associated with these experiments
         session.query(Run).filter(Run.experiment_id.in_(filtered_exp_ids)).update(

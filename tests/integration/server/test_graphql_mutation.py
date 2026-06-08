@@ -946,10 +946,10 @@ def test_delete_running_experiment_fails(
     assert exp.status == Status.RUNNING
 
 
-def test_delete_experiments_skips_running(
+def test_delete_experiments_with_running_and_pending(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test that batch delete skips running experiments"""
+    """Test that batch delete handles running (CANCELLED) and pending (ABORTED) experiments"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -961,8 +961,6 @@ def test_delete_experiments_skips_running(
         name="Completed Experiment",
     )
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
         experiment_id=exp_id_1,
         status=Status.COMPLETED,
     )
@@ -974,8 +972,6 @@ def test_delete_experiments_skips_running(
         name="Running Experiment",
     )
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
         experiment_id=exp_id_2,
         status=Status.RUNNING,
     )
@@ -984,12 +980,21 @@ def test_delete_experiments_skips_running(
         org_id=test_org_id,
         team_id=test_team_id,
         user_id=test_user_id,
+        name="Pending Experiment",
+    )
+    metadb.update_experiment(
+        experiment_id=exp_id_3,
+        status=Status.PENDING,
+    )
+
+    exp_id_4 = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
         name="Failed Experiment",
     )
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
-        experiment_id=exp_id_3,
+        experiment_id=exp_id_4,
         status=Status.FAILED,
     )
 
@@ -1012,16 +1017,23 @@ def test_delete_experiments_skips_running(
         user_id=test_user_id,
         experiment_id=exp_id_3,
     )
+    run_id_4 = metadb.create_run(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        experiment_id=exp_id_4,
+    )
 
     # Verify all experiments exist
     assert metadb.get_experiment(experiment_id=exp_id_1) is not None
     assert metadb.get_experiment(experiment_id=exp_id_2) is not None
     assert metadb.get_experiment(experiment_id=exp_id_3) is not None
+    assert metadb.get_experiment(experiment_id=exp_id_4) is not None
 
-    # Try to batch delete all experiments
+    # Batch delete all experiments
     mutation = f"""
     mutation {{
-        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}", "{exp_id_3}"])
+        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}", "{exp_id_3}", "{exp_id_4}"])
     }}
     """
     response = execute_graphql(
@@ -1030,35 +1042,48 @@ def test_delete_experiments_skips_running(
         user_id=test_user_id,
     )
     assert response.errors is None
-    # Should only delete 2 experiments (skipped the running one)
-    assert response.data["deleteExperiments"] == 2
+    # Should delete all 4 experiments
+    assert response.data["deleteExperiments"] == 4
 
-    # Verify running experiment still exists
-    exp_2 = metadb.get_experiment(experiment_id=exp_id_2)
-    assert exp_2 is not None
-    assert exp_2.status == Status.RUNNING
-
-    # Verify non-running experiments are deleted
+    # Verify all experiments are deleted (get_experiment filters out deleted ones)
     assert metadb.get_experiment(experiment_id=exp_id_1) is None
+    assert metadb.get_experiment(experiment_id=exp_id_2) is None
     assert metadb.get_experiment(experiment_id=exp_id_3) is None
+    assert metadb.get_experiment(experiment_id=exp_id_4) is None
 
-    # Verify runs of deleted experiments are also deleted
+    # Verify status changes by querying directly from database
+    from alphatrion.storage.sql_models import Experiment
+
+    with metadb._session() as session:
+        exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
+        exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
+        exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
+        exp_4 = session.query(Experiment).filter(Experiment.uuid == exp_id_4).first()
+
+        # COMPLETED stays COMPLETED
+        assert exp_1.status == Status.COMPLETED
+        # RUNNING becomes CANCELLED
+        assert exp_2.status == Status.CANCELLED
+        # PENDING becomes ABORTED
+        assert exp_3.status == Status.ABORTED
+        # FAILED stays FAILED
+        assert exp_4.status == Status.FAILED
+
+    # Verify all runs are deleted
     assert metadb.get_run(run_id=run_id_1) is None
+    assert metadb.get_run(run_id=run_id_2) is None
     assert metadb.get_run(run_id=run_id_3) is None
-
-    # Verify run of running experiment still exists
-    run_2 = metadb.get_run(run_id=run_id_2)
-    assert run_2 is not None
+    assert metadb.get_run(run_id=run_id_4) is None
 
 
-def test_delete_experiments_all_running(
+def test_delete_experiments_all_running_and_pending(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test that batch delete returns 0 when all experiments are running"""
+    """Test that batch delete handles all running and pending experiments correctly"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
-    # Create multiple running experiments
+    # Create running and pending experiments
     exp_id_1 = metadb.create_experiment(
         org_id=test_org_id,
         team_id=test_team_id,
@@ -1066,8 +1091,6 @@ def test_delete_experiments_all_running(
         name="Running Experiment 1",
     )
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
         experiment_id=exp_id_1,
         status=Status.RUNNING,
     )
@@ -1079,16 +1102,25 @@ def test_delete_experiments_all_running(
         name="Running Experiment 2",
     )
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
         experiment_id=exp_id_2,
         status=Status.RUNNING,
     )
 
-    # Try to batch delete all running experiments
+    exp_id_3 = metadb.create_experiment(
+        org_id=test_org_id,
+        team_id=test_team_id,
+        user_id=test_user_id,
+        name="Pending Experiment 1",
+    )
+    metadb.update_experiment(
+        experiment_id=exp_id_3,
+        status=Status.PENDING,
+    )
+
+    # Batch delete all experiments
     mutation = f"""
     mutation {{
-        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}"])
+        deleteExperiments(experimentIds: ["{exp_id_1}", "{exp_id_2}", "{exp_id_3}"])
     }}
     """
     response = execute_graphql(
@@ -1097,16 +1129,27 @@ def test_delete_experiments_all_running(
         user_id=test_user_id,
     )
     assert response.errors is None
-    # Should delete 0 experiments (all are running)
-    assert response.data["deleteExperiments"] == 0
+    # Should delete all 3 experiments
+    assert response.data["deleteExperiments"] == 3
 
-    # Verify all experiments still exist
-    exp_1 = metadb.get_experiment(experiment_id=exp_id_1)
-    exp_2 = metadb.get_experiment(experiment_id=exp_id_2)
-    assert exp_1 is not None
-    assert exp_2 is not None
-    assert exp_1.status == Status.RUNNING
-    assert exp_2.status == Status.RUNNING
+    # Verify all experiments are deleted
+    assert metadb.get_experiment(experiment_id=exp_id_1) is None
+    assert metadb.get_experiment(experiment_id=exp_id_2) is None
+    assert metadb.get_experiment(experiment_id=exp_id_3) is None
+
+    # Verify status changes by querying directly from database
+    from alphatrion.storage.sql_models import Experiment
+
+    with metadb._session() as session:
+        exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
+        exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
+        exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
+
+        # RUNNING experiments become CANCELLED
+        assert exp_1.status == Status.CANCELLED
+        assert exp_2.status == Status.CANCELLED
+        # PENDING experiment becomes ABORTED
+        assert exp_3.status == Status.ABORTED
 
 
 def test_create_experiment_mutation(

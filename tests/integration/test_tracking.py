@@ -699,7 +699,9 @@ async def test_agent_tool_with_version(
     agent_spans = [s for s in spans if s[1] == "agent"]
     tool_spans = [s for s in spans if s[1] == "tool"]
 
-    assert len(agent_spans) >= 1, f"Expected at least 1 agent span, got {len(agent_spans)}"
+    assert len(agent_spans) >= 1, (
+        f"Expected at least 1 agent span, got {len(agent_spans)}"
+    )
     assert len(tool_spans) >= 1, f"Expected at least 1 tool span, got {len(tool_spans)}"
 
     # Check that function names appear in span names
@@ -717,8 +719,12 @@ async def test_agent_tool_with_version(
     agent_version = agent_spans[0][2]
     tool_version = tool_spans[0][2]
 
-    assert agent_version == "3", f"Agent version not tracked, expected '3', got '{agent_version}'"
-    assert tool_version == "2", f"Tool version not tracked, expected '2', got '{tool_version}'"
+    assert agent_version == "3", (
+        f"Agent version not tracked, expected '3', got '{agent_version}'"
+    )
+    assert tool_version == "2", (
+        f"Tool version not tracked, expected '2', got '{tool_version}'"
+    )
 
 
 @pytest.mark.asyncio
