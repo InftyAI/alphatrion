@@ -1054,22 +1054,20 @@ def test_delete_experiments_with_running_and_pending(
     # Verify status changes by querying directly from database
     from alphatrion.storage.sql_models import Experiment
 
-    session = metadb._session()
-    exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
-    exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
-    exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
-    exp_4 = session.query(Experiment).filter(Experiment.uuid == exp_id_4).first()
+    with metadb._session() as session:
+        exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
+        exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
+        exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
+        exp_4 = session.query(Experiment).filter(Experiment.uuid == exp_id_4).first()
 
-    # COMPLETED stays COMPLETED
-    assert exp_1.status == Status.COMPLETED
-    # RUNNING becomes CANCELLED
-    assert exp_2.status == Status.CANCELLED
-    # PENDING becomes ABORTED
-    assert exp_3.status == Status.ABORTED
-    # FAILED stays FAILED
-    assert exp_4.status == Status.FAILED
-
-    session.close()
+        # COMPLETED stays COMPLETED
+        assert exp_1.status == Status.COMPLETED
+        # RUNNING becomes CANCELLED
+        assert exp_2.status == Status.CANCELLED
+        # PENDING becomes ABORTED
+        assert exp_3.status == Status.ABORTED
+        # FAILED stays FAILED
+        assert exp_4.status == Status.FAILED
 
     # Verify all runs are deleted
     assert metadb.get_run(run_id=run_id_1) is None
@@ -1142,18 +1140,16 @@ def test_delete_experiments_all_running_and_pending(
     # Verify status changes by querying directly from database
     from alphatrion.storage.sql_models import Experiment
 
-    session = metadb._session()
-    exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
-    exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
-    exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
+    with metadb._session() as session:
+        exp_1 = session.query(Experiment).filter(Experiment.uuid == exp_id_1).first()
+        exp_2 = session.query(Experiment).filter(Experiment.uuid == exp_id_2).first()
+        exp_3 = session.query(Experiment).filter(Experiment.uuid == exp_id_3).first()
 
-    # RUNNING experiments become CANCELLED
-    assert exp_1.status == Status.CANCELLED
-    assert exp_2.status == Status.CANCELLED
-    # PENDING experiment becomes ABORTED
-    assert exp_3.status == Status.ABORTED
-
-    session.close()
+        # RUNNING experiments become CANCELLED
+        assert exp_1.status == Status.CANCELLED
+        assert exp_2.status == Status.CANCELLED
+        # PENDING experiment becomes ABORTED
+        assert exp_3.status == Status.ABORTED
 
 
 def test_create_experiment_mutation(

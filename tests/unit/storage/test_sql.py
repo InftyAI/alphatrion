@@ -288,6 +288,7 @@ def test_delete_experiments_basic(db):
 
 def test_delete_experiments_pending_status(db):
     """Test that pending experiments are marked as ABORTED when deleted"""
+    from alphatrion.storage.sql_models import Experiment
 
     org_id = uuid.uuid4()
     team_id = uuid.uuid4()
@@ -315,25 +316,23 @@ def test_delete_experiments_pending_status(db):
 
     # Verify experiments are deleted but check status in the database directly
     # (since get_experiment filters out deleted experiments)
-    session = db._session()
-    from alphatrion.storage.sql_models import Experiment
+    with db._session() as session:
+        exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
+        exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
 
-    exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
-    exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
+        assert exp1 is not None
+        assert exp1.is_del == 1
+        assert exp1.status == Status.ABORTED
 
-    assert exp1 is not None
-    assert exp1.is_del == 1
-    assert exp1.status == Status.ABORTED
-
-    assert exp2 is not None
-    assert exp2.is_del == 1
-    assert exp2.status == Status.ABORTED
-
-    session.close()
+        assert exp2 is not None
+        assert exp2.is_del == 1
+        assert exp2.status == Status.ABORTED
 
 
 def test_delete_experiments_running_status(db):
     """Test that running experiments are marked as CANCELLED when deleted"""
+    from alphatrion.storage.sql_models import Experiment
+
     org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
@@ -359,25 +358,23 @@ def test_delete_experiments_running_status(db):
     assert deleted_count == 2
 
     # Verify experiments are deleted and status is CANCELLED
-    session = db._session()
-    from alphatrion.storage.sql_models import Experiment
+    with db._session() as session:
+        exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
+        exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
 
-    exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
-    exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
+        assert exp1 is not None
+        assert exp1.is_del == 1
+        assert exp1.status == Status.CANCELLED
 
-    assert exp1 is not None
-    assert exp1.is_del == 1
-    assert exp1.status == Status.CANCELLED
-
-    assert exp2 is not None
-    assert exp2.is_del == 1
-    assert exp2.status == Status.CANCELLED
-
-    session.close()
+        assert exp2 is not None
+        assert exp2.is_del == 1
+        assert exp2.status == Status.CANCELLED
 
 
 def test_delete_experiments_mixed_statuses(db):
     """Test deleting experiments with various statuses"""
+    from alphatrion.storage.sql_models import Experiment
+
     org_id = uuid.uuid4()
     team_id = uuid.uuid4()
     user_id = uuid.uuid4()
@@ -428,31 +425,27 @@ def test_delete_experiments_mixed_statuses(db):
     assert deleted_count == 4
 
     # Verify experiments have correct status after deletion
-    session = db._session()
-    from alphatrion.storage.sql_models import Experiment
+    with db._session() as session:
+        exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
+        exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
+        exp3 = session.query(Experiment).filter(Experiment.uuid == exp_id3).first()
+        exp4 = session.query(Experiment).filter(Experiment.uuid == exp_id4).first()
 
-    exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
-    exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
-    exp3 = session.query(Experiment).filter(Experiment.uuid == exp_id3).first()
-    exp4 = session.query(Experiment).filter(Experiment.uuid == exp_id4).first()
+        # PENDING -> ABORTED
+        assert exp1.is_del == 1
+        assert exp1.status == Status.ABORTED
 
-    # PENDING -> ABORTED
-    assert exp1.is_del == 1
-    assert exp1.status == Status.ABORTED
+        # RUNNING -> CANCELLED
+        assert exp2.is_del == 1
+        assert exp2.status == Status.CANCELLED
 
-    # RUNNING -> CANCELLED
-    assert exp2.is_del == 1
-    assert exp2.status == Status.CANCELLED
+        # COMPLETED stays COMPLETED
+        assert exp3.is_del == 1
+        assert exp3.status == Status.COMPLETED
 
-    # COMPLETED stays COMPLETED
-    assert exp3.is_del == 1
-    assert exp3.status == Status.COMPLETED
-
-    # FAILED stays FAILED
-    assert exp4.is_del == 1
-    assert exp4.status == Status.FAILED
-
-    session.close()
+        # FAILED stays FAILED
+        assert exp4.is_del == 1
+        assert exp4.status == Status.FAILED
 
     # Verify all runs are marked as deleted
     run1 = db.get_run(run_id1)
