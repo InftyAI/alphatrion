@@ -111,9 +111,18 @@ Access the dashboard at `http://127.0.0.1:5173` and **log in with your email and
 
 ![dashboard](./site/images/dashboard.png)
 
-### 5. View Traces
+### 5. Distributed Tracing
 
-AlphaTrion automatically captures distributed tracing data for all LLM calls, including latency, token usage, and span relationships.
+AlphaTrion provides decorators for instrumenting your code with OpenTelemetry distributed tracing:
+
+- **`@tracing.workflow()`** - Top-level orchestration
+- **`@tracing.agent()`** - Autonomous AI agents with decision-making
+- **`@tracing.task()`** - Reusable units of work
+- **`@tracing.tool()`** - Atomic leaf operations
+
+All decorators automatically capture execution duration, status, span hierarchy, and context (run_id, experiment_id, team_id, org_id). LLM calls, database queries, and HTTP requests are auto-instrumented.
+
+View captured traces in the dashboard:
 
 ![tracing](./site/images/trace.png)
 
