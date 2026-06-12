@@ -699,7 +699,9 @@ async def test_agent_tool_with_version(
     agent_spans = [s for s in spans if s[1] == "agent"]
     tool_spans = [s for s in spans if s[1] == "tool"]
 
-    assert len(agent_spans) >= 1, f"Expected at least 1 agent span, got {len(agent_spans)}"
+    assert len(agent_spans) >= 1, (
+        f"Expected at least 1 agent span, got {len(agent_spans)}"
+    )
     assert len(tool_spans) >= 1, f"Expected at least 1 tool span, got {len(tool_spans)}"
 
     # Check that function names appear in span names
@@ -717,8 +719,12 @@ async def test_agent_tool_with_version(
     agent_version = agent_spans[0][2]
     tool_version = tool_spans[0][2]
 
-    assert agent_version == "3", f"Agent version not tracked, expected '3', got '{agent_version}'"
-    assert tool_version == "2", f"Tool version not tracked, expected '2', got '{tool_version}'"
+    assert agent_version == "3", (
+        f"Agent version not tracked, expected '3', got '{agent_version}'"
+    )
+    assert tool_version == "2", (
+        f"Tool version not tracked, expected '2', got '{tool_version}'"
+    )
 
 
 @pytest.mark.asyncio
@@ -802,6 +808,86 @@ async def test_workflow_decorator_tracking(
         assert traceloop_kind == "workflow", f"Span {span_id}: wrong traceloop kind"
         assert team_id == str(test_team_id), f"Span {span_id}: wrong team_id"
         assert exp_id == str(experiment_id), f"Span {span_id}: wrong experiment_id"
+
+
+@pytest.mark.asyncio
+@pytest.mark.timeout(60)
+async def test_workflow_with_custom_name(
+    test_org_id: uuid.UUID,
+    test_team_id: uuid.UUID,
+    test_user_id: uuid.UUID,
+):
+    """Test that @workflow decorator with custom name parameter sets the span name correctly."""
+    import alphatrion as alpha
+
+    alpha.init(
+        org_id=str(test_org_id),
+        team_id=str(test_team_id),
+        user_id=str(test_user_id),
+    )
+
+    experiment_id = None
+
+    # Workflow with custom name
+    @tracing.workflow(name="custom-pipeline-v2")
+    async def my_workflow():
+        """A workflow with a custom name."""
+        return "processed"
+
+    # Workflow without custom name (should use function name)
+    @tracing.workflow()
+    async def default_named_workflow():
+        """A workflow that uses default function name."""
+        return "default"
+
+    @tracing.workflow()
+    async def orchestrator():
+        """Orchestrates both workflows."""
+        result1 = await my_workflow()
+        result2 = await default_named_workflow()
+        return result1, result2
+
+    async with experiment.CraftExperiment.start(name="custom_name_test") as exp:
+        experiment_id = exp.id
+        task = exp.run(orchestrator)
+        await task.wait()
+
+    # Query ClickHouse for workflow spans
+    runtime.init()
+    tracestore = runtime.storage_runtime().tracestore
+    assert tracestore is not None, "Tracestore not initialized"
+
+    database = tracestore.database
+    query = f"""
+    SELECT
+        SpanId,
+        SpanName,
+        SemanticKind,
+        SpanAttributes['traceloop.entity.name'] as entity_name
+    FROM {database}.otel_spans
+    WHERE ExperimentId = '{experiment_id}'
+        AND SemanticKind = 'workflow'
+    ORDER BY Timestamp
+    """
+
+    spans = tracestore.client.query(query).result_rows
+    assert len(spans) >= 3, f"Expected at least 3 workflow spans, got {len(spans)}"
+
+    span_names = {span[1] for span in spans}
+
+    # Check that custom name is used
+    assert any("custom-pipeline-v2" in name for name in span_names), (
+        f"Custom name 'custom-pipeline-v2' not found in span names: {span_names}"
+    )
+
+    # Check that default function name is used when no custom name
+    assert any("default_named_workflow" in name for name in span_names), (
+        f"default_named_workflow not found in span names: {span_names}"
+    )
+
+    assert any("orchestrator" in name for name in span_names), (
+        f"orchestrator not found in span names: {span_names}"
+    )
 
 
 @pytest.mark.asyncio

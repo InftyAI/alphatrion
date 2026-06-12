@@ -1,4 +1,3 @@
-import uuid
 
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk.decorators import agent as _agent
@@ -29,7 +28,7 @@ def task(
 
 
 def workflow(
-    run_id: uuid.UUID | None = None,
+    name: str | None = None,
     version: int | None = None,
     method_name: str | None = None,
     span_kind: TraceloopSpanKindValues | None = TraceloopSpanKindValues.WORKFLOW,
@@ -39,12 +38,12 @@ def workflow(
     Attributes (run_id, team_id, experiment_id) are automatically
     added to all spans by ContextAttributesSpanProcessor.
 
-    :param run_id: The run ID (used as workflow name if provided)
+    :param name: The workflow name (optional)
     """
 
     def decorator(func):
         return _workflow(
-            name=str(run_id) if run_id else None,
+            name=name,
             version=version,
             method_name=method_name,
             tlp_span_kind=span_kind,
