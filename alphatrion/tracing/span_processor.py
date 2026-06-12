@@ -71,11 +71,11 @@ class ContextAttributesSpanProcessor(SpanProcessor):
 
             runtime = global_runtime()
 
+            span.set_attribute("experiment_id", str(exp_id))
             span.set_attribute("run_id", str(run_id))
             span.set_attribute("org_id", str(runtime.org_id))
             span.set_attribute("team_id", str(runtime.team_id))
             span.set_attribute("user_id", str(runtime.user_id))
-            span.set_attribute("experiment_id", str(exp_id))
 
         except (RuntimeError, AttributeError) as e:
             logger.debug(f"Could not set span attributes in processor: {e}")
