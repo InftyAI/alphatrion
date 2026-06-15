@@ -510,3 +510,135 @@ def test_delete_experiments_already_deleted(db):
     # Try to delete again
     deleted_count = db.delete_experiments([exp_id])
     assert deleted_count == 0
+
+
+def test_delete_single_experiment_running(db):
+    """Test that delete_experiment marks RUNNING experiment as CANCELLED"""
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create running experiment
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="running_exp",
+        status=Status.RUNNING,
+    )
+
+    # Delete the running experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify experiment is deleted
+    exp = db.get_experiment(exp_id)
+    assert exp is None
+
+    # Verify status is CANCELLED by querying directly
+    with db._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == exp_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.CANCELLED
+
+
+def test_delete_single_experiment_pending(db):
+    """Test that delete_experiment marks PENDING experiment as ABORTED"""
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create pending experiment
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="pending_exp",
+        status=Status.PENDING,
+    )
+
+    # Delete the pending experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify experiment is deleted
+    exp = db.get_experiment(exp_id)
+    assert exp is None
+
+    # Verify status is ABORTED by querying directly
+    with db._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == exp_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.ABORTED
+
+
+def test_delete_single_experiment_completed(db):
+    """Test that delete_experiment keeps COMPLETED status unchanged"""
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create completed experiment
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="completed_exp",
+        status=Status.COMPLETED,
+    )
+
+    # Delete the completed experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify experiment is deleted
+    exp = db.get_experiment(exp_id)
+    assert exp is None
+
+    # Verify status remains COMPLETED
+    with db._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == exp_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.COMPLETED
+
+
+def test_delete_single_experiment_with_runs(db):
+    """Test that delete_experiment also deletes associated runs"""
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create experiment with runs
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="exp_with_runs",
+        status=Status.RUNNING,
+    )
+
+    run_id_1 = db.create_run(
+        org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=exp_id
+    )
+    run_id_2 = db.create_run(
+        org_id=org_id, team_id=team_id, user_id=user_id, experiment_id=exp_id
+    )
+
+    # Delete the experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify runs are also deleted
+    run1 = db.get_run(run_id_1)
+    run2 = db.get_run(run_id_2)
+    assert run1 is None
+    assert run2 is None
