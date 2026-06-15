@@ -752,7 +752,6 @@ class SQLStore(MetaStore):
         - RUNNING experiments -> CANCELLED
         - Other statuses remain unchanged
         """
-        from sqlalchemy import case
 
         session = self._session()
 
