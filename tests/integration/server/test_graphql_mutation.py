@@ -897,10 +897,10 @@ def test_delete_experiments_batch_deletes_runs(
     assert metadb.get_run(run_id=run_2_2) is None
 
 
-def test_delete_running_experiment_fails(
+def test_delete_running_experiment_succeeds(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test that deleting a running experiment raises an error"""
+    """Test that deleting a running experiment marks it as CANCELLED"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -913,8 +913,6 @@ def test_delete_running_experiment_fails(
 
     # Set experiment status to RUNNING
     metadb.update_experiment(
-        org_id=test_org_id,
-        team_id=test_team_id,
         experiment_id=experiment_id,
         status=Status.RUNNING,
     )
@@ -924,7 +922,7 @@ def test_delete_running_experiment_fails(
     assert exp is not None
     assert exp.status == Status.RUNNING
 
-    # Try to delete running experiment via mutation
+    # Delete running experiment via mutation
     mutation = f"""
     mutation {{
         deleteExperiment(experimentId: "{experiment_id}")
@@ -936,14 +934,22 @@ def test_delete_running_experiment_fails(
         user_id=test_user_id,
     )
 
-    # Should return an error
-    assert response.errors is not None
-    assert "Cannot delete a running experiment" in str(response.errors[0])
+    # Should succeed without errors
+    assert response.errors is None
+    assert response.data["deleteExperiment"] is True
 
-    # Verify experiment still exists
+    # Verify experiment is deleted (get_experiment filters out deleted ones)
     exp = metadb.get_experiment(experiment_id=experiment_id)
-    assert exp is not None
-    assert exp.status == Status.RUNNING
+    assert exp is None
+
+    # Verify status is CANCELLED by querying directly
+    from alphatrion.storage.sql_models import Experiment
+
+    with metadb._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == experiment_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.CANCELLED
 
 
 def test_delete_experiments_with_running_and_pending(

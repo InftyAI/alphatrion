@@ -743,6 +743,16 @@ class SQLStore(MetaStore):
         return exps
 
     def delete_experiment(self, experiment_id: uuid.UUID) -> bool:
+        """
+        Delete a single experiment by setting is_del flag.
+        Also deletes all associated runs.
+
+        Status transitions on deletion:
+        - PENDING experiments -> ABORTED
+        - RUNNING experiments -> CANCELLED
+        - Other statuses remain unchanged
+        """
+
         session = self._session()
 
         # Try to delete the experiment
@@ -752,17 +762,19 @@ class SQLStore(MetaStore):
             .first()
         )
 
-        if exp and exp.status == Status.RUNNING:
-            raise ValueError(
-                "Cannot delete a running experiment. Please stop it first."
-            )
-
         # Delete all runs associated with this experiment
-        # (regardless of experiment status)
         session.query(Run).filter(Run.experiment_id == experiment_id).update(
             {Run.is_del: 1}, synchronize_session=False
         )
+
         if exp:
+            # Update status based on current state
+            if exp.status == Status.PENDING:
+                exp.status = Status.ABORTED
+            elif exp.status == Status.RUNNING:
+                exp.status = Status.CANCELLED
+            # Other statuses remain unchanged
+
             exp.is_del = 1
             session.commit()
             session.close()

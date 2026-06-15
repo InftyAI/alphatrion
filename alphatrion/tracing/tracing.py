@@ -1,4 +1,3 @@
-
 from opentelemetry.semconv_ai import TraceloopSpanKindValues
 from traceloop.sdk.decorators import agent as _agent
 from traceloop.sdk.decorators import task as _task
