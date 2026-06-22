@@ -512,6 +512,126 @@ def test_delete_experiments_already_deleted(db):
     assert deleted_count == 0
 
 
+def test_delete_experiments_running_sets_duration(db):
+    """Test that batch delete_experiments sets duration for RUNNING experiments"""
+    import time
+
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create running experiments
+    exp_id1 = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="running_exp1_duration",
+        status=Status.RUNNING,
+    )
+    exp_id2 = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="running_exp2_duration",
+        status=Status.RUNNING,
+    )
+
+    # Wait a bit to ensure duration is measurable
+    time.sleep(0.1)
+
+    # Delete the running experiments
+    deleted_count = db.delete_experiments([exp_id1, exp_id2])
+    assert deleted_count == 2
+
+    # Verify duration is set for both
+    with db._session() as session:
+        exp1 = session.query(Experiment).filter(Experiment.uuid == exp_id1).first()
+        exp2 = session.query(Experiment).filter(Experiment.uuid == exp_id2).first()
+
+        assert exp1 is not None
+        assert exp1.is_del == 1
+        assert exp1.status == Status.CANCELLED
+        assert exp1.duration is not None
+        assert exp1.duration > 0.0
+
+        assert exp2 is not None
+        assert exp2.is_del == 1
+        assert exp2.status == Status.CANCELLED
+        assert exp2.duration is not None
+        assert exp2.duration > 0.0
+
+
+def test_delete_experiments_mixed_statuses_duration(db):
+    """Test that batch delete sets duration only for RUNNING experiments, not PENDING"""
+    import time
+
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create mixed status experiments
+    running_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="running_exp",
+        status=Status.RUNNING,
+    )
+    pending_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="pending_exp",
+        status=Status.PENDING,
+    )
+    completed_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="completed_exp",
+        status=Status.COMPLETED,
+    )
+
+    # Wait a bit
+    time.sleep(0.1)
+
+    # Delete all experiments
+    deleted_count = db.delete_experiments([running_id, pending_id, completed_id])
+    assert deleted_count == 3
+
+    # Verify duration behavior per status
+    with db._session() as session:
+        running_exp = (
+            session.query(Experiment).filter(Experiment.uuid == running_id).first()
+        )
+        pending_exp = (
+            session.query(Experiment).filter(Experiment.uuid == pending_id).first()
+        )
+        completed_exp = (
+            session.query(Experiment).filter(Experiment.uuid == completed_id).first()
+        )
+
+        # RUNNING -> CANCELLED with duration set
+        assert running_exp is not None
+        assert running_exp.status == Status.CANCELLED
+        assert running_exp.duration is not None
+        assert running_exp.duration > 0.0
+
+        # PENDING -> ABORTED with default duration unchanged
+        assert pending_exp is not None
+        assert pending_exp.status == Status.ABORTED
+        assert pending_exp.duration == 0.0  # Remains default
+
+        # COMPLETED -> unchanged status, duration unchanged
+        assert completed_exp is not None
+        assert completed_exp.status == Status.COMPLETED
+        assert completed_exp.duration == 0.0  # Remains default
+
+
 def test_delete_single_experiment_running(db):
     """Test that delete_experiment marks RUNNING experiment as CANCELLED"""
     from alphatrion.storage.sql_models import Experiment
@@ -642,3 +762,69 @@ def test_delete_single_experiment_with_runs(db):
     run2 = db.get_run(run_id_2)
     assert run1 is None
     assert run2 is None
+
+
+def test_delete_single_running_experiment_sets_duration(db):
+    """Test that delete_experiment sets duration when deleting RUNNING experiment"""
+    import time
+
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create running experiment
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="running_exp_with_duration",
+        status=Status.RUNNING,
+    )
+
+    # Wait a bit to ensure duration is measurable
+    time.sleep(0.1)
+
+    # Delete the running experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify duration is set
+    with db._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == exp_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.CANCELLED
+        assert exp.duration is not None
+        assert exp.duration > 0.0  # Should have some positive duration
+
+
+def test_delete_single_pending_experiment_no_duration(db):
+    """Test that delete_experiment does not update duration for PENDING experiment"""
+    from alphatrion.storage.sql_models import Experiment
+
+    org_id = uuid.uuid4()
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    # Create pending experiment
+    exp_id = db.create_experiment(
+        org_id=org_id,
+        team_id=team_id,
+        user_id=user_id,
+        name="pending_exp_no_duration",
+        status=Status.PENDING,
+    )
+
+    # Delete the pending experiment
+    result = db.delete_experiment(exp_id)
+    assert result is True
+
+    # Verify duration remains default (0.0) for PENDING
+    with db._session() as session:
+        exp = session.query(Experiment).filter(Experiment.uuid == exp_id).first()
+        assert exp is not None
+        assert exp.is_del == 1
+        assert exp.status == Status.ABORTED
+        assert exp.duration == 0.0  # Should remain default for PENDING
