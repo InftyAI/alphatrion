@@ -773,7 +773,9 @@ class SQLStore(MetaStore):
                 exp.status = Status.ABORTED
             elif exp.status == Status.RUNNING:
                 exp.status = Status.CANCELLED
-                exp.duration = (datetime.datetime.now() - exp.created_at).total_seconds()
+                exp.duration = (
+                    datetime.datetime.now() - exp.created_at
+                ).total_seconds()
             # Other statuses remain unchanged
 
             exp.is_del = 1
@@ -798,7 +800,6 @@ class SQLStore(MetaStore):
         - RUNNING experiments -> CANCELLED
         - Other statuses remain unchanged
         """
-        from sqlalchemy import case
 
         session = self._session()
         # Delete the experiments
