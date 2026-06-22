@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from datetime import UTC
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -773,6 +774,9 @@ class SQLStore(MetaStore):
                 exp.status = Status.ABORTED
             elif exp.status == Status.RUNNING:
                 exp.status = Status.CANCELLED
+                exp.duration = (
+                    datetime.datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
+                ).total_seconds()
             # Other statuses remain unchanged
 
             exp.is_del = 1
@@ -797,7 +801,6 @@ class SQLStore(MetaStore):
         - RUNNING experiments -> CANCELLED
         - Other statuses remain unchanged
         """
-        from sqlalchemy import case
 
         session = self._session()
         # Delete the experiments
@@ -811,22 +814,24 @@ class SQLStore(MetaStore):
         )
         filtered_exp_ids = [exp_id for (exp_id,) in filtered_exps]  # unpack tuples
 
-        # Update status based on current state: PENDING -> ABORTED, RUNNING -> CANCELLED
-        deleted_count = (
+        # Update experiments one by one to handle duration calculation
+        exps_to_update = (
             session.query(Experiment)
             .filter(Experiment.uuid.in_(filtered_exp_ids))
-            .update(
-                {
-                    Experiment.is_del: 1,
-                    Experiment.status: case(
-                        (Experiment.status == Status.PENDING, Status.ABORTED),
-                        (Experiment.status == Status.RUNNING, Status.CANCELLED),
-                        else_=Experiment.status,
-                    ),
-                },
-                synchronize_session=False,
-            )
+            .all()
         )
+
+        for exp in exps_to_update:
+            if exp.status == Status.PENDING:
+                exp.status = Status.ABORTED
+            elif exp.status == Status.RUNNING:
+                exp.status = Status.CANCELLED
+                exp.duration = (
+                    datetime.datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
+                ).total_seconds()
+            exp.is_del = 1
+
+        deleted_count = len(exps_to_update)
         # Delete all runs associated with these experiments
         session.query(Run).filter(Run.experiment_id.in_(filtered_exp_ids)).update(
             {Run.is_del: 1}, synchronize_session=False

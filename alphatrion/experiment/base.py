@@ -13,7 +13,7 @@ from alphatrion.run.run import Run
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage import runtime as storage_runtime
-from alphatrion.storage.sql_models import FINISHED_STATUS, Status
+from alphatrion.storage.sql_models import Status
 from alphatrion.types import CallableEntry, PostRunHookFn
 from alphatrion.utils import context
 
@@ -416,7 +416,7 @@ class Experiment(ABC):
         self._runs.clear()
 
         exp = self._runtime._metadb.get_experiment(experiment_id=self.id)
-        if exp is not None and exp.status not in FINISHED_STATUS:
+        if exp is not None:
             duration = (
                 datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
             ).total_seconds()
