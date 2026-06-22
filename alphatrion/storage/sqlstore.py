@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from datetime import UTC
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -774,7 +775,7 @@ class SQLStore(MetaStore):
             elif exp.status == Status.RUNNING:
                 exp.status = Status.CANCELLED
                 exp.duration = (
-                    datetime.datetime.now() - exp.created_at
+                    datetime.datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
                 ).total_seconds()
             # Other statuses remain unchanged
 
@@ -826,7 +827,7 @@ class SQLStore(MetaStore):
             elif exp.status == Status.RUNNING:
                 exp.status = Status.CANCELLED
                 exp.duration = (
-                    datetime.datetime.now() - exp.created_at
+                    datetime.datetime.now(UTC) - exp.created_at.replace(tzinfo=UTC)
                 ).total_seconds()
             exp.is_del = 1
 
