@@ -13,6 +13,7 @@ from alphatrion.run.run import Run
 from alphatrion.runtime.contextvars import current_exp_id
 from alphatrion.runtime.runtime import global_runtime
 from alphatrion.storage import runtime as storage_runtime
+from alphatrion.storage import sql_models
 from alphatrion.storage.sql_models import Status
 from alphatrion.types import CallableEntry, PostRunHookFn
 from alphatrion.utils import context
@@ -168,6 +169,7 @@ class Experiment(ABC):
         # The end status, None, Err or Cancelled.
         "_end_status",
         "_stopped",
+        "_received_signal",
         "_signal_task",
     )
 
@@ -187,6 +189,7 @@ class Experiment(ABC):
         self._start_waiting = False
         self._end_status = None
         self._stopped = asyncio.Event()
+        self._received_signal: int | None = None
         self._signal_task: asyncio.Task | None = None
 
     async def __aenter__(self):
@@ -199,7 +202,6 @@ class Experiment(ABC):
             self.done_with_err()
         else:
             self.done()
-        self._end_status = None
 
         if self._signal_task:
             # Already done, will not update the status again.
@@ -225,22 +227,7 @@ class Experiment(ABC):
             name=name, team_id=self._runtime.team_id
         )
 
-        # Just in case of kubernetes pod restarts, we want to make sure the experiment
-        # can be resumed if it is not completed, instead of creating a new experiment
-        # with the same name. If the experiment is already completed, we raise an error
-        # to avoid confusion.
-        if exp_obj and exp_obj.status != Status.COMPLETED:
-            self._id = exp_obj.uuid
-            self._runtime._metadb.update_experiment(
-                experiment_id=self._id,
-                status=Status.RUNNING,
-            )
-        elif exp_obj and exp_obj.status == Status.COMPLETED:
-            raise RuntimeError(
-                f"Experiment with name '{name}' already exists and is completed. \
-                Please choose a different name or delete the existing experiment."
-            )
-        else:
+        if not exp_obj:
             self._id = self._runtime._metadb.create_experiment(
                 name=name,
                 org_id=self._runtime._org_id,
@@ -252,6 +239,21 @@ class Experiment(ABC):
                 meta=meta,
                 params=params,
                 status=Status.RUNNING,
+            )
+        # Just in case of kubernetes pod restarts, we want to make sure the experiment
+        # can be resumed if it is not terminated, instead of creating a new experiment
+        # with the same name. If the experiment is already terminated, we raise an error
+        # to avoid confusion.
+        elif exp_obj.status not in sql_models.TERMINAL_STATUS:
+            self._id = exp_obj.uuid
+            self._runtime._metadb.update_experiment(
+                experiment_id=self._id,
+                status=Status.RUNNING,
+            )
+        else:
+            raise RuntimeError(
+                f"Experiment with name '{name}' already exists and is terminated with status '{exp_obj.status}'. \
+                        Please choose a different name or delete the existing experiment."
             )
 
         self._context = context.Context(
@@ -397,11 +399,19 @@ class Experiment(ABC):
         self._cancel()
 
     def done_with_err(self):
-        self._end_status = "Err"
+        self._end_status = Status.FAILED
         self.done()
 
     def done_with_cancel(self):
-        self._end_status = "Cancelled"
+        self._end_status = Status.CANCELLED
+        self.done()
+
+    def done_with_interrupt(self):
+        self._end_status = Status.INTERRUPTED
+        self.done()
+
+    def done_with_abort(self):
+        self._end_status = Status.ABORTED
         self.done()
 
     def _cancel(self):
@@ -422,10 +432,8 @@ class Experiment(ABC):
             ).total_seconds()
 
             status = Status.COMPLETED
-            if self._end_status == "Err":
-                status = Status.FAILED
-            elif self._end_status == "Cancelled":
-                status = Status.CANCELLED
+            if self._end_status is not None:
+                status = self._end_status
 
             self._runtime.metadb.update_experiment(
                 experiment_id=self._id, status=status, duration=duration
@@ -500,15 +508,22 @@ class Experiment(ABC):
         loop = asyncio.get_running_loop()
 
         # Handle SIGINT and SIGTERM to allow graceful shutdown.
-        # Make sure to call done() on receiving the signal.
+        # SIGINT (Ctrl+C) → CANCELLED (user intent to stop)
+        # SIGTERM (kill/K8s) → INTERRUPTED (resumable)
         for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, self._on_signal)
+            loop.add_signal_handler(sig, lambda s=sig: self._on_signal(s))
 
         return asyncio.create_task(self._wait_for_stop())
 
-    def _on_signal(self):
+    def _on_signal(self, sig: int):
+        self._received_signal = sig
         self._stopped.set()
 
     async def _wait_for_stop(self):
         await self._stopped.wait()
-        self.done_with_cancel()
+
+        # Distinguish between SIGINT (user Ctrl+C) and SIGTERM (system/K8s)
+        if self._received_signal == signal.SIGINT:
+            self.done_with_cancel()  # User explicitly stopped with Ctrl+C
+        else:
+            self.done_with_interrupt()  # SIGTERM or other, treat as resumable

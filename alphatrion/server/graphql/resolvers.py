@@ -2027,11 +2027,13 @@ class GraphQLMutations:
         return True
 
     @staticmethod
-    def abort_experiment(
+    def stop_experiment(
         info: Info[GraphQLContext, None], experiment_id: strawberry.ID
     ) -> Experiment:
-        """Abort an experiment by changing its status to ABORTED.
-        Only works if the experiment is in PENDING status."""
+        """Stop an experiment.
+        - PENDING → ABORTED (validation failure before start)
+        - RUNNING → CANCELLED (user-initiated stop)
+        """
 
         user_id = uuid.UUID(info.context.user_id)
         experiment_id_uuid = uuid.UUID(experiment_id)
@@ -2048,23 +2050,27 @@ class GraphQLMutations:
                 "Not allowed to update experiment in team that user does not belong to"
             )
 
-        # Only abort if experiment is in PENDING status
-        if exp.status != Status.PENDING:
+        # Determine target status based on current status
+        if exp.status == Status.PENDING:
+            new_status = Status.ABORTED
+        elif exp.status == Status.RUNNING:
+            new_status = Status.CANCELLED
+        else:
             raise RuntimeError(
-                f"Cannot abort experiment with status '{StatusMap[Status(exp.status)]}'. "
-                "Only experiments in PENDING status can be aborted."
+                f"Cannot stop experiment with status '{StatusMap[Status(exp.status)]}'. "
+                "Only experiments in PENDING or RUNNING status can be stopped."
             )
 
-        # Update status to ABORTED
+        # Update status
         metadb.update_experiment(
             experiment_id=experiment_id_uuid,
-            status=Status.ABORTED,
+            status=new_status,
         )
 
         # Get the updated experiment
         updated_exp = metadb.get_experiment(experiment_id=experiment_id_uuid)
         if not updated_exp:
-            raise RuntimeError("Failed to retrieve aborted experiment")
+            raise RuntimeError("Failed to retrieve stopped experiment")
 
         return Experiment(
             id=updated_exp.uuid,

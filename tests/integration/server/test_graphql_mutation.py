@@ -1412,10 +1412,10 @@ def test_update_experiment_not_found(
     assert "not found" in str(response.errors[0]).lower()
 
 
-def test_abort_experiment_pending(
+def test_stop_experiment_pending(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test aborting a pending experiment"""
+    """Test stopping a pending experiment"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -1428,10 +1428,10 @@ def test_abort_experiment_pending(
         status=Status.PENDING,
     )
 
-    # Abort the experiment
+    # Stop the experiment
     mutation = f"""
     mutation {{
-        abortExperiment(experimentId: "{exp_id}") {{
+        stopExperiment(experimentId: "{exp_id}") {{
             id
             name
             status
@@ -1444,17 +1444,17 @@ def test_abort_experiment_pending(
         user_id=test_user_id,
     )
     assert response.errors is None
-    assert response.data["abortExperiment"]["status"] == "ABORTED"
+    assert response.data["stopExperiment"]["status"] == "ABORTED"
 
     # Verify in database
     exp = metadb.get_experiment(experiment_id=exp_id)
     assert exp.status == Status.ABORTED
 
 
-def test_abort_experiment_running_fails(
+def test_stop_experiment_running(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test that aborting a running experiment fails"""
+    """Test stopping a running experiment changes it to CANCELLED"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -1470,10 +1470,10 @@ def test_abort_experiment_running_fails(
         status=Status.RUNNING,
     )
 
-    # Try to abort the running experiment
+    # Stop the running experiment
     mutation = f"""
     mutation {{
-        abortExperiment(experimentId: "{exp_id}") {{
+        stopExperiment(experimentId: "{exp_id}") {{
             id
             status
         }}
@@ -1484,19 +1484,18 @@ def test_abort_experiment_running_fails(
         org_id=test_org_id,
         user_id=test_user_id,
     )
-    # Should return an error
-    assert response.errors is not None
-    assert "Cannot abort" in str(response.errors[0])
+    assert response.errors is None
+    assert response.data["stopExperiment"]["status"] == "CANCELLED"
 
-    # Verify status is still RUNNING
+    # Verify status is CANCELLED
     exp = metadb.get_experiment(experiment_id=exp_id)
-    assert exp.status == Status.RUNNING
+    assert exp.status == Status.CANCELLED
 
 
-def test_abort_experiment_completed_fails(
+def test_stop_experiment_completed_fails(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test that aborting a completed experiment fails"""
+    """Test that stopping a completed experiment fails"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -1512,10 +1511,10 @@ def test_abort_experiment_completed_fails(
         status=Status.COMPLETED,
     )
 
-    # Try to abort the completed experiment
+    # Try to stop the completed experiment
     mutation = f"""
     mutation {{
-        abortExperiment(experimentId: "{exp_id}") {{
+        stopExperiment(experimentId: "{exp_id}") {{
             id
             status
         }}
@@ -1528,17 +1527,17 @@ def test_abort_experiment_completed_fails(
     )
     # Should return an error
     assert response.errors is not None
-    assert "Cannot abort" in str(response.errors[0])
+    assert "Cannot stop" in str(response.errors[0])
 
     # Verify status is still COMPLETED
     exp = metadb.get_experiment(experiment_id=exp_id)
     assert exp.status == Status.COMPLETED
 
 
-def test_abort_experiment_not_found(
+def test_stop_experiment_not_found(
     execute_graphql, test_org_id, test_user_id, test_team_id
 ):
-    """Test aborting a non-existent experiment when user has team access"""
+    """Test stopping a non-existent experiment when user has team access"""
     runtime.init()
     metadb = runtime.storage_runtime().metadb
 
@@ -1549,7 +1548,7 @@ def test_abort_experiment_not_found(
     fake_exp_id = uuid.uuid4()
     mutation = f"""
     mutation {{
-        abortExperiment(experimentId: "{fake_exp_id}") {{
+        stopExperiment(experimentId: "{fake_exp_id}") {{
             id
             status
         }}

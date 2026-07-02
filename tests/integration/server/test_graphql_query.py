@@ -4,6 +4,7 @@
 
 import asyncio
 import os
+import signal
 import uuid
 from datetime import datetime, timedelta
 
@@ -508,7 +509,7 @@ async def test_query_experiment_with_usage(
         # before get the response from the ollama, the spans will be empty.
         exp.run(create_joke)
 
-        exp._on_signal()  # Simulate sending a signal to trigger resume
+        exp._on_signal(signal.SIGTERM)  # Simulate sending a signal to trigger resume
         await exp.wait()
 
     query = f"""
@@ -534,7 +535,7 @@ async def test_query_experiment_with_usage(
     )
 
     assert response.errors is None
-    assert response.data["experiment"]["status"] == "CANCELLED"
+    assert response.data["experiment"]["status"] == "INTERRUPTED"
     assert response.data["experiment"]["aggregatedUsage"] is not None
     assert response.data["experiment"]["aggregatedUsage"]["totalTokens"] is not None
     assert response.data["experiment"]["aggregatedUsage"]["inputTokens"] is not None
@@ -550,7 +551,7 @@ async def test_query_experiment_with_usage(
     assert response.data["experiment"]["aggregatedUsage"]["totalCost"] is not None
 
     exp_obj = runtime.storage_runtime().metadb.get_experiment(experiment_id=exp.id)
-    assert exp_obj.status == Status.CANCELLED
+    assert exp_obj.status == Status.INTERRUPTED
 
     # resume the experiment
     async with CraftExperiment.start(name="integration_test_experiment_resume") as exp:

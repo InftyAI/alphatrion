@@ -148,13 +148,25 @@ class User:
 
 
 class GraphQLStatus(Enum):
+    """Status enum shared between Experiments and Runs.
+
+    Run status is a subset: RUNNING, COMPLETED, CANCELLED, FAILED.
+    Experiment status includes all values.
+
+    Terminal states (cannot resume): COMPLETED, CANCELLED, ABORTED
+    Recoverable states (can resume): FAILED, INTERRUPTED
+    """
+
     UNKNOWN = "UNKNOWN"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
-    CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    ABORTED = "ABORTED"
+    CANCELLED = "CANCELLED"  # User intentionally stopped, cannot resume
+    FAILED = "FAILED"  # Recoverable: can retry after fixing error
+    ABORTED = "ABORTED"  # Programmatically aborted, cannot resume
+    INTERRUPTED = (
+        "INTERRUPTED"  # Recoverable: system stopped (e.g. preemption), can resume
+    )
 
 
 GraphQLStatusEnum = strawberry.enum(GraphQLStatus)

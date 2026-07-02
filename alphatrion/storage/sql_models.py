@@ -19,14 +19,16 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 
+# Status includes both run and experiment status, run status is a subset of experiment status.
 class Status(enum.IntEnum):
     UNKNOWN = 0
     PENDING = 1
     RUNNING = 2
     COMPLETED = 9
-    CANCELLED = 10
-    FAILED = 11
-    ABORTED = 12
+    CANCELLED = 10  # User intentionally stopped, cannot resume
+    FAILED = 11  # Recoverable: can retry after fixing error
+    ABORTED = 12  # Programmatically aborted, cannot resume
+    INTERRUPTED = 13  # Recoverable: system stopped (e.g. preemption), can resume
 
 
 StatusMap = {
@@ -37,9 +39,20 @@ StatusMap = {
     Status.COMPLETED: "COMPLETED",
     Status.FAILED: "FAILED",
     Status.ABORTED: "ABORTED",
+    Status.INTERRUPTED: "INTERRUPTED",
 }
 
-FINISHED_STATUS = [Status.COMPLETED, Status.FAILED, Status.CANCELLED, Status.ABORTED]
+# Terminal states: cannot transition to any other state
+TERMINAL_STATUS = [Status.COMPLETED, Status.CANCELLED, Status.ABORTED]
+
+# Recoverable states: can transition back to RUNNING
+RECOVERABLE_STATUS = [Status.FAILED, Status.INTERRUPTED]
+
+# All finished states (terminal + recoverable)
+FINISHED_STATUS = TERMINAL_STATUS + RECOVERABLE_STATUS
+
+# Run status is a subset of experiment status to make it simpler.
+RUN_STATUS = [Status.RUNNING, Status.COMPLETED, Status.CANCELLED, Status.FAILED]
 
 
 class Organization(Base):

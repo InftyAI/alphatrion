@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import asyncio
+import signal
 import unittest
 import uuid
 from datetime import datetime, timedelta
@@ -354,7 +355,8 @@ async def test_experiment_with_signal():
 
     async def fake_work(exp: CraftExperiment):
         await asyncio.sleep(2)
-        exp._on_signal()
+        # Simulate SIGTERM (system/K8s termination)
+        exp._on_signal(signal.SIGTERM)
 
     start_time = datetime.now()
     async with CraftExperiment.start(
@@ -365,9 +367,34 @@ async def test_experiment_with_signal():
         await exp.wait()
 
     exp_obj = exp._get_obj()
-    assert exp_obj.status == Status.CANCELLED
+    assert exp_obj.status == Status.INTERRUPTED
     assert (datetime.now() - start_time).total_seconds() >= 2
     assert (datetime.now() - start_time).total_seconds() < 5
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_sigint_cancelled():
+    """Test that SIGINT (Ctrl+C) results in CANCELLED status."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work(exp: CraftExperiment):
+        await asyncio.sleep(2)
+        # Simulate SIGINT (Ctrl+C)
+        exp._on_signal(signal.SIGINT)
+
+    async with CraftExperiment.start(
+        name="experiment-with-sigint",
+    ) as exp:
+        exp.run(lambda: asyncio.sleep(5))
+        exp.run(partial(fake_work, exp))
+        await exp.wait()
+
+    exp_obj = exp._get_obj()
+    assert exp_obj.status == Status.CANCELLED
 
 
 @pytest.mark.asyncio
@@ -443,3 +470,164 @@ async def test_experiment_with_tags():
             experiment_id=exp.id,
         )
         assert len(all_tags) == 2
+
+
+@pytest.mark.asyncio
+async def test_experiment_done_with_interrupt(test_team_id, test_user_id, test_org_id):
+    """Test that done_with_interrupt() marks experiment as INTERRUPTED."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_id = None
+    async with CraftExperiment.start(name="interrupt-test") as exp:
+        exp_id = exp.id
+        exp.done_with_interrupt()
+
+    # Verify experiment status is INTERRUPTED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.INTERRUPTED
+    assert exp_obj.duration is not None
+
+
+@pytest.mark.asyncio
+async def test_experiment_done_with_abort(test_team_id, test_user_id, test_org_id):
+    """Test that done_with_abort() marks experiment as ABORTED."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_id = None
+    async with CraftExperiment.start(name="abort-test") as exp:
+        exp_id = exp.id
+        exp.done_with_abort()
+
+    # Verify experiment status is ABORTED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.ABORTED
+    assert exp_obj.duration is not None
+
+
+@pytest.mark.asyncio
+async def test_experiment_resume_from_failed(test_team_id, test_user_id, test_org_id):
+    """Test that an experiment in FAILED state can be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = "failed-resume-test"
+    exp_id = None
+
+    # Create an experiment and mark it as FAILED
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        exp.done_with_err()
+
+    # Verify it's FAILED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.FAILED
+
+    # Resume the experiment - should work and transition to RUNNING
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+        assert exp_obj.status == Status.RUNNING
+
+    # After exit, should be COMPLETED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_resume_from_interrupted(
+    test_team_id, test_user_id, test_org_id
+):
+    """Test that an experiment in INTERRUPTED state can be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = "interrupted-resume-test"
+    exp_id = None
+
+    # Create an experiment and mark it as INTERRUPTED
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        exp.done_with_interrupt()
+
+    # Verify it's INTERRUPTED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.INTERRUPTED
+
+    # Resume the experiment - should work and transition to RUNNING
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+        assert exp_obj.status == Status.RUNNING
+
+    # After exit, should be COMPLETED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_cannot_resume_completed(
+    test_team_id, test_user_id, test_org_id
+):
+    """Test that a COMPLETED experiment cannot be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = "completed-no-resume"
+
+    # Create and complete an experiment
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+
+    # Verify it's COMPLETED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.COMPLETED
+
+    # Try to resume - should raise error
+    with pytest.raises(RuntimeError, match="already exists and is terminated"):
+        async with CraftExperiment.start(name=exp_name) as exp:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_experiment_cannot_resume_cancelled(
+    test_team_id, test_user_id, test_org_id
+):
+    """Test that a CANCELLED experiment cannot be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = "cancelled-no-resume"
+    exp_id = None
+
+    # Create an experiment and cancel it
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        exp.done_with_cancel()
+
+    # Verify it's CANCELLED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.CANCELLED
+
+    # Try to resume - should raise error
+    with pytest.raises(RuntimeError, match="already exists and is terminated"):
+        async with CraftExperiment.start(name=exp_name) as exp:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_experiment_cannot_resume_aborted(
+    test_team_id, test_user_id, test_org_id
+):
+    """Test that an ABORTED experiment cannot be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = "aborted-no-resume"
+    exp_id = None
+
+    # Create an experiment and abort it
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        exp.done_with_abort()
+
+    # Verify it's ABORTED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.ABORTED
+
+    # Try to resume - should raise error
+    with pytest.raises(RuntimeError, match="already exists and is terminated"):
+        async with CraftExperiment.start(name=exp_name) as exp:
+            pass
