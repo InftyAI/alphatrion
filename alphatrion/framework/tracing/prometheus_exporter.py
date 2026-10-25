@@ -211,13 +211,8 @@ class PrometheusExporter(SpanExporter):
             attributes.get("gen_ai.usage.cache_creation_input_tokens", 0)
         )
 
-        # Calculate total tokens
-        total_tokens = (
-            input_tokens
-            + output_tokens
-            + cache_read_input_tokens
-            + cache_creation_input_tokens
-        )
+        # input_tokens already includes cached tokens, so don't add them again.
+        total_tokens = input_tokens + output_tokens
 
         # Skip if no token data
         if total_tokens == 0:

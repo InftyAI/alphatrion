@@ -642,12 +642,8 @@ class GraphQLResolvers:
         if result and len(result) > 0:
             data = result[0]
             # Calculate totals from components
-            total_tokens = (
-                data.get("input_tokens", 0)
-                + data.get("output_tokens", 0)
-                + data.get("cache_read_input_tokens", 0)
-                + data.get("cache_creation_input_tokens", 0)
-            )
+            # input_tokens already includes cached tokens, so don't add them again.
+            total_tokens = data.get("input_tokens", 0) + data.get("output_tokens", 0)
             total_cost = (
                 data.get("input_cost", 0.0)
                 + data.get("output_cost", 0.0)
@@ -705,12 +701,8 @@ class GraphQLResolvers:
         if result and len(result) > 0:
             data = result[0]
             # Calculate totals from components
-            total_tokens = (
-                data.get("input_tokens", 0)
-                + data.get("output_tokens", 0)
-                + data.get("cache_read_input_tokens", 0)
-                + data.get("cache_creation_input_tokens", 0)
-            )
+            # input_tokens already includes cached tokens, so don't add them again.
+            total_tokens = data.get("input_tokens", 0) + data.get("output_tokens", 0)
             total_cost = (
                 data.get("input_cost", 0.0)
                 + data.get("output_cost", 0.0)
@@ -770,12 +762,8 @@ class GraphQLResolvers:
         if result and len(result) > 0:
             data = result[0]
             # Calculate totals from components
-            total_tokens = (
-                data.get("input_tokens", 0)
-                + data.get("output_tokens", 0)
-                + data.get("cache_read_input_tokens", 0)
-                + data.get("cache_creation_input_tokens", 0)
-            )
+            # input_tokens already includes cached tokens, so don't add them again.
+            total_tokens = data.get("input_tokens", 0) + data.get("output_tokens", 0)
             total_cost = (
                 data.get("input_cost", 0.0)
                 + data.get("output_cost", 0.0)
@@ -1186,13 +1174,8 @@ class GraphQLResolvers:
                     span_attrs["alphatrion.cost.cache_creation_input_tokens"]
                 )
 
-        # Calculate total tokens from components
-        total_tokens = (
-            input_tokens
-            + output_tokens
-            + cache_read_input_tokens
-            + cache_creation_input_tokens
-        )
+        # input_tokens already includes cached tokens, so don't add them again.
+        total_tokens = input_tokens + output_tokens
 
         return {
             "total_tokens": total_tokens,
@@ -1283,13 +1266,8 @@ class GraphQLResolvers:
                     span_attrs["alphatrion.cost.cache_creation_input_tokens"]
                 )
 
-        # Calculate total tokens from components
-        total_tokens = (
-            input_tokens
-            + output_tokens
-            + cache_read_input_tokens
-            + cache_creation_input_tokens
-        )
+        # input_tokens already includes cached tokens, so don't add them again.
+        total_tokens = input_tokens + output_tokens
 
         return {
             "total_tokens": total_tokens,

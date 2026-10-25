@@ -78,11 +78,17 @@ class CostEnrichmentProcessor(SpanProcessor):
                 attributes.get("gen_ai.usage.cache_read_input_tokens", 0)
             )
 
+            # gen_ai.usage.input_tokens includes cached tokens, which are priced
+            # separately, so only charge the regular input price for the rest.
+            regular_input_tokens = max(
+                input_tokens - cache_read_input_tokens - cache_creation_input_tokens, 0
+            )
+
             # Calculate costs
             cost_result = calculate_cost(
                 provider=provider,
                 model=model,
-                input_tokens=input_tokens,
+                input_tokens=regular_input_tokens,
                 output_tokens=output_tokens,
                 cache_creation_input_tokens=cache_creation_input_tokens,
                 cache_read_input_tokens=cache_read_input_tokens,
