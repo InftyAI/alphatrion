@@ -6,7 +6,7 @@
 </p>
 
 <h3 align="center">
-Building an open-source recursive self-improvement system.
+Open-source recursive self-improvement system.
 </h3>
 
 <p align="center">
