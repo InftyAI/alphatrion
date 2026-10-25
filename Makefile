@@ -10,46 +10,46 @@ GIT_TAG ?= $(shell git describe --tags --dirty --always)
 IMG ?= $(IMAGE_REPO):$(GIT_TAG)
 PLATFORMS ?= linux/arm64,linux/amd64
 
-POETRY := poetry
+UV := uv
 RUFF := .venv/bin/ruff
+LINT_IMPORTS := .venv/bin/lint-imports
 PYTEST := .venv/bin/pytest
 ALEMBIC := .venv/bin/alembic
 PYTHON := .venv/bin/python
 
+FRAMEWORK := alphatrion/framework
+
 .PHONY: build
 build: lint build-dashboard
-	$(POETRY) build
+	$(UV) build
 
 .PHONY: publish
 publish: build
-	$(POETRY) publish --username=__token__ --password=$(INFTYAI_PYPI_TOKEN)
+	$(UV) publish --token $(INFTYAI_PYPI_TOKEN)
 
 .PHONY: up
 up:
-	docker compose -f ./docker-compose.yaml up -d
+	docker compose -f $(FRAMEWORK)/docker-compose.yaml up -d
 
 .PHONY: migrate-clickhouse
 migrate-clickhouse:
-	$(PYTHON) -m migrations.clickhouse.cli migrate
+	$(PYTHON) -m alphatrion.framework.migrations.clickhouse.cli migrate
 
 .PHONY: migrate
 migrate:
-	@if [ ! -f $(ALEMBIC) ]; then \
-		echo "Alembic not found, installing..."; \
-		$(POETRY) install alembic; \
-	fi
-	$(ALEMBIC) upgrade head
+	$(ALEMBIC) -c $(FRAMEWORK)/alembic.ini upgrade head
 
 .PHONY: migrate-all
 migrate-all: migrate migrate-clickhouse
 
 .PHONY: down
 down:
-	docker compose -f ./docker-compose.yaml down
+	docker compose -f $(FRAMEWORK)/docker-compose.yaml down
 
 .PHONY: lint
 lint:
 	$(RUFF) check .
+	$(LINT_IMPORTS)
 
 .PHONY: format
 format:
@@ -58,17 +58,17 @@ format:
 
 .PHONY: test
 test: lint
-	$(PYTEST) tests/unit --timeout=15
+	$(PYTEST) $(FRAMEWORK)/tests/unit alphatrion/swarm/tests --timeout=15
 
 .PHONY: test-integration
 test-integration: lint
 	@bash -c '\
 	set -e; \
 	set -a; \
-	source .env.integration-test; \
+	source $(FRAMEWORK)/.env.integration-test; \
 	set +a; \
-	docker-compose -f ./docker-compose.test.yaml up -d; \
-	trap "docker-compose -f ./docker-compose.test.yaml down" EXIT; \
+	docker-compose -f $(FRAMEWORK)/docker-compose.test.yaml up -d; \
+	trap "docker-compose -f $(FRAMEWORK)/docker-compose.test.yaml down" EXIT; \
 	echo "Waiting for PostgreSQL..."; \
 	until docker exec postgres-test pg_isready -U alphatr1on; do sleep 1; done; \
 	echo "Waiting for ClickHouse..."; \
@@ -80,28 +80,28 @@ test-integration: lint
 	echo "Running migrations..."; \
 	make migrate-all; \
 	echo "Running integration tests..."; \
-	$(PYTEST) tests/integration --timeout=30; \
+	$(PYTEST) $(FRAMEWORK)/tests/integration --timeout=30; \
 	'
 .PHONY: test-all
 test-all: test test-integration
 
 .PHONY: seed
 seed:
-	$(PYTHON) hack/seed.py seed
+	$(PYTHON) $(FRAMEWORK)/hack/seed.py seed
 
 .PHONY: seed-cleanup
 seed-cleanup:
-	$(PYTHON) hack/seed.py cleanup
+	$(PYTHON) $(FRAMEWORK)/hack/seed.py cleanup
 
 .PHONY: build-dashboard
 build-dashboard:
-	cd dashboard && npm install && npm run build
+	cd $(FRAMEWORK)/dashboard && npm install && npm run build
 
 .PHONY: image-build
 image-build:
 	$(IMAGE_BUILD_CMD) -t $(IMG) \
 		--platform=$(PLATFORMS) \
-		$(IMAGE_BUILD_EXTRA_OPTS) ./
+		$(IMAGE_BUILD_EXTRA_OPTS) -f $(FRAMEWORK)/Dockerfile ./
 image-load: IMAGE_BUILD_EXTRA_OPTS=--load
 image-load: image-build
 image-push: IMAGE_BUILD_EXTRA_OPTS=--push
@@ -111,7 +111,7 @@ image-push: image-build
 image-build-dashboard:
 	$(IMAGE_BUILD_CMD) -t $(IMG) \
 		--platform=$(PLATFORMS) \
-		$(IMAGE_BUILD_EXTRA_OPTS) ./dashboard
+		$(IMAGE_BUILD_EXTRA_OPTS) ./$(FRAMEWORK)/dashboard
 image-load-dashboard: IMAGE_BUILD_EXTRA_OPTS=--load
 image-load-dashboard: image-build-dashboard
 image-push-dashboard: IMAGE_BUILD_EXTRA_OPTS=--push

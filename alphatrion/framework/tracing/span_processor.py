@@ -1,0 +1,93 @@
+import logging
+
+from opentelemetry.context import Context
+from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
+
+from alphatrion.framework.runtime.contextvars import (
+    current_exp_id,
+    current_run_id,
+)
+
+logger = logging.getLogger(__name__)
+
+# Semantic kind enums:
+# Core application spans (decorated with @workflow, @task, @tool)
+SEMANTIC_KIND_WORKFLOW = "workflow"
+SEMANTIC_KIND_TASK = "task"
+SEMANTIC_KIND_TOOL = "tool"
+SEMANTIC_KIND_AGENT = "agent"
+
+# LLM operations
+SEMANTIC_KIND_CHAT = "chat"
+SEMANTIC_KIND_COMPLETION = "completion"
+SEMANTIC_KIND_EMBEDDINGS = "embeddings"
+SEMANTIC_KIND_REASONING = "reasoning"
+
+# Infrastructure operations
+SEMANTIC_KIND_DB = "db"
+SEMANTIC_KIND_HTTP = "http"
+SEMANTIC_KIND_MESSAGING = "messaging"
+SEMANTIC_KIND_RPC = "rpc"
+
+# Fallback
+SEMANTIC_KIND_UNKNOWN = "unknown"
+
+
+class ContextAttributesSpanProcessor(SpanProcessor):
+    """SpanProcessor that adds run_id, org_id, team_id, user_id, experiment_id to all spans.
+
+    This ensures all spans in the trace have these attributes, including
+    child spans created by instrumented libraries (OpenAI, database drivers, etc.).
+    """
+
+    def on_start(self, span: Span, parent_context: Context | None = None) -> None:
+        """Called when a span is started.
+
+        Adds context attributes (run_id, org_id, team_id, user_id, experiment_id) to the span.
+
+        Args:
+            span: The span that was just started
+            parent_context: The parent context (unused)
+        """
+        try:
+            # Add context attributes to span
+            run_id = current_run_id.get(None)
+            exp_id = current_exp_id.get(None)
+
+            if run_id is None:
+                # No run context, skip setting attributes
+                logger.debug(
+                    "Span started with no run_id in context, skipping attribute injection"
+                )
+                return
+
+            if exp_id is None:
+                logger.debug(
+                    f"Span started with run_id {run_id} but no exp_id in context"
+                )
+                return
+
+            from alphatrion.framework.runtime.runtime import global_runtime
+
+            runtime = global_runtime()
+
+            span.set_attribute("experiment_id", str(exp_id))
+            span.set_attribute("run_id", str(run_id))
+            span.set_attribute("org_id", str(runtime.org_id))
+            span.set_attribute("team_id", str(runtime.team_id))
+            span.set_attribute("user_id", str(runtime.user_id))
+
+        except (RuntimeError, AttributeError) as e:
+            logger.debug(f"Could not set span attributes in processor: {e}")
+
+    def on_end(self, span: ReadableSpan) -> None:
+        """Called when a span is ended (no-op)."""
+        pass
+
+    def shutdown(self) -> None:
+        """Called when the processor is shut down (no-op)."""
+        pass
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        """Called to force flush (no-op, always returns True)."""
+        return True

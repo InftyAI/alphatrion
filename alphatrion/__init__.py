@@ -1,6 +1,15 @@
-from alphatrion.log.load import load_checkpoint, load_dataset
-from alphatrion.log.log import log_artifact, log_dataset, log_metrics, log_params
-from alphatrion.runtime.runtime import init
+# Re-export the framework API so `import alphatrion as alpha; alpha.init()` keeps
+# working. Keep this file light: never import `alphatrion.swarm` from here, so the
+# package works with only `alphatrion[framework]` installed.
+from alphatrion.framework import (
+    init,
+    load_checkpoint,
+    load_dataset,
+    log_artifact,
+    log_dataset,
+    log_metrics,
+    log_params,
+)
 
 __all__ = [
     "init",

@@ -5,7 +5,7 @@ if [ ! -d ".venv" ]; then
     echo "Creating virtual environment and installing dependencies..."
     uv venv
     source .venv/bin/activate
-    uv sync
+    uv sync --all-extras
 else
     echo "Virtual environment already exists. Activating..."
     source .venv/bin/activate
