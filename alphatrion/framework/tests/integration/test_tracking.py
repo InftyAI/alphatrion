@@ -17,50 +17,6 @@ from alphatrion.framework.storage import runtime
 
 
 @pytest.fixture(scope="module")
-def test_org_id() -> uuid.UUID:
-    """Organization ID for testing."""
-    return uuid.uuid4()
-
-
-@pytest.fixture(scope="module")
-def test_team_id(test_org_id: uuid.UUID, test_user_id: uuid.UUID) -> uuid.UUID:
-    """Create test team."""
-    runtime.init()
-    metadb = runtime.storage_runtime().metadb
-
-    user = metadb.get_user(user_id=test_user_id)
-    if not user:
-        metadb.create_user(
-            org_id=test_org_id,
-            name="Token Test User",
-            email=f"test-{test_user_id}@example.com",
-            uuid=test_user_id,
-        )
-
-    team_id = metadb.create_team(
-        org_id=test_org_id,
-        name="Token Test Team",
-        description="Team for token tracking tests",
-    )
-
-    from alphatrion.framework.storage.sql_models import MemberRole
-
-    metadb.add_user_to_team(
-        user_id=test_user_id,
-        team_id=team_id,
-        role=MemberRole.SUPER_ADMIN,
-    )
-
-    return team_id
-
-
-@pytest.fixture(scope="module")
-def test_user_id() -> uuid.UUID:
-    """User ID for testing."""
-    return uuid.uuid4()
-
-
-@pytest.fixture(scope="module")
 def openai_client():
     """OpenAI client pointing to local Ollama."""
     import os

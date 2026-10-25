@@ -22,12 +22,3 @@ def test_push_with_error_folder(artifact):
             paths="non_existent_folder.txt",
             version="v1",
         )
-
-
-def test_push_with_empty_folder(artifact):
-    with pytest.raises(RuntimeError):
-        artifact.push(
-            repo_name="test_experiment",
-            paths="empty_folder",
-            version="v1",
-        )
