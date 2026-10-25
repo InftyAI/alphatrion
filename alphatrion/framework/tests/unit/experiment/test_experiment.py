@@ -1,0 +1,597 @@
+# ruff: noqa: E501
+
+import asyncio
+import signal
+import unittest
+import uuid
+from datetime import datetime, timedelta
+from functools import partial
+
+import pytest
+
+from alphatrion.framework.experiment import base as experiment
+from alphatrion.framework.experiment.base import (
+    CheckpointConfig,
+    ExperimentConfig,
+)
+from alphatrion.framework.experiment.craft_experiment import CraftExperiment
+from alphatrion.framework.runtime.contextvars import current_exp_id
+from alphatrion.framework.runtime.runtime import global_runtime, init
+from alphatrion.framework.storage.sql_models import Status
+
+
+class TestExperimentConfig(unittest.IsolatedAsyncioTestCase):
+    def test_config(self):
+        test_cases = [
+            {
+                "name": "Default config",
+                "config": {
+                    "checkpoint.save_on_best": False,
+                    "early_stopping_runs": -1,
+                },
+                "error": False,
+            },
+            {
+                "name": "save_on_best True with monitor_metric",
+                "config": {
+                    "checkpoint.save_on_best": True,
+                    "monitor_metric": "accuracy",
+                },
+                "error": False,
+            },
+            {
+                "name": "save_on_best with no monitor_metric",
+                "config": {
+                    "checkpoint.save_on_best": True,
+                },
+                "error": False,
+            },
+            {
+                "name": "early_stopping_runs > 0 with no monitor_metric",
+                "config": {
+                    "checkpoint.save_on_best": False,
+                    "early_stopping_runs": 2,
+                },
+                "error": True,
+            },
+            {
+                "name": "checkpoint enabled with pre_save_hook",
+                "config": {
+                    "checkpoint.enabled": True,
+                    "checkpoint.pre_save_hook": lambda: "path/to/checkpoint",
+                },
+                "error": False,
+            },
+            {
+                "name": "checkpoint enabled with no pre_save_hook",
+                "config": {
+                    "checkpoint.enabled": True,
+                },
+                "error": True,
+            },
+        ]
+
+        init(team_id=uuid.uuid4(), user_id=uuid.uuid4(), org_id=uuid.uuid4())
+
+        for case in test_cases:
+            with self.subTest(name=case["name"]):
+                if case["error"]:
+                    with self.assertRaises(ValueError):
+                        CraftExperiment(
+                            config=ExperimentConfig(
+                                monitor_metric=case["config"].get(
+                                    "monitor_metric", None
+                                ),
+                                checkpoint=CheckpointConfig(
+                                    enabled=case["config"].get(
+                                        "checkpoint.enabled", False
+                                    ),
+                                    save_on_best=case["config"].get(
+                                        "checkpoint.save_on_best", False
+                                    ),
+                                    pre_save_hook=case["config"].get(
+                                        "checkpoint.pre_save_hook", None
+                                    ),
+                                ),
+                                early_stopping_runs=case["config"].get(
+                                    "early_stopping_runs", -1
+                                ),
+                            ),
+                        )
+                else:
+                    _ = CraftExperiment(
+                        config=ExperimentConfig(
+                            monitor_metric=case["config"].get("monitor_metric", None),
+                            checkpoint=CheckpointConfig(
+                                enabled=case["config"].get("checkpoint.enabled", False),
+                                save_on_best=case["config"].get(
+                                    "checkpoint.save_on_best", False
+                                ),
+                                pre_save_hook=case["config"].get(
+                                    "checkpoint.pre_save_hook", None
+                                ),
+                            ),
+                            early_stopping_runs=case["config"].get(
+                                "early_stopping_runs", -1
+                            ),
+                        ),
+                    )
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_done():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        exp_id = exp.id
+
+    # exit the exp context, trial should be done automatically
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.duration is not None
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_done_with_err():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    run_id = None
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        exp_id = exp.id
+
+        run = exp.run(lambda: asyncio.sleep(2))
+        run_id = run.id
+        exp.done_with_err()
+
+    # exit the proj context, trial should be done automatically
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.duration is not None
+    assert exp_obj.status == Status.FAILED
+
+    assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_experiment_exception_handling():
+    """Test that exceptions in experiment context automatically mark it as failed."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    run_id = None
+
+    with pytest.raises(ValueError, match="Simulated error"):
+        async with CraftExperiment.start(name="failing-experiment") as exp:
+            exp_id = exp.id
+            run = exp.run(lambda: asyncio.sleep(2))
+            run_id = run.id
+            raise ValueError("Simulated error")
+
+    # Verify experiment was marked as FAILED due to exception
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj is not None
+    assert exp_obj.status == Status.FAILED
+    assert exp_obj.duration is not None
+
+    # Verify run was cancelled
+    run_obj = global_runtime().metadb.get_run(run_id=run_id)
+    assert run_obj.status == Status.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_resume():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    run_id = None
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        exp_id = exp.id
+
+        run = exp.run(lambda: asyncio.sleep(2))
+        run_id = run.id
+        exp.done_with_cancel()
+
+    # exit the proj context, trial should be done automatically
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.duration is not None
+    assert exp_obj.status == Status.CANCELLED
+
+    assert global_runtime().metadb.get_run(run_id=run_id).status == Status.CANCELLED
+
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        run = exp.run(lambda: asyncio.sleep(2))
+        exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp.id)
+        # will be reset to running
+        assert exp_obj.status == Status.RUNNING
+
+    # finally should be completed after context exit
+    exp_obj = global_runtime().metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_join():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work():
+        await asyncio.sleep(3)
+
+    exp_id = None
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        exp_id = current_exp_id.get()
+        start_time = datetime.now()
+
+        exp.run(fake_work)
+        assert datetime.now() - start_time <= timedelta(seconds=1)
+
+        await exp.wait()
+        assert datetime.now() - start_time >= timedelta(seconds=3)
+
+    exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_join_with_no_runs():
+    """join() must auto-complete immediately when there are no active runs.
+    Without any runs, no _post_run callback fires, so join() would block
+    forever if it did not complete on its own."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    exp_id = None
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        exp_id = current_exp_id.get()
+
+        # No runs launched; join() must return promptly instead of hanging.
+        await asyncio.wait_for(exp.wait(), timeout=3)
+        assert exp.is_done()
+
+    exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_wait_until_done():
+    """wait_until_done() must NOT auto-complete when all runs finish; it blocks until the
+    experiment is terminated externally (here, by the timeout)."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work():
+        await asyncio.sleep(1)
+
+    exp_id = None
+    async with CraftExperiment.start(
+        name="first-experiment",
+        config=experiment.ExperimentConfig(max_execution_seconds=3),
+    ) as exp:
+        exp_id = current_exp_id.get()
+        start_time = datetime.now()
+
+        exp.run(fake_work)
+
+        await exp.wait_until_done()
+        # The run finishes after ~1s, but wait_until_done() keeps blocking
+        # until the timeout at ~3s instead of auto-completing when the run
+        # drains.
+        assert datetime.now() - start_time >= timedelta(seconds=3)
+        assert len(exp._runs) == 0
+
+    exp_obj = exp._runtime.metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_create_experiment_with_run():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(
+        team_id=team_id,
+        user_id=user_id,
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work(exp_id: uuid.UUID):
+        assert current_exp_id.get() == exp_id
+        await asyncio.sleep(3)
+
+    async with CraftExperiment.start(name="first-experiment") as exp:
+        start_time = datetime.now()
+
+        run1 = exp.run(lambda: fake_work(exp.id))
+        assert len(exp._runs) == 1
+
+        run2 = exp.run(lambda: fake_work(exp.id))
+        assert len(exp._runs) == 2
+
+        await exp.wait()
+        assert datetime.now() - start_time >= timedelta(seconds=3)
+        assert len(exp._runs) == 0
+
+        run1_obj = run1._get_obj()
+        assert run1_obj.status == Status.COMPLETED
+        assert run1_obj.duration >= 3.0
+
+        run2_obj = run2._get_obj()
+        assert run2_obj.status == Status.COMPLETED
+        assert run2_obj.duration >= 3.0
+
+
+@pytest.mark.asyncio
+async def test_create_experiment_with_run_cancelled():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work(timeout: int):
+        await asyncio.sleep(timeout)
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+        config=experiment.ExperimentConfig(max_execution_seconds=2),
+    ) as exp:
+        run_0 = exp.run(lambda: fake_work(1))
+        run_1 = exp.run(lambda: fake_work(4))
+        run_2 = exp.run(lambda: fake_work(5))
+        run_3 = exp.run(lambda: fake_work(6))
+        # At this point, 4 runs are started.
+        assert len(exp._runs) == 4
+        await exp.wait()
+        assert len(exp._runs) == 0
+
+        run_0_obj = run_0._get_obj()
+        assert run_0_obj.status == Status.COMPLETED
+        assert run_0_obj.duration >= 1.0
+        run_1_obj = run_1._get_obj()
+        assert run_1_obj.status == Status.CANCELLED
+        assert run_1_obj.duration >= 2.0
+        run_2_obj = run_2._get_obj()
+        assert run_2_obj.status == Status.CANCELLED
+        assert run_2_obj.duration >= 2.0
+        run_3_obj = run_3._get_obj()
+        assert run_3_obj.status == Status.CANCELLED
+        assert run_3_obj.duration >= 2.0
+
+
+@pytest.mark.asyncio
+async def test_create_experiment_with_max_execution_seconds():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+        config=experiment.ExperimentConfig(max_execution_seconds=2),
+    ) as exp:
+        # No runs launched; the experiment must terminate on the timeout, so
+        # use wait_until_done() rather than wait() (which would auto-complete
+        # immediately with zero active runs).
+        await exp.wait_until_done()
+        assert exp.is_done()
+
+        exp_obj = exp._get_obj()
+        assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_signal():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work(exp: CraftExperiment):
+        await asyncio.sleep(2)
+        # Simulate SIGTERM (system/K8s termination)
+        exp._on_signal(signal.SIGTERM)
+
+    start_time = datetime.now()
+    async with CraftExperiment.start(
+        name="experiment-with-signal",
+    ) as exp:
+        exp.run(lambda: asyncio.sleep(5))
+        exp.run(partial(fake_work, exp))
+        await exp.wait()
+
+    exp_obj = exp._get_obj()
+    assert exp_obj.status == Status.INTERRUPTED
+    assert (datetime.now() - start_time).total_seconds() >= 2
+    assert (datetime.now() - start_time).total_seconds() < 5
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_sigint_cancelled():
+    """Test that SIGINT (Ctrl+C) results in CANCELLED status."""
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work(exp: CraftExperiment):
+        await asyncio.sleep(2)
+        # Simulate SIGINT (Ctrl+C)
+        exp._on_signal(signal.SIGINT)
+
+    async with CraftExperiment.start(
+        name="experiment-with-sigint",
+    ) as exp:
+        exp.run(lambda: asyncio.sleep(5))
+        exp.run(partial(fake_work, exp))
+        await exp.wait()
+
+    exp_obj = exp._get_obj()
+    assert exp_obj.status == Status.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_result_return():
+    init(
+        team_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        org_id=uuid.uuid4(),
+    )
+
+    async def fake_work():
+        return {"foo": "bar"}
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+    ) as exp:
+        run = exp.run(fake_work)
+        await run.wait()
+        assert run.result == {"foo": "bar"}
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_labels():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(
+        team_id=team_id,
+        user_id=user_id,
+        org_id=uuid.uuid4(),
+    )
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+        labels="foo:bar,baz=qux",
+    ) as exp:
+        exp_obj = exp._get_obj()
+        assert exp_obj is not None
+
+        exp_labels = exp._runtime.metadb.list_experiments(
+            team_id=team_id,
+            label_name="foo",
+            label_value="bar",
+        )
+
+        assert len(exp_labels) == 1
+
+
+@pytest.mark.asyncio
+async def test_experiment_with_tags():
+    team_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    init(
+        team_id=team_id,
+        user_id=user_id,
+        org_id=uuid.uuid4(),
+    )
+
+    async with CraftExperiment.start(
+        name="first-experiment",
+        tags=["foo", "bar"],
+    ) as exp:
+        exp_obj = exp._get_obj()
+        assert exp_obj is not None
+
+        exp_tags = exp._runtime.metadb.list_experiments(
+            team_id=team_id,
+            tag="foo",
+        )
+
+        assert len(exp_tags) == 1
+
+        all_tags = exp._runtime.metadb.list_tags_by_exp_id(
+            experiment_id=exp.id,
+        )
+        assert len(all_tags) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("finish", "status"),
+    [
+        ("done_with_err", Status.FAILED),
+        ("done_with_interrupt", Status.INTERRUPTED),
+    ],
+)
+async def test_experiment_resume_from(
+    finish, status, test_team_id, test_user_id, test_org_id
+):
+    """Test that a FAILED or INTERRUPTED experiment can be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = f"resume-from-{status.name.lower()}"
+
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        getattr(exp, finish)()
+
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == status
+    assert exp_obj.duration is not None
+
+    # Resume the experiment - should work and transition to RUNNING
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+        assert exp_obj.status == Status.RUNNING
+
+    # After exit, should be COMPLETED
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp.id)
+    assert exp_obj.status == Status.COMPLETED
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("finish", "status"),
+    [
+        (None, Status.COMPLETED),
+        ("done_with_cancel", Status.CANCELLED),
+        ("done_with_abort", Status.ABORTED),
+    ],
+)
+async def test_experiment_cannot_resume(
+    finish, status, test_team_id, test_user_id, test_org_id
+):
+    """Test that a COMPLETED, CANCELLED, or ABORTED experiment cannot be resumed."""
+    init(team_id=test_team_id, user_id=test_user_id, org_id=test_org_id)
+
+    exp_name = f"no-resume-{status.name.lower()}"
+
+    async with CraftExperiment.start(name=exp_name) as exp:
+        exp_id = exp.id
+        if finish:
+            getattr(exp, finish)()
+
+    exp_obj = global_runtime()._metadb.get_experiment(experiment_id=exp_id)
+    assert exp_obj.status == status
+    assert exp_obj.duration is not None
+
+    with pytest.raises(RuntimeError, match="already exists and is terminated"):
+        async with CraftExperiment.start(name=exp_name) as exp:
+            pass

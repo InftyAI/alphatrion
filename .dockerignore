@@ -1,3 +1,10 @@
 # More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
 # Ignore build and test binaries.
 bin/
+
+# Only the library goes into the server image.
+.venv/
+alphatrion/*/tests/
+alphatrion/framework/hack/
+alphatrion/framework/docs/
+alphatrion/framework/dashboard/

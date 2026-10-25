@@ -1,0 +1,246 @@
+// Core types matching GraphQL schema
+// Note: This uses correct terminology (Experiment, not Trial)
+
+export enum Status {
+  UNKNOWN = "UNKNOWN",
+  PENDING = "PENDING",
+  RUNNING = "RUNNING",
+  CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  ABORTED = "ABORTED",
+}
+
+export enum ExperimentType {
+  UNKNOWN = 0,
+  CRAFT_EXPERIMENT = 1,
+}
+
+export enum AgentType {
+  GENERIC = 1,
+}
+
+export interface AggregatedUsage {
+  totalTokens: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadInputTokens: number;
+  cacheCreationInputTokens: number;
+  totalCost: number;
+}
+
+export interface Team {
+  id: string;
+  orgId: string;
+  name: string | null;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  totalExperiments: number;
+  totalRuns: number;
+  totalDatasets: number;
+  totalAgents: number;
+  totalSessions: number;
+  aggregatedUsage: AggregatedUsage;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: string;
+  orgId: string;
+  name: string;
+  email: string;
+  teamId: string;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Label {
+  name: string;
+  value: string;
+}
+
+export interface TraceStats {
+  totalSpans: number;
+  successSpans: number;
+  errorSpans: number;
+}
+
+export interface Experiment {
+  id: string;
+  teamId: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  kind: ExperimentType;
+  meta: Record<string, unknown> | null;
+  params: Record<string, unknown> | null;
+  labels: Label[];
+  tags: string[];
+  duration: number;
+  status: Status;
+  createdAt: string;
+  updatedAt: string;
+  aggregatedUsage: AggregatedUsage;
+  traceStats?: TraceStats;
+  metrics?: Metric[];
+}
+
+export interface Run {
+  id: string;
+  teamId: string;
+  userId: string;
+  experimentId: string | null;
+  sessionId: string | null;
+  meta: Record<string, unknown> | null;
+  duration: number;
+  status: Status;
+  createdAt: string;
+  aggregatedUsage: AggregatedUsage;
+  metrics?: Metric[];
+  spans?: Span[];
+}
+
+export interface Metric {
+  id: string;
+  key: string | null;
+  value: number | null;
+  teamId: string;
+  experimentId: string;
+  runId: string;
+  createdAt: string;
+}
+
+export interface Agent {
+  id: string;
+  teamId: string;
+  userId: string;
+  name: string;
+  type: AgentType;
+  description: string | null;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Session {
+  id: string;
+  agentId: string;
+  teamId: string;
+  userId: string;
+  meta: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Dataset {
+  id: string;
+  name: string;
+  description: string | null;
+  path: string;
+  meta: Record<string, unknown> | null;
+  teamId: string;
+  experimentId: string | null;
+  runId: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Grouped metrics for chart rendering
+export interface GroupedMetrics {
+  [key: string]: Metric[];
+}
+
+// Artifact types for ORAS registry
+export interface ArtifactRepository {
+  name: string;
+  tags: string[];
+}
+
+export interface ArtifactManifest {
+  schemaVersion: number;
+  mediaType: string;
+  config: {
+    mediaType: string;
+    digest: string;
+    size: number;
+  };
+  layers: Array<{
+    mediaType: string;
+    digest: string;
+    size: number;
+    annotations?: Record<string, string>;
+  }>;
+  annotations?: Record<string, string>;
+}
+
+export interface ArtifactBlob {
+  digest: string;
+  content: Blob | string;
+  mediaType: string;
+}
+
+// Comparison context types
+export interface ComparisonState {
+  selectedExperimentIds: string[];
+  addExperiment: (id: string) => void;
+  removeExperiment: (id: string) => void;
+  clearSelection: () => void;
+}
+
+// Pareto frontier types
+export interface MetricConfig {
+  key: string;
+  direction: 'maximize' | 'minimize';
+}
+
+export interface RunMetrics {
+  runId: string;
+  metrics: Record<string, number>;
+  isPareto?: boolean;
+}
+
+// Trace types
+export interface TraceEvent {
+  timestamp: string;
+  name: string;
+  attributes: Record<string, string>;
+}
+
+export interface TraceLink {
+  traceId: string;
+  spanId: string;
+  attributes: Record<string, string>;
+}
+
+export interface Span {
+  timestamp: string;
+  traceId: string;
+  spanId: string;
+  parentSpanId: string;
+  spanName: string;
+  spanKind: string;
+  semanticKind: string;
+  serviceName: string;
+  duration: number; // nanoseconds (received as float from GraphQL)
+  statusCode: string;
+  statusMessage: string;
+  teamId: string;
+  runId: string;
+  experimentId: string;
+  spanAttributes: Record<string, string>;
+  resourceAttributes: Record<string, string>;
+  events: TraceEvent[];
+  links: TraceLink[];
+}

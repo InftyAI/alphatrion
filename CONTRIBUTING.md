@@ -27,7 +27,8 @@ Please make sure to read and observe our [Code of Conduct](/CODE_OF_CONDUCT.md) 
 ### Pull Requests
 
 Pull requests are often called simply "PR".
-Please follows the standard [github pull request](https://help.github.com/articles/about-pull-requests/) process.
+Please follow the standard [GitHub pull request](https://help.github.com/articles/about-pull-requests/) process.
+To set up your environment, see the [development guide](./alphatrion/framework/docs/development.md).
 To submit a proposed change, please develop the code and add new test cases.
 
 ### Code Review
