@@ -1,0 +1,71 @@
+# autoresearch (https://github.com/karpathy/autoresearch) as a pipeline: a
+# model proposes an edit to train.py, it trains for 5 minutes, and the edit
+# is kept if val_bpb improved, else reverted.
+# Only the evaluator nodes score: the code being improved never judges
+# itself. graph.describe() shows the formats flowing between the nodes.
+name: autoresearch
+params:
+  command: uv run train.py
+  train_timeout: 600            # kill runs after 10 minutes, as crashed
+inputs:
+  - workdir                     # the autoresearch checkout
+  - instructions                # the instructions for the model, proposer.md
+runtimes:
+  train:                        # where train.py runs
+    type: host                  # it needs the GPU; a kubernetes backend can run it remotely
+    mounts:
+      - {path: /repo, source: "${inputs.workdir}", readonly: false}
+nodes:
+  - name: baseline              # train.py as the root, trained once
+    type: action
+    fn: baseline
+    params:
+      workdir: ${inputs.workdir}
+      command: ${params.command}
+      train_timeout: ${params.train_timeout}
+    runtime: train
+    exit: {crashed: raise}
+  - name: score_baseline        # scores the baseline
+    type: evaluator
+    fn: measure
+    params:
+      run: ${nodes.baseline.output}
+  - name: research              # until stopped
+    type: loop
+    nodes:
+      - name: prompt            # proposer.md, train.py and the results so far
+        type: action
+        fn: prompt
+        params:
+          instructions: ${inputs.instructions}
+          workdir: ${inputs.workdir}
+      - name: propose           # a model proposes an edit
+        type: model_router
+        params:
+          request: ${nodes.prompt.output}
+        max_tokens: 32000       # room for thinking and the edits; streamed
+        candidates:
+          - {model: claude-opus-5-5, weight: 0.5, options: {output_config: {effort: high}}}
+          - {model: claude-sonnet-5-5, weight: 0.5, options: {output_config: {effort: high}}}
+        exit: {failed: continue} # every model failed: try again
+      - name: experiment        # edit, commit and train
+        type: action
+        fn: experiment
+        params:
+          reply: ${nodes.propose.output}
+          workdir: ${inputs.workdir}
+          command: ${params.command}
+          train_timeout: ${params.train_timeout}
+        runtime: train
+        exit: {skip: continue, crashed: continue}
+      - name: evaluate          # scores the experiment
+        type: evaluator
+        fn: measure
+        params:
+          run: ${nodes.experiment.output}
+      - name: settle            # keep it if val_bpb improved, else revert
+        type: action
+        fn: settle
+        params:
+          metrics: ${nodes.evaluate.output}
+          workdir: ${inputs.workdir}

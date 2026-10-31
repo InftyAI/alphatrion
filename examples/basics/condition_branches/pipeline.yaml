@@ -1,0 +1,44 @@
+# An adaptive search: exploit the best artifact while it improves, and
+# explore from an earlier one once progress stalls.
+name: adaptive-search
+nodes:
+  - name: seed
+    type: action
+    fn: seed
+  - name: evaluate_seed
+    type: evaluator
+    fn: score
+  - name: search
+    type: loop
+    max_iters: 10000
+    nodes:
+      # A condition returns a bool, which picks the branch to run: true
+      # explores, false exploits. Both then continue with the next node.
+      - name: stalled
+        type: condition
+        fn: stalled
+        params:
+          patience: 30
+        branches:
+          true:
+            - name: jump
+              type: action
+              fn: jump_from_ancestor
+          false:
+            - name: mutate
+              type: action
+              fn: mutate_best
+      - name: evaluate
+        type: evaluator
+        fn: score
+      - name: track
+        type: action
+        fn: track_progress
+      # Break the loop once solved, and fall through otherwise.
+      - name: solved
+        type: condition
+        fn: solved
+        exit: {true: break}
+  - name: report
+    type: action
+    fn: report

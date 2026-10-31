@@ -1,0 +1,65 @@
+# EPLB (https://github.com/UCB-ADRS/ADRS/tree/main/openevolve/examples/ADRS/eplb)
+# as a pipeline: a model edits the evolve block of the best program so far,
+# and ADRS's evaluator scores it on the expert-load trace.
+#
+# What's mutable is the method, which an optimizer may change: the loop, the
+# prompt, the models and the edit. What isn't is the judge: the seed, the
+# guard and the evaluators, which only the pipeline's author changes.
+name: eplb
+inputs:
+  - data                        # the directory holding expert-load.json
+  - instructions                # the instructions for the model, proposer.md
+runtimes:
+  eval:                         # where programs are evaluated
+    type: host                  # or microsandbox, with an image that has torch
+    mounts:
+      - {path: /data, source: "${inputs.data}"}   # the trace
+      - {path: /upstream, source: upstream}     # ADRS's evaluator
+nodes:
+  - name: seed                  # ADRS's initial program, the root
+    type: action
+    fn: seed
+  - name: score_seed
+    type: evaluator
+    fn: measure
+    params: {program: "${nodes.seed.output}"}
+    runtime: eval
+    timeout: 90s
+  - name: evolve
+    type: loop
+    max_iters: 20
+    mutable: true
+    nodes:
+      - name: prompt            # the best program, and how the others did
+        type: action
+        fn: prompt
+        params: {instructions: "${inputs.instructions}"}
+        mutable: true
+      - name: propose
+        type: model_router
+        params: {request: "${nodes.prompt.output}"}
+        # Claude on AWS Bedrock, with the AWS credentials of the environment;
+        # claude-opus-5-5 and claude-sonnet-5-5 use the Anthropic API instead.
+        candidates:
+          - {model: us.anthropic.claude-opus-5-5, weight: 0.5, options: {output_config: {effort: high}}}
+          - {model: us.anthropic.claude-sonnet-5-5, weight: 0.5, options: {output_config: {effort: high}}}
+        max_tokens: 32000
+        mutable: true
+        exit: {failed: continue}       # every model failed: try again
+      - name: edit              # the edited program, as a new artifact
+        type: action
+        fn: edit
+        params: {reply: "${nodes.propose.output}"}
+        mutable: true
+        exit: {skip: continue}
+      - name: guard             # only the evolve block may change
+        type: guardrail
+        checks: [in_evolve_block]
+        params: {program: "${nodes.edit.output}"}
+        exit: {fail: continue}
+      - name: evaluate          # ADRS's evaluator; a program that fails scores 0
+        type: evaluator
+        fn: measure
+        params: {program: "${nodes.edit.output}"}
+        runtime: eval
+        timeout: 90s

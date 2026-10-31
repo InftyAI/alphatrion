@@ -1,0 +1,22 @@
+# The top level stays coarse: seed, then repeat an attempt until solved.
+# What an attempt does is detailed one level down, in attempt.yaml.
+name: improve
+nodes:
+  - name: seed
+    type: action
+    fn: seed
+  - name: evaluate_seed
+    type: evaluator
+    fn: score
+    params:
+      artifact: ${nodes.seed.output}
+  - name: search
+    type: loop
+    max_iters: 10000
+    nodes:
+      - name: attempt               # a subgraph, recorded in memory as attempt.<node>
+        subgraph: attempt.yaml
+      - name: solved
+        type: condition
+        fn: solved
+        exit: {true: break}

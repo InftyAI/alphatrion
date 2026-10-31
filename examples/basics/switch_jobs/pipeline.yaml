@@ -1,0 +1,48 @@
+# A genetic algorithm: each iteration, a switch picks one of several jobs to
+# produce the next artifact, and credits the job when it improves the best.
+name: job-switch
+nodes:
+  - name: seed
+    type: action
+    fn: seed
+  - name: evaluate_seed
+    type: evaluator
+    fn: score
+  - name: evolve
+    type: loop
+    max_iters: 10000
+    nodes:
+      # A switch returns the name of a case, and runs its branch. Returning
+      # a name without a case fails the node, so the weights below must only
+      # name these cases.
+      - name: pick_job
+        type: switch
+        fn: pick_job
+        params:
+          weights: {mutate: 0.7, crossover: 0.25, restart: 0.05}
+        branches:
+          mutate:
+            - name: mutate
+              type: action
+              fn: mutate_best
+          crossover:
+            - name: crossover
+              type: action
+              fn: crossover_top
+          restart:
+            - name: restart
+              type: action
+              fn: restart_from_seed
+      - name: evaluate
+        type: evaluator
+        fn: score
+      - name: credit
+        type: action
+        fn: credit_job
+      - name: solved
+        type: condition
+        fn: solved
+        exit: {true: break}
+  - name: report
+    type: action
+    fn: report

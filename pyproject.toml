@@ -34,13 +34,23 @@ dependencies = [
 # The base install is the framework, so `framework` adds nothing on top of it.
 # It exists so users can state their intent: `pip install alphatrion[framework]`.
 framework = []
-# Dependencies of `alphatrion.swarm`, the self-improvement system.
-swarm = []
+# Dependencies of `alphatrion.swarm`, the self-improvement system: tracing,
+# with OpenTelemetry and OpenInference's conventions and instrumentors.
+swarm = [
+    "opentelemetry-sdk>=1.38.0",
+    "openinference-semantic-conventions>=0.1.43",
+    "openinference-instrumentation-openai>=0.1.69",
+]
 s3 = [
     "boto3>=1.35.0",
 ]
+# Claude models in the model router. OpenAI-compatible models work without it.
+anthropic = [
+    "anthropic>=1.8.0",
+    "openinference-instrumentation-anthropic>=3.3.0",
+]
 all = [
-    "alphatrion[framework,swarm,s3]",
+    "alphatrion[framework,swarm,s3,anthropic]",
 ]
 
 [dependency-groups]
@@ -75,6 +85,7 @@ exclude = [
     "alphatrion/*/tests",
     "alphatrion/framework/hack",
     "alphatrion/framework/docs",
+    "alphatrion/swarm/docs",
     "alphatrion/framework/dashboard",
     "alphatrion/framework/config/grafana",
     "alphatrion/framework/config/prometheus",
@@ -115,7 +126,14 @@ lint.ignore = [
     "PLC0415", # `import` should be at the top-level of a file
     "PLW0603", # Using the global statement
 ]
-exclude = ["venv", "alphatrion/framework/migrations", "__pycache__"]
+exclude = [
+    "venv",
+    "alphatrion/framework/migrations",
+    "__pycache__",
+    # Code the cases vendor from upstream projects, kept unchanged so their
+    # results stay comparable.
+    "examples/cases/*/upstream",
+]
 
 [tool.ruff.format]
 quote-style = "double"

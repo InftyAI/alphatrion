@@ -41,7 +41,7 @@ pip install alphatrion[framework]
 pip install alphatrion[all]
 ```
 
-To start tracking experiments today, see the [framework README](./alphatrion/framework/README.md).
+To start tracking experiments today, see the [framework README](./alphatrion/framework/README.md). For runnable code, see the [examples](./examples).
 
 ## Development
 

@@ -1,0 +1,19 @@
+# One attempt: propose a variant of the best artifact, reject it if it's a
+# duplicate, and score it otherwise. `end` returns to the pipeline using
+# this one, so a rejected variant skips the evaluation.
+name: attempt
+nodes:
+  - name: propose
+    type: action
+    fn: propose
+  - name: guard
+    type: guardrail
+    checks: [not_duplicate]
+    params:
+      artifact: ${nodes.propose.output}
+    exit: {fail: end}
+  - name: evaluate
+    type: evaluator
+    fn: score
+    params:
+      artifact: ${nodes.propose.output}

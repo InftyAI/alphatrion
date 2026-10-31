@@ -1,0 +1,26 @@
+# An improvement loop: propose a variant of the best artifact so far,
+# reject duplicates, score it, and stop once it is good enough.
+name: improve-loop
+nodes:
+  - name: seed
+    type: action
+    fn: seed
+  - name: improve
+    type: loop
+    max_iters: 10000
+    until: good_enough
+    params:
+      target: 1.0
+    nodes:
+      - name: propose
+        type: action
+        fn: propose
+      - name: guard
+        type: guardrail
+        checks: [not_duplicate]
+        exit: {fail: continue}
+      - name: evaluate
+        type: evaluator
+        fn: score
+        params:
+          artifact: ${nodes.propose.output}
